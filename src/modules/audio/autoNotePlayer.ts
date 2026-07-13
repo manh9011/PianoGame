@@ -1,0 +1,196 @@
+import type { MidiDeviceInfo } from '../midi/webMidi'
+import { requestMidiAccess, sendNote, sendProgramChange } from '../midi/webMidi'
+import type { Hand, PlaySession, SessionNote } from '../game/playSession'
+import { SimpleSynth } from './simpleSynth'
+import { handMatches, isNoteInKeyboardRange } from '../game/hitDetection'
+import { getInstrumentByProgram } from './gmInstrumentCatalog'
+
+type MidiAccess = Awaited<ReturnType<typeof requestMidiAccess>>
+interface ActivePitchEntry { hand: Hand; trackId: number }
+
+function lowerBoundStart(notes: SessionNote[], startUs: number) {
+  let lo = 0
+  let hi = notes.length
+  while (lo < hi) {
+    const mid = Math.floor((lo + hi) / 2)
+    if (notes[mid].start < startUs) lo = mid + 1
+    else hi = mid
+  }
+  return lo
+}
+
+function notesSortedByStart(notes: SessionNote[]) {
+  for (let index = 1; index < notes.length; index += 1) {
+    if (notes[index].start < notes[index - 1].start) return false
+  }
+  return true
+}
+
+function maxNoteDurationUs(notes: SessionNote[]) {
+  let maxDuration = 0
+  for (const note of notes) maxDuration = Math.max(maxDuration, note.end - note.start)
+  return maxDuration
+}
+
+export class AutoNotePlayer {
+  private active = new Map<string, SessionNote>()
+  private activeByPitch = new Map<number, ActivePitchEntry[]>()
+  private synth = new SimpleSynth()
+  private midiAccess: MidiAccess = null
+  private midiOutputId = ''
+  private usingSynth = false
+  private sentPrograms = new Map<number, number>()
+  private sessionState: {
+    session: PlaySession
+    notes: SessionNote[]
+    nextStartIndex: number
+    maxDurationUs: number
+    sortedByStart: boolean
+    key: string
+    lastUs: number
+  } | null = null
+
+  async configure(outputId: string) {
+    this.midiOutputId = outputId
+    this.midiAccess = await requestMidiAccess()
+    this.usingSynth = !this.midiAccess?.outputs.get(outputId)
+    this.sentPrograms.clear()
+    if (this.usingSynth) await this.synth.start()
+  }
+
+  tick(session: PlaySession) {
+    if (!session.setupComplete) return
+    this.currentSession = session
+    const trackLookup = new Map(session.tracks.map(track => [track.trackId, track]))
+    const shouldAutoPlay = (note: SessionNote) => {
+      const track = trackLookup.get(note.trackId)
+      if (!track || track.mode === 'notPlayed' || track.mode === 'playedButHidden') return false
+      if (session.mode === 'listen') return true
+      if (track.mode === 'playedAutomatically') return true
+      if (track.mode === 'youPlay' && !isNoteInKeyboardRange(note, session)) return true
+      if (track.mode === 'youPlay' && session.handSelection !== 'both' && !handMatches(session.handSelection, note)) return true
+      return false
+    }
+
+    const autoKey = [
+      session.mode,
+      session.handSelection,
+      session.keyboardRange ? `${session.keyboardRange.lowNote}:${session.keyboardRange.highNote}` : '',
+      session.tracks.map(track => `${track.trackId}:${track.mode}`).join('|'),
+    ].join('|')
+    let state = this.sessionState
+    if (!state || state.session !== session || state.notes !== session.notes || state.key !== autoKey || state.lastUs > session.currentUs) {
+      state = {
+        session,
+        notes: session.notes,
+        nextStartIndex: 0,
+        maxDurationUs: maxNoteDurationUs(session.notes),
+        sortedByStart: notesSortedByStart(session.notes),
+        key: autoKey,
+        lastUs: session.currentUs,
+      }
+      this.sessionState = state
+    }
+
+    if (!state.sortedByStart) {
+      for (const note of session.notes) this.syncNote(session, note, shouldAutoPlay(note) && note.start <= session.currentUs && note.end > session.currentUs)
+      state.lastUs = session.currentUs
+      return
+    }
+
+    for (const note of [...this.active.values()]) {
+      if (note.end <= session.currentUs || !shouldAutoPlay(note)) this.syncNote(session, note, false)
+    }
+
+    const fromIndex = Math.min(state.nextStartIndex, lowerBoundStart(session.notes, session.currentUs - state.maxDurationUs))
+    let index = fromIndex
+    while (index < session.notes.length) {
+      const note = session.notes[index]
+      if (note.start > session.currentUs) break
+      if (note.end > session.currentUs && shouldAutoPlay(note)) this.syncNote(session, note, true)
+      index += 1
+    }
+    state.nextStartIndex = Math.max(state.nextStartIndex, index)
+    state.lastUs = session.currentUs
+  }
+
+  allNotesOff(session?: PlaySession | null) {
+    for (const note of this.active.values()) this.noteOff(note)
+    if (session) {
+      session.autoActiveNotes.clear()
+      session.autoActiveNoteHands.clear()
+      session.autoActiveNoteTrackIds.clear()
+    }
+    this.active.clear()
+    this.activeByPitch.clear()
+    this.currentSession = null
+    this.sessionState = null
+    this.synth.allNotesOff()
+  }
+
+  private syncNote(session: PlaySession, note: SessionNote, activeNow: boolean) {
+    const key = note.id
+    if (activeNow && !this.active.has(key)) {
+      this.active.set(key, note)
+      this.addAutoActiveNote(session, note.noteId, note.hand, note.trackId)
+      this.noteOn(note)
+    } else if (!activeNow && this.active.has(key)) {
+      this.active.delete(key)
+      this.removeAutoActiveNote(session, note.noteId)
+      this.noteOff(note)
+    }
+  }
+
+  private addAutoActiveNote(session: PlaySession, noteId: number, hand: Hand, trackId: number) {
+    const entries = this.activeByPitch.get(noteId) ?? []
+    entries.push({ hand, trackId })
+    this.activeByPitch.set(noteId, entries)
+    session.autoActiveNotes.add(noteId)
+    session.autoActiveNoteHands.set(noteId, hand)
+    session.autoActiveNoteTrackIds.set(noteId, trackId)
+  }
+
+  private removeAutoActiveNote(session: PlaySession, noteId: number) {
+    const entries = this.activeByPitch.get(noteId) ?? []
+    entries.pop()
+    const current = entries[entries.length - 1]
+    if (!current) {
+      this.activeByPitch.delete(noteId)
+      session.autoActiveNotes.delete(noteId)
+      session.autoActiveNoteHands.delete(noteId)
+      session.autoActiveNoteTrackIds.delete(noteId)
+      return
+    }
+    this.activeByPitch.set(noteId, entries)
+    session.autoActiveNoteHands.set(noteId, current.hand)
+    session.autoActiveNoteTrackIds.set(noteId, current.trackId)
+  }
+
+  private noteOn(note: SessionNote) {
+    const sessionTrack = this.currentTrackFor(note)
+    const instrument = getInstrumentByProgram(sessionTrack?.instrumentProgram)
+    if (this.usingSynth) {
+      void this.synth.noteOn(note.id, note.noteId, note.velocity, instrument.soundfontId)
+      return
+    }
+    const channel = note.channel ?? 0
+    if (this.sentPrograms.get(channel) !== instrument.program) {
+      sendProgramChange(this.midiAccess, this.midiOutputId, channel, instrument.program)
+      this.sentPrograms.set(channel, instrument.program)
+    }
+    sendNote(this.midiAccess, this.midiOutputId, note.noteId, note.velocity || 80, true, channel)
+  }
+
+  private noteOff(note: SessionNote) {
+    if (this.usingSynth) this.synth.noteOff(note.id)
+    else sendNote(this.midiAccess, this.midiOutputId, note.noteId, 0, false, note.channel ?? 0)
+  }
+
+  private currentSession: PlaySession | null = null
+
+  private currentTrackFor(note: SessionNote) {
+    return this.currentSession?.tracks.find(track => track.trackId === note.trackId)
+  }
+}
+
+export type { MidiDeviceInfo }

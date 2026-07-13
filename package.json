@@ -1,0 +1,1 @@
+{"scripts":{"dev":"vite","build":"vue-tsc -b && vite build","typecheck":"vue-tsc -b","preview":"vite preview"},"dependencies":{"@fortawesome/fontawesome-free":"^7.3.0","@tonejs/midi":"^2.0.28","@vitejs/plugin-vue":"latest","pinia":"latest","soundfont-player":"^0.12.0","typescript":"latest","vite":"latest","vue":"latest","vue-router":"latest","vue-tsc":"latest"}}
