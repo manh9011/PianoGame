@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { usePlayerStore } from '../../stores/playerStore'
 import { parseMidi } from '../../modules/midi/midiParser'
@@ -7,12 +8,14 @@ import { buildTempoMap } from '../../modules/midi/midiTempo'
 import { base64ToBuffer } from '../../modules/library/songLibrary'
 
 const router = useRouter()
+const { t } = useI18n()
 const player = usePlayerStore()
 
 defineProps<{
   isFullscreen: boolean
   bookmarksDialogOpen?: boolean
   loopDialogOpen?: boolean
+  helpOverlayOpen?: boolean
   benchmarkMode?: boolean
 }>()
 
@@ -25,6 +28,7 @@ const emit = defineEmits<{
   openLoop: [event: MouseEvent]
   openSettings: [event: MouseEvent]
   toggleBenchmark: []
+  toggleHelp: []
   toggleFullscreen: []
 }>()
 
@@ -48,8 +52,8 @@ const loopActive = computed(() => player.session?.loopState.enabled ?? false)
 
 function backDisabled() { return player.session?.mode === 'performance' && !player.stats }
 function back() { if (backDisabled()) return; player.clock?.stop(); player.autoPlayer.allNotesOff(player.session); router.push(`/mode-select/${player.song?.hash}`) }
-function seekToStart() { player.seekToProgress(0) }
-function seekToEnd() { player.seekToProgress(1) }
+function seekToPreviousBookmark() { player.seekToPreviousBookmark() }
+function seekToNextBookmark() { player.seekToNextBookmark() }
 
 function increaseSpeed() {
   if (!player.session?.modeConfig.speedChangeAllowed) return
@@ -68,36 +72,53 @@ function decreaseSpeed() {
   <header v-if="player.session" class="play-top-bar">
     <div class="top-main-row">
       <div class="left-controls">
-        <button class="top-button secondary" :disabled="backDisabled()" @click="back">Back</button>
-        <button class="top-button secondary">Help</button>
+        <button class="top-button secondary" :disabled="backDisabled()" :title="t('play.backToModes')" @click="back">{{ t('common.back') }}</button>
+        <button
+          class="top-button secondary help-toggle"
+          :class="{ 'help-toggle--active': helpOverlayOpen }"
+          :aria-pressed="helpOverlayOpen"
+          :title="t('play.helpToggle')"
+          @click="emit('toggleHelp')"
+        >
+          {{ t('play.help') }}
+        </button>
         <button
           class="top-button secondary benchmark-toggle"
           :class="{ 'benchmark-toggle--active': benchmarkMode }"
           :aria-pressed="benchmarkMode"
-          title="Toggle benchmark FPS"
+          :title="t('play.benchmarkToggle')"
           @click="emit('toggleBenchmark')"
         >
-          Benchmark
+          {{ t('play.benchmark') }}
         </button>
       </div>
 
       <div class="center-controls">
-        <button class="icon-button" :disabled="!player.session.modeConfig.pauseAllowed" @click="player.togglePause">
+        <button
+          class="icon-button"
+          data-help-anchor="play-pause"
+          :disabled="!player.session.modeConfig.pauseAllowed"
+          :title="t('play.playPause')"
+          :aria-label="player.clock?.state.running ? t('play.pause') : t('play.play')"
+          @click="player.togglePause"
+        >
           <i :class="player.clock?.state.running ? 'fas fa-pause' : 'fas fa-play'"></i>
         </button>
-        <button class="icon-button" :disabled="!player.canSeek" @click="seekToStart">
+        <button class="icon-button" data-help-anchor="previous-bookmark" :disabled="!player.canSeek" :title="t('play.previousBookmark')" :aria-label="t('play.previousBookmark')" @click="seekToPreviousBookmark">
           <i class="fas fa-step-backward"></i>
         </button>
-        <button class="icon-button" :disabled="!player.canSeek" @click="seekToEnd">
+        <button class="icon-button" data-help-anchor="next-bookmark" :disabled="!player.canSeek" :title="t('play.nextBookmark')" :aria-label="t('play.nextBookmark')" @click="seekToNextBookmark">
           <i class="fas fa-step-forward"></i>
         </button>
 
         <div class="tempo-control">
           <button
             class="tempo-btn"
+            data-help-anchor="speed-down"
             :disabled="!player.session.modeConfig.speedChangeAllowed"
+            :title="t('play.speedDown')"
             @click="decreaseSpeed"
-            aria-label="Giảm tốc độ"
+            :aria-label="t('play.speedDown')"
           >
             <i class="fas fa-minus"></i>
           </button>
@@ -107,9 +128,11 @@ function decreaseSpeed() {
           </div>
           <button
             class="tempo-btn"
+            data-help-anchor="speed-up"
             :disabled="!player.session.modeConfig.speedChangeAllowed"
+            :title="t('play.speedUp')"
             @click="increaseSpeed"
-            aria-label="Tăng tốc độ"
+            :aria-label="t('play.speedUp')"
           >
             <i class="fas fa-plus"></i>
           </button>
@@ -117,15 +140,15 @@ function decreaseSpeed() {
       </div>
 
       <div class="right-controls">
-        <button class="icon-button" title="Settings" @click="(e) => emit('openSettings', e)"><i class="fas fa-cog"></i></button>
-        <button class="icon-button" title="Metronome" @click="(e) => emit('openMetronome', e)"><i class="fas fa-drum"></i></button>
-        <button class="icon-button" title="Track Settings" @click="(e) => emit('openTrackConfig', e)"><i class="fas fa-sliders-h"></i></button>
-        <button class="icon-button" title="Keyboard Range" @click="(e) => emit('openKeyboardRange', e)"><i class="fas fa-keyboard"></i></button>
-        <button class="icon-button" title="Finger"><i class="fas fa-hand"></i></button>
-        <button class="icon-button" :class="{ 'bookmark-active': bookmarksDialogOpen }" title="Bookmarks" @click="emit('openBookmarks')"><i class="fas fa-bookmark"></i></button>
-        <button class="icon-button" title="Labels" @click="(e) => emit('openLabels', e)"><i class="fas fa-tags"></i></button>
-        <button class="icon-button" :class="{ 'loop-active': loopActive || loopDialogOpen }" title="Loop" @click="(e) => emit('openLoop', e)"><i class="fas fa-repeat"></i></button>
-        <button class="icon-button" title="Fullscreen" @click="emit('toggleFullscreen')">
+        <button class="icon-button" data-help-anchor="settings" :title="t('common.settings')" :aria-label="t('common.settings')" @click="(e) => emit('openSettings', e)"><i class="fas fa-cog"></i></button>
+        <button class="icon-button" data-help-anchor="metronome" :title="t('play.metronome')" :aria-label="t('play.metronome')" @click="(e) => emit('openMetronome', e)"><i class="fas fa-drum"></i></button>
+        <button class="icon-button" data-help-anchor="track-config" :title="t('play.trackConfig')" :aria-label="t('play.trackConfig')" @click="(e) => emit('openTrackConfig', e)"><i class="fas fa-sliders-h"></i></button>
+        <button class="icon-button" data-help-anchor="keyboard-range" :title="t('play.keyboardRange')" :aria-label="t('play.keyboardRange')" @click="(e) => emit('openKeyboardRange', e)"><i class="fas fa-keyboard"></i></button>
+        <button class="icon-button" data-help-anchor="finger-hints" :title="t('play.fingerHints')" :aria-label="t('play.fingerHints')"><i class="fas fa-hand"></i></button>
+        <button class="icon-button" data-help-anchor="bookmarks" :class="{ 'bookmark-active': bookmarksDialogOpen }" :title="t('play.bookmarks')" :aria-label="t('play.bookmarks')" @click="emit('openBookmarks')"><i class="fas fa-bookmark"></i></button>
+        <button class="icon-button" data-help-anchor="note-labels" :title="t('play.noteLabels')" :aria-label="t('play.noteLabels')" @click="(e) => emit('openLabels', e)"><i class="fas fa-tags"></i></button>
+        <button class="icon-button" data-help-anchor="looping" :class="{ 'loop-active': loopActive || loopDialogOpen }" :title="t('play.loop')" :aria-label="t('play.loop')" @click="(e) => emit('openLoop', e)"><i class="fas fa-repeat"></i></button>
+        <button class="icon-button" data-help-anchor="fullscreen" :title="isFullscreen ? t('play.exitFullscreen') : t('play.fullscreen')" :aria-label="isFullscreen ? t('play.exitFullscreen') : t('play.fullscreen')" @click="emit('toggleFullscreen')">
           <i :class="isFullscreen ? 'fas fa-compress' : 'fas fa-expand'"></i>
         </button>
       </div>
@@ -183,13 +206,15 @@ function decreaseSpeed() {
   cursor: not-allowed;
 }
 
-.top-button.benchmark-toggle--active {
+.top-button.benchmark-toggle--active,
+.top-button.help-toggle--active {
   color: #fbbf24;
   background: rgba(251, 191, 36, 0.15);
   border-color: rgba(251, 191, 36, 0.4);
 }
 
-.top-button.benchmark-toggle--active:hover:not(:disabled) {
+.top-button.benchmark-toggle--active:hover:not(:disabled),
+.top-button.help-toggle--active:hover:not(:disabled) {
   background: rgba(251, 191, 36, 0.25);
   border-color: rgba(251, 191, 36, 0.5);
 }

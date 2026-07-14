@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import type { TrackRole } from '../../../modules/game/trackProperties'
 
 const props = defineProps<{
@@ -14,11 +15,13 @@ const emit = defineEmits<{
   close: []
 }>()
 
-const options: Array<{ role: TrackRole | 'custom'; label: string; icon: string; disabled?: boolean; flipped?: boolean }> = [
-  { role: 'left', label: 'Left Hand', icon: 'fas fa-hand-paper', flipped: true },
-  { role: 'right', label: 'Right Hand', icon: 'fas fa-hand-paper' },
-  { role: 'background', label: 'Background', icon: 'fas fa-cog' },
-  { role: 'custom', label: 'Custom', icon: 'fas fa-sliders-h', disabled: true },
+const { t } = useI18n()
+
+const options: Array<{ role: TrackRole | 'custom'; labelKey: string; icon: string; disabled?: boolean; flipped?: boolean }> = [
+  { role: 'left', labelKey: 'trackSettings.left', icon: 'fas fa-hand-paper', flipped: true },
+  { role: 'right', labelKey: 'trackSettings.right', icon: 'fas fa-hand-paper' },
+  { role: 'background', labelKey: 'trackSettings.background', icon: 'fas fa-cog' },
+  { role: 'custom', labelKey: 'trackSettings.custom', icon: 'fas fa-sliders-h', disabled: true },
 ]
 
 function choose(role: TrackRole | 'custom') {
@@ -45,7 +48,7 @@ function close() {
         @click="choose(option.role)"
       >
         <span class="role-icon" :class="{ flipped: option.flipped }"><i :class="option.icon"></i></span>
-        <span class="role-label">{{ option.label }}</span>
+        <span class="role-label">{{ t(option.labelKey) }}</span>
         <i v-if="option.role === currentRole" class="fas fa-check role-check"></i>
       </button>
     </div>
@@ -80,13 +83,8 @@ function close() {
   z-index: -1;
 }
 
-.dialog-arrow.right {
-  right: -9px;
-}
-
-.dialog-arrow.left {
-  left: -9px;
-}
+.dialog-arrow.right { right: -9px; }
+.dialog-arrow.left { left: -9px; }
 
 .role-item {
   width: 100%;
@@ -101,43 +99,17 @@ function close() {
   color: #f1f1f1;
   padding: 5px 10px;
   cursor: pointer;
-  text-align: left;
+  text-align: start;
   font-size: 0.95rem;
   border-radius: 0;
 }
 
-.role-item:first-of-type {
-  border-radius: 8px 8px 0 0;
-}
-
-.role-item:last-of-type {
-  border-bottom: 1px solid #1a1a1a;
-  border-radius: 0 0 8px 8px;
-}
-
+.role-item:first-of-type { border-radius: 8px 8px 0 0; }
+.role-item:last-of-type { border-bottom: 1px solid #1a1a1a; border-radius: 0 0 8px 8px; }
 .role-item:hover:not(.disabled),
-.role-item.selected {
-  background: #454545;
-}
-
-.role-item.disabled {
-  color: #9a9a9a;
-  cursor: not-allowed;
-  opacity: 0.7;
-}
-
-.role-icon {
-  display: grid;
-  place-items: center;
-  color: #d9d9d9;
-  font-size: 1.35rem;
-}
-
-.role-icon.flipped {
-  transform: scaleX(-1);
-}
-
-.role-check {
-  color: #d3d931;
-}
+.role-item.selected { background: #454545; }
+.role-item.disabled { color: #9a9a9a; cursor: not-allowed; opacity: 0.7; }
+.role-icon { display: grid; place-items: center; color: #d9d9d9; font-size: 1.35rem; }
+.role-icon.flipped { transform: scaleX(-1); }
+.role-check { color: #d3d931; }
 </style>

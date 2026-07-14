@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { usePlayerStore } from '../../stores/playerStore'
 import { displayPoints, resolveComboBonus } from '../../modules/game/scoring'
 import { isPlayableNote } from '../../modules/game/hitDetection'
+const { t } = useI18n()
 const player = usePlayerStore()
 
 const isListenMode = computed(() => player.session?.mode === 'listen')
@@ -37,10 +39,10 @@ const comboDisplay = computed(() => `${comboBonus.value.label} (${comboBonus.val
 <template>
   <aside v-if="player.session" class="score-panel">
     <div class="score-live" :class="{ 'score-live--listen': isListenMode }">
-      <span class="metric"><span class="muted">Notes:</span><strong>{{ hitNotes }}/{{ playableTotal }}</strong></span>
+      <span class="metric"><span class="muted">{{ t('score.notes') }}</span><strong>{{ hitNotes }}/{{ playableTotal }}</strong></span>
       <template v-if="!isListenMode">
-        <span class="metric"><span class="muted">Errors:</span><strong>+{{ errors?.strayNotes ?? 0 }}/{{ errors?.missedNotes ?? 0 }}</strong></span>
-        <span class="metric points"><span class="muted">Points:</span><strong>{{ points }} <small>{{ comboDisplay }}</small></strong></span>
+        <span class="metric"><span class="muted">{{ t('score.errors') }}</span><strong>+{{ errors?.strayNotes ?? 0 }}/{{ errors?.missedNotes ?? 0 }}</strong></span>
+        <span class="metric points"><span class="muted">{{ t('score.points') }}</span><strong>{{ points }} <small>{{ comboDisplay }}</small></strong></span>
       </template>
     </div>
   </aside>

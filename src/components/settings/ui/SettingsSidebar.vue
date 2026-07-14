@@ -1,10 +1,13 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 import { settingsNavigation } from '../../../modules/settings/settingsNavigation'
+
+const { t } = useI18n()
 </script>
 
 <template>
-  <nav class="settings-sidebar" aria-label="Settings navigation">
+  <nav class="settings-sidebar" :aria-label="t('settings.navigation')">
     <RouterLink
       v-for="item in settingsNavigation"
       :key="item.routeName"
@@ -12,7 +15,7 @@ import { settingsNavigation } from '../../../modules/settings/settingsNavigation
       :to="item.to"
     >
       <i :class="item.icon" aria-hidden="true" />
-      <span>{{ item.label }}</span>
+      <span>{{ t(item.labelKey) }}</span>
       <i class="fa-solid fa-chevron-right chevron" aria-hidden="true" />
     </RouterLink>
   </nav>
@@ -22,7 +25,7 @@ import { settingsNavigation } from '../../../modules/settings/settingsNavigation
 .settings-sidebar {
   width: 10.15rem;
   min-width: 10.15rem;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  border-inline-end: 1px solid rgba(255, 255, 255, 0.08);
   background: #303030;
 }
 
@@ -67,7 +70,7 @@ import { settingsNavigation } from '../../../modules/settings/settingsNavigation
     min-width: 0;
     display: flex;
     overflow-x: auto;
-    border-right: 0;
+    border-inline-end: 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   }
 

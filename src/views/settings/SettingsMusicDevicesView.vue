@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import SettingsRow from '../../components/settings/ui/SettingsRow.vue'
 import SettingsSection from '../../components/settings/ui/SettingsSection.vue'
 import SettingsToggle from '../../components/settings/ui/SettingsToggle.vue'
 import { bindInput, isWebMidiSupported, listInputs, listOutputs, requestMidiAccess, type MidiDeviceInfo } from '../../modules/midi/webMidi'
 import { useSettingsStore } from '../../stores/settingsStore'
 
+const { t } = useI18n()
 const settings = useSettingsStore()
 const supported = isWebMidiSupported()
 const inputs = ref<MidiDeviceInfo[]>([])
@@ -34,38 +36,38 @@ function selectOutput(id: string) {
   <div class="settings-page">
     <header class="settings-page-title">
       <div>
-        <h2>Music Devices</h2>
-        <p>Thiết lập thiết bị MIDI đầu vào và đầu ra giống bảng Music Devices của Synthesia.</p>
+        <h2>{{ t('settings.musicDevices') }}</h2>
+        <p>{{ t('settings.musicDevicesDescription') }}</p>
       </div>
-      <span class="settings-pill">{{ supported ? 'Web MIDI' : 'Unavailable' }}</span>
+      <span class="settings-pill">{{ supported ? t('settings.webMidi') : t('settings.unavailable') }}</span>
     </header>
 
-    <SettingsSection title="Music Input" :description="supported ? 'Nhận nốt từ keyboard MIDI hoặc virtual piano.' : 'Trình duyệt hiện tại không hỗ trợ Web MIDI API.'">
-      <SettingsRow title="Synthesia Virtual Piano" description="Fallback mặc định khi chưa chọn MIDI keyboard.">
-        <span class="device-count">18 Keys</span>
+    <SettingsSection :title="t('settings.musicInput')" :description="supported ? t('settings.musicInputDescription') : t('settings.midiUnsupported')">
+      <SettingsRow :title="t('settings.synthesiaVirtualPiano')" :description="t('settings.virtualPianoDescription')">
+        <span class="device-count">{{ t('settings.keys18') }}</span>
       </SettingsRow>
-      <SettingsRow title="MIDI Input" description="Thiết bị dùng để chơi nốt của bạn.">
+      <SettingsRow :title="t('settings.midiInput')" :description="t('settings.midiInputDescription')">
         <select class="settings-control" :disabled="!supported" :value="settings.midiInputId" @change="selectInput(($event.target as HTMLSelectElement).value)">
-          <option value="">Không chọn</option>
+          <option value="">{{ t('settings.noneSelected') }}</option>
           <option v-for="device in inputs" :key="device.id" :value="device.id">{{ device.name }}</option>
         </select>
       </SettingsRow>
-      <SettingsRow title="Auto-connect last input" description="Lưu lựa chọn ở store; tích hợp tự kết nối sẽ làm ở bước sau.">
+      <SettingsRow :title="t('settings.autoConnectLastInput')" :description="t('settings.autoConnectLastInputDescription')">
         <SettingsToggle :model-value="settings.musicDevicesAutoConnectInput" @change="settings.patchSettings({ musicDevicesAutoConnectInput: $event })" />
       </SettingsRow>
     </SettingsSection>
 
-    <SettingsSection title="Music Output">
-      <SettingsRow title="Built-in MIDI Synthesizer" description="Ưu tiên synth phần mềm khi chưa chọn thiết bị output.">
+    <SettingsSection :title="t('settings.musicOutput')">
+      <SettingsRow :title="t('settings.builtInMidiSynthesizer')" :description="t('settings.builtInSynthDescription')">
         <SettingsToggle :model-value="settings.musicDevicesPreferBuiltInSynth" @change="settings.patchSettings({ musicDevicesPreferBuiltInSynth: $event })" />
       </SettingsRow>
-      <SettingsRow title="MIDI Output" description="Thiết bị phát âm thanh MIDI bên ngoài.">
+      <SettingsRow :title="t('settings.midiOutput')" :description="t('settings.midiOutputDescription')">
         <select class="settings-control" :disabled="!supported" :value="settings.midiOutputId" @change="selectOutput(($event.target as HTMLSelectElement).value)">
-          <option value="">Built-in MIDI Synthesizer</option>
+          <option value="">{{ t('settings.builtInMidiSynthesizer') }}</option>
           <option v-for="device in outputs" :key="device.id" :value="device.id">{{ device.name }}</option>
         </select>
       </SettingsRow>
-      <SettingsRow title="Auto-connect last output" description="Chỉ lưu cấu hình ở phase giao diện.">
+      <SettingsRow :title="t('settings.autoConnectLastOutput')" :description="t('settings.autoConnectLastOutputDescription')">
         <SettingsToggle :model-value="settings.musicDevicesAutoConnectOutput" @change="settings.patchSettings({ musicDevicesAutoConnectOutput: $event })" />
       </SettingsRow>
     </SettingsSection>

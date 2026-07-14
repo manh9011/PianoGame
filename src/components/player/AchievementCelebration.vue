@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { AchievementCelebration } from '../../stores/profileStore'
 import achievementUrl from '../../../achievement.mid?url'
 
 const props = defineProps<{ celebration: AchievementCelebration }>()
 const emit = defineEmits<{ done: [] }>()
+const { t } = useI18n()
 
 const displayScore = ref(props.celebration.from)
 let frameId: number | null = null
@@ -53,7 +55,7 @@ onBeforeUnmount(() => {
       <span v-for="i in 28" :key="`r-${i}`" :style="{ '--i': i }" />
     </div>
     <div class="achievement-card">
-      <span class="label">Achievement increased!</span>
+      <span class="label">{{ t('achievement.increased') }}</span>
       <strong>{{ displayScore }}</strong>
       <small>{{ props.celebration.from }} → {{ props.celebration.to }}</small>
     </div>

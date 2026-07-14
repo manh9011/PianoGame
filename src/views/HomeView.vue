@@ -1,13 +1,17 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '../stores/appStore'
 import { useLibraryStore } from '../stores/libraryStore'
 import { useProfileStore } from '../stores/profileStore'
 import { useSettingsStore } from '../stores/settingsStore'
+import LanguageDropup from '../components/home/LanguageDropup.vue'
 import ProfileManager from '../components/home/ProfileManager.vue'
+import { formatRelativeTime } from '../i18n/formatters'
 
 const router = useRouter()
+const { t } = useI18n()
 const app = useAppStore()
 const library = useLibraryStore()
 const profile = useProfileStore()
@@ -23,15 +27,7 @@ const recentSongs = computed(() =>
 )
 
 function formatTimeAgo(timestamp: number): string {
-  if (!timestamp) return 'Never'
-  const seconds = Math.floor((Date.now() - timestamp) / 1000)
-  if (seconds < 60) return 'Just now'
-  const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`
-  const days = Math.floor(hours / 24)
-  return `${days} day${days > 1 ? 's' : ''} ago`
+  return timestamp ? formatRelativeTime(timestamp, settings.locale) : t('common.never')
 }
 
 function playSong(songId: string) {
@@ -56,10 +52,10 @@ function closeProfileManager() {
     <header class="home-header">
       <div class="header-left">
         <div class="app-icon">🎹</div>
-        <h1 class="app-name">PianoGame</h1>
+        <h1 class="app-name">{{ t('app.name') }}</h1>
       </div>
       <div class="header-right">
-        <button class="username-button" @click="toggleProfileManager">
+        <button class="username-button" :aria-label="t('home.profileMenu')" @click="toggleProfileManager">
           {{ profile.activeProfile.name }} ▾
         </button>
 
@@ -80,22 +76,22 @@ function closeProfileManager() {
       <!-- Left Panel - Menu Buttons -->
       <div class="left-panel">
         <button class="menu-button primary" @click="router.push('/library')">
-          Play a Song
+          {{ t('home.playSong') }}
         </button>
         <button class="menu-button primary" @click="router.push('/library')" disabled>
-          Free Play
+          {{ t('home.freePlay') }}
         </button>
         <button class="menu-button secondary" @click="router.push('/settings')">
-          Settings
+          {{ t('common.settings') }}
         </button>
         <button class="menu-button secondary" @click="app.exitApp">
-          Exit
+          {{ t('home.exit') }}
         </button>
       </div>
 
       <!-- Right Panel - Recently Played -->
       <div class="right-panel">
-        <h2 class="panel-title">Recently Played</h2>
+        <h2 class="panel-title">{{ t('home.recentlyPlayed') }}</h2>
         <div v-if="recentSongs.length" class="recent-list">
           <button
             v-for="song in recentSongs"
@@ -110,22 +106,22 @@ function closeProfileManager() {
             </div>
           </button>
         </div>
-        <p v-else class="empty-message">No recent songs</p>
+        <p v-else class="empty-message">{{ t('home.noRecentSongs') }}</p>
       </div>
     </main>
 
     <!-- Footer -->
     <footer class="home-footer">
       <div class="footer-left">
-        <span class="language">🌐 Tiếng Việt</span>
+        <LanguageDropup />
       </div>
       <div class="footer-center">
-        <div class="footer-info">Input: {{ settings.midiInputId || 'No MIDI Input' }}</div>
-        <div class="footer-info">Output: {{ settings.midiOutputId || 'Built-in Synthesizer' }}</div>
+        <div class="footer-info">{{ t('common.input') }}: {{ settings.midiInputId || t('common.noMidiInput') }}</div>
+        <div class="footer-info">{{ t('common.output') }}: {{ settings.midiOutputId || t('common.builtInSynthesizer') }}</div>
       </div>
       <div class="footer-right">
-        <div class="version">v1.0.0</div>
-        <div class="copyright">©2026 PianoGame</div>
+        <div class="version">{{ t('app.version') }}</div>
+        <div class="copyright">{{ t('app.copyright') }}</div>
       </div>
     </footer>
   </div>

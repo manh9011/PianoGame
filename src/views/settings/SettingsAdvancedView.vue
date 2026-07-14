@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import SettingsRow from '../../components/settings/ui/SettingsRow.vue'
 import SettingsSection from '../../components/settings/ui/SettingsSection.vue'
 import SettingsToggle from '../../components/settings/ui/SettingsToggle.vue'
 import { useSettingsStore } from '../../stores/settingsStore'
 
+const { t } = useI18n()
 const settings = useSettingsStore()
 </script>
 
@@ -11,30 +13,30 @@ const settings = useSettingsStore()
   <div class="settings-page">
     <header class="settings-page-title">
       <div>
-        <h2>Advanced</h2>
-        <p>Các tùy chọn nâng cao dành cho trải nghiệm và debug.</p>
+        <h2>{{ t('settings.advanced') }}</h2>
+        <p>{{ t('settings.advancedDescription') }}</p>
       </div>
-      <span class="settings-pill">Saved</span>
+      <span class="settings-pill">{{ t('settings.saved') }}</span>
     </header>
 
-    <SettingsSection title="Interface">
-      <SettingsRow title="Reduce motion" description="Giảm animation và chuyển động trên giao diện.">
+    <SettingsSection :title="t('settings.interface')">
+      <SettingsRow :title="t('settings.reduceMotion')" :description="t('settings.reduceMotionDescription')">
         <SettingsToggle :model-value="settings.advancedReduceAnimations" @change="settings.patchSettings({ advancedReduceAnimations: $event })" />
       </SettingsRow>
-      <SettingsRow title="Compact mode" description="Dùng spacing gọn hơn cho các màn có nhiều dữ liệu.">
+      <SettingsRow :title="t('settings.compactMode')" :description="t('settings.compactModeDescription')">
         <SettingsToggle :model-value="settings.advancedCompactMode" @change="settings.patchSettings({ advancedCompactMode: $event })" />
       </SettingsRow>
-      <SettingsRow title="Confirm before destructive actions" description="Hiển thị xác nhận trước khi xóa/import ghi đè.">
+      <SettingsRow :title="t('settings.confirmDestructive')" :description="t('settings.confirmDestructiveDescription')">
         <SettingsToggle :model-value="settings.advancedConfirmBeforeDestructiveAction" @change="settings.patchSettings({ advancedConfirmBeforeDestructiveAction: $event })" />
       </SettingsRow>
     </SettingsSection>
 
-    <SettingsSection title="Diagnostics" note="Các setting nâng cao hiện chỉ lưu vào store trong phase giao diện.">
-      <SettingsRow title="Debug overlay" description="Hiển thị thông tin debug khi tích hợp ở bước sau.">
+    <SettingsSection :title="t('settings.diagnostics')" :note="t('settings.diagnosticsNote')">
+      <SettingsRow :title="t('settings.debugOverlay')" :description="t('settings.debugOverlayDescription')">
         <SettingsToggle :model-value="settings.advancedEnableDebugOverlay" @change="settings.patchSettings({ advancedEnableDebugOverlay: $event })" />
       </SettingsRow>
-      <SettingsRow title="Reset to defaults" description="Chức năng reset sẽ được nối logic ở bước sau để tránh mất cấu hình ngoài ý muốn.">
-        <button class="settings-button" type="button" disabled>Reset to Defaults</button>
+      <SettingsRow :title="t('settings.resetToDefaults')" :description="t('settings.resetToDefaultsDescription')">
+        <button class="settings-button" type="button" disabled>{{ t('settings.resetToDefaults') }}</button>
       </SettingsRow>
     </SettingsSection>
   </div>

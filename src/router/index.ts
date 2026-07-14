@@ -27,7 +27,6 @@ export default createRouter({
         { path: 'shortcuts', name: 'settings-shortcuts', component: () => import('../views/settings/SettingsShortcutsView.vue') },
         { path: 'color-theme', name: 'settings-color-theme', component: () => import('../views/settings/SettingsColorThemeView.vue') },
         { path: 'advanced', name: 'settings-advanced', component: () => import('../views/settings/SettingsAdvancedView.vue') },
-        { path: 'unlock-synthesia', name: 'settings-unlock-synthesia', component: () => import('../views/settings/SettingsUnlockSynthesiaView.vue') },
       ],
     },
   ],

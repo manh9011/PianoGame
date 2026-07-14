@@ -1,20 +1,22 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import SettingsRow from '../../components/settings/ui/SettingsRow.vue'
 import SettingsSection from '../../components/settings/ui/SettingsSection.vue'
 import SettingsToggle from '../../components/settings/ui/SettingsToggle.vue'
 import type { KeyboardRangeMode } from '../../types/settings'
 import { useSettingsStore } from '../../stores/settingsStore'
 
+const { t } = useI18n()
 const settings = useSettingsStore()
 
-const keyboardRangeOptions: Array<{ value: KeyboardRangeMode; label: string }> = [
-  { value: '18-keys', label: '18 keys' },
-  { value: '25-keys', label: '25 keys' },
-  { value: '88-keys', label: '88 keys' },
-  { value: 'my-notes', label: 'My notes' },
-  { value: 'my-keyboard', label: 'My keyboard' },
-  { value: 'song-only', label: 'Song only' },
-  { value: 'custom', label: 'Custom' },
+const keyboardRangeOptions: Array<{ value: KeyboardRangeMode; labelKey: string }> = [
+  { value: '18-keys', labelKey: 'settings.keyboardRangeOptions.keys18' },
+  { value: '25-keys', labelKey: 'settings.keyboardRangeOptions.keys25' },
+  { value: '88-keys', labelKey: 'settings.keyboardRangeOptions.keys88' },
+  { value: 'my-notes', labelKey: 'settings.keyboardRangeOptions.myNotes' },
+  { value: 'my-keyboard', labelKey: 'settings.keyboardRangeOptions.myKeyboard' },
+  { value: 'song-only', labelKey: 'settings.keyboardRangeOptions.songOnly' },
+  { value: 'custom', labelKey: 'settings.keyboardRangeOptions.custom' },
 ]
 </script>
 
@@ -22,51 +24,51 @@ const keyboardRangeOptions: Array<{ value: KeyboardRangeMode; label: string }> =
   <div class="settings-page">
     <header class="settings-page-title">
       <div>
-        <h2>Gameplay</h2>
-        <p>Thiết lập hiển thị và hành vi luyện tập khi chơi nhạc.</p>
+        <h2>{{ t('settings.gameplay') }}</h2>
+        <p>{{ t('settings.gameplayDescription') }}</p>
       </div>
     </header>
 
-    <SettingsSection title="Play Controls">
-      <SettingsRow title="Default speed" description="Tốc độ mặc định khi mở bài hát.">
+    <SettingsSection :title="t('settings.playControls')">
+      <SettingsRow :title="t('settings.defaultSpeed')" :description="t('settings.defaultSpeedDescription')">
         <input class="settings-control compact" type="number" min="0" max="400" step="10" :value="settings.defaultSpeed" @change="settings.setSpeed(Number(($event.target as HTMLInputElement).value))" />
         <span class="unit">%</span>
       </SettingsRow>
-      <SettingsRow title="Show duration" description="Thời gian nốt rơi xuất hiện trước khi tới phím.">
+      <SettingsRow :title="t('settings.showDuration')" :description="t('settings.showDurationDescription')">
         <input class="settings-control compact" type="number" min="0.25" max="10" step="0.25" :value="settings.showDuration" @change="settings.setShowDuration(Number(($event.target as HTMLInputElement).value))" />
         <span class="unit">s</span>
       </SettingsRow>
-      <SettingsRow title="Input octave shift" description="Dịch octave cho input MIDI.">
+      <SettingsRow :title="t('settings.inputOctaveShift')" :description="t('settings.inputOctaveShiftDescription')">
         <input class="settings-control compact" type="number" min="-4" max="4" step="1" :value="settings.octaveShift" @change="settings.patchSettings({ octaveShift: Number(($event.target as HTMLInputElement).value) })" />
       </SettingsRow>
-      <SettingsRow title="Keyboard range" description="Phạm vi phím hiển thị trong gameplay.">
+      <SettingsRow :title="t('settings.keyboardRange')" :description="t('settings.keyboardRangeDescription')">
         <select class="settings-control" :value="settings.keyboardRangeMode" @change="settings.setKeyboardRangeMode(($event.target as HTMLSelectElement).value as KeyboardRangeMode)">
-          <option v-for="option in keyboardRangeOptions" :key="option.value" :value="option.value">{{ option.label }}</option>
+          <option v-for="option in keyboardRangeOptions" :key="option.value" :value="option.value">{{ t(option.labelKey) }}</option>
         </select>
       </SettingsRow>
     </SettingsSection>
 
-    <SettingsSection title="Display During Play">
-      <SettingsRow title="Falling notes" description="Hiển thị note rơi.">
+    <SettingsSection :title="t('settings.displayDuringPlay')">
+      <SettingsRow :title="t('settings.fallingNotes')" :description="t('settings.fallingNotesDescription')">
         <SettingsToggle :model-value="settings.showFallingNotes" @change="settings.patchSettings({ showFallingNotes: $event })" />
       </SettingsRow>
-      <SettingsRow title="Falling measure lines" description="Hiển thị grid/measure lines.">
+      <SettingsRow :title="t('settings.fallingMeasureLines')" :description="t('settings.fallingMeasureLinesDescription')">
         <SettingsToggle :model-value="settings.showGrid" @change="settings.patchSettings({ showGrid: $event })" />
       </SettingsRow>
-      <SettingsRow title="Sheet music" description="Hiển thị sheet music nếu có dữ liệu.">
+      <SettingsRow :title="t('settings.sheetMusic')" :description="t('settings.sheetMusicDescription')">
         <SettingsToggle :model-value="settings.showSheetMusic" @change="settings.patchSettings({ showSheetMusic: $event })" />
       </SettingsRow>
     </SettingsSection>
 
-    <SettingsSection title="Metronome">
-      <SettingsRow title="Volume" description="Âm lượng metronome.">
+    <SettingsSection :title="t('settings.metronome')">
+      <SettingsRow :title="t('settings.volume')" :description="t('settings.volumeDescription')">
         <input class="settings-control compact" type="range" min="0" max="100" step="5" :value="settings.metronomeVolume" @input="settings.setMetronomeVolume(Number(($event.target as HTMLInputElement).value))" />
         <span class="unit">{{ settings.metronomeVolume }}%</span>
       </SettingsRow>
-      <SettingsRow title="Double speed" description="Gõ metronome ở tốc độ gấp đôi.">
+      <SettingsRow :title="t('settings.doubleSpeed')" :description="t('settings.doubleSpeedDescription')">
         <SettingsToggle :model-value="settings.metronomeDoubleSpeed" @change="settings.setMetronomeDoubleSpeed($event)" />
       </SettingsRow>
-      <SettingsRow title="Emphasize first beat" description="Nhấn mạnh phách đầu tiên của ô nhịp.">
+      <SettingsRow :title="t('settings.emphasizeFirstBeat')" :description="t('settings.emphasizeFirstBeatDescription')">
         <SettingsToggle :model-value="settings.metronomeEmphasizeFirstBeat" @change="settings.setMetronomeEmphasizeFirstBeat($event)" />
       </SettingsRow>
     </SettingsSection>
@@ -78,6 +80,6 @@ const keyboardRangeOptions: Array<{ value: KeyboardRangeMode; label: string }> =
   min-width: 2.4rem;
   color: rgba(255, 255, 255, 0.58);
   font-size: 0.78rem;
-  text-align: right;
+  text-align: end;
 }
 </style>

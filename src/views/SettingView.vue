@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { RouterView, useRouter } from 'vue-router'
 import SettingsSidebar from '../components/settings/ui/SettingsSidebar.vue'
 
 const router = useRouter()
+const { t } = useI18n()
 </script>
 
 <template>
@@ -10,10 +12,10 @@ const router = useRouter()
     <header class="settings-topbar">
       <button class="settings-back" type="button" @click="router.push('/')">
         <i class="fa-solid fa-chevron-left" aria-hidden="true" />
-        Back
+        {{ t('common.back') }}
       </button>
-      <h1>Settings</h1>
-      <span class="settings-brand">Synthesia Style</span>
+      <h1>{{ t('settings.title') }}</h1>
+      <span class="settings-brand">{{ t('app.brand') }}</span>
     </header>
 
     <div class="settings-frame">
@@ -27,7 +29,8 @@ const router = useRouter()
 
 <style scoped>
 .settings-view {
-  min-height: 100vh;
+  height: 100vh;
+  min-height: 0;
   display: grid;
   grid-template-rows: 2.75rem minmax(0, 1fr);
   background: #4a4a4a;

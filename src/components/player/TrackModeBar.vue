@@ -1,25 +1,27 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { usePlayerStore } from '../../stores/playerStore'
 import { TRACK_MODES, type TrackMode } from '../../modules/game/trackProperties'
 
+const { t } = useI18n()
 const player = usePlayerStore()
-const labels: Record<TrackMode, string> = {
-  playedAutomatically: 'Played Automatically',
-  youPlay: 'You Play',
-  playedButHidden: 'Played But Hidden',
-  notPlayed: 'Not Played',
+const labelKeys: Record<TrackMode, string> = {
+  playedAutomatically: 'trackModes.playedAutomatically',
+  youPlay: 'trackModes.youPlay',
+  playedButHidden: 'trackModes.playedButHidden',
+  notPlayed: 'trackModes.notPlayed',
 }
 </script>
 
 <template>
   <section v-if="player.session" class="track-modes">
-    <strong>Track modes</strong>
+    <strong>{{ t('trackModes.title') }}</strong>
     <div class="track-grid">
       <div v-for="track in player.session.tracks" :key="track.trackId" class="track-row">
         <span class="swatch" :style="{ backgroundColor: track.color }"></span>
-        <strong>Track {{ track.trackId + 1 }}</strong>
+        <strong>{{ t('trackModes.track', { number: track.trackId + 1 }) }}</strong>
         <select :value="track.mode" @change="player.setTrackMode(track.trackId, ($event.target as HTMLSelectElement).value as TrackMode)">
-          <option v-for="mode in TRACK_MODES" :key="mode" :value="mode">{{ labels[mode] }}</option>
+          <option v-for="mode in TRACK_MODES" :key="mode" :value="mode">{{ t(labelKeys[mode]) }}</option>
         </select>
       </div>
     </div>

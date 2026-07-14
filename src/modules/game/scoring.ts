@@ -185,7 +185,35 @@ export function effectiveSpeedFactor(s: ScoreState) {
   return baseFactor * errorPenalty
 }
 
+function refreshSpeedIntegral(s: ScoreState) {
+  s.speedIntegral = Math.round(effectiveSpeedFactor(s) * 100) * s.notesUserCouldHavePlayed
+}
+
+function applyHitTotals(s: ScoreState, judgement: TimingJudgement) {
+  s.combo += 1
+  s.longestCombo = Math.max(s.longestCombo, s.combo)
+  s.notesUserCouldHavePlayed += 1
+  s.notesUserActuallyPlayed += 1
+  s.judgementCounts[judgement] += 1
+  refreshSpeedIntegral(s)
+}
+
+function applyMissTotals(s: ScoreState) {
+  s.combo = 0
+  s.notesUserCouldHavePlayed += 1
+  s.missedNotes += 1
+  refreshSpeedIntegral(s)
+}
+
+function applyErrorTotals(s: ScoreState, type: ErrorEventType) {
+  s.combo = 0
+  if (type === 'stray') s.strayNotes += 1
+  else s.wrongNotes += 1
+  refreshSpeedIntegral(s)
+}
+
 export function recordHit(s: ScoreState, note: { id: string; start: number; end: number }, hitAtUs: number, inputNoteId: number, nowMs: number, config = DEFAULT_SCORING_CONFIG) {
+  if (s.noteOutcomes[note.id]) return
   const timingOffsetUs = hitAtUs - note.start
   const judgement = classifyTiming(timingOffsetUs, config)
   const nextCombo = s.combo + 1
@@ -212,8 +240,8 @@ export function recordHit(s: ScoreState, note: { id: string; start: number; end:
     comboFactor: comboBonus.factor,
     timingFactor: config.timingFactors[judgement],
   }
-  s.feedback = { combo: nextCombo, judgement, visibleUntilMs: nowMs + 850, sequence: (s.feedback?.sequence ?? 0) + 1 }
-  recalculateScoreTotals(s)
+  applyHitTotals(s, judgement)
+  s.feedback = { combo: s.combo, judgement, visibleUntilMs: nowMs + 850, sequence: (s.feedback?.sequence ?? 0) + 1 }
 }
 
 export function recordMiss(s: ScoreState, note: { id: string; start: number; end: number }) {
@@ -221,7 +249,6 @@ export function recordMiss(s: ScoreState, note: { id: string; start: number; end
 }
 
 export function recordMisses(s: ScoreState, notes: Array<{ id: string; start: number; end: number }>) {
-  let changed = false
   for (const note of notes) {
     if (s.noteOutcomes[note.id]) continue
     s.noteOutcomes[note.id] = {
@@ -233,19 +260,18 @@ export function recordMisses(s: ScoreState, notes: Array<{ id: string; start: nu
       rawPointsAwarded: 0,
     }
     delete s.activeHolds[note.id]
-    changed = true
+    applyMissTotals(s)
   }
-  if (changed) recalculateScoreTotals(s)
 }
 
 export function recordStray(s: ScoreState, atUs: number) {
   s.errorEvents.push({ id: `stray:${atUs}:${s.errorEvents.length}`, atUs, type: 'stray' })
-  recalculateScoreTotals(s)
+  applyErrorTotals(s, 'stray')
 }
 
 export function recordWrong(s: ScoreState, atUs: number) {
   s.errorEvents.push({ id: `wrong:${atUs}:${s.errorEvents.length}`, atUs, type: 'wrong' })
-  recalculateScoreTotals(s)
+  applyErrorTotals(s, 'wrong')
 }
 
 export function awardHoldPoints(s: ScoreState, currentUs: number, mode: 'noteMemory' | 'practice' | 'performance' | 'listen', config = DEFAULT_SCORING_CONFIG) {

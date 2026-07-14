@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import BasePopover from './BasePopover.vue'
 
 interface Props {
@@ -14,6 +15,7 @@ const emit = defineEmits<{
   close: []
 }>()
 
+const { t } = useI18n()
 const delayBetweenLoops = ref(50)
 const restartLoopAfterErrors = ref(false)
 </script>
@@ -30,13 +32,13 @@ const restartLoopAfterErrors = ref(false)
     <div class="loop-dialog">
       <div class="header-row">
         <p class="instruction-text">
-          Drag in the timeline to create a loop. Fine-tune below.
+          {{ t('dialogs.loopInstruction') }}
         </p>
-        <button class="clear-button">Clear</button>
+        <button class="clear-button">{{ t('common.clear') }}</button>
       </div>
 
       <div class="slider-section">
-        <span class="slider-label">Delay between loops</span>
+        <span class="slider-label">{{ t('dialogs.delayBetweenLoops') }}</span>
         <input
           v-model.number="delayBetweenLoops"
           type="range"
@@ -48,7 +50,7 @@ const restartLoopAfterErrors = ref(false)
       </div>
 
       <div class="toggle-section">
-        <span class="toggle-label">Restart Loop After Errors</span>
+        <span class="toggle-label">{{ t('dialogs.restartLoopAfterErrors') }}</span>
         <button
           class="toggle-switch"
           :class="{ active: restartLoopAfterErrors }"
@@ -57,25 +59,25 @@ const restartLoopAfterErrors = ref(false)
           <span class="toggle-track"></span>
           <span class="toggle-thumb"></span>
         </button>
-        <span class="disabled-label">{{ restartLoopAfterErrors ? 'Enabled' : 'Disabled' }}</span>
+        <span class="disabled-label">{{ restartLoopAfterErrors ? t('dialogs.enabled') : t('dialogs.disabled') }}</span>
       </div>
 
       <div class="loop-controls">
         <div class="control-section">
           <button class="nav-button"><i class="fas fa-step-backward"></i></button>
-          <span class="section-label">Loop Start</span>
+          <span class="section-label">{{ t('dialogs.loopStart') }}</span>
           <button class="nav-button"><i class="fas fa-step-forward"></i></button>
         </div>
 
         <div class="control-section">
           <button class="nav-button"><i class="fas fa-step-backward"></i></button>
-          <span class="section-label">Entire Loop</span>
+          <span class="section-label">{{ t('dialogs.entireLoop') }}</span>
           <button class="nav-button"><i class="fas fa-step-forward"></i></button>
         </div>
 
         <div class="control-section">
           <button class="nav-button"><i class="fas fa-step-backward"></i></button>
-          <span class="section-label">Loop End</span>
+          <span class="section-label">{{ t('dialogs.loopEnd') }}</span>
           <button class="nav-button"><i class="fas fa-step-forward"></i></button>
         </div>
       </div>

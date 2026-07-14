@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import BasePopover from './BasePopover.vue'
 import { useSettingsStore } from '../../../stores/settingsStore'
 import { usePlayerStore } from '../../../stores/playerStore'
@@ -19,12 +20,13 @@ const emit = defineEmits<{
   close: []
 }>()
 
+const { t } = useI18n()
 const settings = useSettingsStore()
 const player = usePlayerStore()
 
 interface RangeOption {
   value: KeyboardRangeMode
-  label: string
+  labelKey: string
   disabled: boolean
 }
 
@@ -34,13 +36,13 @@ const songRange = computed(() => {
 })
 
 const options = computed<RangeOption[]>(() => [
-  { value: '18-keys', label: '18 Keys', disabled: false },
-  { value: '25-keys', label: '25 Keys', disabled: false },
-  { value: '88-keys', label: 'All 88', disabled: false },
-  { value: 'my-notes', label: 'My Notes', disabled: true },
-  { value: 'my-keyboard', label: 'My Keyboard', disabled: true },
-  { value: 'song-only', label: 'Song Only', disabled: false },
-  { value: 'custom', label: 'Custom', disabled: true },
+  { value: '18-keys', labelKey: 'settings.keyboardRangeOptions.keys18', disabled: false },
+  { value: '25-keys', labelKey: 'settings.keyboardRangeOptions.keys25', disabled: false },
+  { value: '88-keys', labelKey: 'dialogs.all88', disabled: false },
+  { value: 'my-notes', labelKey: 'settings.keyboardRangeOptions.myNotes', disabled: true },
+  { value: 'my-keyboard', labelKey: 'settings.keyboardRangeOptions.myKeyboard', disabled: true },
+  { value: 'song-only', labelKey: 'settings.keyboardRangeOptions.songOnly', disabled: false },
+  { value: 'custom', labelKey: 'settings.keyboardRangeOptions.custom', disabled: true },
 ])
 
 function selectOption(option: RangeOption) {
@@ -60,7 +62,7 @@ function selectOption(option: RangeOption) {
   >
     <div class="keyboard-range-dialog">
       <p class="instruction-text">
-        Drag in the falling note area to pan the keyboard. Adjust the zoom below.
+        {{ t('dialogs.keyboardRangeInstruction') }}
       </p>
 
       <div class="options-list">
@@ -76,7 +78,7 @@ function selectOption(option: RangeOption) {
           @click="selectOption(option)"
         >
           <div class="option-content">
-            <span class="option-label">{{ option.label }}</span>
+            <span class="option-label">{{ t(option.labelKey) }}</span>
           </div>
           <span v-if="settings.keyboardRangeMode === option.value" class="checkmark">✓</span>
         </button>
@@ -129,7 +131,7 @@ function selectOption(option: RangeOption) {
   background: rgba(0, 0, 0, 0.2);
   color: #e3e4e8;
   font-size: 1rem;
-  text-align: left;
+  text-align: start;
   cursor: pointer;
   transition: all 0.2s ease;
   border-radius: 0;

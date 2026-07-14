@@ -1,12 +1,21 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { usePlayerStore } from '../../stores/playerStore'
 import { useProfileStore } from '../../stores/profileStore'
-import { HAND_LABELS, PLAY_MODE_LABELS, type PlayMode } from '../../modules/game/playSession'
+import type { HandSelection, PlayMode } from '../../modules/game/playSession'
 
+const { t } = useI18n()
 const player = usePlayerStore()
 const profiles = useProfileStore()
 const modes: PlayMode[] = ['noteMemory', 'practice', 'performance']
+const handLabelKeys: Record<HandSelection, string> = { left: 'modeSelect.hands.left', right: 'modeSelect.hands.right', both: 'modeSelect.hands.both' }
+const modeTitleKeys: Record<PlayMode, string> = {
+  listen: 'modeSelect.modes.listen',
+  noteMemory: 'modeSelect.columns.noteMemoryTitle',
+  practice: 'modeSelect.columns.practiceTitle',
+  performance: 'modeSelect.columns.performanceTitle',
+}
 const rows = computed(() => {
   const songId = player.song?.id
   if (!songId) return []
@@ -27,22 +36,22 @@ function formatDuration(us?: number) {
 
 <template>
   <section class="score-board">
-    <h3>Bảng điểm bài này</h3>
+    <h3>{{ t('score.boardTitle') }}</h3>
     <div v-if="rows.length" class="board-grid">
       <div v-for="mode in modes" :key="mode" class="board-column">
-        <strong>{{ PLAY_MODE_LABELS[mode] }}</strong>
+        <strong>{{ t(modeTitleKeys[mode]) }}</strong>
         <div v-for="entry in rows.filter(row => row.mode === mode)" :key="`${entry.mode}-${entry.handSelection}-${entry.playedAt}`" class="board-row">
-          <span>{{ HAND_LABELS[entry.handSelection] }}</span>
+          <span>{{ t(handLabelKeys[entry.handSelection]) }}</span>
           <span>{{ entry.gameplayPoints ?? 0 }}</span>
           <span>{{ entry.grade }}</span>
           <span>{{ entry.notesHit ?? percent(entry.accuracy) }}</span>
           <span>{{ entry.errors ?? 0 }}</span>
           <span>{{ formatDuration(entry.timeSpentUs) }}</span>
-          <span v-if="entry.perfect">Perfect</span>
+          <span v-if="entry.perfect">{{ t('score.perfect') }}</span>
         </div>
       </div>
     </div>
-    <p v-else class="muted">Chưa có điểm cho bài này.</p>
+    <p v-else class="muted">{{ t('score.empty') }}</p>
   </section>
 </template>
 

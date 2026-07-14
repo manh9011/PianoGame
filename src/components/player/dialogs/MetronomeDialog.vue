@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import BasePopover from './BasePopover.vue'
 import { useSettingsStore } from '../../../stores/settingsStore'
 
@@ -15,6 +16,7 @@ const emit = defineEmits<{
   close: []
 }>()
 
+const { t } = useI18n()
 const settings = useSettingsStore()
 
 const volume = computed({
@@ -31,7 +33,7 @@ const emphasizeFirstBeat = computed({
 })
 
 function getVolumeLabel() {
-  return volume.value === 0 ? 'Off' : `${volume.value}%`
+  return volume.value === 0 ? t('dialogs.off') : `${volume.value}%`
 }
 </script>
 
@@ -47,7 +49,7 @@ function getVolumeLabel() {
     <div class="metronome-settings">
       <div class="setting-group">
         <div class="setting-row">
-          <label class="setting-label">Metronome Volume</label>
+          <label class="setting-label">{{ t('dialogs.metronomeVolume') }}</label>
           <span class="volume-value">{{ getVolumeLabel() }}</span>
         </div>
         <input
@@ -62,7 +64,7 @@ function getVolumeLabel() {
 
       <div class="setting-group">
         <div class="setting-row">
-          <span class="setting-label">Double speed</span>
+          <span class="setting-label">{{ t('settings.doubleSpeed') }}</span>
           <button
             class="toggle-switch"
             :class="{ active: doubleSpeed }"
@@ -74,7 +76,7 @@ function getVolumeLabel() {
         </div>
 
         <div class="setting-row">
-          <span class="setting-label">Emphasize first beat</span>
+          <span class="setting-label">{{ t('settings.emphasizeFirstBeat') }}</span>
           <button
             class="toggle-switch"
             :class="{ active: emphasizeFirstBeat }"

@@ -667,15 +667,17 @@ export const usePlayerStore = defineStore('player', {
         const chordNotes = chordStart === null
           ? [hit]
           : collectChordAtStart(session.notes, session.tracks, session.handSelection, chordStart, session)
-        const heldPlayableNotes = new Set([...session.activeNotes].map(activeNoteId => activeNoteId - session.octaveShift * 12))
-        const requiredNotes = new Set(chordNotes.map(note => note.noteId))
-        const chordComplete = [...requiredNotes].every(requiredNoteId => heldPlayableNotes.has(requiredNoteId))
+        const activeInputByPlayableNote = new Map<number, number>()
+        for (const activeNoteId of session.activeNotes) {
+          activeInputByPlayableNote.set(activeNoteId - session.octaveShift * 12, activeNoteId)
+        }
+        const chordComplete = chordNotes.every(chordNote => activeInputByPlayableNote.has(chordNote.noteId))
 
         if (!chordComplete) return
 
         const nowMs = performance.now()
         for (const chordNote of chordNotes) {
-          const inputNoteId = [...session.activeNotes].find(activeNoteId => activeNoteId - session.octaveShift * 12 === chordNote.noteId) ?? noteId
+          const inputNoteId = activeInputByPlayableNote.get(chordNote.noteId) ?? noteId
           session.activeNoteHands.set(inputNoteId, chordNote.hand)
           session.activeNoteTrackIds.set(inputNoteId, chordNote.trackId)
           chordNote.state = 'hit'

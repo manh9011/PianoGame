@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { usePlayerStore } from '../../../stores/playerStore'
 import { useSettingsStore } from '../../../stores/settingsStore'
 
@@ -12,6 +13,7 @@ const emit = defineEmits<{
   close: []
 }>()
 
+const { t } = useI18n()
 const player = usePlayerStore()
 const settings = useSettingsStore()
 
@@ -72,7 +74,7 @@ function clearAllUserBookmarks() {
             <div class="bookmarks-list">
               <div class="bookmark-item my">
                 <i class="fa fa-bookmark"></i>
-                <span class="bookmark-label">My Bookmarks</span>
+                <span class="bookmark-label">{{ t('dialogs.myBookmarks') }}</span>
                 <button
                   class="toggle-switch"
                   :class="{ active: settings.showMyBookmarks }"
@@ -85,7 +87,7 @@ function clearAllUserBookmarks() {
 
               <div class="bookmark-item metadata">
                 <i class="fa fa-bookmark"></i>
-                <span class="bookmark-label">Metadata Bookmarks</span>
+                <span class="bookmark-label">{{ t('dialogs.metadataBookmarks') }}</span>
                 <button
                   class="toggle-switch"
                   :class="{ active: settings.showMetadataBookmarks }"
@@ -98,7 +100,7 @@ function clearAllUserBookmarks() {
 
               <div class="bookmark-item key-signature">
                 <i class="fa fa-bookmark"></i>
-                <span class="bookmark-label">Key Signatures</span>
+                <span class="bookmark-label">{{ t('dialogs.keySignatures') }}</span>
                 <button
                   class="toggle-switch"
                   :class="{ active: settings.showKeySignatureBookmarks }"
@@ -111,7 +113,7 @@ function clearAllUserBookmarks() {
 
               <div class="bookmark-item midi-marker">
                 <i class="fa fa-bookmark"></i>
-                <span class="bookmark-label">MIDI Markers</span>
+                <span class="bookmark-label">{{ t('dialogs.midiMarkers') }}</span>
                 <button
                   class="toggle-switch"
                   :class="{ active: settings.showMidiMarkers }"
@@ -124,14 +126,14 @@ function clearAllUserBookmarks() {
             </div>
 
             <p class="info-text">
-              Set bookmarks in the left margin.
+              {{ t('dialogs.bookmarkHintSet') }}
               <br>
-              Double-click to rename the bookmark.
+              {{ t('dialogs.bookmarkHintRename') }}
             </p>
 
             <div v-if="userBookmarks.length > 0" class="user-bookmarks-section">
               <div class="section-header">
-                <span class="section-title">My Bookmarks</span>
+                <span class="section-title">{{ t('dialogs.myBookmarks') }}</span>
                 <span class="section-count">{{ userBookmarks.length }}</span>
               </div>
               <div class="user-bookmarks-list">
@@ -140,7 +142,7 @@ function clearAllUserBookmarks() {
                   :key="bookmark.id"
                   class="user-bookmark-item"
                 >
-                  <button class="bookmark-go-btn" @click="goToBookmark(bookmark.id)" title="Nhảy tới bookmark">
+                  <button class="bookmark-go-btn" @click="goToBookmark(bookmark.id)" :title="t('dialogs.goToBookmark')">
                     <i class="fas fa-play"></i>
                   </button>
                   <div class="bookmark-info" @dblclick="startEdit(bookmark.id, bookmark.label)">
@@ -158,14 +160,14 @@ function clearAllUserBookmarks() {
                       <span class="bookmark-time">{{ formatTime(bookmark.timeUs) }}</span>
                     </template>
                   </div>
-                  <button class="bookmark-delete-btn" @click="removeBookmark(bookmark.id)" title="Xóa bookmark">
+                  <button class="bookmark-delete-btn" @click="removeBookmark(bookmark.id)" :title="t('dialogs.deleteBookmark')">
                     <i class="fas fa-times"></i>
                   </button>
                 </div>
               </div>
               <button class="clear-bookmarks-btn" @click="clearAllUserBookmarks">
                 <i class="fas fa-trash"></i>
-                Clear User Bookmarks
+                {{ t('dialogs.clearUserBookmarks') }}
               </button>
             </div>
           </div>
@@ -179,7 +181,7 @@ function clearAllUserBookmarks() {
 .bookmarks-wrapper {
   position: fixed;
   bottom: 1rem;
-  left: 2rem;
+  inset-inline-start: 2rem;
   z-index: 100;
   pointer-events: none;
 }
@@ -277,7 +279,7 @@ function clearAllUserBookmarks() {
 .toggle-thumb {
   position: absolute;
   top: 3px;
-  left: 3px;
+  inset-inline-start: 3px;
   width: 22px;
   height: 22px;
   border-radius: 50%;

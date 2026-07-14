@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { usePlayerStore } from '../stores/playerStore'
 import { useLibraryStore } from '../stores/libraryStore'
@@ -9,11 +10,13 @@ import { PLAY_MODE_CONFIGS, type HandSelection, type PlayMode } from '../modules
 import { achievementFromHistory, entryAchievementBreakdown, topAchievementAttempts } from '../modules/game/achievementScoring'
 import { achievementColorStyle } from '../modules/game/achievementColors'
 import type { ModeScoreEntry } from '../types/profile'
+import { formatDateTime } from '../i18n/formatters'
 import AchievementCelebration from '../components/player/AchievementCelebration.vue'
 import type { AchievementCelebration as AchievementCelebrationState } from '../stores/profileStore'
 
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 const library = useLibraryStore()
 const player = usePlayerStore()
 const profiles = useProfileStore()
@@ -28,25 +31,25 @@ const achievementCelebration = ref<AchievementCelebrationState | null>(null)
 const animatedAchievementScores = ref<Record<string, number>>({})
 let achievementFrameId: number | null = null
 const config = computed(() => PLAY_MODE_CONFIGS[mode.value])
-const handLabels: Record<HandSelection, string> = { left: 'Left Hand', right: 'Right Hand', both: 'Both Hands' }
-const modeTitles: Record<PlayMode, string> = {
-  listen: 'Watch and Listen Only',
-  noteMemory: 'Melody Practice',
-  practice: 'Rhythm Practice',
-  performance: 'Song Recital',
+const handLabelKeys: Record<HandSelection, string> = { left: 'modeSelect.hands.left', right: 'modeSelect.hands.right', both: 'modeSelect.hands.both' }
+const modeTitleKeys: Record<PlayMode, string> = {
+  listen: 'modeSelect.modes.listen',
+  noteMemory: 'modeSelect.modes.noteMemory',
+  practice: 'modeSelect.modes.practice',
+  performance: 'modeSelect.modes.performance',
 }
-const modeColumns: { mode: PlayMode; title: string; subtitle: string }[] = [
-  { mode: 'noteMemory', title: 'Practice the Melody', subtitle: 'Song waits for you' },
-  { mode: 'practice', title: 'Practice the Rhythm', subtitle: 'Tempo practice' },
-  { mode: 'performance', title: 'Song Recital', subtitle: 'One try at full speed' },
+const modeColumns: { mode: PlayMode; titleKey: string; subtitleKey: string }[] = [
+  { mode: 'noteMemory', titleKey: 'modeSelect.columns.noteMemoryTitle', subtitleKey: 'modeSelect.columns.noteMemorySubtitle' },
+  { mode: 'practice', titleKey: 'modeSelect.columns.practiceTitle', subtitleKey: 'modeSelect.columns.practiceSubtitle' },
+  { mode: 'performance', titleKey: 'modeSelect.columns.performanceTitle', subtitleKey: 'modeSelect.columns.performanceSubtitle' },
 ]
 const detailTabs = [
-  { key: 'instructions', label: 'Instructions' },
-  { key: 'breakdown', label: 'Progress Breakdown' },
-  { key: 'chart', label: 'Line Chart' },
-  { key: 'points', label: 'Points Earned' },
+  { key: 'instructions', labelKey: 'modeSelect.tabs.instructions' },
+  { key: 'breakdown', labelKey: 'modeSelect.tabs.breakdown' },
+  { key: 'chart', labelKey: 'modeSelect.tabs.chart' },
+  { key: 'points', labelKey: 'modeSelect.tabs.points' },
 ] as const
-const selectedTitle = computed(() => mode.value === 'listen' ? modeTitles.listen : `${handLabels[handSelection.value]} • ${modeTitles[mode.value]}`)
+const selectedTitle = computed(() => mode.value === 'listen' ? t(modeTitleKeys.listen) : `${t(handLabelKeys[handSelection.value])} • ${t(modeTitleKeys[mode.value])}`)
 const selectedScoreEntries = computed<ModeScoreEntry[]>(() => {
   const songId = player.song?.id
   if (!songId) return []
@@ -67,8 +70,8 @@ const scoreRows = computed<ModeScoreEntry[]>(() => {
 
     switch (sortColumn.value) {
       case 'name':
-        aVal = `${handLabels[a.handSelection]} • ${modeTitles[a.mode]}`
-        bVal = `${handLabels[b.handSelection]} • ${modeTitles[b.mode]}`
+        aVal = `${t(handLabelKeys[a.handSelection])} • ${t(modeTitleKeys[a.mode])}`
+        bVal = `${t(handLabelKeys[b.handSelection])} • ${t(modeTitleKeys[b.mode])}`
         break
       case 'points':
         aVal = a.gameplayPoints ?? a.score
@@ -212,7 +215,7 @@ function formatDuration(us?: number) {
   const seconds = totalSeconds % 60
   return `${minutes}:${seconds.toString().padStart(2, '0')}`
 }
-function date(ms: number) { return ms ? new Date(ms).toLocaleString() : '-' }
+function date(ms: number) { return ms ? formatDateTime(ms, settings.locale) : '-' }
 
 function toggleSort(column: typeof sortColumn.value) {
   if (sortColumn.value === column) {
@@ -253,32 +256,32 @@ function goToTrackSettings() {
       @done="achievementCelebration = null"
     />
     <header class="setup-header">
-      <button class="header-button secondary" @click="router.push('/library')">Songs</button>
+      <button class="header-button secondary" @click="router.push('/library')">{{ t('modeSelect.songs') }}</button>
       <div class="song-heading">
         <span class="top-score" :style="achievementColorStyle(selectedAchievementScore, maxPoints(handSelection))">{{ selectedBestGameplay }}</span>
         <span class="song-title">{{ player.song?.title }}</span>
       </div>
-      <button class="header-button secondary" @click="startPlay">Continue</button>
+      <button class="header-button secondary" @click="startPlay">{{ t('modeSelect.continue') }}</button>
     </header>
 
     <section class="setup-modes">
       <aside class="setup-tools">
         <button class="utility-card" :class="{ active: mode === 'listen' }" @click="selectMode('listen', 'both')" @dblclick="selectAndStart('listen', 'both')">
-          Watch and Listen Only
+          {{ t('modeSelect.listen') }}
         </button>
         <button class="utility-card" :class="{ 'needs-attention': needsTrackConfig }" @click="goToTrackSettings">
-          Hands, Colors, and Instruments
+          {{ t('modeSelect.trackSettings') }}
         </button>
         <div v-if="needsTrackConfig" class="config-warning">
           <i class="fas fa-exclamation-triangle"></i>
-          <span>Vui lòng cấu hình phân chia tay cho các track trước khi chơi</span>
+          <span>{{ t('modeSelect.trackConfigWarning') }}</span>
         </div>
       </aside>
 
       <section v-for="item in modeColumns" :key="item.mode" class="mode-column">
         <header class="mode-heading">
-          <h2>{{ item.title }}</h2>
-          <p>{{ item.subtitle }}</p>
+          <h2>{{ t(item.titleKey) }}</h2>
+          <p>{{ t(item.subtitleKey) }}</p>
         </header>
         <div class="hand-pair">
           <button
@@ -292,12 +295,12 @@ function goToTrackSettings() {
             @dblclick="selectAndStart(item.mode, hand)"
           >
             <span class="card-score">{{ formatScore(scoreValue(item.mode, hand)) }}<small>/{{ maxPoints(hand) }}</small></span>
-            <span>{{ handLabels[hand] }}</span>
+            <span>{{ t(handLabelKeys[hand]) }}</span>
           </button>
         </div>
         <button class="score-card both-card" :class="{ active: mode === item.mode && handSelection === 'both', disabled: needsTrackConfig }" :style="scoreCardStyle(item.mode, 'both')" :disabled="needsTrackConfig" @click="selectMode(item.mode, 'both')" @dblclick="selectAndStart(item.mode, 'both')">
           <span class="card-score">{{ formatScore(scoreValue(item.mode, 'both')) }}<small>/{{ maxPoints('both') }}</small></span>
-          <span>Both Hands</span>
+          <span>{{ t('modeSelect.hands.both') }}</span>
         </button>
       </section>
     </section>
@@ -305,7 +308,7 @@ function goToTrackSettings() {
     <h1 class="selection-title">{{ selectedTitle }}</h1>
 
     <section class="setup-detail-area">
-      <nav class="detail-tabs" aria-label="Setup details">
+      <nav class="detail-tabs" :aria-label="t('modeSelect.detailTabsAria')">
         <button
           v-for="tab in detailTabs"
           :key="tab.key"
@@ -313,7 +316,7 @@ function goToTrackSettings() {
           :class="{ active: detailTab === tab.key }"
           @click="detailTab = tab.key"
         >
-          {{ tab.label }}
+          {{ t(tab.labelKey) }}
         </button>
       </nav>
 
@@ -321,67 +324,67 @@ function goToTrackSettings() {
         <template v-if="detailTab === 'instructions'">
           <div class="detail-content instructions-content">
             <template v-if="mode === 'listen'">
-              <p class="muted">Listen to the full song while the app plays it automatically. This mode does not award points.</p>
+              <p class="muted">{{ t('modeSelect.instructions.listen') }}</p>
             </template>
             <template v-else-if="mode === 'noteMemory'">
-              <p>The song will wait for you to hit the correct note.</p>
+              <p>{{ t('modeSelect.instructions.noteMemoryIntro') }}</p>
               <ul>
-                <li>Take your time. There is no penalty for playing slowly.</li>
-                <li>Pay the most attention to avoiding mistakes.</li>
-                <li>Holding notes their full duration is also important.</li>
+                <li>{{ t('modeSelect.instructions.noteMemorySlow') }}</li>
+                <li>{{ t('modeSelect.instructions.noteMemoryAvoid') }}</li>
+                <li>{{ t('modeSelect.instructions.noteMemoryHold') }}</li>
               </ul>
-              <p>If you aren't careful, you might develop muscle memory with the mistakes included!</p>
+              <p>{{ t('modeSelect.instructions.noteMemoryWarning') }}</p>
             </template>
             <template v-else-if="mode === 'practice'">
-              <p>Adjust the speed until you can play without mistakes.</p>
+              <p>{{ t('modeSelect.instructions.practiceIntro') }}</p>
               <ul>
-                <li>Play as fast as you can comfortably.</li>
-                <li>Work your way up to 100% speed.</li>
-                <li>Practice the melody first to make this easier.</li>
+                <li>{{ t('modeSelect.instructions.practiceFast') }}</li>
+                <li>{{ t('modeSelect.instructions.practiceBuild') }}</li>
+                <li>{{ t('modeSelect.instructions.practiceMelody') }}</li>
               </ul>
-              <p>Avoiding mistakes is critical. Never set the speed so high that you begin to panic and lose your place.</p>
+              <p>{{ t('modeSelect.instructions.practiceWarning') }}</p>
             </template>
             <template v-else>
-              <p>The final step once you've learned the melody and rhythm.</p>
-              <p>The song's speed is fixed at 100% and you can't skip around. You should practice using the other modes before trying this.</p>
+              <p>{{ t('modeSelect.instructions.performanceIntro') }}</p>
+              <p>{{ t('modeSelect.instructions.performanceWarning') }}</p>
             </template>
           </div>
         </template>
 
         <template v-else-if="detailTab === 'breakdown'">
           <div v-if="breakdownAttempts.length" class="detail-content breakdown-content">
-            <p class="breakdown-note">Points are averaged across your best three attempts. "Both Hands" counts for each hand, too!</p>
+            <p class="breakdown-note">{{ t('modeSelect.breakdown.note') }}</p>
             <div class="breakdown-board">
               <div class="breakdown-row breakdown-header-row">
                 <span></span>
-                <strong>Achievement</strong>
+                <strong>{{ t('modeSelect.breakdown.achievement') }}</strong>
                 <strong>#1</strong>
                 <strong>#2</strong>
                 <strong>#3</strong>
               </div>
               <div class="breakdown-row">
-                <span>Hit every note and avoid mistakes</span>
+                <span>{{ t('modeSelect.breakdown.hitEveryNote') }}</span>
                 <strong>{{ aggregateBreakdownScore('notes') }}</strong>
                 <strong v-for="index in 3" :key="`notes-${index}`" :class="{ empty: !breakdownAttempts[index - 1] }">
                   {{ breakdownScore(breakdownAttempts[index - 1], 'notes') }}
                 </strong>
               </div>
               <div class="breakdown-row">
-                <span>Hold notes their full duration</span>
+                <span>{{ t('modeSelect.breakdown.holdFullDuration') }}</span>
                 <strong>{{ aggregateBreakdownScore('hold') }}</strong>
                 <strong v-for="index in 3" :key="`hold-${index}`" :class="{ empty: !breakdownAttempts[index - 1] }">
                   {{ breakdownScore(breakdownAttempts[index - 1], 'hold') }}
                 </strong>
               </div>
               <div class="breakdown-row">
-                <span>Play as close to 100% speed as you can</span>
+                <span>{{ t('modeSelect.breakdown.closeToFullSpeed') }}</span>
                 <strong>{{ aggregateBreakdownScore('speed') }}</strong>
                 <strong v-for="index in 3" :key="`speed-${index}`" :class="{ empty: !breakdownAttempts[index - 1] }">
                   {{ breakdownScore(breakdownAttempts[index - 1], 'speed') }}
                 </strong>
               </div>
               <div class="breakdown-row breakdown-date-row">
-                <span>Date</span>
+                <span>{{ t('modeSelect.breakdown.date') }}</span>
                 <span></span>
                 <span v-for="index in 3" :key="`date-${index}`" :class="{ empty: !breakdownAttempts[index - 1] }">
                   {{ breakdownAttempts[index - 1] ? date(breakdownAttempts[index - 1].playedAt) : '--' }}
@@ -390,17 +393,17 @@ function goToTrackSettings() {
             </div>
           </div>
           <div v-else class="breakdown-empty-state">
-            <p>There aren't any statistics for this mode yet. Try playing the song!</p>
+            <p>{{ t('modeSelect.breakdown.empty') }}</p>
           </div>
         </template>
 
         <template v-else-if="detailTab === 'chart'">
           <div class="detail-content">
-            <h2>Line Chart</h2>
+            <h2>{{ t('modeSelect.tabs.chart') }}</h2>
             <div class="chart-placeholder">
               <span v-for="entry in scoreRows.slice().reverse()" :key="`${entry.playedAt}-${entry.gameplayPoints ?? entry.score}`" :style="{ height: `${Math.max(8, Math.min(100, (entry.gameplayPoints ?? entry.score) / 100))}%` }" />
             </div>
-            <p v-if="!scoreRows.length" class="muted">Chưa có dữ liệu để vẽ biểu đồ.</p>
+            <p v-if="!scoreRows.length" class="muted">{{ t('modeSelect.chart.empty') }}</p>
           </div>
         </template>
 
@@ -409,29 +412,29 @@ function goToTrackSettings() {
             <thead>
               <tr>
                 <th @click="toggleSort('name')">
-                  <span class="sort-arrow" :class="{ active: sortColumn === 'name', desc: sortColumn === 'name' && sortDirection === 'desc' }">▲</span>Name
+                  <span class="sort-arrow" :class="{ active: sortColumn === 'name', desc: sortColumn === 'name' && sortDirection === 'desc' }">▲</span>{{ t('modeSelect.table.name') }}
                 </th>
                 <th @click="toggleSort('points')">
-                  <span class="sort-arrow" :class="{ active: sortColumn === 'points', desc: sortColumn === 'points' && sortDirection === 'desc' }">▲</span>Points
+                  <span class="sort-arrow" :class="{ active: sortColumn === 'points', desc: sortColumn === 'points' && sortDirection === 'desc' }">▲</span>{{ t('modeSelect.table.points') }}
                 </th>
                 <th @click="toggleSort('accuracy')">
-                  <span class="sort-arrow" :class="{ active: sortColumn === 'accuracy', desc: sortColumn === 'accuracy' && sortDirection === 'desc' }">▲</span>Notes Hit
+                  <span class="sort-arrow" :class="{ active: sortColumn === 'accuracy', desc: sortColumn === 'accuracy' && sortDirection === 'desc' }">▲</span>{{ t('modeSelect.table.notesHit') }}
                 </th>
                 <th @click="toggleSort('errors')">
-                  <span class="sort-arrow" :class="{ active: sortColumn === 'errors', desc: sortColumn === 'errors' && sortDirection === 'desc' }">▲</span>Errors
+                  <span class="sort-arrow" :class="{ active: sortColumn === 'errors', desc: sortColumn === 'errors' && sortDirection === 'desc' }">▲</span>{{ t('modeSelect.table.errors') }}
                 </th>
                 <th @click="toggleSort('speed')">
-                  <span class="sort-arrow" :class="{ active: sortColumn === 'speed', desc: sortColumn === 'speed' && sortDirection === 'desc' }">▲</span>Actual Speed
+                  <span class="sort-arrow" :class="{ active: sortColumn === 'speed', desc: sortColumn === 'speed' && sortDirection === 'desc' }">▲</span>{{ t('modeSelect.table.actualSpeed') }}
                 </th>
-                <th>Time Spent</th>
+                <th>{{ t('modeSelect.table.timeSpent') }}</th>
                 <th @click="toggleSort('date')">
-                  <span class="sort-arrow" :class="{ active: sortColumn === 'date', desc: sortColumn === 'date' && sortDirection === 'desc' }">▲</span>Date Earned
+                  <span class="sort-arrow" :class="{ active: sortColumn === 'date', desc: sortColumn === 'date' && sortDirection === 'desc' }">▲</span>{{ t('modeSelect.table.dateEarned') }}
                 </th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="entry in scoreRows" :key="`${entry.mode}-${entry.handSelection}-${entry.playedAt}`">
-                <td>{{ handLabels[entry.handSelection] }} • {{ modeTitles[entry.mode] }}</td>
+                <td>{{ t(handLabelKeys[entry.handSelection]) }} • {{ t(modeTitleKeys[entry.mode]) }}</td>
                 <td>{{ entry.gameplayPoints ?? entry.score }}</td>
                 <td>{{ entry.notesHit ?? '-' }}</td>
                 <td>{{ entry.errors ?? (entry.failed ? 1 : 0) }}</td>
@@ -441,7 +444,7 @@ function goToTrackSettings() {
               </tr>
             </tbody>
           </table>
-          <p v-if="!scoreRows.length" class="empty-table muted">Chưa có điểm cho lựa chọn này.</p>
+          <p v-if="!scoreRows.length" class="empty-table muted">{{ t('modeSelect.table.empty') }}</p>
         </template>
       </section>
     </section>
@@ -645,7 +648,7 @@ function goToTrackSettings() {
 .detail-tabs {
   display: grid;
   align-content: start;
-  border-right: 1px solid #151515;
+  border-inline-end: 1px solid #151515;
 }
 
 .detail-tab {
@@ -715,7 +718,7 @@ function goToTrackSettings() {
 
 .sort-arrow {
   display: inline-block;
-  margin-right: 0.5rem;
+  margin-inline-end: 0.5rem;
   color: #5f5f5f;
   font-size: 0.75rem;
   transition: transform 0.2s, color 0.2s;
@@ -857,7 +860,7 @@ function goToTrackSettings() {
 
   .detail-tabs {
     grid-template-columns: repeat(2, 1fr);
-    border-right: 0;
+    border-inline-end: 0;
   }
 
   .breakdown-row {

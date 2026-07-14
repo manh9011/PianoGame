@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { useSettingsStore } from '../../../stores/settingsStore'
 
 interface Props {
@@ -18,6 +19,7 @@ const emit = defineEmits<{
   close: []
 }>()
 
+const { t } = useI18n()
 const settings = useSettingsStore()
 
 function handleClickOutside(event: MouseEvent) {
@@ -38,7 +40,7 @@ function handleClickOutside(event: MouseEvent) {
         >
           <div class="settings-dialog-content">
             <div class="setting-item">
-              <span class="setting-label">Falling Notes</span>
+              <span class="setting-label">{{ t('settings.fallingNotes') }}</span>
               <button
                 class="toggle-switch"
                 :class="{ active: settings.showFallingNotes }"
@@ -50,7 +52,7 @@ function handleClickOutside(event: MouseEvent) {
             </div>
 
             <div class="setting-item">
-              <span class="setting-label">Measure Lines</span>
+              <span class="setting-label">{{ t('settings.fallingMeasureLines') }}</span>
               <button
                 class="toggle-switch"
                 :class="{ active: settings.showGrid }"
@@ -62,7 +64,7 @@ function handleClickOutside(event: MouseEvent) {
             </div>
 
             <div class="setting-item">
-              <span class="setting-label">Sheet Music</span>
+              <span class="setting-label">{{ t('settings.sheetMusic') }}</span>
               <button
                 class="toggle-switch"
                 :class="{ active: settings.showSheetMusic }"

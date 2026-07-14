@@ -1,21 +1,23 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import SettingsRow from '../../components/settings/ui/SettingsRow.vue'
 import SettingsSection from '../../components/settings/ui/SettingsSection.vue'
 import SettingsToggle from '../../components/settings/ui/SettingsToggle.vue'
 import type { LabelMode } from '../../types/settings'
 import { useSettingsStore } from '../../stores/settingsStore'
 
+const { t } = useI18n()
 const settings = useSettingsStore()
 
-const labelModes: Array<{ value: LabelMode; label: string }> = [
-  { value: 'octaves', label: 'Octaves' },
-  { value: 'finger-hint', label: 'Finger hints' },
-  { value: 'virtual-piano', label: 'Virtual piano' },
-  { value: 'english', label: 'English' },
-  { value: 'fixed-do', label: 'Fixed Do' },
-  { value: 'movable-do', label: 'Movable Do' },
-  { value: 'scale-number', label: 'Scale number' },
-  { value: 'simple', label: 'Simple' },
+const labelModes: Array<{ value: LabelMode; labelKey: string }> = [
+  { value: 'octaves', labelKey: 'settings.labelModeOptions.octaves' },
+  { value: 'finger-hint', labelKey: 'settings.labelModeOptions.fingerHint' },
+  { value: 'virtual-piano', labelKey: 'settings.labelModeOptions.virtualPiano' },
+  { value: 'english', labelKey: 'settings.labelModeOptions.english' },
+  { value: 'fixed-do', labelKey: 'settings.labelModeOptions.fixedDo' },
+  { value: 'movable-do', labelKey: 'settings.labelModeOptions.movableDo' },
+  { value: 'scale-number', labelKey: 'settings.labelModeOptions.scaleNumber' },
+  { value: 'simple', labelKey: 'settings.labelModeOptions.simple' },
 ]
 </script>
 
@@ -23,47 +25,47 @@ const labelModes: Array<{ value: LabelMode; label: string }> = [
   <div class="settings-page">
     <header class="settings-page-title">
       <div>
-        <h2>Color Theme</h2>
-        <p>Chọn màu giao diện và cách hiển thị nhãn nốt/phím.</p>
+        <h2>{{ t('settings.colorTheme') }}</h2>
+        <p>{{ t('settings.colorThemeDescription') }}</p>
       </div>
     </header>
 
-    <SettingsSection title="Theme Preview">
+    <SettingsSection :title="t('settings.themePreview')">
       <div class="theme-previews">
         <button class="theme-card dark" :class="{ active: settings.theme === 'dark' }" type="button" @click="settings.setTheme('dark')">
-          <span class="theme-bar">Color Theme</span>
-          <strong>Synthesia Classic</strong>
-          <span class="theme-row">labore et dolore <i class="fa-solid fa-chevron-right" /></span>
+          <span class="theme-bar">{{ t('settings.colorTheme') }}</span>
+          <strong>{{ t('settings.synthesiaClassic') }}</strong>
+          <span class="theme-row">{{ t('settings.labels') }} <i class="fa-solid fa-chevron-right" /></span>
         </button>
         <button class="theme-card light" :class="{ active: settings.theme === 'light' }" type="button" @click="settings.setTheme('light')">
-          <span class="theme-bar">Color Theme</span>
-          <strong>Crystal Light</strong>
-          <span class="theme-row">labore et dolore <i class="fa-solid fa-chevron-right" /></span>
+          <span class="theme-bar">{{ t('settings.colorTheme') }}</span>
+          <strong>{{ t('settings.crystalLight') }}</strong>
+          <span class="theme-row">{{ t('settings.labels') }} <i class="fa-solid fa-chevron-right" /></span>
         </button>
       </div>
     </SettingsSection>
 
-    <SettingsSection title="Labels">
-      <SettingsRow title="Key labels" description="Hiển thị nhãn trên phím đàn.">
+    <SettingsSection :title="t('settings.labels')">
+      <SettingsRow :title="t('settings.keyLabels')" :description="t('settings.keyLabelsDescription')">
         <SettingsToggle :model-value="settings.showKeyLabels" @change="settings.setShowKeyLabels($event)" />
       </SettingsRow>
-      <SettingsRow title="Key label mode" description="Kiểu nhãn cho bàn phím.">
+      <SettingsRow :title="t('settings.keyLabelMode')" :description="t('settings.keyLabelModeDescription')">
         <select class="settings-control" :value="settings.keyLabelMode" @change="settings.setKeyLabelMode(($event.target as HTMLSelectElement).value as LabelMode)">
-          <option v-for="mode in labelModes" :key="mode.value" :value="mode.value">{{ mode.label }}</option>
+          <option v-for="mode in labelModes" :key="mode.value" :value="mode.value">{{ t(mode.labelKey) }}</option>
         </select>
       </SettingsRow>
-      <SettingsRow title="Key label size" description="Tăng/giảm kích thước nhãn phím.">
+      <SettingsRow :title="t('settings.keyLabelSize')" :description="t('settings.keyLabelSizeDescription')">
         <input class="settings-control compact" type="number" min="-10" max="25" step="1" :value="settings.keyLabelSize" @change="settings.setKeyLabelSize(Number(($event.target as HTMLInputElement).value))" />
       </SettingsRow>
-      <SettingsRow title="Falling note labels" description="Hiển thị nhãn trên note rơi.">
+      <SettingsRow :title="t('settings.fallingNoteLabels')" :description="t('settings.fallingNoteLabelsDescription')">
         <SettingsToggle :model-value="settings.showNoteLabels" @change="settings.setShowNoteLabels($event)" />
       </SettingsRow>
-      <SettingsRow title="Note label mode" description="Kiểu nhãn cho note rơi.">
+      <SettingsRow :title="t('settings.noteLabelMode')" :description="t('settings.noteLabelModeDescription')">
         <select class="settings-control" :value="settings.noteLabelMode" @change="settings.setNoteLabelMode(($event.target as HTMLSelectElement).value as LabelMode)">
-          <option v-for="mode in labelModes" :key="mode.value" :value="mode.value">{{ mode.label }}</option>
+          <option v-for="mode in labelModes" :key="mode.value" :value="mode.value">{{ t(mode.labelKey) }}</option>
         </select>
       </SettingsRow>
-      <SettingsRow title="Note label size" description="Tăng/giảm kích thước nhãn note.">
+      <SettingsRow :title="t('settings.noteLabelSize')" :description="t('settings.noteLabelSizeDescription')">
         <input class="settings-control compact" type="number" min="-10" max="25" step="1" :value="settings.noteLabelSize" @change="settings.setNoteLabelSize(Number(($event.target as HTMLInputElement).value))" />
       </SettingsRow>
     </SettingsSection>

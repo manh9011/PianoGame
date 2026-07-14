@@ -1,8 +1,10 @@
 import type { UserSettings } from '../../types/settings'
+import { detectLocaleFromNavigator, isSupportedLocale } from '../../i18n'
 import { STORAGE_KEYS } from './storageKeys'
 import { get, put } from '../storage/indexedDb'
 
 export const defaultSettings: UserSettings = {
+  locale: 'en',
   theme: 'dark',
   midiInputId: '',
   midiOutputId: '',
@@ -41,19 +43,21 @@ export const defaultSettings: UserSettings = {
   advancedEnableDebugOverlay: false,
   advancedConfirmBeforeDestructiveAction: true,
   advancedCompactMode: false,
-  unlockSynthesiaEmail: '',
-  unlockSynthesiaLicenseKey: '',
-  unlockSynthesiaRememberDevice: true,
+}
+
+function normalizeSettings(value?: Partial<UserSettings> | null): UserSettings {
+  const locale = isSupportedLocale(value?.locale) ? value.locale : detectLocaleFromNavigator()
+  return { ...defaultSettings, ...value, locale }
 }
 
 export async function loadSettings(): Promise<UserSettings> {
   try {
     const record = await get<{ key: string; value: UserSettings }>('settings', 'user-settings')
-    return record?.value ? { ...defaultSettings, ...record.value } : { ...defaultSettings }
+    return normalizeSettings(record?.value)
   } catch (error) {
     console.error('[Settings] Lỗi khi load từ IndexedDB, fallback về localStorage:', error)
     const raw = localStorage.getItem(STORAGE_KEYS.settings)
-    return raw ? { ...defaultSettings, ...JSON.parse(raw) } : { ...defaultSettings }
+    return raw ? normalizeSettings(JSON.parse(raw)) : normalizeSettings()
   }
 }
 

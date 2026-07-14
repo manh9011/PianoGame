@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, onBeforeUnmount } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { usePlayerStore } from '../../stores/playerStore'
 import { useSettingsStore } from '../../stores/settingsStore'
 import type { MidiBookmarkSource } from '../../modules/midi/midiTypes'
 
+const { t } = useI18n()
 const player = usePlayerStore()
 const settings = useSettingsStore()
 const seekBarRef = ref<HTMLElement | null>(null)
@@ -254,8 +256,8 @@ function seekFromPointer(event: MouseEvent) {
         class="hover-popover"
         :style="{ left: `${hoverPopoverLeftPx}px` }"
       >
-        <span>Time: <strong>{{ hoverTime }}</strong></span>
-        <span>Measure: <strong>{{ hoverPopover.measure }}</strong></span>
+        <span>{{ t('progress.time') }} <strong>{{ hoverTime }}</strong></span>
+        <span>{{ t('progress.measure') }} <strong>{{ hoverPopover.measure }}</strong></span>
       </div>
       <div class="time-display">
         <span class="time-left">{{ currentTime }}</span>

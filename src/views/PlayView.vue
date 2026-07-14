@@ -14,6 +14,7 @@ import PianoRoll from '../components/player/PianoRoll.vue'
 import PianoKeyboard from '../components/player/PianoKeyboard.vue'
 import ScorePanel from '../components/player/ScorePanel.vue'
 import GameplayFeedbackOverlay from '../components/player/GameplayFeedbackOverlay.vue'
+import HelpOverlay from '../components/player/HelpOverlay.vue'
 import MetronomeDialog from '../components/player/dialogs/MetronomeDialog.vue'
 import KeyboardRangeDialog from '../components/player/dialogs/KeyboardRangeDialog.vue'
 import LabelsDialog from '../components/player/dialogs/LabelsDialog.vue'
@@ -46,6 +47,7 @@ const showLabelsDialog = ref(false)
 const showBookmarksDialog = ref(false)
 const showLoopControl = ref(false)
 const showSettingsDialog = ref(false)
+const showHelpOverlay = ref(false)
 const isFullscreen = ref(false)
 const wasPlayingBeforeDialog = ref(false)
 const benchmarkMode = ref(
@@ -54,13 +56,14 @@ const benchmarkMode = ref(
   localStorage.getItem(BENCHMARK_STORAGE_KEY) === '1'
 )
 
-const hasOpenDialog = computed(() =>
+const hasBlockingOverlay = computed(() =>
   showMetronomeDialog.value ||
   showTrackConfigDialog.value ||
   showKeyboardRangeDialog.value ||
   showLabelsDialog.value ||
   showBookmarksDialog.value ||
-  showSettingsDialog.value
+  showSettingsDialog.value ||
+  showHelpOverlay.value
 )
 
 // Popover positions
@@ -236,6 +239,10 @@ function toggleBenchmark() {
   localStorage.setItem(BENCHMARK_STORAGE_KEY, benchmarkMode.value ? '1' : '0')
 }
 
+function toggleHelpOverlay() {
+  showHelpOverlay.value = !showHelpOverlay.value
+}
+
 function toggleFullscreen() {
   if (!document.fullscreenElement) {
     document.documentElement.requestFullscreen().catch(err => {
@@ -335,7 +342,7 @@ watch(() => settings.keyboardRangeMode, () => {
   player.refreshKeyboardRange()
 })
 
-watch(hasOpenDialog, open => {
+watch(hasBlockingOverlay, open => {
   const session = player.session
   if (!session?.setupComplete || session.finished || player.stats) {
     wasPlayingBeforeDialog.value = false
@@ -377,6 +384,7 @@ watch(() => player.stats, stats => {
       :is-fullscreen="isFullscreen"
       :bookmarks-dialog-open="showBookmarksDialog"
       :loop-dialog-open="showLoopControl"
+      :help-overlay-open="showHelpOverlay"
       :benchmark-mode="benchmarkMode"
       @open-metronome="openMetronome"
       @open-track-config="openTrackConfig"
@@ -386,6 +394,7 @@ watch(() => player.stats, stats => {
       @open-loop="openLoop"
       @open-settings="openSettings"
       @toggle-benchmark="toggleBenchmark"
+      @toggle-help="toggleHelpOverlay"
       @toggle-fullscreen="toggleFullscreen"
     />
     <TrackProgressBar />
@@ -397,6 +406,7 @@ watch(() => player.stats, stats => {
       <GameplayFeedbackOverlay />
     </section>
     <PianoKeyboard />
+    <HelpOverlay :show="showHelpOverlay" />
 
     <!-- Dialogs -->
     <SettingsDialog

@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import type { SongMetadata } from '../../types/song'
 import { useLibraryStore } from '../../stores/libraryStore'
 import { useProfileStore } from '../../stores/profileStore'
+import { useSettingsStore } from '../../stores/settingsStore'
+import { formatDate } from '../../i18n/formatters'
 import { achievementColorStyle } from '../../modules/game/achievementColors'
 import { achievementFromHistory } from '../../modules/game/achievementScoring'
 
@@ -12,8 +15,10 @@ defineEmits<{
   play: []
 }>()
 
+const { t } = useI18n()
 const library = useLibraryStore()
 const profiles = useProfileStore()
+const settings = useSettingsStore()
 const MAX_LIBRARY_ACHIEVEMENT = 105
 
 const songAchievementScores = computed(() => {
@@ -69,8 +74,8 @@ const difficultyArrowStyle = ref<{ top: string; left?: string; right?: string }>
 const difficultyArrowPlacement = ref<'left' | 'right'>('left')
 
 function formatLastPlayed(value: number) {
-  if (!value) return 'Never'
-  return new Date(value).toLocaleDateString(undefined, {
+  if (!value) return t('common.never')
+  return formatDate(value, settings.locale, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -231,14 +236,14 @@ function clearDifficulty() {
       <div
         class="song-rating"
         :class="{ 'has-rating': song.rating }"
-        :aria-label="`Rating ${song.rating ?? 0}/5`"
+        :aria-label="t('library.ratingValue', { value: song.rating ?? 0 })"
         @click="showRatingDialog($event, song)"
       >
         {{ stars(song.rating) }}
       </div>
       <div
         class="song-difficulty"
-        :aria-label="`Difficulty ${song.difficulty ?? 0}/10`"
+        :aria-label="t('library.difficultyValue', { value: song.difficulty ?? 0 })"
         @click="showDifficultyDialog($event, song)"
       >
         <span
@@ -252,13 +257,13 @@ function clearDifficulty() {
       <div
         class="detail-button"
         @click="showDetail($event, song)"
-        aria-label="Show details"
+        :aria-label="t('library.showDetails')"
       >
         <i class="fa fa-info"></i>
       </div>
     </button>
   </div>
-  <p v-else class="muted empty-list">Import file .mid hoặc .midi để bắt đầu.</p>
+  <p v-else class="muted empty-list">{{ t('library.importToStart') }}</p>
 
   <!-- Detail Popup -->
   <Teleport to="body">
@@ -266,39 +271,39 @@ function clearDifficulty() {
       <div class="detail-popup" :style="detailPopupStyle" @click.stop>
         <div class="detail-arrow" :class="`arrow-${detailArrowPlacement}`" :style="detailArrowStyle" />
         <div class="detail-content">
-          <h4 class="detail-dialog-title">Detail</h4>
+          <h4 class="detail-dialog-title">{{ t('library.detail') }}</h4>
           <div class="detail-info">
             <h3 class="detail-title">{{ detailSong.title }}</h3>
             <div class="detail-row">
-              <span class="detail-label">Thời lượng:</span>
+              <span class="detail-label">{{ t('library.duration') }}:</span>
               <span class="detail-value">{{ formatDuration(detailSong.duration) }}</span>
             </div>
             <div class="detail-row">
-              <span class="detail-label">Tracks:</span>
+              <span class="detail-label">{{ t('library.tracks') }}:</span>
               <span class="detail-value">{{ detailSong.trackCount }}</span>
             </div>
             <div class="detail-row">
-              <span class="detail-label">Notes:</span>
+              <span class="detail-label">{{ t('library.notes') }}:</span>
               <span class="detail-value">{{ detailSong.noteCount }}</span>
             </div>
             <div class="detail-row">
-              <span class="detail-label">Thành tựu:</span>
+              <span class="detail-label">{{ t('library.achievement') }}:</span>
               <span class="detail-value">{{ formatScore(achievementScore(detailSong.id)) }}/105</span>
             </div>
             <div class="detail-row">
-              <span class="detail-label">Số lần chơi:</span>
+              <span class="detail-label">{{ t('library.playCount') }}:</span>
               <span class="detail-value">{{ detailSong.playCount }}</span>
             </div>
             <div class="detail-row">
-              <span class="detail-label">Chơi lần cuối:</span>
+              <span class="detail-label">{{ t('library.lastPlayed') }}:</span>
               <span class="detail-value">{{ formatLastPlayed(detailSong.lastPlayed) }}</span>
             </div>
             <div class="detail-row">
-              <span class="detail-label">Rating:</span>
+              <span class="detail-label">{{ t('library.rating') }}:</span>
               <span class="detail-value">{{ stars(detailSong.rating) }}</span>
             </div>
             <div class="detail-row">
-              <span class="detail-label">Difficulty:</span>
+              <span class="detail-label">{{ t('library.difficulty') }}:</span>
               <span class="detail-value">{{ detailSong.difficulty ?? 0 }}/10</span>
             </div>
           </div>
@@ -313,7 +318,7 @@ function clearDifficulty() {
       <div class="quick-dialog" :style="ratingPopupStyle" @click.stop>
         <div class="dialog-arrow" :class="`arrow-${ratingArrowPlacement}`" :style="ratingArrowStyle" />
         <div class="dialog-content">
-          <h4 class="dialog-title">Rating</h4>
+          <h4 class="dialog-title">{{ t('library.rating') }}</h4>
           <div class="dialog-stars">
             <button
               v-for="value in 5"
@@ -326,7 +331,7 @@ function clearDifficulty() {
               ★
             </button>
           </div>
-          <button type="button" class="clear-button" @click="clearRating">Clear</button>
+          <button type="button" class="clear-button" @click="clearRating">{{ t('common.clear') }}</button>
         </div>
       </div>
     </div>
@@ -338,7 +343,7 @@ function clearDifficulty() {
       <div class="quick-dialog" :style="difficultyPopupStyle" @click.stop>
         <div class="dialog-arrow" :class="`arrow-${difficultyArrowPlacement}`" :style="difficultyArrowStyle" />
         <div class="dialog-content">
-          <h4 class="dialog-title">Difficulty</h4>
+          <h4 class="dialog-title">{{ t('library.difficulty') }}</h4>
           <div class="dialog-bars">
             <button
               v-for="value in 10"
@@ -352,7 +357,7 @@ function clearDifficulty() {
               <span class="bar-fill" />
             </button>
           </div>
-          <button type="button" class="clear-button" @click="clearDifficulty">Clear</button>
+          <button type="button" class="clear-button" @click="clearDifficulty">{{ t('common.clear') }}</button>
         </div>
       </div>
     </div>

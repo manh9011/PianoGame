@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import BasePopover from './BasePopover.vue'
 import { useSettingsStore } from '../../../stores/settingsStore'
 
@@ -14,6 +15,7 @@ const emit = defineEmits<{
   close: []
 }>()
 
+const { t } = useI18n()
 const settings = useSettingsStore()
 </script>
 
@@ -28,7 +30,7 @@ const settings = useSettingsStore()
   >
     <div class="settings-popover">
       <div class="setting-item">
-        <span class="setting-label">Falling Notes</span>
+        <span class="setting-label">{{ t('settings.fallingNotes') }}</span>
         <button
           class="toggle-switch"
           :class="{ active: settings.showFallingNotes }"
@@ -40,7 +42,7 @@ const settings = useSettingsStore()
       </div>
 
       <div class="setting-item">
-        <span class="setting-label">Measure Lines</span>
+        <span class="setting-label">{{ t('settings.fallingMeasureLines') }}</span>
         <button
           class="toggle-switch"
           :class="{ active: settings.showGrid }"
@@ -52,7 +54,7 @@ const settings = useSettingsStore()
       </div>
 
       <div class="setting-item">
-        <span class="setting-label">Sheet Music</span>
+        <span class="setting-label">{{ t('settings.sheetMusic') }}</span>
         <button
           class="toggle-switch"
           :class="{ active: settings.showSheetMusic }"

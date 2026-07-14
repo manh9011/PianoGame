@@ -5,6 +5,7 @@ export const CHORD_START_TOLERANCE_US = 2000
 
 const trackLookupCache = new WeakMap<TrackProperties[], Map<number, TrackProperties>>()
 const noteOrderCache = new WeakMap<SessionNote[], boolean>()
+const earliestWaitingCursorCache = new WeakMap<PlaySession, { notes: SessionNote[]; cursor: number; key: string }>()
 const missCursorCache = new WeakMap<PlaySession, { notes: SessionNote[]; cursor: number; lastUs: number; key: string }>()
 
 function trackById(tracks: TrackProperties[]) {
@@ -78,8 +79,23 @@ export function findEarliestPlayableWaitingStart(notes: SessionNote[], tracks: T
     return Number.isFinite(earliest) ? earliest : null
   }
 
-  for (const note of notes) {
+  if (!session) {
+    for (const note of notes) {
+      if (note.state === 'waiting' && isPlayableNote(note, tracks, handSelection, session)) return note.start
+    }
+    return null
+  }
+
+  const key = playableKey(tracks, handSelection, session)
+  const cached = earliestWaitingCursorCache.get(session)
+  const shouldReset = !cached || cached.notes !== notes || cached.key !== key
+  const state = shouldReset ? { notes, cursor: 0, key } : cached
+  if (shouldReset) earliestWaitingCursorCache.set(session, state)
+
+  while (state.cursor < notes.length) {
+    const note = notes[state.cursor]
     if (note.state === 'waiting' && isPlayableNote(note, tracks, handSelection, session)) return note.start
+    state.cursor += 1
   }
   return null
 }

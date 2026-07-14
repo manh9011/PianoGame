@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { usePlayerStore } from '../../../stores/playerStore'
 import { isTrackSounded, type TrackMode, type TrackRole } from '../../../modules/game/trackProperties'
 import { getEmojiFontFamily, getInstrumentByProgram, getInstrumentEmoji } from '../../../modules/audio/gmInstrumentCatalog'
@@ -29,6 +30,7 @@ interface TrackData {
 
 const props = defineProps<Props>()
 
+const { t } = useI18n()
 const player = usePlayerStore()
 const emojiStyle = { fontFamily: getEmojiFontFamily() }
 
@@ -77,25 +79,25 @@ const currentTrack = computed(() => selectedTrackId.value === null
   ? null
   : player.session?.tracks.find(track => track.trackId === selectedTrackId.value) ?? null)
 
-const roleLabels: Record<TrackData['predominantHand'], string> = {
-  left: 'Left Hand',
-  right: 'Right Hand',
-  both: 'Both Hands',
-  background: 'Background',
+const roleLabelKeys: Record<TrackData['predominantHand'], string> = {
+  left: 'trackSettings.left',
+  right: 'trackSettings.right',
+  both: 'trackSettings.both',
+  background: 'trackSettings.background',
 }
 
-const colorLabels: Record<string, string> = {
-  '#729fcf': 'Blue',
-  '#4e9a06': 'Green',
-  '#8ae234': 'Green',
-  '#f57900': 'Orange',
-  '#fce94f': 'Yellow',
-  '#ad7fa8': 'Purple',
-  '#ef2929': 'Red',
+const colorLabelKeys: Record<string, string> = {
+  '#729fcf': 'trackSettings.blue',
+  '#4e9a06': 'trackSettings.green',
+  '#8ae234': 'trackSettings.green',
+  '#f57900': 'trackSettings.orange',
+  '#fce94f': 'trackSettings.yellow',
+  '#ad7fa8': 'trackSettings.purple',
+  '#ef2929': 'trackSettings.red',
 }
 
 function colorName(color: string) {
-  return colorLabels[color.toLowerCase()] ?? 'Color'
+  return t(colorLabelKeys[color.toLowerCase()] ?? 'trackSettings.color')
 }
 
 function positionPopup(event: MouseEvent, width: number, height: number) {
@@ -183,8 +185,8 @@ function isSounded(mode: TrackMode) {
   >
     <div class="track-config-dialog">
       <div>
-        <h3 class="dialog-title">Track Settings</h3>
-        <p class="dialog-subtitle">Chỉnh nhạc cụ, màu sắc và bật/tắt tiếng cho từng track.</p>
+        <h3 class="dialog-title">{{ t('trackSettings.dialogTitle') }}</h3>
+        <p class="dialog-subtitle">{{ t('trackSettings.dialogSubtitle') }}</p>
       </div>
 
       <div class="track-list">
@@ -197,21 +199,21 @@ function isSounded(mode: TrackMode) {
           <div class="track-accent"></div>
 
           <div class="track-card-header">
-            <button class="track-icon" title="Chọn nhạc cụ" @click="(event) => openInstrumentDialog(event, track.trackId)">
+            <button class="track-icon" :title="t('trackSettings.selectInstrument')" @click="(event) => openInstrumentDialog(event, track.trackId)">
               <span class="track-emoji-wrap">
                 <span class="track-emoji" :style="emojiStyle">{{ track.instrumentEmoji }}</span>
               </span>
             </button>
             <div class="track-info">
               <div class="instrument-name">{{ track.instrumentName }}</div>
-              <div class="track-meta">{{ track.noteCount }} notes • Channel {{ track.channel + 1 }}</div>
+              <div class="track-meta">{{ t('trackSettings.notes', { count: track.noteCount }) }} • {{ t('trackSettings.channel', { number: track.channel + 1 }) }}</div>
             </div>
           </div>
 
           <div class="track-controls">
             <button class="control-btn disabled" type="button" disabled>
               <i :class="[track.predominantHand === 'background' ? 'fas fa-cog' : 'fas fa-hand-paper', { flipped: track.predominantHand === 'left' }]" />
-              <span>{{ roleLabels[track.predominantHand] }}</span>
+              <span>{{ t(roleLabelKeys[track.predominantHand]) }}</span>
             </button>
             <button class="control-btn" type="button" @click="(event) => openColorPicker(event, track.trackId)">
               <span class="keyboard-icon" :style="{ color: track.color }"><i class="fas fa-keyboard"></i></span>
@@ -219,7 +221,7 @@ function isSounded(mode: TrackMode) {
             </button>
             <button class="control-btn" :class="{ muted: !isSounded(track.mode), danger: !isSounded(track.mode) }" type="button" @click="toggleSound(track.trackId)">
               <i :class="isSounded(track.mode) ? 'fas fa-volume-up' : 'fas fa-times'" />
-              <span>{{ isSounded(track.mode) ? 'Sounded' : 'Muted' }}</span>
+              <span>{{ isSounded(track.mode) ? t('trackSettings.sounded') : t('trackSettings.muted') }}</span>
             </button>
           </div>
         </section>

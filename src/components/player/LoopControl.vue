@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { usePlayerStore } from '../../stores/playerStore'
 
 interface Props {
@@ -8,6 +9,7 @@ interface Props {
 
 defineProps<Props>()
 
+const { t } = useI18n()
 const player = usePlayerStore()
 const session = computed(() => player.session)
 const loopState = computed(() => session.value?.loopState)
@@ -24,7 +26,7 @@ const restartLoopAfterErrors = computed({
 })
 
 const restartLabel = computed(() => {
-  return restartLoopAfterErrors.value === 0 ? 'Disabled' : `${restartLoopAfterErrors.value}s`
+  return restartLoopAfterErrors.value === 0 ? t('dialogs.disabled') : `${restartLoopAfterErrors.value}s`
 })
 
 const canShiftStartBackward = computed(() => {
@@ -95,14 +97,14 @@ function clearLoop() {
         <div class="loop-bar" @click.stop>
           <!-- Row 1: Clear box -->
           <div class="control-box clear-box">
-            <p class="instruction-text">Drag in the timeline to create a loop. Fine-tune below.</p>
-            <button class="clear-button" @click="clearLoop">Clear</button>
+            <p class="instruction-text">{{ t('dialogs.loopInstruction') }}</p>
+            <button class="clear-button" @click="clearLoop">{{ t('common.clear') }}</button>
           </div>
 
           <!-- Row 2: Sliders box -->
           <div class="control-box sliders-box">
             <div class="slider-row">
-              <span class="slider-label">Delay between loops</span>
+              <span class="slider-label">{{ t('dialogs.delayBetweenLoops') }}</span>
               <input
                 v-model.number="delayBetweenLoops"
                 type="range"
@@ -115,7 +117,7 @@ function clearLoop() {
             </div>
 
             <div class="slider-row">
-              <span class="slider-label">Restart Loop After Errors</span>
+              <span class="slider-label">{{ t('dialogs.restartLoopAfterErrors') }}</span>
               <input
                 v-model.number="restartLoopAfterErrors"
                 type="range"
@@ -134,7 +136,7 @@ function clearLoop() {
               <button class="nav-btn" :disabled="!canShiftStartBackward" @click="shiftLoopStartBackward">
                 <i class="fas fa-step-backward"></i>
               </button>
-              <span class="nav-label">Loop Start</span>
+              <span class="nav-label">{{ t('dialogs.loopStart') }}</span>
               <button class="nav-btn" :disabled="!canShiftStartForward" @click="shiftLoopStartForward">
                 <i class="fas fa-step-forward"></i>
               </button>
@@ -144,7 +146,7 @@ function clearLoop() {
               <button class="nav-btn" :disabled="!canShiftEntireBackward" @click="shiftEntireLoopBackward">
                 <i class="fas fa-step-backward"></i>
               </button>
-              <span class="nav-label">Entire Loop</span>
+              <span class="nav-label">{{ t('dialogs.entireLoop') }}</span>
               <button class="nav-btn" :disabled="!canShiftEntireForward" @click="shiftEntireLoopForward">
                 <i class="fas fa-step-forward"></i>
               </button>
@@ -154,7 +156,7 @@ function clearLoop() {
               <button class="nav-btn" :disabled="!canShiftEndBackward" @click="shiftLoopEndBackward">
                 <i class="fas fa-step-backward"></i>
               </button>
-              <span class="nav-label">Loop End</span>
+              <span class="nav-label">{{ t('dialogs.loopEnd') }}</span>
               <button class="nav-btn" :disabled="!canShiftEndForward" @click="shiftLoopEndForward">
                 <i class="fas fa-step-forward"></i>
               </button>

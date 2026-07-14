@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { useLibraryStore } from '../../stores/libraryStore'
 import { useToastStore } from '../../stores/toastStore'
 
+const { t } = useI18n()
 const library = useLibraryStore()
 const toastStore = useToastStore()
 
@@ -9,14 +11,14 @@ async function onFiles(files: FileList | null) {
   const selected = files ? [...files] : []
   if (!selected.length) return
 
-  toastStore.showLoading(`Đang import ${selected.length} file MIDI...`)
+  toastStore.showLoading(t('library.importProgress', { count: selected.length }))
 
   const result = await library.importFiles(selected)
 
   if (result.failed.length) {
-    toastStore.showError(`Đã import ${result.imported} file, lỗi ${result.failed.length}: ${result.failed.map(f => `${f.name} (${f.reason})`).join('; ')}`)
+    toastStore.showError(t('library.importFailed', { imported: result.imported, failed: result.failed.length, details: result.failed.map(f => `${f.name} (${f.reason})`).join('; ') }))
   } else {
-    toastStore.showSuccess(`Đã import ${result.imported} file MIDI.`)
+    toastStore.showSuccess(t('library.importSuccess', { count: result.imported }))
   }
 }
 </script>
@@ -25,7 +27,7 @@ async function onFiles(files: FileList | null) {
   <div class="midi-import">
     <label class="import-button">
       <input type="file" accept=".mid,.midi,.rmi,.rmid" multiple @change="onFiles(($event.target as HTMLInputElement).files)" />
-      Import MIDI
+      {{ t('library.importMidi') }}
     </label>
   </div>
 </template>

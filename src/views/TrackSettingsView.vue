@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { usePlayerStore } from '../stores/playerStore'
 import { useSettingsStore } from '../stores/settingsStore'
@@ -10,6 +11,7 @@ import TrackInstrumentDialog from '../components/player/dialogs/TrackInstrumentD
 import TrackRoleDialog from '../components/player/dialogs/TrackRoleDialog.vue'
 
 const router = useRouter()
+const { t } = useI18n()
 const player = usePlayerStore()
 const settings = useSettingsStore()
 
@@ -194,25 +196,25 @@ function autoColor() {
   })
 }
 
-const roleLabels: Record<TrackData['predominantHand'], string> = {
-  left: 'Left Hand',
-  right: 'Right Hand',
-  both: 'Both Hands',
-  background: 'Background',
+const roleLabelKeys: Record<TrackData['predominantHand'], string> = {
+  left: 'trackSettings.left',
+  right: 'trackSettings.right',
+  both: 'trackSettings.both',
+  background: 'trackSettings.background',
 }
 
-const colorLabels: Record<string, string> = {
-  '#729fcf': 'Blue',
-  '#4e9a06': 'Green',
-  '#8ae234': 'Green',
-  '#f57900': 'Orange',
-  '#fce94f': 'Yellow',
-  '#ad7fa8': 'Purple',
-  '#ef2929': 'Red',
+const colorLabelKeys: Record<string, string> = {
+  '#729fcf': 'trackSettings.blue',
+  '#4e9a06': 'trackSettings.green',
+  '#8ae234': 'trackSettings.green',
+  '#f57900': 'trackSettings.orange',
+  '#fce94f': 'trackSettings.yellow',
+  '#ad7fa8': 'trackSettings.purple',
+  '#ef2929': 'trackSettings.red',
 }
 
 function colorName(color: string) {
-  return colorLabels[color.toLowerCase()] ?? 'Color'
+  return t(colorLabelKeys[color.toLowerCase()] ?? 'trackSettings.color')
 }
 
 function isSounded(mode: TrackMode): boolean {
@@ -230,10 +232,10 @@ onBeforeUnmount(() => player.stopTrackPreview())
   <section class="track-settings-wrap">
     <header class="track-header">
       <div class="header-left">
-        <button class="header-btn" @click="back">Back</button>
-        <button class="header-btn">Help</button>
+        <button class="header-btn" @click="back">{{ t('common.back') }}</button>
+        <button class="header-btn">{{ t('play.help') }}</button>
       </div>
-      <h1 class="track-title">Hands, Colors, and Instruments</h1>
+      <h1 class="track-title">{{ t('trackSettings.title') }}</h1>
     </header>
 
     <main class="tracks-container">
@@ -245,14 +247,14 @@ onBeforeUnmount(() => player.stopTrackPreview())
       >
         <div class="track-accent"></div>
         <div class="track-card-header">
-          <button class="track-icon" title="Chọn nhạc cụ" @click="(e) => openInstrumentDialog(e, track.trackId)">
+          <button class="track-icon" :title="t('trackSettings.selectInstrument')" @click="(e) => openInstrumentDialog(e, track.trackId)">
             <span class="track-emoji-wrap">
               <span class="track-emoji" :style="emojiStyle">{{ track.instrumentEmoji }}</span>
             </span>
           </button>
           <div class="track-info">
             <div class="instrument-name">{{ track.instrumentName }}</div>
-            <div class="track-meta">{{ track.noteCount }} notes • Channel {{ track.channel + 1 }}</div>
+            <div class="track-meta">{{ t('trackSettings.notes', { count: track.noteCount }) }} • {{ t('trackSettings.channel', { number: track.channel + 1 }) }}</div>
           </div>
           <button class="play-btn" :class="{ active: isPreviewing(track.trackId) }" @click="playTrack(track.trackId)">
             <i :class="isPreviewing(track.trackId) ? 'fas fa-stop' : 'fas fa-play'"></i>
@@ -262,7 +264,7 @@ onBeforeUnmount(() => player.stopTrackPreview())
         <div class="track-controls">
           <button class="control-btn wide" @click="(e) => openRoleDialog(e, track.trackId)">
             <i :class="[track.predominantHand === 'background' ? 'fas fa-cog' : 'fas fa-hand-paper', { flipped: track.predominantHand === 'left' }]"></i>
-            <span>{{ roleLabels[track.predominantHand] }}</span>
+            <span>{{ t(roleLabelKeys[track.predominantHand]) }}</span>
           </button>
           <button class="control-btn" @click="(e) => openColorPicker(e, track.trackId)">
             <span class="keyboard-icon" :style="{ color: track.color }"><i class="fas fa-keyboard"></i></span>
@@ -270,7 +272,7 @@ onBeforeUnmount(() => player.stopTrackPreview())
           </button>
           <button class="control-btn" :class="{ muted: !isSounded(track.mode) }" @click="toggleSound(track.trackId)">
             <i :class="isSounded(track.mode) ? 'fas fa-volume-up' : 'fas fa-volume-mute'"></i>
-            <span>{{ isSounded(track.mode) ? 'Sounded' : 'Muted' }}</span>
+            <span>{{ isSounded(track.mode) ? t('trackSettings.sounded') : t('trackSettings.muted') }}</span>
           </button>
         </div>
       </div>
@@ -279,10 +281,10 @@ onBeforeUnmount(() => player.stopTrackPreview())
     <footer class="track-footer">
       <button class="footer-btn" @click="reset">
         <i class="fas fa-bolt"></i>
-        Reset
+        {{ t('trackSettings.reset') }}
       </button>
-      <span class="footer-text">Copy settings by dragging them.</span>
-      <button class="footer-btn auto-color" @click="autoColor">Auto Color</button>
+      <span class="footer-text">{{ t('trackSettings.copySettingsByDragging') }}</span>
+      <button class="footer-btn auto-color" @click="autoColor">{{ t('trackSettings.autoColor') }}</button>
     </footer>
 
     <TrackInstrumentDialog
@@ -339,7 +341,7 @@ onBeforeUnmount(() => player.stopTrackPreview())
 
 .header-left {
   position: absolute;
-  left: 0.5rem;
+  inset-inline-start: 0.5rem;
   display: flex;
   gap: 0.5rem;
 }
@@ -508,7 +510,7 @@ onBeforeUnmount(() => player.stopTrackPreview())
   justify-content: center;
   gap: 4px;
   border: 0;
-  border-right: 1px solid rgba(0, 0, 0, 0.22);
+  border-inline-end: 1px solid rgba(0, 0, 0, 0.22);
   background: rgba(0, 0, 0, 0.06);
   color: #fff;
   cursor: pointer;
@@ -517,7 +519,7 @@ onBeforeUnmount(() => player.stopTrackPreview())
 }
 
 .control-btn:last-child {
-  border-right: 0;
+  border-inline-end: 0;
 }
 
 .control-btn:hover {
@@ -554,8 +556,8 @@ onBeforeUnmount(() => player.stopTrackPreview())
 
 .track-footer {
   position: fixed;
-  left: 0;
-  right: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 0;
   bottom: 0;
   display: grid;
   grid-template-columns: 108px 1fr auto;
@@ -572,7 +574,7 @@ onBeforeUnmount(() => player.stopTrackPreview())
   justify-content: center;
   gap: 0.5rem;
   border: 0;
-  border-right: 1px solid #363636;
+  border-inline-end: 1px solid #363636;
   background: rgba(255, 255, 255, 0.03);
   color: #f1f1f1;
   font-size: 0.9rem;
@@ -600,7 +602,7 @@ onBeforeUnmount(() => player.stopTrackPreview())
 .footer-text {
   display: flex;
   align-items: center;
-  padding-left: 20px;
+  padding-inline-start: 20px;
   font-size: 0.85rem;
   color: #ededed;
 }

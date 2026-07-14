@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { supportsFileSystemAccess, pickMidiFilesFromFolder } from '../../modules/library/fileSystemAccess'
 import { useLibraryStore } from '../../stores/libraryStore'
 import { useSettingsStore } from '../../stores/settingsStore'
 import { useToastStore } from '../../stores/toastStore'
 
+const { t } = useI18n()
 const settings = useSettingsStore()
 const library = useLibraryStore()
 const toastStore = useToastStore()
@@ -14,27 +16,27 @@ async function pick() {
   settings.folders = [...new Set([...settings.folders, picked.name])]
   settings.persist()
   if (!picked.files.length) {
-    toastStore.showError(`Folder "${picked.name}" không có file MIDI.`)
+    toastStore.showError(t('library.folderNoMidi', { name: picked.name }))
     return
   }
 
-  toastStore.showLoading(`Đang import ${picked.files.length} file từ "${picked.name}"...`)
+  toastStore.showLoading(t('library.folderImporting', { count: picked.files.length, name: picked.name }))
 
   const result = await library.importFiles(picked.files, picked.name)
 
   if (result.failed.length) {
-    toastStore.showError(`Folder "${picked.name}": import ${result.imported} file, lỗi ${result.failed.length}.`)
+    toastStore.showError(t('library.folderImportFailed', { name: picked.name, imported: result.imported, failed: result.failed.length }))
   } else {
-    toastStore.showSuccess(`Folder "${picked.name}": đã import ${result.imported} file MIDI.`)
+    toastStore.showSuccess(t('library.folderImportSuccess', { name: picked.name, count: result.imported }))
   }
 }
 </script>
 
 <template>
   <div class="folder-selector">
-    <button class="secondary folder-button" :disabled="!supportsFileSystemAccess()" @click="pick">Songs</button>
+    <button class="secondary folder-button" :disabled="!supportsFileSystemAccess()" @click="pick">{{ t('settings.songs') }}</button>
     <span class="folder-summary muted">
-      {{ supportsFileSystemAccess() ? (settings.folders.join(', ') || 'Choose folder...') : 'Browser không hỗ trợ File System Access API' }}
+      {{ supportsFileSystemAccess() ? (settings.folders.join(', ') || t('library.chooseFolder')) : t('library.folderUnsupported') }}
     </span>
   </div>
 </template>

@@ -7,19 +7,23 @@ import '@fortawesome/fontawesome-free/css/all.min.css'
 import { useLibraryStore } from './stores/libraryStore'
 import { useSettingsStore } from './stores/settingsStore'
 import { useProfileStore } from './stores/profileStore'
+import { i18n } from './i18n'
 import { useToastStore } from './stores/toastStore'
+
+const t = i18n.global.t as (key: string, named?: Record<string, unknown>) => string
 
 async function initApp() {
   const app = createApp(App)
   const pinia = createPinia()
   app.use(pinia)
+  app.use(i18n)
 
   const toastStore = useToastStore()
   const libraryStore = useLibraryStore()
   const settingsStore = useSettingsStore()
   const profileStore = useProfileStore()
 
-  toastStore.showLoading('Đang tải dữ liệu...')
+  toastStore.showLoading(t('common.loadingData'))
 
   let completed = 0
   const total = 3
@@ -39,7 +43,7 @@ async function initApp() {
     })
   ])
 
-  toastStore.showSuccess('Đã tải xong!')
+  toastStore.showSuccess(t('common.loaded'))
 
   app.use(router).mount('#app')
 }

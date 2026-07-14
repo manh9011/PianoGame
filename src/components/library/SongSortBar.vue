@@ -1,21 +1,23 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { useLibraryStore } from '../../stores/libraryStore'
 import type { SongSortKey } from '../../types/song'
 
+const { t } = useI18n()
 const library = useLibraryStore()
-const keys: { key: SongSortKey; label: string }[] = [
-  { key: 'bestScore', label: 'Points' },
-  { key: 'title', label: 'Title' },
-  { key: 'lastPlayed', label: 'Last Played' },
-  { key: 'duration', label: 'Duration' },
-  { key: 'playCount', label: 'Play Count' },
-  { key: 'rating', label: 'Rating' },
-  { key: 'difficulty', label: 'Difficulty' },
+const keys: { key: SongSortKey; labelKey: string }[] = [
+  { key: 'bestScore', labelKey: 'library.sort.points' },
+  { key: 'title', labelKey: 'library.sort.title' },
+  { key: 'lastPlayed', labelKey: 'library.sort.lastPlayed' },
+  { key: 'duration', labelKey: 'library.sort.duration' },
+  { key: 'playCount', labelKey: 'library.sort.playCount' },
+  { key: 'rating', labelKey: 'library.sort.rating' },
+  { key: 'difficulty', labelKey: 'library.sort.difficulty' },
 ]
 </script>
 
 <template>
-  <nav class="sort-bar" aria-label="Library sort columns">
+  <nav class="sort-bar" :aria-label="t('library.sort.aria')">
     <button
       v-for="item in keys"
       :key="item.key"
@@ -24,7 +26,7 @@ const keys: { key: SongSortKey; label: string }[] = [
       :class="{ active: library.sortKey === item.key }"
       @click="library.setSort(item.key)"
     >
-      <span class="sort-label">{{ item.label }}</span>
+      <span class="sort-label">{{ t(item.labelKey) }}</span>
       <span v-if="library.sortKey === item.key" class="sort-direction">{{ library.sortDirection === 'asc' ? '↑' : '↓' }}</span>
     </button>
   </nav>

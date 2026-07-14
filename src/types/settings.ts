@@ -1,3 +1,5 @@
+import type { SupportedLocale } from '../i18n'
+
 export type LabelMode =
   | 'octaves'
   | 'finger-hint'
@@ -18,6 +20,7 @@ export type KeyboardRangeMode =
   | 'custom'
 
 export interface UserSettings {
+  locale: SupportedLocale
   theme: 'dark' | 'light'
   midiInputId: string
   midiOutputId: string
@@ -56,7 +59,4 @@ export interface UserSettings {
   advancedEnableDebugOverlay: boolean
   advancedConfirmBeforeDestructiveAction: boolean
   advancedCompactMode: boolean
-  unlockSynthesiaEmail: string
-  unlockSynthesiaLicenseKey: string
-  unlockSynthesiaRememberDevice: boolean
 }

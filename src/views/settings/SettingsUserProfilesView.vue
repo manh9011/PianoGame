@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import SettingsRow from '../../components/settings/ui/SettingsRow.vue'
 import SettingsSection from '../../components/settings/ui/SettingsSection.vue'
 import { useProfileStore } from '../../stores/profileStore'
 
+const { t } = useI18n()
 const profiles = useProfileStore()
 const name = ref('')
 
@@ -19,30 +21,30 @@ function createProfile() {
   <div class="settings-page">
     <header class="settings-page-title">
       <div>
-        <h2>User Profiles</h2>
-        <p>Chọn profile luyện tập và lưu tiến trình cục bộ.</p>
+        <h2>{{ t('settings.userProfiles') }}</h2>
+        <p>{{ t('settings.userProfilesDescription') }}</p>
       </div>
-      <span class="settings-pill">{{ profiles.profiles.length }} profiles</span>
+      <span class="settings-pill">{{ t('settings.profiles', { count: profiles.profiles.length }) }}</span>
     </header>
 
-    <SettingsSection title="Profiles">
-      <SettingsRow title="Active profile" description="Profile đang được dùng để lưu điểm và bài gần đây.">
+    <SettingsSection :title="t('settings.userProfiles')">
+      <SettingsRow :title="t('settings.activeProfile')" :description="t('settings.activeProfileDescription')">
         <select class="settings-control" :value="profiles.activeProfile.id" @change="profiles.selectProfile(($event.target as HTMLSelectElement).value)">
           <option v-for="profile in profiles.profiles" :key="profile.id" :value="profile.id">{{ profile.name }}</option>
         </select>
       </SettingsRow>
-      <SettingsRow title="New profile" description="Tạo profile mới và chuyển sang dùng ngay.">
+      <SettingsRow :title="t('settings.newProfile')" :description="t('settings.newProfileDescription')">
         <div class="profile-actions">
-          <input v-model="name" class="settings-control" placeholder="Name" @keyup.enter="createProfile" />
-          <button class="settings-button primary" type="button" @click="createProfile">Save</button>
+          <input v-model="name" class="settings-control" :placeholder="t('profile.newProfileName')" @keyup.enter="createProfile" />
+          <button class="settings-button primary" type="button" @click="createProfile">{{ t('common.save') }}</button>
         </div>
       </SettingsRow>
     </SettingsSection>
 
-    <SettingsSection title="Profile List">
-      <SettingsRow v-for="profile in profiles.profiles" :key="profile.id" :title="profile.name" :description="profile.id === profiles.activeProfile.id ? 'Profile đang hoạt động' : 'Profile cục bộ'">
-        <button class="settings-button" type="button" :disabled="profile.id === profiles.activeProfile.id" @click="profiles.selectProfile(profile.id)">Use</button>
-        <button class="settings-button danger" type="button" :disabled="profiles.profiles.length <= 1" @click="profiles.deleteProfile(profile.id)">Delete</button>
+    <SettingsSection :title="t('settings.profileList')">
+      <SettingsRow v-for="profile in profiles.profiles" :key="profile.id" :title="profile.name" :description="profile.id === profiles.activeProfile.id ? t('settings.activeProfileStatus') : t('settings.localProfileStatus')">
+        <button class="settings-button" type="button" :disabled="profile.id === profiles.activeProfile.id" @click="profiles.selectProfile(profile.id)">{{ t('settings.useProfile') }}</button>
+        <button class="settings-button danger" type="button" :disabled="profiles.profiles.length <= 1" @click="profiles.deleteProfile(profile.id)">{{ t('common.delete') }}</button>
       </SettingsRow>
     </SettingsSection>
   </div>

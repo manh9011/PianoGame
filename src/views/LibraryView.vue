@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import MidiImportButton from '../components/library/MidiImportButton.vue'
 import FolderSelector from '../components/library/FolderSelector.vue'
@@ -11,6 +12,7 @@ import { useSettingsStore } from '../stores/settingsStore'
 import { useProfileStore } from '../stores/profileStore'
 
 const router = useRouter()
+const { t } = useI18n()
 const library = useLibraryStore()
 const player = usePlayerStore()
 const settings = useSettingsStore()
@@ -36,7 +38,7 @@ function togglePreview() {
 function deleteSong() {
   const song = selectedSong.value
   if (!song) return
-  if (!confirm(`Xóa "${song.title}"?`)) return
+  if (!confirm(t('library.deleteConfirm', { title: song.title }))) return
   library.deleteSong(song.id)
 }
 
@@ -51,28 +53,28 @@ onBeforeUnmount(() => library.stopPreview())
 <template>
   <main class="library-page">
     <header class="library-header">
-      <button class="secondary header-tab" @click="router.push('/')">Back</button>
+      <button class="secondary header-tab" @click="router.push('/')">{{ t('common.back') }}</button>
 
       <div class="library-playback">
-        <button class="icon-button" :disabled="!selectedSong" aria-label="Toggle preview" @click="togglePreview">
+        <button class="icon-button" :disabled="!selectedSong" :aria-label="t('library.togglePreview')" @click="togglePreview">
           <i v-if="library.previewSongId === selectedSong?.id && library.previewRunning" class="fa-solid fa-pause" aria-hidden="true" />
           <i v-else class="fa-solid fa-play" aria-hidden="true" />
         </button>
 
         <div class="preview-center">
-          <div class="preview-song">{{ selectedSong?.title ?? 'No song selected' }}</div>
+          <div class="preview-song">{{ selectedSong?.title ?? t('common.noSongSelected') }}</div>
           <div class="preview-track" @click="seekPreviewFromPointer">
             <div class="preview-fill" :style="{ width: `${Math.round(library.previewProgress * 100)}%` }" />
           </div>
         </div>
 
-        <button class="icon-button" :disabled="!selectedSong" aria-label="Delete song" @click="deleteSong">
+        <button class="icon-button" :disabled="!selectedSong" :aria-label="t('library.deleteSong')" @click="deleteSong">
           <i class="fa-regular fa-trash-can" aria-hidden="true" />
         </button>
       </div>
 
       <div class="header-actions">
-        <button class="action-button continue-button" :disabled="!selectedSong" @click="continuePlay">Continue</button>
+        <button class="action-button continue-button" :disabled="!selectedSong" @click="continuePlay">{{ t('common.continue') }}</button>
       </div>
     </header>
 
@@ -80,7 +82,7 @@ onBeforeUnmount(() => library.stopPreview())
       <FolderSelector />
       <input
         :value="library.searchQuery"
-        placeholder="Search..."
+        :placeholder="t('common.search')"
         @input="library.setSearch(($event.target as HTMLInputElement).value)"
       />
     </section>
@@ -96,7 +98,7 @@ onBeforeUnmount(() => library.stopPreview())
       <div class="footer-sort">
         <SongSortBar />
       </div>
-      <div class="footer-count muted">{{ visibleSongCount }} songs</div>
+      <div class="footer-count muted">{{ t('common.songs', { count: visibleSongCount }) }}</div>
     </footer>
   </main>
 </template>
