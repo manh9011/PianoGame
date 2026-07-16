@@ -4,6 +4,7 @@ import type { Hand, PlaySession, SessionNote } from '../game/playSession'
 import { SimpleSynth } from './simpleSynth'
 import { handMatches, isNoteInKeyboardRange } from '../game/hitDetection'
 import { getInstrumentByProgram } from './gmInstrumentCatalog'
+import { addActivePlaybackCounter, isPlaybackProfilerEnabled, setActivePlaybackGauge } from '../perf/playbackProfiler'
 
 type MidiAccess = Awaited<ReturnType<typeof requestMidiAccess>>
 interface ActivePitchEntry { hand: Hand; trackId: number }
@@ -60,6 +61,10 @@ export class AutoNotePlayer {
 
   tick(session: PlaySession) {
     if (!session.setupComplete) return
+    const profileEnabled = isPlaybackProfilerEnabled()
+    let scannedNotes = 0
+    let activatedNotes = 0
+    let deactivatedNotes = 0
     this.currentSession = session
     const trackLookup = new Map(session.tracks.map(track => [track.trackId, track]))
     const shouldAutoPlay = (note: SessionNote) => {
@@ -93,25 +98,61 @@ export class AutoNotePlayer {
     }
 
     if (!state.sortedByStart) {
-      for (const note of session.notes) this.syncNote(session, note, shouldAutoPlay(note) && note.start <= session.currentUs && note.end > session.currentUs)
+      for (const note of session.notes) {
+        scannedNotes += 1
+        const wasActive = this.active.has(note.id)
+        this.syncNote(session, note, shouldAutoPlay(note) && note.start <= session.currentUs && note.end > session.currentUs)
+        const isActive = this.active.has(note.id)
+        if (!wasActive && isActive) activatedNotes += 1
+        else if (wasActive && !isActive) deactivatedNotes += 1
+      }
       state.lastUs = session.currentUs
+      if (profileEnabled) {
+        addActivePlaybackCounter('simulation', 'autoPlayerScanned', scannedNotes)
+        addActivePlaybackCounter('simulation', 'autoPlayerActivated', activatedNotes)
+        addActivePlaybackCounter('simulation', 'autoPlayerDeactivated', deactivatedNotes)
+        setActivePlaybackGauge('simulation', 'autoPlayerActiveNotes', this.active.size)
+        setActivePlaybackGauge('simulation', 'autoPlayerUsedFallbackFullScan', 1)
+        setActivePlaybackGauge('simulation', 'autoPlayerMaxDurationUs', state.maxDurationUs)
+      }
       return
     }
 
     for (const note of [...this.active.values()]) {
-      if (note.end <= session.currentUs || !shouldAutoPlay(note)) this.syncNote(session, note, false)
+      if (note.end <= session.currentUs || !shouldAutoPlay(note)) {
+        const wasActive = this.active.has(note.id)
+        this.syncNote(session, note, false)
+        if (wasActive && !this.active.has(note.id)) deactivatedNotes += 1
+      }
     }
 
+    const nextStartIndexBefore = state.nextStartIndex
     const fromIndex = Math.min(state.nextStartIndex, lowerBoundStart(session.notes, session.currentUs - state.maxDurationUs))
     let index = fromIndex
     while (index < session.notes.length) {
       const note = session.notes[index]
       if (note.start > session.currentUs) break
-      if (note.end > session.currentUs && shouldAutoPlay(note)) this.syncNote(session, note, true)
+      scannedNotes += 1
+      if (note.end > session.currentUs && shouldAutoPlay(note)) {
+        const wasActive = this.active.has(note.id)
+        this.syncNote(session, note, true)
+        if (!wasActive && this.active.has(note.id)) activatedNotes += 1
+      }
       index += 1
     }
     state.nextStartIndex = Math.max(state.nextStartIndex, index)
     state.lastUs = session.currentUs
+    if (profileEnabled) {
+      addActivePlaybackCounter('simulation', 'autoPlayerScanned', scannedNotes)
+      addActivePlaybackCounter('simulation', 'autoPlayerActivated', activatedNotes)
+      addActivePlaybackCounter('simulation', 'autoPlayerDeactivated', deactivatedNotes)
+      setActivePlaybackGauge('simulation', 'autoPlayerActiveNotes', this.active.size)
+      setActivePlaybackGauge('simulation', 'autoPlayerMaxDurationUs', state.maxDurationUs)
+      setActivePlaybackGauge('simulation', 'autoPlayerFromIndex', fromIndex)
+      setActivePlaybackGauge('simulation', 'autoPlayerNextStartIndexBefore', nextStartIndexBefore)
+      setActivePlaybackGauge('simulation', 'autoPlayerNextStartIndexAfter', state.nextStartIndex)
+      setActivePlaybackGauge('simulation', 'autoPlayerUsedFallbackFullScan', 0)
+    }
   }
 
   allNotesOff(session?: PlaySession | null) {

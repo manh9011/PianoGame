@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { usePlayerStore } from '../../stores/playerStore'
 import { useSettingsStore } from '../../stores/settingsStore'
 import { layoutNotes } from '../../modules/render/pianoRollLayout'
 import type { LaidOutNote } from '../../modules/render/pianoRollLayout'
 import { createPianoKeys, WHITE_KEY_COUNT } from '../../modules/render/pianoGeometry'
 import { getNoteLabel, notePitchClass } from '../../modules/render/pianoLabels'
-import { FLAT_GRAY, MISSED_NOTE_COLOR } from '../../modules/game/trackProperties'
+import { FLAT_GRAY, MISSED_NOTE_COLOR, TRACK_INVISIBLE_COLOR } from '../../modules/game/trackProperties'
 import { HAND_COLORS, HAND_HIT_COLORS } from '../../modules/game/handAssignment'
 import { CanvasSpriteCache, createSpriteCanvas } from '../../modules/render/canvasSpriteCache'
+import { addActivePlaybackCounter, addPlaybackCounter, beginRenderFrame, endRenderFrame, measurePlaybackSpan, setPlaybackGauge, type PlaybackProfilerContext } from '../../modules/perf/playbackProfiler'
 import type { SessionBookmark, SessionNote, UserBookmark } from '../../modules/game/playSession'
 import type { MidiBookmarkSource } from '../../modules/midi/midiTypes'
 
@@ -31,15 +32,9 @@ let logicalHeight = 0
 let pixelRatio = 1
 const noteBodySprites = new CanvasSpriteCache(220)
 const noteLabelSprites = new CanvasSpriteCache(180)
-const perfStats = {
-  frames: 0,
-  fps: 0,
-  lastSampleMs: performance.now(),
-  drawMs: 0,
-  layoutMs: 0,
-  laidOutNotes: 0,
-  visibleNotes: 0,
-}
+let fpsFrames = 0
+let fpsLastSampleMs = performance.now()
+let lastFps = 0
 
 // Touch scroll state
 let touchStartY = 0
@@ -162,8 +157,8 @@ function color(note: SessionNote) {
   return track.color || HAND_COLORS[note.hand]
 }
 function visible(note: SessionNote) {
-  const mode = trackRenderMeta.get(note.trackId)?.mode
-  return mode !== 'playedButHidden' && mode !== 'notPlayed'
+  const track = trackRenderMeta.get(note.trackId)
+  return track?.color !== TRACK_INVISIBLE_COLOR && track?.mode !== 'playedButHidden' && track?.mode !== 'notPlayed'
 }
 function roundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   const radius = Math.max(0, Math.min(r, w / 2, h / 2))
@@ -322,6 +317,7 @@ function createFloatSprite(variant: typeof IMPACT_RAY_VARIANTS[number]) {
   return canvas
 }
 function spawnImpact(note: LaidOutNote<SessionNote>) {
+  addActivePlaybackCounter('render', 'impactSpawns')
   const y = logicalHeight + 4
   const particleCount = Math.max(7, Math.min(16, Math.round(note.width / 4.5)))
   const left = note.x + Math.min(2, note.width * 0.08)
@@ -430,14 +426,23 @@ function bookmarkVisible(source: MidiBookmarkSource | 'user') {
   return settings.showMidiMarkers
 }
 function visibleBookmarks(session: NonNullable<typeof player.session>) {
-  return session.bookmarks.filter(bookmark => bookmarkVisible(bookmark.source))
+  let scanned = 0
+  const result = session.bookmarks.filter(bookmark => {
+    scanned += 1
+    return bookmarkVisible(bookmark.source)
+  })
+  addActivePlaybackCounter('render', 'bookmarksScanned', scanned)
+  return result
 }
 function currentKeySignature(session: NonNullable<typeof player.session>) {
   let current = null
+  let scanned = 0
   for (const signature of session.keySignatures) {
+    scanned += 1
     if (signature.timeUs > session.currentUs) break
     current = signature
   }
+  addActivePlaybackCounter('render', 'keySignatureScanned', scanned)
   return current
 }
 
@@ -452,8 +457,10 @@ function currentKeySignatureAccidentals(session: NonNullable<typeof player.sessi
 function drawBookmarks(ctx: CanvasRenderingContext2D, session: NonNullable<typeof player.session>) {
   const windowUs = session.showDuration * 1_000_000
   let lastLabelY = Number.NEGATIVE_INFINITY
+  let visibleCount = 0
   for (const bookmark of visibleBookmarks(session)) {
     if (bookmark.timeUs < session.currentUs || bookmark.timeUs > session.currentUs + windowUs) continue
+    visibleCount += 1
     const y = logicalHeight - ((bookmark.timeUs - session.currentUs) / windowUs) * logicalHeight
     drawBookmarkTick(ctx, bookmark, y)
     if (y > 12 && y < logicalHeight - 10 && Math.abs(y - lastLabelY) >= BOOKMARK_LABEL_MIN_GAP) {
@@ -461,6 +468,7 @@ function drawBookmarks(ctx: CanvasRenderingContext2D, session: NonNullable<typeo
       lastLabelY = y
     }
   }
+  addActivePlaybackCounter('render', 'bookmarksVisible', visibleCount)
 }
 function drawBookmarkTick(ctx: CanvasRenderingContext2D, bookmark: SessionBookmark, y: number) {
   ctx.save()
@@ -495,8 +503,12 @@ function drawUserBookmarks(ctx: CanvasRenderingContext2D, session: NonNullable<t
   if (!settings.showMyBookmarks) return
   const windowUs = session.showDuration * 1_000_000
   let lastLabelY = Number.NEGATIVE_INFINITY
+  let scanned = 0
+  let visibleCount = 0
   for (const bookmark of session.userBookmarks) {
+    scanned += 1
     if (bookmark.timeUs < session.currentUs || bookmark.timeUs > session.currentUs + windowUs) continue
+    visibleCount += 1
     const y = logicalHeight - ((bookmark.timeUs - session.currentUs) / windowUs) * logicalHeight
     drawUserBookmarkTick(ctx, bookmark, y)
     if (y > 12 && y < logicalHeight - 10 && Math.abs(y - lastLabelY) >= BOOKMARK_LABEL_MIN_GAP) {
@@ -504,6 +516,8 @@ function drawUserBookmarks(ctx: CanvasRenderingContext2D, session: NonNullable<t
       lastLabelY = y
     }
   }
+  addActivePlaybackCounter('render', 'userBookmarksScanned', scanned)
+  addActivePlaybackCounter('render', 'userBookmarksVisible', visibleCount)
 }
 function drawUserBookmarkTick(ctx: CanvasRenderingContext2D, bookmark: UserBookmark, y: number) {
   ctx.save()
@@ -636,9 +650,13 @@ function drawGrid(ctx: CanvasRenderingContext2D, session: NonNullable<typeof pla
   }
 
   const windowUs = session.showDuration * 1_000_000
+  let scanned = 0
+  let visibleCount = 0
   for (let index = 0; index < session.measureGridUs.length; index += 1) {
+    scanned += 1
     const us = session.measureGridUs[index]
     if (us < session.currentUs || us > session.currentUs + windowUs) continue
+    visibleCount += 1
     const y = logicalHeight - ((us - session.currentUs) / windowUs) * logicalHeight
     ctx.beginPath()
     ctx.moveTo(0, y)
@@ -660,6 +678,8 @@ function drawGrid(ctx: CanvasRenderingContext2D, session: NonNullable<typeof pla
       ctx.restore()
     }
   }
+  addActivePlaybackCounter('render', 'measureLinesScanned', scanned)
+  addActivePlaybackCounter('render', 'measureLinesVisible', visibleCount)
 }
 function drawLoopRegion(ctx: CanvasRenderingContext2D, session: NonNullable<typeof player.session>) {
   const loopState = session.loopState
@@ -794,25 +814,6 @@ function getNoteLabelSprite(options: NoteLabelSpriteOptions) {
   })
 }
 
-function drawPerfOverlay(ctx: CanvasRenderingContext2D) {
-  if (!props.benchmarkMode) return
-  const lines = [
-    `FPS ${perfStats.fps.toFixed(1)}`,
-    `draw ${perfStats.drawMs.toFixed(1)}ms`,
-    `layout ${perfStats.layoutMs.toFixed(1)}ms`,
-    `notes ${perfStats.visibleNotes}/${perfStats.laidOutNotes}`,
-    `particles ${particles.length + floatingParticles.length}`,
-  ]
-  ctx.save()
-  ctx.font = '600 12px monospace'
-  ctx.textBaseline = 'top'
-  ctx.fillStyle = '#d9f99d'
-  for (let index = 0; index < lines.length; index += 1) {
-    ctx.fillText(lines[index], 16, 16 + index * 15)
-  }
-  ctx.restore()
-}
-
 function drawNoteLabel(ctx: CanvasRenderingContext2D, note: LaidOutNote<SessionNote>, text: string) {
   const baseFontSize = 16
   const fontSize = baseFontSize + settings.noteLabelSize * 2
@@ -825,94 +826,118 @@ function drawNoteLabel(ctx: CanvasRenderingContext2D, note: LaidOutNote<SessionN
   })
   ctx.drawImage(sprite, note.x + note.width / 2 - sprite.width / 2, note.y - 6 - sprite.height / 2)
 }
-function draw(dt: number, nowMs: number) {
-  const drawStartMs = props.benchmarkMode ? performance.now() : 0
+
+function publishSpriteCacheStats(profile: PlaybackProfilerContext | null) {
+  const body = noteBodySprites.snapshotStats()
+  const label = noteLabelSprites.snapshotStats()
+  setPlaybackGauge(profile, 'noteBodyCacheHits', body.hits)
+  setPlaybackGauge(profile, 'noteBodyCacheMisses', body.misses)
+  setPlaybackGauge(profile, 'noteBodyCacheEvictions', body.evictions)
+  setPlaybackGauge(profile, 'noteBodyCacheSize', body.size)
+  setPlaybackGauge(profile, 'noteLabelCacheHits', label.hits)
+  setPlaybackGauge(profile, 'noteLabelCacheMisses', label.misses)
+  setPlaybackGauge(profile, 'noteLabelCacheEvictions', label.evictions)
+  setPlaybackGauge(profile, 'noteLabelCacheSize', label.size)
+}
+
+function draw(dt: number, nowMs: number, frameProfile: PlaybackProfilerContext | null) {
   const canvas = canvasRef.value
   const ctx = canvas?.getContext('2d')
   if (!canvas || !ctx) return
   if (!logicalWidth || !logicalHeight) resizeCanvas()
-  ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0)
-  ctx.clearRect(0, 0, logicalWidth, logicalHeight)
-  ctx.fillStyle = PIANO_ROLL_BACKGROUND
-  ctx.fillRect(0, 0, logicalWidth, logicalHeight)
+  measurePlaybackSpan(frameProfile, 'frame.clearBackground', () => {
+    ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0)
+    ctx.clearRect(0, 0, logicalWidth, logicalHeight)
+    ctx.fillStyle = PIANO_ROLL_BACKGROUND
+    ctx.fillRect(0, 0, logicalWidth, logicalHeight)
+  })
 
   const session = player.session
   if (!session) {
     lastSessionRef = null
     lastCurrentUs = Number.NEGATIVE_INFINITY
-    updateEffects(dt)
-    drawHitLine(ctx, true)
-    drawImpactParticles(ctx)
+    measurePlaybackSpan(frameProfile, 'frame.updateEffects', () => updateEffects(dt))
+    measurePlaybackSpan(frameProfile, 'frame.drawHitLine', () => drawHitLine(ctx, true))
+    measurePlaybackSpan(frameProfile, 'frame.drawParticles', () => drawImpactParticles(ctx))
+    setPlaybackGauge(frameProfile, 'particlesLive', particles.length + floatingParticles.length)
+    publishSpriteCacheStats(frameProfile)
     return
   }
 
-  syncEffectSession(session)
-  syncTrackRenderMeta(session)
-  if (props.bookmarkMode) drawBookmarkGap(ctx)
-  if (settings.showGrid) drawGrid(ctx, session)
-  drawLoopRegion(ctx, session)
-  drawBookmarks(ctx, session)
-  drawUserBookmarks(ctx, session)
-  drawCurrentKey(ctx, session)
+  measurePlaybackSpan(frameProfile, 'frame.syncEffectSession', () => syncEffectSession(session))
+  measurePlaybackSpan(frameProfile, 'frame.syncTrackRenderMeta', () => syncTrackRenderMeta(session))
+  if (props.bookmarkMode) measurePlaybackSpan(frameProfile, 'frame.drawBookmarkGap', () => drawBookmarkGap(ctx))
+  if (settings.showGrid) measurePlaybackSpan(frameProfile, 'frame.drawGrid', () => drawGrid(ctx, session))
+  measurePlaybackSpan(frameProfile, 'frame.drawLoopRegion', () => drawLoopRegion(ctx, session))
+  measurePlaybackSpan(frameProfile, 'frame.drawBookmarks', () => drawBookmarks(ctx, session))
+  measurePlaybackSpan(frameProfile, 'frame.drawUserBookmarks', () => drawUserBookmarks(ctx, session))
+  measurePlaybackSpan(frameProfile, 'frame.drawCurrentKey', () => drawCurrentKey(ctx, session))
 
-  const layoutStartMs = props.benchmarkMode ? performance.now() : 0
-  const notes = layoutNotes(session.notes, session.currentUs, session.showDuration, logicalWidth, logicalHeight)
-  if (props.benchmarkMode) {
-    perfStats.layoutMs = performance.now() - layoutStartMs
-    perfStats.laidOutNotes = notes.length
-    perfStats.visibleNotes = 0
-  }
-  updateEffects(dt)
+  const notes = measurePlaybackSpan(frameProfile, 'frame.layoutNotes', () => layoutNotes(session.notes, session.currentUs, session.showDuration, logicalWidth, logicalHeight))
+  setPlaybackGauge(frameProfile, 'laidOutNotes', notes.length)
+  measurePlaybackSpan(frameProfile, 'frame.updateEffects', () => updateEffects(dt))
 
+  const visibleNotes: LaidOutNote<SessionNote>[] = []
   if (settings.showFallingNotes) {
-    triggerImpacts(notes, session, nowMs)
-
-    const keyAccidentals = settings.showNoteLabels ? currentKeySignatureAccidentals(session) : 0
-    for (const note of notes) {
-      if (!visible(note)) continue
-      if (props.benchmarkMode) perfStats.visibleNotes += 1
-      drawNote(ctx, note)
-      if (settings.showNoteLabels) {
-        const text = getNoteLabel(settings.noteLabelMode, note.noteId, keyAccidentals)
-        if (text) drawNoteLabel(ctx, note, text)
+    measurePlaybackSpan(frameProfile, 'frame.triggerImpacts', () => triggerImpacts(notes, session, nowMs))
+    measurePlaybackSpan(frameProfile, 'frame.drawNotes', () => {
+      for (const note of notes) {
+        if (!visible(note)) continue
+        visibleNotes.push(note)
+        drawNote(ctx, note)
       }
+    })
+    if (settings.showNoteLabels) {
+      let labelsDrawn = 0
+      measurePlaybackSpan(frameProfile, 'frame.drawLabels', () => {
+        const keyAccidentals = currentKeySignatureAccidentals(session)
+        for (const note of visibleNotes) {
+          const text = getNoteLabel(settings.noteLabelMode, note.noteId, keyAccidentals)
+          if (!text) continue
+          labelsDrawn += 1
+          drawNoteLabel(ctx, note, text)
+        }
+      })
+      setPlaybackGauge(frameProfile, 'labelsDrawn', labelsDrawn)
     }
   }
 
+  setPlaybackGauge(frameProfile, 'visibleNotes', visibleNotes.length)
+  setPlaybackGauge(frameProfile, 'hiddenNotes', Math.max(0, notes.length - visibleNotes.length))
+  setPlaybackGauge(frameProfile, 'particlesLive', particles.length + floatingParticles.length)
+  setPlaybackGauge(frameProfile, 'floatingParticlesLive', floatingParticles.length)
   const isStopped = session.paused || session.finished
-  drawHitLine(ctx, isStopped)
+  measurePlaybackSpan(frameProfile, 'frame.drawHitLine', () => drawHitLine(ctx, isStopped))
   if (settings.showFallingNotes) {
-    drawImpactParticles(ctx)
+    measurePlaybackSpan(frameProfile, 'frame.drawParticles', () => drawImpactParticles(ctx))
   }
-  if (props.benchmarkMode) {
-    perfStats.drawMs = performance.now() - drawStartMs
-    drawPerfOverlay(ctx)
-  }
-}
-function resetPerfStats() {
-  perfStats.frames = 0
-  perfStats.fps = 0
-  perfStats.lastSampleMs = performance.now()
-  perfStats.drawMs = 0
-  perfStats.layoutMs = 0
-  perfStats.laidOutNotes = 0
-  perfStats.visibleNotes = 0
+  publishSpriteCacheStats(frameProfile)
 }
 
 function drawFrame() {
   const now = performance.now()
-  const dt = Math.min(32, now - lastFrameMs)
+  const rawDt = now - lastFrameMs
+  const dt = Math.min(32, rawDt)
   lastFrameMs = now
-  if (props.benchmarkMode) {
-    perfStats.frames += 1
-    const elapsedMs = now - perfStats.lastSampleMs
+  fpsFrames += 1
+  const elapsedMs = now - fpsLastSampleMs
+  const session = player.session
+  const progressRatio = session?.loopState.durationUs ? session.currentUs / session.loopState.durationUs : 0
+  const frameProfile = beginRenderFrame({ currentUs: session?.currentUs ?? 0, progressRatio, notesTotal: session?.notes.length ?? 0, rafDeltaMs: rawDt })
+  try {
     if (elapsedMs >= 500) {
-      perfStats.fps = perfStats.frames * 1000 / elapsedMs
-      perfStats.frames = 0
-      perfStats.lastSampleMs = now
+      lastFps = fpsFrames * 1000 / elapsedMs
+      fpsFrames = 0
+      fpsLastSampleMs = now
     }
+    setPlaybackGauge(frameProfile, 'fps', lastFps)
+    addPlaybackCounter(frameProfile, rawDt > 16.7 ? 'slowFrames16' : 'framesWithin16', 1)
+    if (rawDt > 33.3) addPlaybackCounter(frameProfile, 'slowFrames33')
+    if (rawDt > 50) addPlaybackCounter(frameProfile, 'slowFrames50')
+    draw(dt, now, frameProfile)
+  } finally {
+    endRenderFrame(frameProfile)
   }
-  draw(dt, now)
   rafId = requestAnimationFrame(drawFrame)
 }
 
@@ -1108,10 +1133,6 @@ function handleMouseUp() {
   window.removeEventListener('mousemove', handleMouseMove)
   window.removeEventListener('mouseup', handleMouseUp)
 }
-
-watch(() => props.benchmarkMode, enabled => {
-  if (enabled) resetPerfStats()
-})
 
 onMounted(() => {
   resizeCanvas()

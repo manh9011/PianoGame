@@ -1,5 +1,6 @@
 import type { TrackProperties } from './trackProperties'
 import type { HandSelection, PlaySession, SessionNote } from './playSession'
+import { addActivePlaybackCounter, isPlaybackProfilerEnabled, setActivePlaybackGauge } from '../perf/playbackProfiler'
 export const HIT_WINDOW_US = 330000
 export const CHORD_START_TOLERANCE_US = 2000
 
@@ -132,13 +133,21 @@ export function findHit(notes: SessionNote[], tracks: TrackProperties[], handSel
 
 export function markMisses(notes: SessionNote[], tracks: TrackProperties[], handSelection: HandSelection, currentUs: number, session?: PlaySession) {
   const missed: SessionNote[] = []
+  const profileEnabled = isPlaybackProfilerEnabled()
+  let scannedNotes = 0
 
   if (!session || !notesSortedByStart(notes)) {
     for (const note of notes) {
+      scannedNotes += 1
       if (isPlayableNote(note, tracks, handSelection, session) && note.state === 'waiting' && currentUs > note.start + HIT_WINDOW_US) {
         note.state = 'missed'
         missed.push(note)
       }
+    }
+    if (profileEnabled) {
+      addActivePlaybackCounter('simulation', 'markMissesScanned', scannedNotes)
+      addActivePlaybackCounter('simulation', 'markMissesMissed', missed.length)
+      setActivePlaybackGauge('simulation', 'markMissesUsedSortedPath', 0)
     }
     return missed
   }
@@ -151,6 +160,7 @@ export function markMisses(notes: SessionNote[], tracks: TrackProperties[], hand
 
   while (state.cursor < notes.length) {
     const note = notes[state.cursor]
+    scannedNotes += 1
     if (currentUs <= note.start + HIT_WINDOW_US) break
     if (note.state === 'waiting' && isPlayableNote(note, tracks, handSelection, session)) {
       note.state = 'missed'
@@ -159,5 +169,11 @@ export function markMisses(notes: SessionNote[], tracks: TrackProperties[], hand
     state.cursor += 1
   }
   state.lastUs = currentUs
+  if (profileEnabled) {
+    addActivePlaybackCounter('simulation', 'markMissesScanned', scannedNotes)
+    addActivePlaybackCounter('simulation', 'markMissesMissed', missed.length)
+    setActivePlaybackGauge('simulation', 'markMissesUsedSortedPath', 1)
+    setActivePlaybackGauge('simulation', 'markMissesCursorReset', shouldReset ? 1 : 0)
+  }
   return missed
 }

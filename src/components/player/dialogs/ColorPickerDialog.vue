@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { TRACK_SETTINGS_PALETTE } from '../../../modules/game/trackProperties'
+import { TRACK_INVISIBLE_COLOR, TRACK_SETTINGS_PALETTE } from '../../../modules/game/trackProperties'
 
 const props = defineProps<{
   show: boolean
@@ -18,6 +18,11 @@ const colors = TRACK_SETTINGS_PALETTE
 
 function selectColor(color: string) {
   emit('select', color)
+  emit('close')
+}
+
+function hideTrack() {
+  emit('select', TRACK_INVISIBLE_COLOR)
   emit('close')
 }
 
@@ -43,7 +48,7 @@ function close() {
           <div v-if="color === currentColor" class="selected-indicator"></div>
         </button>
 
-        <button class="close-btn" @click="close">
+        <button class="close-btn" @click="hideTrack">
           <i class="fas fa-times"></i>
         </button>
       </div>

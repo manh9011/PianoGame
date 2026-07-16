@@ -6,7 +6,7 @@ import { translateNotes } from '../modules/midi/midiNoteTranslator'
 import type { MidiBookmarkSource } from '../modules/midi/midiTypes'
 import { buildTempoMap, pulseToMicroseconds } from '../modules/midi/midiTempo'
 import { createDefaultTrackProperties, isTrackRoleComplete, resolveTrackModeForSession, roleToHandAssignment, TRACK_ROLE_COLORS, type TrackMode, type TrackRole } from '../modules/game/trackProperties'
-import { PLAY_MODE_CONFIGS, clampShowDuration, clampSpeed, createPlaySession, type ConfigureSessionOptions, type FailureReason, type PlaySession } from '../modules/game/playSession'
+import { PLAY_MODE_CONFIGS, clampShowDuration, clampSpeed, createPlaySession, type ConfigureSessionOptions, type FailureReason, type PlaySession, type SessionNote } from '../modules/game/playSession'
 import { getKeyboardRange } from '../modules/render/keyboardRange'
 import { getKeySignatureAccidentals } from '../modules/render/pianoLabels'
 import { MidiPlayerClock } from '../modules/midi/midiPlayerClock'
@@ -19,6 +19,7 @@ import { MetronomePlayer, type MetronomeBeat } from '../modules/audio/metronomeP
 import { SimpleSynth } from '../modules/audio/simpleSynth'
 import { getInstrumentByProgram } from '../modules/audio/gmInstrumentCatalog'
 import { useSettingsStore } from './settingsStore'
+import { addActivePlaybackCounter, addPlaybackCounter, beginSimulationTick, endSimulationTick, isPlaybackProfilerDetailEnabled, measurePlaybackSpan, recordPlaybackEvent, setPlaybackGauge } from '../modules/perf/playbackProfiler'
 
 function getTimeSignatures(midi: ReturnType<typeof parseMidi>) {
   const signatures = midi.events
@@ -115,6 +116,21 @@ function getLoopSnapGrid(session: PlaySession) {
     .sort((a, b) => a - b)
 }
 
+function countWaitingNotes(session: PlaySession) {
+  if (!isPlaybackProfilerDetailEnabled()) return 0
+  let total = 0
+  for (const note of session.notes) if (note.state === 'waiting') total += 1
+  return total
+}
+
+function playableAutoTestNotes(session: PlaySession, currentUs: number) {
+  return session.notes.filter(note =>
+    note.state === 'waiting' &&
+    note.start <= currentUs &&
+    isPlayableNote(note, session.tracks, session.handSelection, session)
+  )
+}
+
 const BOOKMARK_SEEK_EPSILON_US = 10_000
 const FALLBACK_BOOKMARK_US = 1_000_000
 
@@ -165,6 +181,8 @@ export const usePlayerStore = defineStore('player', {
     trackPreviewSession: null as PlaySession | null,
     trackPreviewTrackId: null as number | null,
     trackPreviewRunning: false,
+    performanceAutoPlay: false,
+    performanceAutoPlayUsed: false,
   }),
   getters: {
     canSeek: state => !!state.session?.setupComplete && !state.stats && !state.session.finished && state.session.mode !== 'performance',
@@ -204,70 +222,122 @@ export const usePlayerStore = defineStore('player', {
       this.session = createPlaySession(notes, tracks, { speed, showDuration, octaveShift, measureGridUs, metronomeBeatGrid, bookmarks, keySignatures, needsTrackConfiguration: needsManualAssignment, durationUs: duration })
       this.refreshKeyboardRange()
       this.stats = null
+      this.performanceAutoPlay = false
+      this.performanceAutoPlayUsed = false
       this.clock?.stop()
       this.metronome.restart()
       this.clock = new MidiPlayerClock(duration, () => this.session?.speed ?? 100, state => {
         const session = this.session
         if (!session || !session.setupComplete || this.stats) return
-        const settings = useSettingsStore()
-        this.currentProgress = state.progress
-        if (state.looped) {
-          this.resetSessionForSeek(state.currentUs)
-          this.metronome.reset(state.currentUs)
-        }
-        const nowMs = performance.now()
-        const activeWaitNote = session.melodyWaitNoteId
-          ? session.notes.find(note => note.id === session.melodyWaitNoteId)
-          : undefined
-        if (activeWaitNote) {
-          session.currentUs = activeWaitNote.start
-          session.finished = false
-          session.paused = true
-          resetSpeedTrackingAnchor(session.score, activeWaitNote.start, nowMs)
-          return
-        }
-
-        if (session.mode === 'noteMemory') {
-          const waitNote = session.notes.find(note =>
-            isPlayableNote(note, session.tracks, session.handSelection, session) &&
-            note.state === 'waiting' &&
-            note.start <= state.currentUs
-          )
-          if (waitNote) {
-            session.melodyWaitNoteId = waitNote.id
-            session.melodyWaitStartedMs = nowMs
-            session.currentUs = waitNote.start
+        const tickProfile = beginSimulationTick({ currentUs: state.currentUs, progressRatio: state.progress, notesTotal: session.notes.length })
+        try {
+          const settings = useSettingsStore()
+          this.currentProgress = state.progress
+          setPlaybackGauge(tickProfile, 'progressRatio', state.progress)
+          setPlaybackGauge(tickProfile, 'waitingNotes', countWaitingNotes(session))
+          setPlaybackGauge(tickProfile, 'activeHolds', Object.keys(session.score.activeHolds).length)
+          setPlaybackGauge(tickProfile, 'activeInputNotes', session.activeNotes.size)
+          setPlaybackGauge(tickProfile, 'activeAutoNotes', session.autoActiveNotes.size)
+          setPlaybackGauge(tickProfile, 'scoreOutcomeCount', Object.keys(session.score.noteOutcomes).length)
+          if (state.looped) {
+            measurePlaybackSpan(tickProfile, 'tick.loopReset', () => {
+              this.resetSessionForSeek(state.currentUs)
+              this.metronome.reset(state.currentUs)
+            })
+            addPlaybackCounter(tickProfile, 'loopedThisTick')
+          }
+          const nowMs = performance.now()
+          const activeWaitNote = measurePlaybackSpan(tickProfile, 'tick.activeWaitLookup', () => {
+            if (!session.melodyWaitNoteId) return undefined
+            let scanned = 0
+            for (const note of session.notes) {
+              scanned += 1
+              if (note.id === session.melodyWaitNoteId) {
+                addPlaybackCounter(tickProfile, 'activeWaitScanned', scanned)
+                return note
+              }
+            }
+            addPlaybackCounter(tickProfile, 'activeWaitScanned', scanned)
+            return undefined
+          })
+          if (activeWaitNote && this.performanceAutoPlay) {
+            measurePlaybackSpan(tickProfile, 'tick.performanceAutoPlay', () => this.runPerformanceAutoPlay(session, Math.max(state.currentUs, activeWaitNote.start), nowMs))
+          }
+          if (activeWaitNote && activeWaitNote.state === 'waiting') {
+            session.currentUs = activeWaitNote.start
             session.finished = false
             session.paused = true
-            this.autoPlayer.allNotesOff(session)
-            resetSpeedTrackingAnchor(session.score, waitNote.start, nowMs)
-            this.clock?.pause()
-            this.clock?.seek(waitNote.start)
+            resetSpeedTrackingAnchor(session.score, activeWaitNote.start, nowMs)
             return
           }
-        }
 
-        if (state.running) updateSpeedTracking(session.score, state.currentUs, nowMs)
-        else resetSpeedTrackingAnchor(session.score, state.currentUs, nowMs)
-        session.currentUs = state.currentUs
-        session.finished = state.finished
-        this.autoPlayer.tick(session)
-        this.metronome.tick(session.metronomeBeatGrid, state.currentUs, {
-          volume: settings.metronomeVolume,
-          doubleSpeed: settings.metronomeDoubleSpeed,
-          emphasizeFirstBeat: settings.metronomeEmphasizeFirstBeat,
-        })
-        const misses = markMisses(session.notes, session.tracks, session.handSelection, state.currentUs, session)
-        if (session.modeConfig.scoringEnabled) {
-          recordMisses(session.score, misses)
-          awardHoldPoints(session.score, state.currentUs, session.mode)
+          if (this.performanceAutoPlay) {
+            measurePlaybackSpan(tickProfile, 'tick.performanceAutoPlay', () => this.runPerformanceAutoPlay(session, state.currentUs, nowMs))
+          }
+
+          if (session.mode === 'noteMemory' && !this.performanceAutoPlay) {
+            const waitNote = measurePlaybackSpan(tickProfile, 'tick.noteMemoryWaitLookup', () => {
+              let scanned = 0
+              for (const note of session.notes) {
+                scanned += 1
+                if (
+                  isPlayableNote(note, session.tracks, session.handSelection, session) &&
+                  note.state === 'waiting' &&
+                  note.start <= state.currentUs
+                ) {
+                  addPlaybackCounter(tickProfile, 'noteMemoryWaitScanned', scanned)
+                  addPlaybackCounter(tickProfile, 'noteMemoryWaitFound')
+                  return note
+                }
+              }
+              addPlaybackCounter(tickProfile, 'noteMemoryWaitScanned', scanned)
+              return undefined
+            })
+            if (waitNote) {
+              session.melodyWaitNoteId = waitNote.id
+              session.melodyWaitStartedMs = nowMs
+              session.currentUs = waitNote.start
+              session.finished = false
+              session.paused = true
+              this.autoPlayer.allNotesOff(session)
+              resetSpeedTrackingAnchor(session.score, waitNote.start, nowMs)
+              this.clock?.pause()
+              this.clock?.seek(waitNote.start)
+              return
+            }
+          }
+
+          measurePlaybackSpan(tickProfile, 'tick.speedTracking', () => {
+            if (state.running) updateSpeedTracking(session.score, state.currentUs, nowMs)
+            else resetSpeedTrackingAnchor(session.score, state.currentUs, nowMs)
+          })
+          session.currentUs = state.currentUs
+          session.finished = state.finished
+          measurePlaybackSpan(tickProfile, 'tick.autoPlayer', () => this.autoPlayer.tick(session))
+          measurePlaybackSpan(tickProfile, 'tick.metronome', () => this.metronome.tick(session.metronomeBeatGrid, state.currentUs, {
+            volume: settings.metronomeVolume,
+            doubleSpeed: settings.metronomeDoubleSpeed,
+            emphasizeFirstBeat: settings.metronomeEmphasizeFirstBeat,
+          }))
+          const misses = measurePlaybackSpan(tickProfile, 'tick.markMisses', () => markMisses(session.notes, session.tracks, session.handSelection, state.currentUs, session))
+          addPlaybackCounter(tickProfile, 'missesThisTick', misses.length)
+          if (session.modeConfig.scoringEnabled) {
+            measurePlaybackSpan(tickProfile, 'tick.recordMisses', () => recordMisses(session.score, misses))
+            measurePlaybackSpan(tickProfile, 'tick.awardHoldPoints', () => awardHoldPoints(session.score, state.currentUs, session.mode))
+          }
+          if (state.finished) {
+            addPlaybackCounter(tickProfile, 'finishedThisTick')
+            measurePlaybackSpan(tickProfile, 'tick.finishSession', () => this.finishSession())
+          }
+        } finally {
+          endSimulationTick(tickProfile)
         }
-        if (state.finished) this.finishSession()
       })
     },
     configureSession(options: ConfigureSessionOptions) {
       const session = this.session
       if (!session) return
+      const configureStartMs = performance.now()
       this.clock?.stop()
       this.autoPlayer.allNotesOff(session)
       this.metronome.restart()
@@ -289,6 +359,9 @@ export const usePlayerStore = defineStore('player', {
       session.tracks.forEach(track => { track.mode = resolveTrackModeForSession(track, options.mode) })
       this.refreshKeyboardRange()
       this.stats = null
+      this.performanceAutoPlay = false
+      this.performanceAutoPlayUsed = false
+      recordPlaybackEvent('configure', { durationMs: performance.now() - configureStartMs, notesTouched: session.notes.length, currentUs: session.currentUs })
     },
     async prepareAudio(outputId: string) {
       await this.autoPlayer.configure(outputId)
@@ -313,6 +386,37 @@ export const usePlayerStore = defineStore('player', {
       session.speed = clampSpeed(v)
       this.clock?.setSpeed()
     },
+    setPerformanceAutoPlay(enabled: boolean) {
+      this.performanceAutoPlay = enabled
+      if (enabled) this.performanceAutoPlayUsed = true
+      if (enabled && this.session) {
+        this.runPerformanceAutoPlay(this.session, this.session.currentUs, performance.now())
+      }
+    },
+    runPerformanceAutoPlay(session: PlaySession, currentUs: number, nowMs: number) {
+      if (!this.performanceAutoPlay || session.mode === 'listen' || !session.modeConfig.scoringEnabled) return
+      const notes = playableAutoTestNotes(session, currentUs)
+      addActivePlaybackCounter('simulation', 'performanceAutoPlayNotes', notes.length)
+      if (!notes.length) return
+      const chordStart = Math.min(...notes.map(note => note.start))
+      const chordNotes = notes.filter(note => Math.abs(note.start - chordStart) <= 2_000)
+      for (const note of chordNotes) {
+        this.pressNoteForPerformanceAutoPlay(session, note, currentUs)
+      }
+    },
+    pressNoteForPerformanceAutoPlay(session: PlaySession, note: SessionNote, currentUs: number) {
+      if (note.state !== 'waiting') return
+      const inputNoteId = note.noteId + session.octaveShift * 12
+      if (session.activeNotes.has(inputNoteId)) return
+      this.noteInput(inputNoteId, true)
+      const speedFactor = Math.max(0.01, session.speed / 100)
+      const holdSongUs = Math.max(80_000, note.end - Math.max(currentUs, note.start))
+      const releaseDelayMs = Math.max(80, Math.min(15_000, holdSongUs / 1000 / speedFactor))
+      window.setTimeout(() => {
+        if (this.session !== session) return
+        this.noteInput(inputNoteId, false)
+      }, releaseDelayMs)
+    },
     seekToProgress(ratio: number) {
       const durationUs = this.clock?.seekableDurationUs ?? 0
       this.seekToUs(Math.max(0, Math.min(1, ratio)) * durationUs)
@@ -321,20 +425,26 @@ export const usePlayerStore = defineStore('player', {
       const session = this.session
       const clock = this.clock
       if (!session || !clock || !this.canSeek) return
+      const seekStartMs = performance.now()
       const seekUs = Math.max(0, Math.min(clock.seekableDurationUs, targetUs))
       this.recordSkippedPlayableNotes(seekUs)
       this.resetSessionForSeek(seekUs)
       clock.seek(seekUs)
       this.metronome.reset(seekUs)
       session.paused = !clock.state.running
+      recordPlaybackEvent('seek', { durationMs: performance.now() - seekStartMs, currentUs: seekUs, notesTouched: session.notes.length })
     },
     recordSkippedPlayableNotes(seekUs: number) {
       const session = this.session
       if (!session?.modeConfig.scoringEnabled || session.mode === 'noteMemory') return
+      const skippedStartMs = performance.now()
+      let touched = 0
+      let missed = 0
       const fromUs = Math.max(0, session.currentUs)
       const toUs = Math.max(0, seekUs)
       if (toUs <= fromUs) return
       for (const note of session.notes) {
+        touched += 1
         if (
           note.state === 'waiting' &&
           note.start >= fromUs &&
@@ -343,12 +453,15 @@ export const usePlayerStore = defineStore('player', {
         ) {
           note.state = 'missed'
           recordMiss(session.score, note)
+          missed += 1
         }
       }
+      recordPlaybackEvent('recordSkippedPlayableNotes', { durationMs: performance.now() - skippedStartMs, currentUs: seekUs, notesTouched: touched, missed })
     },
     resetSessionForSeek(seekUs: number) {
       const session = this.session
       if (!session) return
+      const resetStartMs = performance.now()
       this.autoPlayer.allNotesOff(session)
       clearActiveNoteMetadata(session)
       session.failed = false
@@ -366,6 +479,13 @@ export const usePlayerStore = defineStore('player', {
         return { ...note, state }
       })
       resetSpeedTrackingAnchor(session.score, seekUs, performance.now())
+      recordPlaybackEvent('resetSessionForSeek', {
+        durationMs: performance.now() - resetStartMs,
+        currentUs: seekUs,
+        notesTouched: session.notes.length,
+        scoreOutcomeCount: Object.keys(session.score.noteOutcomes).length,
+        errorEventCount: session.score.errorEvents.length,
+      })
     },
     setShowDuration(v: number) { if (this.session) this.session.showDuration = clampShowDuration(v) },
     addUserBookmark(timeUs: number, label?: string) {
@@ -711,10 +831,12 @@ export const usePlayerStore = defineStore('player', {
     finishSession() {
       const session = this.session
       if (!session || this.stats) return
+      const finishStartMs = performance.now()
       session.finished = true
       session.paused = true
       this.autoPlayer.allNotesOff(session)
       this.stats = summarizeStats(session.score, session)
+      recordPlaybackEvent('finishSession', { durationMs: performance.now() - finishStartMs, currentUs: session.currentUs, notesTouched: session.notes.length })
     },
   },
 })

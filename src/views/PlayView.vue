@@ -10,9 +10,11 @@ import { WHITE_KEY_COUNT } from '../modules/render/pianoGeometry'
 import type { HandSelection, PlayMode } from '../modules/game/playSession'
 import PlayTopBar from '../components/player/PlayTopBar.vue'
 import TrackProgressBar from '../components/player/TrackProgressBar.vue'
+import SheetMusicPanel from '../components/player/SheetMusicPanel.vue'
 import PianoRoll from '../components/player/PianoRoll.vue'
 import PianoKeyboard from '../components/player/PianoKeyboard.vue'
 import ScorePanel from '../components/player/ScorePanel.vue'
+import PerformanceOverlay from '../components/player/PerformanceOverlay.vue'
 import GameplayFeedbackOverlay from '../components/player/GameplayFeedbackOverlay.vue'
 import HelpOverlay from '../components/player/HelpOverlay.vue'
 import MetronomeDialog from '../components/player/dialogs/MetronomeDialog.vue'
@@ -22,6 +24,7 @@ import BookmarksDialog from '../components/player/dialogs/BookmarksDialog.vue'
 import LoopControl from '../components/player/LoopControl.vue'
 import SettingsDialog from '../components/player/dialogs/SettingsDialog.vue'
 import TrackConfigDialog from '../components/player/dialogs/TrackConfigDialog.vue'
+import { freezePlaybackProfiler, resumePlaybackProfiler, setPlaybackProfilerMode, type PlaybackProfilerSnapshot } from '../modules/perf/playbackProfiler'
 
 const WHITE_KEY_ASPECT_RATIO = 150 / 23.5  // 6.383
 const BLACK_KEY_HEIGHT_RATIO = 95 / 150    // 0.633
@@ -48,8 +51,13 @@ const showBookmarksDialog = ref(false)
 const showLoopControl = ref(false)
 const showSettingsDialog = ref(false)
 const showHelpOverlay = ref(false)
+const showPerformanceDetail = ref(false)
+const frozenPerformanceSnapshot = ref<PlaybackProfilerSnapshot | null>(null)
 const isFullscreen = ref(false)
 const wasPlayingBeforeDialog = ref(false)
+const sheetReady = ref(!settings.showSheetMusic)
+const shouldStartAfterSheetReady = ref(false)
+const wasPlayingBeforeSheetLoad = ref(false)
 const benchmarkMode = ref(
   window.location.search.includes('perf=1') ||
   window.location.hash.includes('perf=1') ||
@@ -63,8 +71,11 @@ const hasBlockingOverlay = computed(() =>
   showLabelsDialog.value ||
   showBookmarksDialog.value ||
   showSettingsDialog.value ||
-  showHelpOverlay.value
+  showHelpOverlay.value ||
+  showPerformanceDetail.value
 )
+const showPerformanceOverlay = computed(() => benchmarkMode.value || settings.advancedEnableDebugOverlay)
+const showPerformanceDetails = computed(() => benchmarkMode.value)
 
 // Popover positions
 const metronomePopupStyle = ref({ top: '0px', left: '0px' })
@@ -239,6 +250,21 @@ function toggleBenchmark() {
   localStorage.setItem(BENCHMARK_STORAGE_KEY, benchmarkMode.value ? '1' : '0')
 }
 
+function togglePerformanceAutoPlay() {
+  player.setPerformanceAutoPlay(!player.performanceAutoPlay)
+}
+
+function openPerformanceDetail() {
+  frozenPerformanceSnapshot.value = freezePlaybackProfiler()
+  showPerformanceDetail.value = true
+}
+
+function closePerformanceDetail() {
+  showPerformanceDetail.value = false
+  frozenPerformanceSnapshot.value = null
+  resumePlaybackProfiler()
+}
+
 function toggleHelpOverlay() {
   showHelpOverlay.value = !showHelpOverlay.value
 }
@@ -264,6 +290,23 @@ function updateFullscreenState() {
 function handleFullscreenShortcut(event: KeyboardEvent) {
   if (event.key === 'F11') {
     setTimeout(updateFullscreenState, 100)
+  }
+}
+
+function startWhenSheetIsReady() {
+  if (settings.showSheetMusic && !sheetReady.value) {
+    shouldStartAfterSheetReady.value = true
+    return
+  }
+  shouldStartAfterSheetReady.value = false
+  player.start()
+}
+
+function handleSheetReady() {
+  sheetReady.value = true
+  if (shouldStartAfterSheetReady.value) {
+    shouldStartAfterSheetReady.value = false
+    player.start()
   }
 }
 
@@ -310,7 +353,8 @@ onMounted(async () => {
     player.configureSession({ mode, handSelection, speed: settings.defaultSpeed })
   }
 
-  player.start()
+  sheetReady.value = !settings.showSheetMusic
+  startWhenSheetIsReady()
   midiAccess = await requestMidiAccess()
   bindInput(midiAccess, settings.midiInputId, (note, _velocity, on) => player.noteInput(note, on))
 
@@ -342,6 +386,32 @@ watch(() => settings.keyboardRangeMode, () => {
   player.refreshKeyboardRange()
 })
 
+watch(() => settings.showSheetMusic, show => {
+  if (show) {
+    sheetReady.value = false
+    wasPlayingBeforeSheetLoad.value = !!player.clock?.state.running
+    if (wasPlayingBeforeSheetLoad.value) {
+      player.clock?.pause()
+      if (player.session) player.session.paused = true
+      player.autoPlayer.allNotesOff(player.session)
+    }
+    shouldStartAfterSheetReady.value = wasPlayingBeforeSheetLoad.value
+    return
+  }
+
+  sheetReady.value = true
+  shouldStartAfterSheetReady.value = false
+  wasPlayingBeforeSheetLoad.value = false
+})
+
+watch(showPerformanceOverlay, enabled => {
+  setPlaybackProfilerMode({ summaryEnabled: enabled, detailEnabled: showPerformanceDetails.value })
+}, { immediate: true })
+
+watch(showPerformanceDetails, detailed => {
+  setPlaybackProfilerMode({ summaryEnabled: showPerformanceOverlay.value, detailEnabled: detailed })
+}, { immediate: true })
+
 watch(hasBlockingOverlay, open => {
   const session = player.session
   if (!session?.setupComplete || session.finished || player.stats) {
@@ -369,8 +439,10 @@ watch(() => player.stats, stats => {
   if (!stats || !player.song || saved) return
   saved = true
   const song = player.song
-  profiles.recordScore(song.id, stats)
-  if (stats.mode !== 'listen') library.updateAfterPlay(song.id, stats.score)
+  if (!player.performanceAutoPlayUsed) {
+    profiles.recordScore(song.id, stats)
+    if (stats.mode !== 'listen') library.updateAfterPlay(song.id, stats.score)
+  }
 
   setTimeout(() => {
     router.push(`/mode-select/${song.hash}`)
@@ -379,13 +451,21 @@ watch(() => player.stats, stats => {
 </script>
 
 <template>
-  <main v-if="player.session && player.song" ref="playLayoutRef" class="play-layout" :style="{ '--keyboard-height': `${keyboardHeight}px`, '--black-key-height': `${blackKeyHeight}px` }">
+  <main
+    v-if="player.session && player.song"
+    ref="playLayoutRef"
+    class="play-layout"
+    :class="{ 'with-sheet': settings.showSheetMusic }"
+    :style="{ '--keyboard-height': `${keyboardHeight}px`, '--black-key-height': `${blackKeyHeight}px` }"
+  >
     <PlayTopBar
       :is-fullscreen="isFullscreen"
       :bookmarks-dialog-open="showBookmarksDialog"
       :loop-dialog-open="showLoopControl"
       :help-overlay-open="showHelpOverlay"
       :benchmark-mode="benchmarkMode"
+      :performance-auto-play="player.performanceAutoPlay"
+      :playback-blocked="settings.showSheetMusic && !sheetReady"
       @open-metronome="openMetronome"
       @open-track-config="openTrackConfig"
       @open-keyboard-range="openKeyboardRange"
@@ -394,19 +474,32 @@ watch(() => player.stats, stats => {
       @open-loop="openLoop"
       @open-settings="openSettings"
       @toggle-benchmark="toggleBenchmark"
+      @toggle-performance-auto-play="togglePerformanceAutoPlay"
       @toggle-help="toggleHelpOverlay"
       @toggle-fullscreen="toggleFullscreen"
     />
     <TrackProgressBar />
+    <SheetMusicPanel v-if="settings.showSheetMusic" @ready="handleSheetReady" />
     <section class="play-stage">
       <section class="kbd-area">
         <PianoRoll :bookmark-mode="showBookmarksDialog" :benchmark-mode="benchmarkMode" />
       </section>
+      <PerformanceOverlay
+        v-if="showPerformanceOverlay && !showPerformanceDetail"
+        variant="mini"
+        @open-detail="openPerformanceDetail"
+      />
       <ScorePanel />
       <GameplayFeedbackOverlay />
     </section>
     <PianoKeyboard />
     <HelpOverlay :show="showHelpOverlay" />
+    <PerformanceOverlay
+      v-if="showPerformanceDetail && frozenPerformanceSnapshot"
+      variant="detail"
+      :snapshot-override="frozenPerformanceSnapshot"
+      @close-detail="closePerformanceDetail"
+    />
 
     <!-- Dialogs -->
     <SettingsDialog
@@ -460,6 +553,10 @@ watch(() => player.stats, stats => {
   grid-template-rows: auto auto minmax(0, 1fr) var(--keyboard-height);
   background: #2b2d31;
   overflow: hidden;
+}
+
+.play-layout.with-sheet {
+  grid-template-rows: auto auto auto minmax(0, 1fr) var(--keyboard-height);
 }
 
 .play-stage {

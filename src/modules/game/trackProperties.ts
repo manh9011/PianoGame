@@ -18,6 +18,7 @@ export interface TrackPropertyDefaults { trackId: number; instrumentProgram?: nu
 export const TRACK_MODES: TrackMode[] = ['playedAutomatically', 'youPlay', 'playedButHidden', 'notPlayed']
 export const TANGO_COLORS = ['#ef2929', '#f57900', '#fce94f', '#8ae234', '#729fcf', '#ad7fa8', '#e9b96e']
 export const TRACK_SETTINGS_PALETTE = ['#729fcf', '#4e9a06', '#f57900', '#fce94f', '#ad7fa8', '#ef2929']
+export const TRACK_INVISIBLE_COLOR = 'transparent'
 export const TRACK_ROLE_COLORS = {
   left: '#729fcf',
   right: '#4e9a06',
@@ -54,6 +55,25 @@ export function resolveTrackModeForSession(track: TrackProperties, playMode: Pla
 
 export function isTrackRoleComplete(track: TrackProperties): boolean {
   return track.role === 'left' || track.role === 'right' || track.role === 'background'
+}
+
+export function isRoleIncludedInSheet(role: TrackRole | undefined): role is HandAssignment {
+  return role === 'left' || role === 'right'
+}
+
+export function getSheetTrackIds(tracks: TrackProperties[]): number[] {
+  return tracks
+    .filter(track => isRoleIncludedInSheet(track.role))
+    .map(track => track.trackId)
+    .sort((a, b) => a - b)
+}
+
+export function getSheetTrackSelectionKey(tracks: TrackProperties[]): string {
+  return tracks
+    .filter(track => isRoleIncludedInSheet(track.role))
+    .map(track => `${track.trackId}:${track.role}`)
+    .sort((a, b) => a.localeCompare(b))
+    .join('|')
 }
 
 export function createDefaultTrackProperties(trackIdsOrDefaults: Array<number | TrackPropertyDefaults>, percussionTracks = new Set<number>()): TrackProperties[] {

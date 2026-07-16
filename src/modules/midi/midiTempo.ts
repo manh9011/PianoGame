@@ -26,3 +26,13 @@ export function pulseToMicroseconds(pulse: number, ticksPerQuarter: number, temp
   }
   return point.microseconds + convertDeltaPulses(pulse - point.pulse, ticksPerQuarter, point.microsecondsPerQuarter)
 }
+
+export function microsecondsToPulse(microseconds: number, ticksPerQuarter: number, tempoMap: TempoPoint[]) {
+  let point = tempoMap[0]
+  for (const candidate of tempoMap) {
+    if (candidate.microseconds <= microseconds) point = candidate
+    else break
+  }
+  const deltaUs = microseconds - point.microseconds
+  return point.pulse + (deltaUs * ticksPerQuarter) / point.microsecondsPerQuarter
+}

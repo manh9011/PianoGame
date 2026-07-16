@@ -11,12 +11,14 @@ const router = useRouter()
 const { t } = useI18n()
 const player = usePlayerStore()
 
-defineProps<{
+const props = defineProps<{
   isFullscreen: boolean
   bookmarksDialogOpen?: boolean
   loopDialogOpen?: boolean
   helpOverlayOpen?: boolean
   benchmarkMode?: boolean
+  performanceAutoPlay?: boolean
+  playbackBlocked?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -28,6 +30,7 @@ const emit = defineEmits<{
   openLoop: [event: MouseEvent]
   openSettings: [event: MouseEvent]
   toggleBenchmark: []
+  togglePerformanceAutoPlay: []
   toggleHelp: []
   toggleFullscreen: []
 }>()
@@ -54,6 +57,7 @@ function backDisabled() { return player.session?.mode === 'performance' && !play
 function back() { if (backDisabled()) return; player.clock?.stop(); player.autoPlayer.allNotesOff(player.session); router.push(`/mode-select/${player.song?.hash}`) }
 function seekToPreviousBookmark() { player.seekToPreviousBookmark() }
 function seekToNextBookmark() { player.seekToNextBookmark() }
+function togglePlayback() { if (!props.playbackBlocked) player.togglePause() }
 
 function increaseSpeed() {
   if (!player.session?.modeConfig.speedChangeAllowed) return
@@ -91,16 +95,25 @@ function decreaseSpeed() {
         >
           {{ t('play.benchmark') }}
         </button>
+        <button
+          class="top-button secondary benchmark-toggle"
+          :class="{ 'benchmark-toggle--active': performanceAutoPlay }"
+          :aria-pressed="performanceAutoPlay"
+          :title="t('perf.autoPlayTest')"
+          @click="emit('togglePerformanceAutoPlay')"
+        >
+          {{ t('perf.autoPlayTest') }}
+        </button>
       </div>
 
       <div class="center-controls">
         <button
           class="icon-button"
           data-help-anchor="play-pause"
-          :disabled="!player.session.modeConfig.pauseAllowed"
-          :title="t('play.playPause')"
+          :disabled="!player.session.modeConfig.pauseAllowed || playbackBlocked"
+          :title="playbackBlocked ? t('sheetMusic.waitingReady') : t('play.playPause')"
           :aria-label="player.clock?.state.running ? t('play.pause') : t('play.play')"
-          @click="player.togglePause"
+          @click="togglePlayback"
         >
           <i :class="player.clock?.state.running ? 'fas fa-pause' : 'fas fa-play'"></i>
         </button>

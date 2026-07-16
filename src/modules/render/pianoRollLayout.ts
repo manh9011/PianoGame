@@ -1,4 +1,5 @@
 import type { TranslatedNote } from '../midi/midiTypes'
+import { addActivePlaybackCounter, isPlaybackProfilerEnabled, setActivePlaybackGauge } from '../perf/playbackProfiler'
 import { createPianoKeys, WHITE_KEY_COUNT } from './pianoGeometry'
 
 const keyByNoteId = new Map(createPianoKeys().map(key => [key.noteId, key]))
@@ -111,41 +112,82 @@ export function layoutNotes<T extends TranslatedNote>(notes: T[], currentUs: num
   const windowUs = showDuration * 1_000_000
   const viewEndUs = currentUs + windowUs
   const cache = getNotesLayoutCache(notes)
+  const profileEnabled = isPlaybackProfilerEnabled()
+  let consideredCount = 0
+  let startCandidateCount = 0
+  let endCandidateCount = 0
+  let fromIndex = 0
+  let usedEndIndex = 0
 
   if (!cache.sortedByStart) {
-    return notes
-      .filter(n => n.end >= currentUs && n.start <= viewEndUs)
+    const result = notes
+      .filter(n => {
+        consideredCount += 1
+        return n.end >= currentUs && n.start <= viewEndUs
+      })
       .map(n => layoutNote(n, currentUs, windowUs, viewportWidth, viewportHeight))
+    if (profileEnabled) {
+      addActivePlaybackCounter('render', 'layoutCandidates', consideredCount)
+      setActivePlaybackGauge('render', 'layoutSortedByStart', 0)
+      setActivePlaybackGauge('render', 'layoutOutputCount', result.length)
+      setActivePlaybackGauge('render', 'layoutWindowUs', windowUs)
+      setActivePlaybackGauge('render', 'layoutMaxDurationUs', cache.maxDurationUs)
+    }
+    return result
   }
 
   const result: LaidOutNote<T>[] = []
   const useEndIndex = cache.maxDurationUs > windowUs * 2
   if (useEndIndex) {
+    usedEndIndex = 1
     const notesByEnd = cache.notesByEnd as T[]
     const fromEndIndex = lowerBoundEnd(notesByEnd, currentUs)
-    const endCandidateCount = notesByEnd.length - fromEndIndex
-    const startCandidateCount = upperBoundStart(notes, viewEndUs)
+    fromIndex = fromEndIndex
+    endCandidateCount = notesByEnd.length - fromEndIndex
+    startCandidateCount = upperBoundStart(notes, viewEndUs)
 
     if (endCandidateCount <= startCandidateCount) {
       for (let index = fromEndIndex; index < notesByEnd.length; index += 1) {
         const note = notesByEnd[index]
+        consideredCount += 1
         if (note.start <= viewEndUs) result.push(layoutNote(note, currentUs, windowUs, viewportWidth, viewportHeight))
       }
-      return result
+    } else {
+      for (let index = 0; index < startCandidateCount; index += 1) {
+        const note = notes[index]
+        consideredCount += 1
+        if (note.end >= currentUs) result.push(layoutNote(note, currentUs, windowUs, viewportWidth, viewportHeight))
+      }
     }
-
-    for (let index = 0; index < startCandidateCount; index += 1) {
-      const note = notes[index]
-      if (note.end >= currentUs) result.push(layoutNote(note, currentUs, windowUs, viewportWidth, viewportHeight))
+    if (profileEnabled) {
+      addActivePlaybackCounter('render', 'layoutCandidates', consideredCount)
+      setActivePlaybackGauge('render', 'layoutSortedByStart', 1)
+      setActivePlaybackGauge('render', 'layoutUsedEndIndex', usedEndIndex)
+      setActivePlaybackGauge('render', 'layoutFromIndex', fromIndex)
+      setActivePlaybackGauge('render', 'layoutStartCandidateCount', startCandidateCount)
+      setActivePlaybackGauge('render', 'layoutEndCandidateCount', endCandidateCount)
+      setActivePlaybackGauge('render', 'layoutOutputCount', result.length)
+      setActivePlaybackGauge('render', 'layoutWindowUs', windowUs)
+      setActivePlaybackGauge('render', 'layoutMaxDurationUs', cache.maxDurationUs)
     }
     return result
   }
 
-  const fromIndex = lowerBoundStart(notes, currentUs - cache.maxDurationUs)
+  fromIndex = lowerBoundStart(notes, currentUs - cache.maxDurationUs)
   for (let index = fromIndex; index < notes.length; index += 1) {
     const note = notes[index]
     if (note.start > viewEndUs) break
+    consideredCount += 1
     if (note.end >= currentUs) result.push(layoutNote(note, currentUs, windowUs, viewportWidth, viewportHeight))
+  }
+  if (profileEnabled) {
+    addActivePlaybackCounter('render', 'layoutCandidates', consideredCount)
+    setActivePlaybackGauge('render', 'layoutSortedByStart', 1)
+    setActivePlaybackGauge('render', 'layoutUsedEndIndex', usedEndIndex)
+    setActivePlaybackGauge('render', 'layoutFromIndex', fromIndex)
+    setActivePlaybackGauge('render', 'layoutOutputCount', result.length)
+    setActivePlaybackGauge('render', 'layoutWindowUs', windowUs)
+    setActivePlaybackGauge('render', 'layoutMaxDurationUs', cache.maxDurationUs)
   }
   return result
 }
