@@ -117,7 +117,7 @@ export function createPlaySession(notes: SessionNote[], tracks: TrackProperties[
     loopState: {
       enabled: false,
       startUs: 0,
-      endUs: durationUs,
+      endUs: 0,
       durationUs,
       delayBetweenLoops: 0,
       restartAfterErrors: 0,

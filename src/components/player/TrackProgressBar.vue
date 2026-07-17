@@ -6,6 +6,10 @@ import { useSettingsStore } from '../../stores/settingsStore'
 import type { MidiBookmarkSource } from '../../modules/midi/midiTypes'
 
 const { t } = useI18n()
+const props = defineProps<{
+  loopSetupActive?: boolean
+}>()
+
 const player = usePlayerStore()
 const settings = useSettingsStore()
 const seekBarRef = ref<HTMLElement | null>(null)
@@ -53,7 +57,7 @@ const bookmarkMarkers = computed(() => {
 const loopRegion = computed(() => {
   const loop = player.session?.loopState
   const total = loopTotalUs.value
-  if (!loop?.enabled || !total) return null
+  if (!loop || !total || !player.loopRegionConfigured) return null
   return {
     left: (loop.startUs / total) * 100,
     width: ((loop.endUs - loop.startUs) / total) * 100,
@@ -119,8 +123,7 @@ function drawCanvases() {
 }
 
 function handleMouseDown(event: MouseEvent) {
-  const loopEnabled = player.session?.loopState.enabled
-  if (!loopEnabled) {
+  if (!props.loopSetupActive) {
     seekFromPointer(event)
     return
   }
@@ -272,7 +275,7 @@ function seekFromPointer(event: MouseEvent) {
     <div
       ref="seekBarRef"
       class="seek-bar"
-      :class="{ disabled: !player.canSeek, 'loop-mode': player.session.loopState.enabled }"
+      :class="{ disabled: !player.canSeek && !loopSetupActive, 'loop-mode': loopSetupActive }"
       @mousedown="handleMouseDown"
       @mousemove="updateHoverPopover"
       @mouseleave="hideHoverPopover"

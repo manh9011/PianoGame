@@ -11,7 +11,8 @@ export function createDefaultProfile(name = 'Người chơi'): UserProfile {
     createdAt: Date.now(),
     recentSongIds: [],
     bestScoresBySongMode: {},
-    scoresByMode: {}
+    scoresByMode: {},
+    loopRegionsBySongId: {},
   }
 }
 
@@ -23,6 +24,7 @@ function normalizeProfile(profile: Partial<UserProfile>): UserProfile {
     recentSongIds: profile.recentSongIds ?? [],
     bestScoresBySongMode: profile.bestScoresBySongMode ?? {},
     scoresByMode: profile.scoresByMode ?? {},
+    loopRegionsBySongId: profile.loopRegionsBySongId ?? {},
   }
 }
 

@@ -22,6 +22,7 @@ import KeyboardRangeDialog from '../components/player/dialogs/KeyboardRangeDialo
 import LabelsDialog from '../components/player/dialogs/LabelsDialog.vue'
 import BookmarksDialog from '../components/player/dialogs/BookmarksDialog.vue'
 import LoopControl from '../components/player/LoopControl.vue'
+import LoopPerformanceOverlay from '../components/player/LoopPerformanceOverlay.vue'
 import SettingsDialog from '../components/player/dialogs/SettingsDialog.vue'
 import TrackConfigDialog from '../components/player/dialogs/TrackConfigDialog.vue'
 import { freezePlaybackProfiler, resumePlaybackProfiler, setPlaybackProfilerMode, type PlaybackProfilerSnapshot } from '../modules/perf/playbackProfiler'
@@ -220,14 +221,11 @@ function openBookmarks() {
 }
 
 function openLoop() {
-  const loopEnabled = player.session?.loopState.enabled ?? false
-  if (loopEnabled || showLoopControl.value) {
-    if (loopEnabled) player.toggleLoop()
+  if (showLoopControl.value) {
     showLoopControl.value = false
     return
   }
   closeAllDialogs()
-  player.toggleLoop()
   showLoopControl.value = true
 }
 
@@ -483,11 +481,11 @@ watch(() => player.stats, stats => {
       @stop-playback="stopPlayback"
       @toggle-fullscreen="toggleFullscreen"
     />
-    <TrackProgressBar />
+    <TrackProgressBar :loop-setup-active="showLoopControl" />
     <SheetMusicPanel v-if="settings.showSheetMusic" @ready="handleSheetReady" />
     <section class="play-stage">
       <section class="kbd-area">
-        <PianoRoll :bookmark-mode="showBookmarksDialog" :benchmark-mode="benchmarkMode" />
+        <PianoRoll :bookmark-mode="showBookmarksDialog" :benchmark-mode="benchmarkMode" :loop-setup-active="showLoopControl" />
       </section>
       <PerformanceOverlay
         v-if="showPerformanceOverlay && !showPerformanceDetail"
@@ -495,6 +493,7 @@ watch(() => player.stats, stats => {
         @open-detail="openPerformanceDetail"
       />
       <ScorePanel />
+      <LoopPerformanceOverlay />
       <GameplayFeedbackOverlay />
     </section>
     <PianoKeyboard />

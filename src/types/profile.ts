@@ -36,6 +36,12 @@ export interface ModeScoreEntry {
   failureReason?: FailureReason
 }
 
+export interface StoredLoopRegion {
+  startUs: number
+  endUs: number
+  updatedAt: number
+}
+
 export interface UserProfile {
   id: string
   name: string
@@ -43,4 +49,5 @@ export interface UserProfile {
   recentSongIds: string[]
   bestScoresBySongMode: Record<string, ModeScoreEntry>
   scoresByMode: Partial<Record<PlayMode, ModeScoreEntry[]>>
+  loopRegionsBySongId: Record<string, StoredLoopRegion>
 }

@@ -8,6 +8,7 @@
     "dependencies": {
         "@fortawesome/fontawesome-free": "^7.3.0",
         "@tonejs/midi": "^2.0.28",
+        "@vercel/analytics": "^2.0.1",
         "@vitejs/plugin-vue": "latest",
         "pinia": "latest",
         "soundfont-player": "^0.12.0",

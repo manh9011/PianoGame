@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { usePlayerStore } from '../../stores/playerStore'
-import { judgementLabel } from '../../modules/game/scoring'
 
+const { t } = useI18n()
 const player = usePlayerStore()
 const nowMs = ref(performance.now())
 let raf: number | null = null
@@ -39,11 +40,12 @@ onBeforeUnmount(() => {
 
 const feedback = computed(() => player.session?.score.feedback ?? null)
 const visible = computed(() => !!feedback.value && feedback.value.visibleUntilMs > nowMs.value)
-const judgement = computed(() => judgementLabel(feedback.value?.judgement))
-const comboText = computed(() => {
-  const combo = feedback.value?.combo ?? 0
-  return combo > 1 ? `${combo} Note Combo!` : '1 Note Combo!'
+const judgement = computed(() => {
+  const value = feedback.value?.judgement
+  if (!value) return ''
+  return t(`score.${value}Judgement`)
 })
+const comboText = computed(() => t('score.combo', { count: feedback.value?.combo ?? 1 }))
 </script>
 
 <template>

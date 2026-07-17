@@ -26,38 +26,43 @@ const restartLoopAfterErrors = computed({
 })
 
 const restartLabel = computed(() => {
-  return restartLoopAfterErrors.value === 0 ? t('dialogs.disabled') : `${restartLoopAfterErrors.value}s`
+  return restartLoopAfterErrors.value === 0 ? t('dialogs.disabled') : t('dialogs.loopErrorLimitValue', { count: restartLoopAfterErrors.value })
 })
 
+const delaySliderStyle = computed(() => ({ '--slider-progress': `${Math.min(100, Math.max(0, delayBetweenLoops.value / 8 * 100))}%` }))
+const restartSliderStyle = computed(() => ({ '--slider-progress': `${Math.min(100, Math.max(0, restartLoopAfterErrors.value / 30 * 100))}%` }))
+
+const hasLoopRegion = computed(() => player.loopRegionConfigured)
+
 const canShiftStartBackward = computed(() => {
-  if (!loopState.value) return false
+  if (!loopState.value || !hasLoopRegion.value) return false
   return loopState.value.startUs > 0
 })
 
 const canShiftStartForward = computed(() => {
-  if (!loopState.value || !session.value) return false
+  if (!loopState.value || !session.value || !hasLoopRegion.value) return false
   const nextMeasure = player.findNextMeasure(loopState.value.startUs + 1000)
   return nextMeasure < loopState.value.endUs
 })
 
 const canShiftEndBackward = computed(() => {
-  if (!loopState.value || !session.value) return false
+  if (!loopState.value || !session.value || !hasLoopRegion.value) return false
   const prevMeasure = player.findPrevMeasure(loopState.value.endUs - 1000)
   return prevMeasure > loopState.value.startUs
 })
 
 const canShiftEndForward = computed(() => {
-  if (!loopState.value) return false
+  if (!loopState.value || !hasLoopRegion.value) return false
   return loopState.value.endUs < durationUs.value
 })
 
 const canShiftEntireBackward = computed(() => {
-  if (!loopState.value) return false
+  if (!loopState.value || !hasLoopRegion.value) return false
   return loopState.value.startUs > 0
 })
 
 const canShiftEntireForward = computed(() => {
-  if (!loopState.value) return false
+  if (!loopState.value || !hasLoopRegion.value) return false
   return loopState.value.endUs < durationUs.value
 })
 
@@ -97,7 +102,7 @@ function clearLoop() {
         <div class="loop-bar" @click.stop>
           <!-- Row 1: Clear box -->
           <div class="control-box clear-box">
-            <p class="instruction-text">{{ t('dialogs.loopInstruction') }}</p>
+            <p class="instruction-text">{{ hasLoopRegion ? t('dialogs.loopInstruction') : t('dialogs.loopEmptyInstruction') }}</p>
             <button class="clear-button" @click="clearLoop">{{ t('common.clear') }}</button>
           </div>
 
@@ -112,6 +117,7 @@ function clearLoop() {
                 max="8"
                 step="0.5"
                 class="slider"
+                :style="delaySliderStyle"
               />
               <span class="slider-value">{{ delayBetweenLoops }}s</span>
             </div>
@@ -125,13 +131,14 @@ function clearLoop() {
                 max="30"
                 step="1"
                 class="slider"
+                :style="restartSliderStyle"
               />
               <span class="slider-value">{{ restartLabel }}</span>
             </div>
           </div>
 
           <!-- Row 3: Navigation controls -->
-          <div class="navigation-row">
+          <div class="navigation-row" :class="{ 'navigation-row--disabled': !hasLoopRegion }">
             <div class="nav-group left">
               <button class="nav-btn" :disabled="!canShiftStartBackward" @click="shiftLoopStartBackward">
                 <i class="fas fa-step-backward"></i>
@@ -192,9 +199,9 @@ function clearLoop() {
 .control-box {
   padding: 0.75rem 1rem;
   border-radius: 6px;
-  background: rgba(43, 45, 49, 0.9);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  background: rgba(16, 17, 20, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.46);
 }
 
 .clear-box {
@@ -205,41 +212,49 @@ function clearLoop() {
 
 .instruction-text {
   margin: 0;
-  color: #e3e4e8;
+  color: #ffffff;
   font-size: 0.9rem;
+  font-weight: 600;
   line-height: 1.3;
   white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
 }
 
 .clear-button {
   padding: 0.4rem 0.9rem;
   border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 4px;
-  background: rgba(60, 62, 66, 0.8);
-  color: #e3e4e8;
+  background: rgba(104, 108, 116, 0.92);
+  color: #ffffff;
   font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 3px 8px rgba(0, 0, 0, 0.42);
 }
 
 .clear-button:hover {
-  background: rgba(80, 82, 86, 0.9);
-  border-color: rgba(255, 255, 255, 0.35);
+  background: rgba(128, 132, 140, 0.96);
+  border-color: rgba(255, 255, 255, 0.45);
 }
 
 .sliders-box {
   flex-direction: column;
   align-items: stretch;
   gap: 0.75rem;
-  min-width: 400px;
+  width: min(720px, calc(100vw - 3rem));
+  min-width: 0;
 }
 
 .slider-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 210px minmax(280px, 1fr) 78px;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.9rem;
 }
 
 .slider-label {
@@ -247,45 +262,78 @@ function clearLoop() {
   font-size: 0.85rem;
   font-weight: 500;
   white-space: nowrap;
-  min-width: 160px;
+  min-width: 0;
 }
 
 .slider {
-  flex: 1;
-  height: 5px;
-  border-radius: 3px;
-  background: #5a5c61;
+  width: 100%;
+  height: 20px;
+  border-radius: 999px;
+  border: 0;
+  background: transparent;
   outline: none;
+  box-shadow: none;
   -webkit-appearance: none;
   appearance: none;
+  cursor: pointer;
+}
+
+.slider::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    rgba(122, 126, 134, 0.98) 0%,
+    rgba(122, 126, 134, 0.98) var(--slider-progress),
+    rgba(255, 255, 255, 0.96) var(--slider-progress),
+    rgba(255, 255, 255, 0.96) 100%
+  );
+  box-shadow: none;
 }
 
 .slider::-webkit-slider-thumb {
-  width: 16px;
-  height: 16px;
+  width: 22px;
+  height: 22px;
+  margin-top: -7px;
+  border: 2px solid rgba(255, 255, 255, 0.96);
   border-radius: 50%;
-  background: #e3e4e8;
+  background: #ffffff;
   cursor: pointer;
   -webkit-appearance: none;
   appearance: none;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.58);
+}
+
+.slider::-moz-range-track {
+  height: 8px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    rgba(122, 126, 134, 0.98) 0%,
+    rgba(122, 126, 134, 0.98) var(--slider-progress),
+    rgba(255, 255, 255, 0.96) var(--slider-progress),
+    rgba(255, 255, 255, 0.96) 100%
+  );
+  box-shadow: none;
 }
 
 .slider::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
-  border: none;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.96);
   border-radius: 50%;
-  background: #e3e4e8;
+  background: #ffffff;
   cursor: pointer;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.58);
 }
 
 .slider-value {
-  color: #9ca3af;
+  color: #ffffff;
   font-size: 0.85rem;
+  font-weight: 600;
   min-width: 60px;
   text-align: right;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
 }
 
 .navigation-row {
@@ -302,9 +350,9 @@ function clearLoop() {
   gap: 0.5rem;
   padding: 0.6rem 0.75rem;
   border-radius: 6px;
-  background: rgba(43, 45, 49, 0.9);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  background: rgba(16, 17, 20, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.46);
 }
 
 .nav-group.left {
@@ -325,19 +373,23 @@ function clearLoop() {
   padding: 0;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 4px;
-  background: rgba(60, 62, 66, 0.8);
-  color: #e3e4e8;
+  background: rgba(104, 108, 116, 0.92);
+  color: #ffffff;
   font-size: 0.9rem;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 3px 8px rgba(0, 0, 0, 0.42);
 }
 
 .nav-btn:hover:not(:disabled) {
-  background: rgba(80, 82, 86, 0.9);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(128, 132, 140, 0.96);
+  border-color: rgba(255, 255, 255, 0.45);
 }
 
 .nav-btn:active:not(:disabled) {

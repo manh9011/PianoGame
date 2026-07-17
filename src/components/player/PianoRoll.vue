@@ -16,6 +16,7 @@ import type { MidiBookmarkSource } from '../../modules/midi/midiTypes'
 const props = defineProps<{
   bookmarkMode?: boolean
   benchmarkMode?: boolean
+  loopSetupActive?: boolean
 }>()
 
 const USER_BOOKMARK_COLOR = '#FFBB32'
@@ -683,7 +684,7 @@ function drawGrid(ctx: CanvasRenderingContext2D, session: NonNullable<typeof pla
 }
 function drawLoopRegion(ctx: CanvasRenderingContext2D, session: NonNullable<typeof player.session>) {
   const loopState = session.loopState
-  if (!loopState.enabled) return
+  if (!player.loopRegionConfigured) return
 
   const windowUs = session.showDuration * 1_000_000
   const viewStartUs = session.currentUs
@@ -994,7 +995,7 @@ function yToTimeUs(y: number, session: NonNullable<typeof player.session>) {
 
 function getHoveredLoopEdge(y: number, session: NonNullable<typeof player.session>): LoopDragEdge {
   const loopState = session.loopState
-  if (!loopState.enabled) return null
+  if (!props.loopSetupActive || !player.loopRegionConfigured) return null
 
   const windowUs = session.showDuration * 1_000_000
   const loopStartY = logicalHeight - ((loopState.startUs - session.currentUs) / windowUs) * logicalHeight
@@ -1053,7 +1054,7 @@ function handleLoopEdgeDragEnd() {
 
 function handleWheel(event: WheelEvent) {
   const session = player.session
-  if (!session?.loopState.enabled || !player.canSeek) return
+  if (!session || !player.canSeek) return
 
   event.preventDefault()
 

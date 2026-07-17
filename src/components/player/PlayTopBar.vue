@@ -53,7 +53,7 @@ const baseBPM = computed(() => {
 
 const currentBPM = computed(() => Math.round(baseBPM.value * (currentSpeed.value / 100)))
 
-const loopActive = computed(() => player.session?.loopState.enabled ?? false)
+const loopActive = computed(() => player.loopRegionConfigured)
 
 function back() {
   player.clock?.stop()

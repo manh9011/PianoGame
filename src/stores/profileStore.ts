@@ -67,6 +67,15 @@ export const useProfileStore = defineStore('profiles', {
     selectProfile(id: string) { this.activeProfileId = id; this.persist() },
     deleteProfile(id: string) { if (this.profiles.length <= 1) return; this.profiles = this.profiles.filter(p => p.id !== id); if (this.activeProfileId === id) this.activeProfileId = this.profiles[0].id; this.persist() },
     markRecent(songId: string) { const p = this.activeProfile; p.recentSongIds = [songId, ...p.recentSongIds.filter(id => id !== songId)].slice(0, 8); this.persist() },
+    loopRegionFor(songId: string) {
+      return this.activeProfile.loopRegionsBySongId?.[songId]
+    },
+    saveLoopRegion(songId: string, startUs: number, endUs: number) {
+      const p = this.activeProfile
+      p.loopRegionsBySongId ??= {}
+      p.loopRegionsBySongId[songId] = { startUs, endUs, updatedAt: Date.now() }
+      this.persist()
+    },
     recordScore(songId: string, stats: SongPlayStats) {
       this.markRecent(songId)
       if (stats.mode === 'listen') return

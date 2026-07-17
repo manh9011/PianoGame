@@ -98,6 +98,14 @@ export interface ScoreState {
   feedback: GameplayFeedbackState | null
 }
 
+export interface LoopRangeScoreSummary {
+  rawPoints: number
+  score: number
+  hitCount: number
+  missedCount: number
+  errorCount: number
+}
+
 const COMBO_TIERS: ComboTier[] = Array.from({ length: 16 }, (_, index) => {
   const combo = index + 1
   return { combo, label: `x${combo}`, factor: Math.min(2.5, 1 + index * 0.1) }
@@ -148,6 +156,25 @@ export function createScoreState(): ScoreState {
 
 export function displayPoints(rawPoints: number) {
   return Math.round(rawPoints)
+}
+
+export function summarizeScoreWithinRange(s: ScoreState, startUs: number, endUs: number): LoopRangeScoreSummary {
+  const start = Math.max(0, Math.min(startUs, endUs))
+  const end = Math.max(0, Math.max(startUs, endUs))
+  let rawPoints = 0
+  let hitCount = 0
+  let missedCount = 0
+
+  for (const outcome of Object.values(s.noteOutcomes)) {
+    if (outcome.noteStartUs < start || outcome.noteStartUs >= end) continue
+    rawPoints += outcome.rawPointsAwarded
+    if (outcome.status === 'hit') hitCount += 1
+    else missedCount += 1
+  }
+
+  const inputErrorCount = s.errorEvents.filter(event => event.atUs >= start && event.atUs < end).length
+  const errorCount = missedCount + inputErrorCount
+  return { rawPoints, score: displayPoints(rawPoints), hitCount, missedCount, errorCount }
 }
 
 export function resolveComboBonus(combo: number, config = DEFAULT_SCORING_CONFIG) {

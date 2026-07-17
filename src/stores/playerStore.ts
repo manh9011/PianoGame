@@ -6,12 +6,12 @@ import { translateNotes } from '../modules/midi/midiNoteTranslator'
 import type { MidiBookmarkSource } from '../modules/midi/midiTypes'
 import { buildTempoMap, pulseToMicroseconds } from '../modules/midi/midiTempo'
 import { createDefaultTrackProperties, isTrackRoleComplete, resolveTrackModeForSession, roleToHandAssignment, TRACK_ROLE_COLORS, type TrackMode, type TrackRole } from '../modules/game/trackProperties'
-import { PLAY_MODE_CONFIGS, clampShowDuration, clampSpeed, createPlaySession, type ConfigureSessionOptions, type FailureReason, type PlaySession, type SessionNote } from '../modules/game/playSession'
+import { PLAY_MODE_CONFIGS, clampShowDuration, clampSpeed, createPlaySession, type ConfigureSessionOptions, type FailureReason, type LoopState, type PlaySession, type SessionNote } from '../modules/game/playSession'
 import { getKeyboardRange } from '../modules/render/keyboardRange'
 import { getKeySignatureAccidentals } from '../modules/render/pianoLabels'
 import { MidiPlayerClock } from '../modules/midi/midiPlayerClock'
 import { collectChordAtStart, findEarliestPlayableWaitingStart, findHit, HIT_WINDOW_US, isPlayableNote, markMisses } from '../modules/game/hitDetection'
-import { awardHoldPoints, createScoreState, recordHit, recordMiss, recordMisses, recordStray, recordWrong, resetSpeedTrackingAnchor, stopHoldsForInput, trimScoreAfter, updateSpeedTracking } from '../modules/game/scoring'
+import { awardHoldPoints, createScoreState, recordHit, recordMiss, recordMisses, recordStray, recordWrong, resetSpeedTrackingAnchor, stopHoldsForInput, summarizeScoreWithinRange, trimScoreAfter, updateSpeedTracking } from '../modules/game/scoring'
 import { summarizeStats, type SongPlayStats } from '../modules/game/songStatistics'
 import { assignHands } from '../modules/game/handAssignment'
 import { AutoNotePlayer } from '../modules/audio/autoNotePlayer'
@@ -19,6 +19,7 @@ import { MetronomePlayer, type MetronomeBeat } from '../modules/audio/metronomeP
 import { SimpleSynth } from '../modules/audio/simpleSynth'
 import { getInstrumentByProgram } from '../modules/audio/gmInstrumentCatalog'
 import { useSettingsStore } from './settingsStore'
+import { useProfileStore } from './profileStore'
 import { addActivePlaybackCounter, addPlaybackCounter, beginSimulationTick, endSimulationTick, isPlaybackProfilerDetailEnabled, measurePlaybackSpan, recordPlaybackEvent, setPlaybackGauge } from '../modules/perf/playbackProfiler'
 
 function getTimeSignatures(midi: ReturnType<typeof parseMidi>) {
@@ -134,6 +135,28 @@ function playableAutoTestNotes(session: PlaySession, currentUs: number) {
 const BOOKMARK_SEEK_EPSILON_US = 10_000
 const FALLBACK_BOOKMARK_US = 1_000_000
 
+export interface LoopAttemptSummary {
+  id: string
+  loopIndex: number
+  score: number
+  errorCount: number
+  totalNotes: number
+  startedAtUs: number
+  endedAtUs: number
+  completedAt: number
+}
+
+export function isLoopRegionConfigured(loop?: LoopState | null) {
+  if (!loop) return false
+  return (loop.startUs > 0 || loop.endUs > 0) && loop.endUs > loop.startUs
+}
+
+function clampLoopRegion(startUs: number, endUs: number, durationUs: number) {
+  const start = Math.max(0, Math.min(durationUs, startUs))
+  const end = Math.max(0, Math.min(durationUs, endUs))
+  return { startUs: start, endUs: end }
+}
+
 function getBookmarkSeekPoints(session: PlaySession) {
   const durationUs = Math.max(0, session.loopState.durationUs)
   const points = [
@@ -185,9 +208,19 @@ export const usePlayerStore = defineStore('player', {
     performanceAutoPlayUsed: false,
     playbackManuallyStopped: false,
     playbackRunning: false,
+    loopAttemptHistory: [] as LoopAttemptSummary[],
+    loopAttemptCounter: 0,
   }),
   getters: {
     canSeek: state => !!state.session?.setupComplete && !state.stats && !state.session.finished && state.session.mode !== 'performance',
+    loopRegionConfigured: state => isLoopRegionConfigured(state.session?.loopState),
+    recentLoopAttempts: state => state.loopAttemptHistory.slice(-5).reverse(),
+    bestLoopAttempt: state => state.loopAttemptHistory.reduce<LoopAttemptSummary | null>((best, attempt) => {
+      if (!best) return attempt
+      if (attempt.score !== best.score) return attempt.score > best.score ? attempt : best
+      if (attempt.errorCount !== best.errorCount) return attempt.errorCount < best.errorCount ? attempt : best
+      return attempt.loopIndex > best.loopIndex ? attempt : best
+    }, null),
   },
   actions: {
     refreshKeyboardRange() {
@@ -228,6 +261,8 @@ export const usePlayerStore = defineStore('player', {
       this.performanceAutoPlayUsed = false
       this.playbackManuallyStopped = false
       this.playbackRunning = false
+      this.resetLoopAttemptHistory()
+      this.restoreSavedLoopRegion(song.id)
       this.clock?.stop()
       this.metronome.restart()
       this.clock = new MidiPlayerClock(duration, () => this.session?.speed ?? 100, state => {
@@ -246,6 +281,7 @@ export const usePlayerStore = defineStore('player', {
           setPlaybackGauge(tickProfile, 'scoreOutcomeCount', Object.keys(session.score.noteOutcomes).length)
           if (state.looped) {
             measurePlaybackSpan(tickProfile, 'tick.loopReset', () => {
+              this.finalizeLoopAttempt(session)
               this.resetSessionForSeek(state.currentUs)
               this.metronome.reset(state.currentUs)
             })
@@ -329,6 +365,7 @@ export const usePlayerStore = defineStore('player', {
           if (session.modeConfig.scoringEnabled) {
             measurePlaybackSpan(tickProfile, 'tick.recordMisses', () => recordMisses(session.score, misses))
             measurePlaybackSpan(tickProfile, 'tick.awardHoldPoints', () => awardHoldPoints(session.score, state.currentUs, session.mode))
+            measurePlaybackSpan(tickProfile, 'tick.loopErrorLimit', () => this.restartLoopIfErrorLimitExceeded(session))
           }
           if (state.finished) {
             addPlaybackCounter(tickProfile, 'finishedThisTick')
@@ -338,6 +375,7 @@ export const usePlayerStore = defineStore('player', {
           endSimulationTick(tickProfile)
         }
       })
+      this.applyLoopBoundsToClock()
     },
     configureSession(options: ConfigureSessionOptions) {
       const session = this.session
@@ -368,6 +406,8 @@ export const usePlayerStore = defineStore('player', {
       this.performanceAutoPlayUsed = false
       this.playbackManuallyStopped = false
       this.playbackRunning = false
+      this.resetLoopAttemptHistory()
+      this.applyLoopBoundsToClock()
       recordPlaybackEvent('configure', { durationMs: performance.now() - configureStartMs, notesTouched: session.notes.length, currentUs: session.currentUs })
     },
     async prepareAudio(outputId: string) {
@@ -558,51 +598,67 @@ export const usePlayerStore = defineStore('player', {
       this.seekToUs(next ?? points[points.length - 1])
     },
     toggleLoop() {
+      this.applyLoopBoundsToClock()
+    },
+    applyLoopBoundsToClock() {
       const session = this.session
       if (!session) return
-      session.loopState.enabled = !session.loopState.enabled
+      const configured = isLoopRegionConfigured(session.loopState)
+      session.loopState.enabled = configured
       this.clock?.setLoopBounds(
-        session.loopState.enabled ? session.loopState.startUs : null,
-        session.loopState.enabled ? session.loopState.endUs : null,
+        configured ? session.loopState.startUs : null,
+        configured ? session.loopState.endUs : null,
         session.loopState.delayBetweenLoops * 1000
       )
     },
+    restoreSavedLoopRegion(songId: string) {
+      const session = this.session
+      if (!session) return
+      const saved = useProfileStore().loopRegionFor(songId)
+      const durationUs = session.loopState.durationUs
+      const restored = saved ? clampLoopRegion(saved.startUs, saved.endUs, durationUs) : { startUs: 0, endUs: 0 }
+      const configured = isLoopRegionConfigured({ ...session.loopState, ...restored })
+      session.loopState.startUs = configured ? restored.startUs : 0
+      session.loopState.endUs = configured ? restored.endUs : 0
+      this.applyLoopBoundsToClock()
+      this.resetLoopAttemptHistory()
+    },
+    persistLoopRegion() {
+      const session = this.session
+      if (!session || !this.song) return
+      useProfileStore().saveLoopRegion(this.song.id, session.loopState.startUs, session.loopState.endUs)
+    },
     setLoopRegion(startUs: number, endUs: number) {
       const session = this.session
-      const clock = this.clock
-      if (!session || !clock) return
+      if (!session) return
       const durationUs = session.loopState.durationUs
-      const validStart = Math.max(0, Math.min(durationUs, startUs))
-      const validEnd = Math.max(0, Math.min(durationUs, endUs))
+      const { startUs: validStart, endUs: validEnd } = clampLoopRegion(startUs, endUs, durationUs)
       if (validStart >= validEnd) return
       session.loopState.startUs = validStart
       session.loopState.endUs = validEnd
-      if (session.loopState.enabled) {
-        clock.setLoopBounds(validStart, validEnd, session.loopState.delayBetweenLoops * 1000)
-      }
+      this.applyLoopBoundsToClock()
+      this.resetLoopAttemptHistory()
+      this.persistLoopRegion()
     },
     clearLoopRegion() {
       const session = this.session
-      const clock = this.clock
-      if (!session || !clock) return
+      if (!session) return
       session.loopState.startUs = 0
-      session.loopState.endUs = session.loopState.durationUs
-      if (session.loopState.enabled) {
-        clock.setLoopBounds(0, session.loopState.durationUs, session.loopState.delayBetweenLoops * 1000)
-      }
+      session.loopState.endUs = 0
+      this.applyLoopBoundsToClock()
+      this.resetLoopAttemptHistory()
+      this.persistLoopRegion()
     },
     setLoopDelay(seconds: number) {
       const session = this.session
       if (!session) return
       session.loopState.delayBetweenLoops = Math.max(0, Math.min(8, seconds))
-      if (session.loopState.enabled) {
-        this.clock?.setLoopBounds(session.loopState.startUs, session.loopState.endUs, session.loopState.delayBetweenLoops * 1000)
-      }
+      this.applyLoopBoundsToClock()
     },
-    setLoopRestartAfterErrors(seconds: number) {
+    setLoopRestartAfterErrors(errors: number) {
       const session = this.session
       if (!session) return
-      session.loopState.restartAfterErrors = Math.max(0, Math.min(30, seconds))
+      session.loopState.restartAfterErrors = Math.max(0, Math.min(30, Math.round(errors)))
     },
     snapToMeasure(timeUs: number): number {
       const session = this.session
@@ -640,6 +696,7 @@ export const usePlayerStore = defineStore('player', {
       const session = this.session
       if (!session) return
       const loop = session.loopState
+      if (!isLoopRegionConfigured(loop)) return
       let currentUs = loop.startUs
       const snapped = this.snapToMeasure(currentUs)
       const threshold = 1000
@@ -656,6 +713,7 @@ export const usePlayerStore = defineStore('player', {
       const session = this.session
       if (!session) return
       const loop = session.loopState
+      if (!isLoopRegionConfigured(loop)) return
       const durationUs = loop.durationUs
       let currentUs = loop.endUs
       const snapped = this.snapToMeasure(currentUs)
@@ -673,6 +731,7 @@ export const usePlayerStore = defineStore('player', {
       const session = this.session
       if (!session) return
       const loop = session.loopState
+      if (!isLoopRegionConfigured(loop)) return
       const durationUs = loop.durationUs
       let shiftUs: number
       const threshold = 1000
@@ -688,6 +747,48 @@ export const usePlayerStore = defineStore('player', {
         if (loop.endUs + shiftUs > durationUs) return
       }
       this.setLoopRegion(loop.startUs + shiftUs, loop.endUs + shiftUs)
+    },
+    resetLoopAttemptHistory() {
+      this.loopAttemptHistory = []
+      this.loopAttemptCounter = 0
+    },
+    restartLoopIfErrorLimitExceeded(session: PlaySession) {
+      const loop = session.loopState
+      if (!isLoopRegionConfigured(loop) || loop.restartAfterErrors <= 0) return
+      const currentUs = Math.max(0, session.currentUs)
+      if (currentUs < loop.startUs || currentUs >= loop.endUs) return
+      const summary = summarizeScoreWithinRange(session.score, loop.startUs, loop.endUs)
+      if (summary.errorCount <= loop.restartAfterErrors) return
+      this.resetSessionForSeek(loop.startUs)
+      this.clock?.seek(loop.startUs)
+      this.metronome.reset(loop.startUs)
+    },
+    countPlayableNotesInLoop(session: PlaySession) {
+      const loop = session.loopState
+      if (!isLoopRegionConfigured(loop)) return 0
+      let total = 0
+      for (const note of session.notes) {
+        if (note.start >= loop.startUs && note.start < loop.endUs && isPlayableNote(note, session.tracks, session.handSelection, session)) total += 1
+      }
+      return total
+    },
+    finalizeLoopAttempt(session: PlaySession) {
+      const loop = session.loopState
+      if (!session.modeConfig.scoringEnabled || !isLoopRegionConfigured(loop)) return
+      const totalNotes = this.countPlayableNotesInLoop(session)
+      const summary = summarizeScoreWithinRange(session.score, loop.startUs, loop.endUs)
+      this.loopAttemptCounter += 1
+      this.loopAttemptHistory.push({
+        id: `loop:${this.loopAttemptCounter}`,
+        loopIndex: this.loopAttemptCounter,
+        score: summary.score,
+        errorCount: summary.errorCount,
+        totalNotes,
+        startedAtUs: loop.startUs,
+        endedAtUs: loop.endUs,
+        completedAt: Date.now(),
+      })
+      if (this.loopAttemptHistory.length > 50) this.loopAttemptHistory.splice(0, this.loopAttemptHistory.length - 50)
     },
     setTrackMode(trackId: number, mode: TrackMode) { const track = this.session?.tracks.find(t => t.trackId === trackId); if (track) track.mode = mode },
     setTrackColor(trackId: number, color: string) {
