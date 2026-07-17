@@ -55,8 +55,11 @@ const currentBPM = computed(() => Math.round(baseBPM.value * (currentSpeed.value
 
 const loopActive = computed(() => player.session?.loopState.enabled ?? false)
 
-function backDisabled() { return player.session?.mode === 'performance' && !player.stats }
-function back() { if (backDisabled()) return; player.clock?.stop(); player.autoPlayer.allNotesOff(player.session); router.push(`/mode-select/${player.song?.hash}`) }
+function back() {
+  player.clock?.stop()
+  player.autoPlayer.allNotesOff(player.session)
+  router.push(`/mode-select/${player.song?.hash}`)
+}
 function seekToPreviousBookmark() { player.seekToPreviousBookmark() }
 function seekToNextBookmark() { player.seekToNextBookmark() }
 function togglePlayback() {
@@ -82,7 +85,7 @@ function decreaseSpeed() {
   <header v-if="player.session" class="play-top-bar">
     <div class="top-main-row">
       <div class="left-controls">
-        <button class="top-button secondary" :disabled="backDisabled()" :title="t('play.backToModes')" @click="back">{{ t('common.back') }}</button>
+        <button class="top-button secondary" :title="t('play.backToModes')" @click="back">{{ t('common.back') }}</button>
         <button
           class="top-button secondary help-toggle"
           :class="{ 'help-toggle--active': helpOverlayOpen }"

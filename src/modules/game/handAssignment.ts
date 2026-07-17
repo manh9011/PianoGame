@@ -1,11 +1,16 @@
 import type { TranslatedNote } from '../midi/midiTypes'
-import type { Hand, SessionNote } from './playSession'
+import type { Hand, HandSelection, SessionNote } from './playSession'
 
 export const DEFAULT_HAND_SPLIT_NOTE_ID = 60
 export const HAND_COLORS: Record<Hand, string> = {
   left: '#5B9BD5',
   right: '#4ADE80',
   unknown: '#888a85',
+}
+export const HAND_SELECTION_COLORS: Record<HandSelection, string> = {
+  left: HAND_COLORS.left,
+  right: HAND_COLORS.right,
+  both: '#C084FC',
 }
 export const HAND_HIT_COLORS: Record<Hand, string> = {
   left: '#A8D1F2',

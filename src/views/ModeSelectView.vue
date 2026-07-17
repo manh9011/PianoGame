@@ -9,9 +9,11 @@ import { useSettingsStore } from '../stores/settingsStore'
 import { PLAY_MODE_CONFIGS, type HandSelection, type PlayMode } from '../modules/game/playSession'
 import { achievementFromHistory, entryAchievementBreakdown, topAchievementAttempts } from '../modules/game/achievementScoring'
 import { achievementColorStyle } from '../modules/game/achievementColors'
+import { HAND_SELECTION_COLORS } from '../modules/game/handAssignment'
 import type { ModeScoreEntry } from '../types/profile'
 import { formatDateTime } from '../i18n/formatters'
 import AchievementCelebration from '../components/player/AchievementCelebration.vue'
+import ModeScoreTimeline from '../components/player/ModeScoreTimeline.vue'
 import type { AchievementCelebration as AchievementCelebrationState } from '../stores/profileStore'
 
 const DEBUG = import.meta.env.DEV
@@ -62,6 +64,7 @@ const selectedAchievementScore = computed(() => selectedAchievementBreakdown.val
 const selectedBestGameplay = computed(() => formatScore(selectedAchievementScore.value))
 const breakdownAttempts = computed(() => topAchievementAttempts(selectedScoreEntries.value))
 const needsTrackConfig = computed(() => player.session?.needsTrackConfiguration ?? false)
+const chartEntries = computed<ModeScoreEntry[]>(() => selectedScoreEntries.value.slice().sort((a, b) => a.playedAt - b.playedAt))
 const scoreRows = computed<ModeScoreEntry[]>(() => {
   const entries = selectedScoreEntries.value.slice()
 
@@ -189,7 +192,10 @@ function animateAchievementScore(celebration: AchievementCelebrationState) {
 
 function maxPoints(nextHand: HandSelection) { return nextHand === 'both' ? 15 : 10 }
 function scoreCardStyle(nextMode: PlayMode, nextHand: HandSelection) {
-  return achievementColorStyle(scoreValue(nextMode, nextHand), maxPoints(nextHand))
+  return {
+    ...achievementColorStyle(scoreValue(nextMode, nextHand), maxPoints(nextHand)),
+    '--hand-color': HAND_SELECTION_COLORS[nextHand],
+  }
 }
 function formatScore(value?: number) {
   if (value === undefined) return '--'
@@ -322,12 +328,12 @@ function goToTrackSettings() {
             @dblclick="selectAndStart(item.mode, hand)"
           >
             <span class="card-score">{{ formatScore(scoreValue(item.mode, hand)) }}<small>/{{ maxPoints(hand) }}</small></span>
-            <span>{{ t(handLabelKeys[hand]) }}</span>
+            <span class="hand-label"><span class="hand-swatch" aria-hidden="true"></span>{{ t(handLabelKeys[hand]) }}</span>
           </button>
         </div>
         <button class="score-card both-card" :class="{ active: mode === item.mode && handSelection === 'both', disabled: needsTrackConfig }" :style="scoreCardStyle(item.mode, 'both')" :disabled="needsTrackConfig" @click="selectMode(item.mode, 'both')" @dblclick="selectAndStart(item.mode, 'both')">
           <span class="card-score">{{ formatScore(scoreValue(item.mode, 'both')) }}<small>/{{ maxPoints('both') }}</small></span>
-          <span>{{ t('modeSelect.hands.both') }}</span>
+          <span class="hand-label"><span class="hand-swatch" aria-hidden="true"></span>{{ t('modeSelect.hands.both') }}</span>
         </button>
       </section>
     </section>
@@ -425,12 +431,13 @@ function goToTrackSettings() {
         </template>
 
         <template v-else-if="detailTab === 'chart'">
-          <div class="detail-content">
-            <h2>{{ t('modeSelect.tabs.chart') }}</h2>
-            <div class="chart-placeholder">
-              <span v-for="entry in scoreRows.slice().reverse()" :key="`${entry.playedAt}-${entry.gameplayPoints ?? entry.score}`" :style="{ height: `${Math.max(8, Math.min(100, (entry.gameplayPoints ?? entry.score) / 100))}%` }" />
-            </div>
-            <p v-if="!scoreRows.length" class="muted">{{ t('modeSelect.chart.empty') }}</p>
+          <div class="detail-content chart-content">
+            <ModeScoreTimeline
+              :entries="chartEntries"
+              :hand-selection="handSelection"
+              :empty-label="t('modeSelect.chart.empty')"
+              :locale="settings.locale"
+            />
           </div>
         </template>
 
@@ -639,6 +646,7 @@ function goToTrackSettings() {
   place-items: center;
   gap: 0.1rem;
   padding: 0.6rem;
+  position: relative;
 }
 
 .both-card {
@@ -660,6 +668,22 @@ function goToTrackSettings() {
 
 .card-score small {
   font-size: 1rem;
+}
+
+.hand-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.hand-swatch {
+  width: 0.65rem;
+  height: 0.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  border-radius: 999px;
+  background: var(--hand-color);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.18), 0 0 10px color-mix(in srgb, var(--hand-color) 58%, transparent);
 }
 
 .selection-title {
@@ -848,21 +872,11 @@ function goToTrackSettings() {
   margin: 0;
 }
 
-.chart-placeholder {
-  display: flex;
-  align-items: end;
-  gap: 0.35rem;
-  height: 12rem;
-  padding: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.12);
-}
-
-.chart-placeholder span {
-  width: 1rem;
-  border-radius: 999px 999px 0 0;
-  background: #8ae234;
+.chart-content {
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
 }
 
 @media (max-width: 1100px) {
