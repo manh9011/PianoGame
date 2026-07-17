@@ -57,6 +57,18 @@ function stripForAdditionalVoice(inner: string) {
     .replace(/<barline\b[\s\S]*?<\/barline>/gi, '')
 }
 
+function stripVisualTempoDirections(inner: string) {
+  return inner.replace(/<direction\b([^>]*)>([\s\S]*?)<\/direction>/gi, (directionXml, attrs: string, body: string) => {
+    const hasTempoSound = /<sound\b[^>]*\btempo\s*=/i.test(body)
+    const hasMetronome = /<metronome\b/i.test(body)
+    if (!hasTempoSound && !hasMetronome) return directionXml
+
+    const bodyWithoutVisualTempo = body.replace(/<direction-type\b[\s\S]*?<\/direction-type>/gi, '')
+    if (!/<sound\b[^>]*\btempo\s*=/i.test(bodyWithoutVisualTempo)) return ''
+    return `<direction${attrs}>${bodyWithoutVisualTempo}</direction>`
+  })
+}
+
 function hideRests(inner: string) {
   return inner.replace(/<note\b[^>]*>\s*<rest\b[\s\S]*?<\/note>/gi, noteXml => {
     if (/<print-object="no"/i.test(noteXml)) return noteXml
@@ -223,7 +235,7 @@ export function mergeShardMusicXml(shards: ShardMusicXml[]) {
           inner = stripForAdditionalVoice(inner)
           chunks.push(`<backup><duration>${measureDuration(state)}</duration></backup>`)
         }
-        inner = stripBarlines(inner)
+        inner = stripBarlines(stripVisualTempoDirections(inner))
         chunks.push(forceVoiceNumber(normalizeAccidentals(inner, state.fifths), renderIndex + 1))
       })
 

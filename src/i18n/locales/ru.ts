@@ -78,6 +78,7 @@ export const ru = {
     benchmark: "Бенчмарк",
     play: "Воспроизвести",
     pause: "Пауза",
+    stop: "Остановить",
     playPause: "Воспроизведение / пауза",
     previousBookmark: "Предыдущая закладка",
     nextBookmark: "Следующая закладка",
@@ -268,6 +269,7 @@ export const ru = {
   },
   modeSelect: {
     songs: "Песни",
+    testCelebration: "Тест празднования",
     continue: "Продолжить",
     listen: "Только смотреть и слушать",
     trackSettings: "Руки, цвета и инструменты",

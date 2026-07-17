@@ -78,6 +78,7 @@ export const ko = {
     benchmark: "벤치마크",
     play: "재생",
     pause: "일시정지",
+    stop: "정지",
     playPause: "재생 / 일시정지",
     previousBookmark: "이전 북마크",
     nextBookmark: "다음 북마크",
@@ -268,6 +269,7 @@ export const ko = {
   },
   modeSelect: {
     songs: "곡",
+    testCelebration: "축하 효과 테스트",
     continue: "계속",
     listen: "보기와 듣기만",
     trackSettings: "손, 색상 및 악기",

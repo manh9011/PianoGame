@@ -78,6 +78,7 @@ export const hi = {
     benchmark: "बेंचमार्क",
     play: "चलाएँ",
     pause: "रोकें",
+    stop: "बंद करें",
     playPause: "चलाएँ / रोकें",
     previousBookmark: "पिछला बुकमार्क",
     nextBookmark: "अगला बुकमार्क",
@@ -268,6 +269,7 @@ export const hi = {
   },
   modeSelect: {
     songs: "गीत",
+    testCelebration: "उत्सव जाँचें",
     continue: "जारी रखें",
     listen: "केवल देखें और सुनें",
     trackSettings: "हाथ, रंग और वाद्ययंत्र",

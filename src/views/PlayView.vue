@@ -254,6 +254,10 @@ function togglePerformanceAutoPlay() {
   player.setPerformanceAutoPlay(!player.performanceAutoPlay)
 }
 
+function stopPlayback() {
+  player.stopPlayback()
+}
+
 function openPerformanceDetail() {
   frozenPerformanceSnapshot.value = freezePlaybackProfiler()
   showPerformanceDetail.value = true
@@ -476,6 +480,7 @@ watch(() => player.stats, stats => {
       @toggle-benchmark="toggleBenchmark"
       @toggle-performance-auto-play="togglePerformanceAutoPlay"
       @toggle-help="toggleHelpOverlay"
+      @stop-playback="stopPlayback"
       @toggle-fullscreen="toggleFullscreen"
     />
     <TrackProgressBar />

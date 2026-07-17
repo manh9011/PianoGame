@@ -78,6 +78,7 @@ export const fr = {
     benchmark: "Benchmark",
     play: "Lecture",
     pause: "Pause",
+    stop: "Arrêter",
     playPause: "Lecture / pause",
     previousBookmark: "Signet précédent",
     nextBookmark: "Signet suivant",
@@ -268,6 +269,7 @@ export const fr = {
   },
   modeSelect: {
     songs: "Morceaux",
+    testCelebration: "Tester la célébration",
     continue: "Continuer",
     listen: "Regarder et écouter seulement",
     trackSettings: "Mains, couleurs et instruments",

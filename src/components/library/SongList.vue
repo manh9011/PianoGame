@@ -555,6 +555,8 @@ function clearDifficulty() {
 
 /* Detail button styles */
 .detail-button {
+  display: grid;
+  place-items: center;
   justify-self: center;
   width: 1.8rem;
   height: 1.8rem;
@@ -564,8 +566,14 @@ function clearDifficulty() {
   background: rgba(255, 255, 255, 0.1);
   color: rgba(255, 255, 255, 0.6);
   font-size: 1rem;
+  line-height: 1;
   cursor: pointer;
   transition: all 0.2s ease;
+}
+
+.detail-button i {
+  display: block;
+  line-height: 1;
 }
 
 .detail-button:hover {

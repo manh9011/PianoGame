@@ -257,7 +257,7 @@ async function loadSheet() {
     const data = song.data ?? await loadSongData(song.id)
     if (!data) throw new SheetMusicError('sheetMusic.errors.missingMidiData', 'missingMidiData')
     const includedTrackIds = includedSheetTrackIds.value
-    const cacheKey = `${song.hash}:sheet-v19:tracks=${sheetTrackSignature.value || 'none'}`
+    const cacheKey = `${song.hash}:sheet-v20:tracks=${sheetTrackSignature.value || 'none'}`
     const generated = await generateSheetMusic(cacheKey, base64ToBuffer(data), progress => {
       if (token === requestToken) status.value = progress
     }, { includedTrackIds })

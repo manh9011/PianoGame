@@ -78,6 +78,7 @@ export const it = {
     benchmark: "Benchmark",
     play: "Riproduci",
     pause: "Pausa",
+    stop: "Stop",
     playPause: "Riproduci / pausa",
     previousBookmark: "Segnalibro precedente",
     nextBookmark: "Segnalibro successivo",
@@ -268,6 +269,7 @@ export const it = {
   },
   modeSelect: {
     songs: "Brani",
+    testCelebration: "Prova celebrazione",
     continue: "Continua",
     listen: "Guarda e ascolta soltanto",
     trackSettings: "Mani, colori e strumenti",

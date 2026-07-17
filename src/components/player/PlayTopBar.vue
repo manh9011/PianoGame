@@ -7,6 +7,7 @@ import { parseMidi } from '../../modules/midi/midiParser'
 import { buildTempoMap } from '../../modules/midi/midiTempo'
 import { base64ToBuffer } from '../../modules/library/songLibrary'
 
+const DEBUG = import.meta.env.DEV
 const router = useRouter()
 const { t } = useI18n()
 const player = usePlayerStore()
@@ -33,6 +34,7 @@ const emit = defineEmits<{
   togglePerformanceAutoPlay: []
   toggleHelp: []
   toggleFullscreen: []
+  stopPlayback: []
 }>()
 
 const currentSpeed = computed(() => player.session?.speed ?? 100)
@@ -57,7 +59,11 @@ function backDisabled() { return player.session?.mode === 'performance' && !play
 function back() { if (backDisabled()) return; player.clock?.stop(); player.autoPlayer.allNotesOff(player.session); router.push(`/mode-select/${player.song?.hash}`) }
 function seekToPreviousBookmark() { player.seekToPreviousBookmark() }
 function seekToNextBookmark() { player.seekToNextBookmark() }
-function togglePlayback() { if (!props.playbackBlocked) player.togglePause() }
+function togglePlayback() {
+  if (props.playbackBlocked) return
+  if (player.playbackRunning) player.stopPlayback()
+  else player.start()
+}
 
 function increaseSpeed() {
   if (!player.session?.modeConfig.speedChangeAllowed) return
@@ -87,6 +93,7 @@ function decreaseSpeed() {
           {{ t('play.help') }}
         </button>
         <button
+          v-if="DEBUG"
           class="top-button secondary benchmark-toggle"
           :class="{ 'benchmark-toggle--active': benchmarkMode }"
           :aria-pressed="benchmarkMode"
@@ -96,6 +103,7 @@ function decreaseSpeed() {
           {{ t('play.benchmark') }}
         </button>
         <button
+          v-if="DEBUG"
           class="top-button secondary benchmark-toggle"
           :class="{ 'benchmark-toggle--active': performanceAutoPlay }"
           :aria-pressed="performanceAutoPlay"
@@ -110,12 +118,12 @@ function decreaseSpeed() {
         <button
           class="icon-button"
           data-help-anchor="play-pause"
-          :disabled="!player.session.modeConfig.pauseAllowed || playbackBlocked"
+          :disabled="playbackBlocked"
           :title="playbackBlocked ? t('sheetMusic.waitingReady') : t('play.playPause')"
-          :aria-label="player.clock?.state.running ? t('play.pause') : t('play.play')"
+          :aria-label="player.playbackRunning ? t('play.stop') : t('play.play')"
           @click="togglePlayback"
         >
-          <i :class="player.clock?.state.running ? 'fas fa-pause' : 'fas fa-play'"></i>
+          <i :class="player.playbackRunning ? 'fas fa-stop' : 'fas fa-play'"></i>
         </button>
         <button class="icon-button" data-help-anchor="previous-bookmark" :disabled="!player.canSeek" :title="t('play.previousBookmark')" :aria-label="t('play.previousBookmark')" @click="seekToPreviousBookmark">
           <i class="fas fa-step-backward"></i>

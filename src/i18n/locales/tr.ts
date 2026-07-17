@@ -78,6 +78,7 @@ export const tr = {
     benchmark: "Benchmark",
     play: "Çal",
     pause: "Duraklat",
+    stop: "Durdur",
     playPause: "Çal / duraklat",
     previousBookmark: "Önceki yer imi",
     nextBookmark: "Sonraki yer imi",
@@ -268,6 +269,7 @@ export const tr = {
   },
   modeSelect: {
     songs: "Şarkılar",
+    testCelebration: "Kutlamayı test et",
     continue: "Devam et",
     listen: "Yalnızca izle ve dinle",
     trackSettings: "Eller, renkler ve enstrümanlar",

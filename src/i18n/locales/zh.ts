@@ -78,6 +78,7 @@ export const zh = {
     benchmark: "基准测试",
     play: "播放",
     pause: "暂停",
+    stop: "停止",
     playPause: "播放 / 暂停",
     previousBookmark: "上一个书签",
     nextBookmark: "下一个书签",
@@ -268,6 +269,7 @@ export const zh = {
   },
   modeSelect: {
     songs: "歌曲",
+    testCelebration: "测试庆祝效果",
     continue: "继续",
     listen: "仅观看和聆听",
     trackSettings: "手部、颜色和乐器",

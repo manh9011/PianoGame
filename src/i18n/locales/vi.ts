@@ -78,6 +78,7 @@ export const vi = {
     benchmark: "Đo hiệu năng",
     play: "Phát",
     pause: "Tạm dừng",
+    stop: "Dừng",
     playPause: "Phát / tạm dừng",
     previousBookmark: "Dấu mốc trước",
     nextBookmark: "Dấu mốc tiếp theo",
@@ -268,6 +269,7 @@ export const vi = {
   },
   modeSelect: {
     songs: "Bài hát",
+    testCelebration: "Thử hiệu ứng",
     continue: "Tiếp tục",
     listen: "Chỉ xem và nghe",
     trackSettings: "Tay, màu sắc và nhạc cụ",

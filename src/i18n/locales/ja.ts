@@ -78,6 +78,7 @@ export const ja = {
     benchmark: "ベンチマーク",
     play: "再生",
     pause: "一時停止",
+    stop: "停止",
     playPause: "再生 / 一時停止",
     previousBookmark: "前のブックマーク",
     nextBookmark: "次のブックマーク",
@@ -268,6 +269,7 @@ export const ja = {
   },
   modeSelect: {
     songs: "曲",
+    testCelebration: "お祝いをテスト",
     continue: "続ける",
     listen: "見る・聴くだけ",
     trackSettings: "手、色、楽器",

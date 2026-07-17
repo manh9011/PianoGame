@@ -78,6 +78,7 @@ export const sl = {
     benchmark: "Primerjalni test",
     play: "Predvajaj",
     pause: "Premor",
+    stop: "Ustavi",
     playPause: "Predvajaj / premor",
     previousBookmark: "Prejšnji zaznamek",
     nextBookmark: "Naslednji zaznamek",
@@ -268,6 +269,7 @@ export const sl = {
   },
   modeSelect: {
     songs: "Skladbe",
+    testCelebration: "Preizkusi praznovanje",
     continue: "Nadaljuj",
     listen: "Samo glej in poslušaj",
     trackSettings: "Roke, barve in instrumenti",

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, onBeforeUnmount } from 'vue'
+import { computed, nextTick, ref, onBeforeUnmount, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePlayerStore } from '../../stores/playerStore'
 import { useSettingsStore } from '../../stores/settingsStore'
@@ -9,10 +9,10 @@ const { t } = useI18n()
 const player = usePlayerStore()
 const settings = useSettingsStore()
 const seekBarRef = ref<HTMLElement | null>(null)
+const progressCanvasRef = ref<HTMLCanvasElement | null>(null)
 const popoverRef = ref<HTMLElement | null>(null)
 const hoverPopover = ref({ visible: false, left: 0, timeUs: 0, measure: 1 })
 const hoverPopoverLeftPx = ref(0)
-const progress = computed(() => (player.currentProgress * 100).toFixed(2))
 const totalUs = computed(() => player.clock?.seekableDurationUs ?? 0)
 const loopTotalUs = computed(() => player.session?.loopState.durationUs || totalUs.value)
 const measureTicks = computed(() => {
@@ -50,23 +50,6 @@ const bookmarkMarkers = computed(() => {
   return [...midiBookmarks, ...userBookmarks]
 })
 
-const playedRegions = computed(() => {
-  const total = totalUs.value
-  if (!total || player.session?.mode === 'listen') return []
-  return (player.session?.score.playedSegments ?? [])
-    .filter(segment => segment.endUs > 0 && segment.startUs < total)
-    .map(segment => {
-      const startUs = Math.max(0, Math.min(total, segment.startUs))
-      const endUs = Math.max(0, Math.min(total, segment.endUs))
-      return {
-        key: `${startUs}:${endUs}`,
-        left: (startUs / total) * 100,
-        width: ((endUs - startUs) / total) * 100,
-      }
-    })
-    .filter(region => region.width > 0)
-})
-
 const loopRegion = computed(() => {
   const loop = player.session?.loopState
   const total = loopTotalUs.value
@@ -81,7 +64,59 @@ let isDraggingLoop = false
 let dragStartUs = 0
 let previewStartUs = 0
 let previewEndUs = 0
+let canvasResizeObserver: ResizeObserver | null = null
 const loopPreview = ref<{ left: number; width: number } | null>(null)
+const shouldDrawPlayedRegions = computed(() => !!player.session && player.playbackManuallyStopped)
+const playedRegions = computed(() => {
+  const total = totalUs.value
+  if (!shouldDrawPlayedRegions.value || !total) return []
+
+  return (player.session?.score.playedSegments ?? [])
+    .map((segment, index) => {
+      const startUs = Math.max(0, Math.min(total, segment.startUs))
+      const endUs = Math.max(0, Math.min(total, segment.endUs))
+      return {
+        key: `${startUs}:${endUs}:${index}`,
+        left: (startUs / total) * 100,
+        width: ((endUs - startUs) / total) * 100,
+      }
+    })
+    .filter(region => region.width > 0)
+})
+
+function syncCanvasSize(canvas: HTMLCanvasElement) {
+  const rect = canvas.getBoundingClientRect()
+  const dpr = window.devicePixelRatio || 1
+  const width = Math.max(1, Math.round(rect.width * dpr))
+  const height = Math.max(1, Math.round(rect.height * dpr))
+  if (canvas.width !== width) canvas.width = width
+  if (canvas.height !== height) canvas.height = height
+  return { width, height }
+}
+
+function drawProgressCanvas() {
+  const canvas = progressCanvasRef.value
+  if (!canvas) return
+
+  const { width, height } = syncCanvasSize(canvas)
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return
+  ctx.clearRect(0, 0, width, height)
+
+  const progressWidth = Math.max(0, Math.min(1, player.currentProgress)) * width
+  if (progressWidth <= 0) return
+
+  const progressGradient = ctx.createLinearGradient(0, 0, 0, height)
+  progressGradient.addColorStop(0, '#20c92c')
+  progressGradient.addColorStop(0.4, '#14a823')
+  progressGradient.addColorStop(1, '#079018')
+  ctx.fillStyle = progressGradient
+  ctx.fillRect(0, 0, progressWidth, height)
+}
+
+function drawCanvases() {
+  drawProgressCanvas()
+}
 
 function handleMouseDown(event: MouseEvent) {
   const loopEnabled = player.session?.loopState.enabled
@@ -124,9 +159,27 @@ function handleDragEnd() {
   window.removeEventListener('mouseup', handleDragEnd)
 }
 
+onMounted(() => {
+  drawCanvases()
+  if (typeof ResizeObserver !== 'undefined' && seekBarRef.value) {
+    canvasResizeObserver = new ResizeObserver(() => drawCanvases())
+    canvasResizeObserver.observe(seekBarRef.value)
+  }
+})
+
+watch(
+  () => [
+    player.currentProgress,
+    totalUs.value,
+  ],
+  () => nextTick(drawCanvases),
+  { flush: 'post' },
+)
+
 onBeforeUnmount(() => {
   window.removeEventListener('mousemove', handleDragMove)
   window.removeEventListener('mouseup', handleDragEnd)
+  canvasResizeObserver?.disconnect()
 })
 
 function formatTime(microseconds: number): string {
@@ -224,13 +277,13 @@ function seekFromPointer(event: MouseEvent) {
       @mousemove="updateHoverPopover"
       @mouseleave="hideHoverPopover"
     >
+      <canvas ref="progressCanvasRef" class="progress-canvas" />
       <div
         v-for="region in playedRegions"
         :key="region.key"
         class="played-region"
         :style="{ left: `${region.left}%`, width: `${region.width}%` }"
       />
-      <div class="seek-fill" :style="{ width: `${progress}%` }" />
       <div v-for="tick in measureTicks" :key="tick.us" class="measure-tick" :style="{ left: `${tick.left}%` }" />
       <div
         v-if="loopRegion"
@@ -304,36 +357,22 @@ function seekFromPointer(event: MouseEvent) {
   opacity: 0.65;
   cursor: not-allowed;
 }
-.played-region {
-  position: absolute;
-  z-index: 2;
-  top: 4px;
-  bottom: 4px;
-  border-radius: 999px;
-  background: repeating-linear-gradient(
-    45deg,
-    rgba(255, 255, 255, 0.34) 0,
-    rgba(255, 255, 255, 0.34) 4px,
-    rgba(96, 165, 250, 0.62) 4px,
-    rgba(96, 165, 250, 0.62) 8px
-  );
-  border: 1px solid rgba(219, 234, 254, 0.68);
-  box-shadow: 0 0 8px rgba(147, 197, 253, 0.35);
-  pointer-events: none;
-}
-
-.seek-fill {
+.progress-canvas {
   position: absolute;
   z-index: 1;
-  top: 0;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.played-region {
+  position: absolute;
+  z-index: 4;
   bottom: 0;
-  left: 0;
-  border-radius: inherit;
-  background: linear-gradient(180deg, #20c92c 0%, #14a823 40%, #079018 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.28),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.34);
-  transition: width 0.08s linear;
+  height: 7px;
+  background: #fbbf24;
+  box-shadow: 0 0 8px rgba(251, 191, 36, 0.42);
+  pointer-events: none;
 }
 .measure-tick {
   position: absolute;
@@ -421,7 +460,7 @@ function seekFromPointer(event: MouseEvent) {
 }
 .time-display {
   position: absolute;
-  z-index: 4;
+  z-index: 5;
   bottom: 2px;
   left: 0;
   right: 0;

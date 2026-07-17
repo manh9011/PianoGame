@@ -78,6 +78,7 @@ export const ca = {
     benchmark: "Benchmark",
     play: "Reprodueix",
     pause: "Pausa",
+    stop: "Atura",
     playPause: "Reprodueix / pausa",
     previousBookmark: "Marcador anterior",
     nextBookmark: "Marcador següent",
@@ -268,6 +269,7 @@ export const ca = {
   },
   modeSelect: {
     songs: "Cançons",
+    testCelebration: "Prova la celebració",
     continue: "Continua",
     listen: "Només mirar i escoltar",
     trackSettings: "Mans, colors i instruments",

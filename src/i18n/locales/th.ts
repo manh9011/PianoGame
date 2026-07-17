@@ -78,6 +78,7 @@ export const th = {
     benchmark: "เบนช์มาร์ก",
     play: "เล่น",
     pause: "หยุดชั่วคราว",
+    stop: "หยุด",
     playPause: "เล่น / หยุดชั่วคราว",
     previousBookmark: "บุ๊กมาร์กก่อนหน้า",
     nextBookmark: "บุ๊กมาร์กถัดไป",
@@ -268,6 +269,7 @@ export const th = {
   },
   modeSelect: {
     songs: "เพลง",
+    testCelebration: "ทดสอบฉลอง",
     continue: "ดำเนินการต่อ",
     listen: "ดูและฟังเท่านั้น",
     trackSettings: "มือ สี และเครื่องดนตรี",

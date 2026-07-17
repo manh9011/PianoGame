@@ -76,6 +76,7 @@ export const en = {
     benchmark: 'Benchmark',
     play: 'Play',
     pause: 'Pause',
+    stop: 'Stop',
     playPause: 'Play / pause',
     previousBookmark: 'Previous bookmark',
     nextBookmark: 'Next bookmark',
@@ -266,6 +267,7 @@ export const en = {
   },
   modeSelect: {
     songs: 'Songs',
+    testCelebration: 'Test celebration',
     continue: 'Continue',
     listen: 'Watch and Listen Only',
     trackSettings: 'Hands, Colors, and Instruments',

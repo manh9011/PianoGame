@@ -183,6 +183,8 @@ export const usePlayerStore = defineStore('player', {
     trackPreviewRunning: false,
     performanceAutoPlay: false,
     performanceAutoPlayUsed: false,
+    playbackManuallyStopped: false,
+    playbackRunning: false,
   }),
   getters: {
     canSeek: state => !!state.session?.setupComplete && !state.stats && !state.session.finished && state.session.mode !== 'performance',
@@ -224,6 +226,8 @@ export const usePlayerStore = defineStore('player', {
       this.stats = null
       this.performanceAutoPlay = false
       this.performanceAutoPlayUsed = false
+      this.playbackManuallyStopped = false
+      this.playbackRunning = false
       this.clock?.stop()
       this.metronome.restart()
       this.clock = new MidiPlayerClock(duration, () => this.session?.speed ?? 100, state => {
@@ -233,6 +237,7 @@ export const usePlayerStore = defineStore('player', {
         try {
           const settings = useSettingsStore()
           this.currentProgress = state.progress
+          this.playbackRunning = state.running && !state.finished
           setPlaybackGauge(tickProfile, 'progressRatio', state.progress)
           setPlaybackGauge(tickProfile, 'waitingNotes', countWaitingNotes(session))
           setPlaybackGauge(tickProfile, 'activeHolds', Object.keys(session.score.activeHolds).length)
@@ -361,6 +366,8 @@ export const usePlayerStore = defineStore('player', {
       this.stats = null
       this.performanceAutoPlay = false
       this.performanceAutoPlayUsed = false
+      this.playbackManuallyStopped = false
+      this.playbackRunning = false
       recordPlaybackEvent('configure', { durationMs: performance.now() - configureStartMs, notesTouched: session.notes.length, currentUs: session.currentUs })
     },
     async prepareAudio(outputId: string) {
@@ -370,6 +377,8 @@ export const usePlayerStore = defineStore('player', {
     start() {
       if (!this.session?.setupComplete || this.stats) return
       this.stopTrackPreview()
+      this.playbackManuallyStopped = false
+      this.playbackRunning = true
       this.clock?.start()
       this.session.paused = false
     },
@@ -378,7 +387,20 @@ export const usePlayerStore = defineStore('player', {
       if (!session?.setupComplete || !session.modeConfig.pauseAllowed || this.stats) return
       this.clock?.toggle()
       session.paused = !this.clock?.state.running
+      this.playbackRunning = !!this.clock?.state.running
+      if (!session.paused) this.playbackManuallyStopped = false
       if (session.paused) this.autoPlayer.allNotesOff(session)
+    },
+    stopPlayback() {
+      const session = this.session
+      if (!session || this.stats) return
+      this.clock?.pause()
+      session.paused = true
+      this.playbackManuallyStopped = true
+      this.playbackRunning = false
+      this.currentProgress = this.clock?.state.progress ?? this.currentProgress
+      session.currentUs = this.clock?.state.currentUs ?? session.currentUs
+      this.autoPlayer.allNotesOff(session)
     },
     setSpeed(v: number) {
       const session = this.session

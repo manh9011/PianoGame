@@ -78,6 +78,7 @@ export const ar = {
     benchmark: "قياس الأداء",
     play: "تشغيل",
     pause: "إيقاف مؤقت",
+    stop: "إيقاف",
     playPause: "تشغيل / إيقاف مؤقت",
     previousBookmark: "الإشارة المرجعية السابقة",
     nextBookmark: "الإشارة المرجعية التالية",
@@ -268,6 +269,7 @@ export const ar = {
   },
   modeSelect: {
     songs: "الأغاني",
+    testCelebration: "اختبار الاحتفال",
     continue: "متابعة",
     listen: "مشاهدة واستماع فقط",
     trackSettings: "اليدان والألوان والآلات",

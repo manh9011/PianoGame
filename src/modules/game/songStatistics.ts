@@ -39,7 +39,7 @@ function playedProgressRatio(session: PlaySession) {
   const duration = session.loopState.durationUs || Math.max(...session.notes.map(note => note.end), 0)
   if (!duration) return playableProgress
   const coveredUs = session.score.playedSegments.reduce((sum, segment) => sum + Math.max(0, Math.min(duration, segment.endUs) - Math.max(0, segment.startUs)), 0)
-  return Math.max(playableProgress, Math.max(0, Math.min(1, coveredUs / duration)))
+  return Math.max(0, Math.min(1, coveredUs / duration))
 }
 
 export function summarizeStats(score: ScoreState, session: PlaySession): SongPlayStats {

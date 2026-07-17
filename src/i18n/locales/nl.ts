@@ -78,6 +78,7 @@ export const nl = {
     benchmark: "Benchmark",
     play: "Afspelen",
     pause: "Pauze",
+    stop: "Stoppen",
     playPause: "Afspelen / pauze",
     previousBookmark: "Vorige bladwijzer",
     nextBookmark: "Volgende bladwijzer",
@@ -268,6 +269,7 @@ export const nl = {
   },
   modeSelect: {
     songs: "Nummers",
+    testCelebration: "Viering testen",
     continue: "Doorgaan",
     listen: "Alleen kijken en luisteren",
     trackSettings: "Handen, kleuren en instrumenten",

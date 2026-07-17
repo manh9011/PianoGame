@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { usePlayerStore } from '../stores/playerStore'
@@ -14,6 +14,7 @@ import { formatDateTime } from '../i18n/formatters'
 import AchievementCelebration from '../components/player/AchievementCelebration.vue'
 import type { AchievementCelebration as AchievementCelebrationState } from '../stores/profileStore'
 
+const DEBUG = import.meta.env.DEV
 const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
@@ -217,6 +218,29 @@ function formatDuration(us?: number) {
 }
 function date(ms: number) { return ms ? formatDateTime(ms, settings.locale) : '-' }
 
+async function testAchievementCelebration() {
+  const songId = player.song?.id ?? '__test__'
+  const testMode = mode.value === 'listen' ? 'noteMemory' : mode.value
+  const testHand = mode.value === 'listen' ? 'right' : handSelection.value
+  const max = maxPoints(testHand)
+  const current = scoreValue(testMode, testHand)
+  const from = Math.min(current, Math.max(0, max - 1))
+  const to = Math.min(max, from + 1)
+  achievementCelebration.value = null
+  await nextTick()
+  const celebration: AchievementCelebrationState = {
+    songId,
+    mode: testMode,
+    handSelection: testHand,
+    from,
+    to,
+    playedAt: Date.now(),
+  }
+  selectMode(celebration.mode, celebration.handSelection)
+  achievementCelebration.value = celebration
+  animateAchievementScore(celebration)
+}
+
 function toggleSort(column: typeof sortColumn.value) {
   if (sortColumn.value === column) {
     sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
@@ -256,7 +280,10 @@ function goToTrackSettings() {
       @done="achievementCelebration = null"
     />
     <header class="setup-header">
-      <button class="header-button secondary" @click="router.push('/library')">{{ t('modeSelect.songs') }}</button>
+      <div class="header-actions">
+        <button class="header-button secondary" @click="router.push('/library')">{{ t('modeSelect.songs') }}</button>
+        <button v-if="DEBUG" class="header-button secondary" @click="testAchievementCelebration">{{ t('modeSelect.testCelebration') }}</button>
+      </div>
       <div class="song-heading">
         <span class="top-score" :style="achievementColorStyle(selectedAchievementScore, maxPoints(handSelection))">{{ selectedBestGameplay }}</span>
         <span class="song-title">{{ player.song?.title }}</span>
@@ -469,6 +496,12 @@ function goToTrackSettings() {
   min-height: 45px;
   padding: 0.35rem 0.5rem;
   background: #2f2f2f;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
 }
 
 .header-button {

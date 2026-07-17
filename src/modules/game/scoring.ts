@@ -382,6 +382,15 @@ export function appendPlayedSegment(segments: PlayedSegment[], startUs: number, 
   segments.splice(0, segments.length, ...merged)
 }
 
+export function trimPlayedSegmentsAfter(segments: PlayedSegment[], seekUs: number) {
+  const endUs = Math.max(0, seekUs)
+  return segments.flatMap(segment => {
+    if (segment.startUs >= endUs) return []
+    if (segment.endUs <= endUs) return [segment]
+    return [{ startUs: segment.startUs, endUs }]
+  })
+}
+
 export function trimScoreAfter(s: ScoreState, seekUs: number) {
   for (const [id, outcome] of Object.entries(s.noteOutcomes)) {
     if (outcome.noteStartUs >= seekUs && outcome.status === 'hit') delete s.noteOutcomes[id]
@@ -389,6 +398,7 @@ export function trimScoreAfter(s: ScoreState, seekUs: number) {
   s.errorEvents = s.errorEvents.filter(event => event.atUs < seekUs)
   s.activeHolds = {}
   s.feedback = null
+  s.playedSegments = trimPlayedSegmentsAfter(s.playedSegments, seekUs)
 
   s.speedTracking.segments = s.speedTracking.segments.flatMap(segment => {
     if (segment.startUs >= seekUs) return []
