@@ -4,7 +4,6 @@ import { useI18n } from 'vue-i18n'
 import { MidiAssetPlayer } from '../../modules/audio/midiAssetPlayer'
 import type { AchievementCelebration } from '../../stores/profileStore'
 import { useSettingsStore } from '../../stores/settingsStore'
-import achievementUrl from '../../../achievement.mid?url'
 
 const props = defineProps<{ celebration: AchievementCelebration }>()
 const emit = defineEmits<{ done: [] }>()
@@ -17,6 +16,7 @@ let timeoutId: number | null = null
 let startedAt = 0
 const midiPlayer = new MidiAssetPlayer()
 const MIN_VISIBLE_MS = 2400
+const achievementUrl = `${import.meta.env.BASE_URL}achievement.mid`
 
 function easeOutCubic(t: number) {
   return 1 - Math.pow(1 - t, 3)

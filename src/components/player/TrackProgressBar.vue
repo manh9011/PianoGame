@@ -65,6 +65,7 @@ const loopRegion = computed(() => {
 })
 
 let isDraggingLoop = false
+let isSeekingProgress = false
 let dragStartUs = 0
 let previewStartUs = 0
 let previewEndUs = 0
@@ -124,9 +125,15 @@ function drawCanvases() {
 
 function handleMouseDown(event: MouseEvent) {
   if (!props.loopSetupActive) {
+    if (!player.canSeek) return
+    player.blockPlaybackOutput()
+    isSeekingProgress = true
     seekFromPointer(event)
+    window.addEventListener('mousemove', handleSeekMove)
+    window.addEventListener('mouseup', handleSeekEnd)
     return
   }
+  player.blockPlaybackOutput()
   const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
   const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width))
   isDraggingLoop = true
@@ -136,6 +143,19 @@ function handleMouseDown(event: MouseEvent) {
   loopPreview.value = { left: ratio * 100, width: 0 }
   window.addEventListener('mousemove', handleDragMove)
   window.addEventListener('mouseup', handleDragEnd)
+}
+
+function handleSeekMove(event: MouseEvent) {
+  if (!isSeekingProgress || !seekBarRef.value) return
+  seekFromPointer(event)
+}
+
+function handleSeekEnd() {
+  if (!isSeekingProgress) return
+  isSeekingProgress = false
+  player.unblockPlaybackOutput()
+  window.removeEventListener('mousemove', handleSeekMove)
+  window.removeEventListener('mouseup', handleSeekEnd)
 }
 
 function handleDragMove(event: MouseEvent) {
@@ -158,6 +178,7 @@ function handleDragEnd() {
   if (Math.abs(previewEndUs - previewStartUs) > 10000) {
     player.setLoopRegion(previewStartUs, previewEndUs)
   }
+  player.unblockPlaybackOutput()
   window.removeEventListener('mousemove', handleDragMove)
   window.removeEventListener('mouseup', handleDragEnd)
 }
@@ -180,6 +201,9 @@ watch(
 )
 
 onBeforeUnmount(() => {
+  if (isDraggingLoop || isSeekingProgress) player.unblockPlaybackOutput(true)
+  window.removeEventListener('mousemove', handleSeekMove)
+  window.removeEventListener('mouseup', handleSeekEnd)
   window.removeEventListener('mousemove', handleDragMove)
   window.removeEventListener('mouseup', handleDragEnd)
   canvasResizeObserver?.disconnect()

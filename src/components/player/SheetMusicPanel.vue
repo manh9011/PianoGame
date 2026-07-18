@@ -31,6 +31,8 @@ const includedSheetTrackIds = computed(() => getSheetTrackIds(player.session?.tr
 const sheetTrackSignature = computed(() => getSheetTrackSelectionKey(player.session?.tracks ?? []))
 const statusMessage = computed(() => status.value.code ? t(`sheetMusic.progress.${status.value.code}`, status.value.values ?? {}) : status.value.message)
 const errorMessage = computed(() => errorCode.value ? t(`sheetMusic.errors.${errorCode.value}`, errorValues.value) : errorFallback.value)
+const SHEET_DRAG_SEEK_SENSITIVITY = 2.5
+const sheetDragActive = ref(false)
 
 let toolkit: Awaited<ReturnType<typeof loadVerovio>>['toolkit']['prototype'] | null = null
 let requestToken = 0
@@ -43,6 +45,9 @@ let currentPlayheadX = 0
 let lastAnchorOnsetMs = -Infinity
 let lastPlaybackUs = 0
 let resizeObserver: ResizeObserver | null = null
+let sheetDragPointerId: number | null = null
+let sheetDragStartClientX = 0
+let sheetDragStartUs = 0
 
 function clearHighlights() {
   for (const id of activeNoteIds) {
@@ -163,7 +168,8 @@ function updatePanelHeight() {
   panelHeight.value = Math.min(maxHeight, Math.max(128, Math.ceil(svgHeight + 20)))
 }
 
-function updateSheetFollow(force = false) {
+function updateSheetFollow(force = false, allowDuringDrag = false) {
+  if (sheetDragActive.value && !allowDuringDrag) return
   const viewport = viewportRef.value
   if (!viewport || !scoreSvgElement) return
 
@@ -178,6 +184,65 @@ function updateSheetFollow(force = false) {
   const targetScrollLeft = Math.min(maxScrollLeft, Math.max(0, currentPlayheadX - anchorX))
   if (force) viewport.scrollLeft = targetScrollLeft
   else viewport.scrollLeft += (targetScrollLeft - viewport.scrollLeft) * 0.18
+}
+
+function previewSheetFollowAt(timeUs: number, durationUs: number) {
+  const viewport = viewportRef.value
+  if (!viewport || !scoreSvgElement || durationUs <= 0) return
+
+  const contentWidth = Math.max(scoreContentWidth, viewport.scrollWidth, scoreSvgElement.getBoundingClientRect().width)
+  if (contentWidth <= viewport.clientWidth) {
+    viewport.scrollLeft = 0
+    return
+  }
+
+  const progressX = Math.max(0, Math.min(1, timeUs / durationUs)) * contentWidth
+  const anchorX = viewport.clientWidth * 0.35
+  const maxScrollLeft = contentWidth - viewport.clientWidth
+  viewport.scrollLeft = Math.min(maxScrollLeft, Math.max(0, progressX - anchorX))
+}
+
+function seekSheetFromDrag(clientX: number) {
+  const session = player.session
+  const durationUs = player.clock?.seekableDurationUs ?? session?.loopState.durationUs ?? 0
+  const viewport = viewportRef.value
+  if (!session || !player.canSeek || durationUs <= 0 || !viewport) return
+
+  const deltaX = clientX - sheetDragStartClientX
+  const contentWidth = Math.max(scoreContentWidth, viewport.scrollWidth, scoreSvgElement?.getBoundingClientRect().width ?? 0, viewport.clientWidth)
+  const usableWidth = Math.max(viewport.clientWidth, contentWidth)
+  const usPerPixel = durationUs / usableWidth * SHEET_DRAG_SEEK_SENSITIVITY
+  const targetUs = Math.max(0, Math.min(durationUs, sheetDragStartUs - deltaX * usPerPixel))
+  player.seekToUs(targetUs)
+  previewSheetFollowAt(targetUs, durationUs)
+}
+
+function handleSheetPointerDown(event: PointerEvent) {
+  if (!player.canSeek || !player.session) return
+  if (event.button !== 0 && event.pointerType === 'mouse') return
+  sheetDragActive.value = true
+  player.blockPlaybackOutput()
+  sheetDragPointerId = event.pointerId
+  sheetDragStartClientX = event.clientX
+  sheetDragStartUs = player.session.currentUs
+  ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
+}
+
+function handleSheetPointerMove(event: PointerEvent) {
+  if (!sheetDragActive.value || sheetDragPointerId !== event.pointerId) return
+  event.preventDefault()
+  seekSheetFromDrag(event.clientX)
+}
+
+function endSheetDrag(event?: PointerEvent) {
+  if (!sheetDragActive.value) return
+  const viewport = viewportRef.value
+  if (event && viewport?.hasPointerCapture(event.pointerId)) viewport.releasePointerCapture(event.pointerId)
+  sheetDragActive.value = false
+  sheetDragPointerId = null
+  player.unblockPlaybackOutput()
+  updatePlaybackWindow()
+  updateSheetFollow(true, true)
 }
 
 function playbackLoop() {
@@ -300,6 +365,7 @@ startPlaybackLoop()
 onBeforeUnmount(() => {
   requestToken++
   stopPlaybackLoop()
+  endSheetDrag()
   resizeObserver?.disconnect()
   clearHighlights()
 })
@@ -307,7 +373,16 @@ onBeforeUnmount(() => {
 
 <template>
   <section class="sheet-panel" :style="{ height: `${panelHeight}px` }" :aria-label="t('sheetMusic.aria')">
-    <div ref="viewportRef" class="sheet-viewport">
+    <div
+      ref="viewportRef"
+      class="sheet-viewport"
+      :class="{ dragging: sheetDragActive }"
+      @pointerdown="handleSheetPointerDown"
+      @pointermove="handleSheetPointerMove"
+      @pointerup="endSheetDrag"
+      @pointercancel="endSheetDrag"
+      @lostpointercapture="endSheetDrag"
+    >
       <div v-if="loading" class="sheet-message">
         <span class="spinner" />
         <span>{{ statusMessage }}</span>
@@ -344,6 +419,12 @@ onBeforeUnmount(() => {
   scrollbar-width: none;
   -ms-overflow-style: none;
   white-space: nowrap;
+  cursor: grab;
+  touch-action: none;
+}
+
+.sheet-viewport.dragging {
+  cursor: grabbing;
 }
 
 .sheet-viewport::-webkit-scrollbar {

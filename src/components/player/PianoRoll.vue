@@ -950,11 +950,13 @@ function handleTouchStart(event: TouchEvent) {
   touchStartY = touch.clientY
   touchStartUs = player.session.currentUs
   isTouchDragging = true
+  player.blockPlaybackOutput()
 }
 
 function handleTouchMove(event: TouchEvent) {
   if (!isTouchDragging || !player.canSeek || !player.session) return
   if (event.touches.length !== 1) {
+    if (isTouchDragging) player.unblockPlaybackOutput()
     isTouchDragging = false
     return
   }
@@ -975,6 +977,7 @@ function handleTouchMove(event: TouchEvent) {
 }
 
 function handleTouchEnd() {
+  if (isTouchDragging) player.unblockPlaybackOutput()
   isTouchDragging = false
 }
 
@@ -1047,6 +1050,7 @@ function handleLoopEdgeDrag(event: MouseEvent) {
 }
 
 function handleLoopEdgeDragEnd() {
+  if (draggingLoopEdge) player.unblockPlaybackOutput()
   draggingLoopEdge = null
   window.removeEventListener('mousemove', handleLoopEdgeDrag)
   window.removeEventListener('mouseup', handleLoopEdgeDragEnd)
@@ -1099,6 +1103,7 @@ function handleMouseDown(event: MouseEvent) {
   const edge = getHoveredLoopEdge(coords.y, session)
   if (edge) {
     draggingLoopEdge = edge
+    player.blockPlaybackOutput()
     window.addEventListener('mousemove', handleLoopEdgeDrag)
     window.addEventListener('mouseup', handleLoopEdgeDragEnd)
     return
@@ -1109,6 +1114,7 @@ function handleMouseDown(event: MouseEvent) {
   touchStartY = event.clientY
   touchStartUs = session.currentUs
   isTouchDragging = true
+  player.blockPlaybackOutput()
 
   window.addEventListener('mousemove', handleMouseMove)
   window.addEventListener('mouseup', handleMouseUp)
@@ -1130,6 +1136,7 @@ function handleMouseMove(event: MouseEvent) {
 }
 
 function handleMouseUp() {
+  if (isTouchDragging) player.unblockPlaybackOutput()
   isTouchDragging = false
   window.removeEventListener('mousemove', handleMouseMove)
   window.removeEventListener('mouseup', handleMouseUp)
@@ -1154,6 +1161,7 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
+  if (isTouchDragging || draggingLoopEdge) player.unblockPlaybackOutput(true)
   if (rafId !== null) cancelAnimationFrame(rafId)
   resizeObserver?.disconnect()
   clearEffects()

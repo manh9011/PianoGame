@@ -80,11 +80,22 @@ onBeforeUnmount(() => library.stopPreview())
 
     <section class="library-tools">
       <FolderSelector />
-      <input
-        :value="library.searchQuery"
-        :placeholder="t('common.search')"
-        @input="library.setSearch(($event.target as HTMLInputElement).value)"
-      />
+      <div class="search-field">
+        <input
+          :value="library.searchQuery"
+          :placeholder="t('common.search')"
+          @input="library.setSearch(($event.target as HTMLInputElement).value)"
+        />
+        <button
+          v-if="library.searchQuery"
+          type="button"
+          class="search-clear-button"
+          :aria-label="t('common.clear')"
+          @click="library.setSearch('')"
+        >
+          <i class="fa-solid fa-xmark" aria-hidden="true" />
+        </button>
+      </div>
     </section>
 
     <section class="library-main">
@@ -230,6 +241,13 @@ onBeforeUnmount(() => library.stopPreview())
   background: #4c4c4c;
 }
 
+.search-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
 .library-tools input,
 .detail-modal select {
   width: 100%;
@@ -241,8 +259,32 @@ onBeforeUnmount(() => library.stopPreview())
   color: rgba(255, 255, 255, 0.88);
 }
 
+.search-field input {
+  padding-right: 2.35rem;
+}
+
 .library-tools input::placeholder {
   color: rgba(255, 255, 255, 0.42);
+}
+
+.search-clear-button {
+  position: absolute;
+  right: 0.42rem;
+  display: grid;
+  place-items: center;
+  width: 1.65rem;
+  height: 1.65rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.74);
+  cursor: pointer;
+}
+
+.search-clear-button:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .library-main {
