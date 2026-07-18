@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { GM_INSTRUMENT_GROUPS, getInstrumentIconClass } from '../../../modules/audio/gmInstrumentCatalog'
+import { GM_INSTRUMENT_GROUPS, getInstrumentEmoji } from '../../../modules/audio/gmInstrumentCatalog'
 
 const props = defineProps<{
   show: boolean
@@ -62,7 +62,7 @@ function close() {
             @click="selectInstrument(instrument.program)"
           >
             <span class="instrument-icon">
-              <i class="instrument-glyph" :class="getInstrumentIconClass(instrument)"></i>
+              <span class="instrument-emoji">{{ getInstrumentEmoji(instrument) }}</span>
             </span>
             <span class="instrument-label">{{ instrument.name }}</span>
             <i v-if="instrument.program === currentProgram" class="fas fa-check selected-check"></i>
@@ -201,18 +201,22 @@ function close() {
   background: linear-gradient(145deg, #222, #505050);
 }
 
-.instrument-glyph {
-  color: rgba(255, 255, 255, 0.92);
-  font-size: 1.55rem;
+.instrument-emoji {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.2em;
+  height: 1.2em;
+  font-family: 'Noto Color Emoji', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
+  font-size: 1.35rem;
   line-height: 1;
   text-align: center;
-  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.34));
-  transition: transform 0.15s ease;
+  transform: translate(-1px, 0);
 }
 
-.instrument-item:hover .instrument-glyph,
-.instrument-item.selected .instrument-glyph {
-  transform: scale(1.04);
+.instrument-item:hover .instrument-emoji,
+.instrument-item.selected .instrument-emoji {
+  transform: translate(-1px, 0) scale(1.02);
 }
 
 .instrument-item.selected .instrument-icon {
@@ -233,7 +237,7 @@ function close() {
 .instrument-icon,
 .instrument-label,
 .selected-check,
-.instrument-glyph {
+.instrument-emoji {
   pointer-events: none;
 }
 

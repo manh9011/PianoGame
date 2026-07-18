@@ -131,7 +131,7 @@ function closeProfileManager() {
 .home-container {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  height: 100vh;
   background: #4a4a4a;
   color: #e0e0e0;
 }
@@ -435,4 +435,21 @@ function closeProfileManager() {
   font-size: 0.75rem;
 }
 
+/* Responsive */
+@media (max-width: 1024px) {
+  .home-main {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  .left-panel {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .menu-button {
+    flex: 1;
+    min-width: 150px;
+  }
+}
 </style>

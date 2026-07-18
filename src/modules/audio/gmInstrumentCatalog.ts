@@ -106,26 +106,6 @@ export const DEFAULT_INSTRUMENT_PROGRAM = 0
 export const VOCAL_EMOJI_OPTIONS = [InstrumentEmoji.VocalMic, InstrumentEmoji.VocalStudio, InstrumentEmoji.VocalLips, InstrumentEmoji.VocalSpeaking] as const
 export const EMOJI_FONT_FAMILY = "'Noto Color Emoji', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif"
 
-const INSTRUMENT_ICON_CLASSES: Record<InstrumentVisualFamily, string> = {
-  [InstrumentVisualFamily.Keys]: 'fas fa-keyboard',
-  [InstrumentVisualFamily.OrganKeys]: 'fas fa-keyboard',
-  [InstrumentVisualFamily.Guitar]: 'fas fa-guitar',
-  [InstrumentVisualFamily.Strings]: 'fas fa-music',
-  [InstrumentVisualFamily.Harp]: 'fas fa-music',
-  [InstrumentVisualFamily.Ensemble]: 'fas fa-music',
-  [InstrumentVisualFamily.Brass]: 'fas fa-volume-high',
-  [InstrumentVisualFamily.Reed]: 'fas fa-music',
-  [InstrumentVisualFamily.Pipe]: 'fas fa-wind',
-  [InstrumentVisualFamily.Vocal]: 'fas fa-microphone',
-  [InstrumentVisualFamily.Percussion]: 'fas fa-drum',
-  [InstrumentVisualFamily.SynthLead]: 'fas fa-sliders',
-  [InstrumentVisualFamily.SynthPad]: 'fas fa-wave-square',
-  [InstrumentVisualFamily.SynthEffects]: 'fas fa-wand-magic-sparkles',
-  [InstrumentVisualFamily.Ethnic]: 'fas fa-music',
-  [InstrumentVisualFamily.SoundEffects]: 'fas fa-bolt',
-  [InstrumentVisualFamily.Accordion]: 'fas fa-music',
-}
-
 // Danh sách nhạc cụ đầy đủ để bạn tự sửa trực tiếp family / displayFamily / visualFamily / emoji / soundfontId.
 export const GM_INSTRUMENTS: InstrumentOption[] = [
   { program: 0, name: 'Acoustic Grand Piano', family: InstrumentFamily.Piano, displayFamily: InstrumentDisplayFamily.Piano, visualFamily: InstrumentVisualFamily.Keys, emoji: InstrumentEmoji.Piano, soundfontId: 'acoustic_grand_piano' },
@@ -292,10 +272,6 @@ export function getInstrumentEmoji(instrument: InstrumentOption): string {
 
 export function getInstrumentVisualFamily(instrument: InstrumentOption): InstrumentVisualFamily {
   return instrument.visualFamily
-}
-
-export function getInstrumentIconClass(instrument: InstrumentOption): string {
-  return INSTRUMENT_ICON_CLASSES[instrument.visualFamily] ?? 'fas fa-music'
 }
 
 export function getInstrumentDisplayFamily(instrument: InstrumentOption): InstrumentDisplayFamily {

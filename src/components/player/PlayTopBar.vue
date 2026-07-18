@@ -351,4 +351,15 @@ function decreaseSpeed() {
   margin-top: 0.05rem;
 }
 
+@media (max-width: 900px) {
+  .top-main-row {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .left-controls,
+  .right-controls {
+    justify-content: center;
+  }
+}
 </style>

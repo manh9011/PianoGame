@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePlayerStore } from '../../../stores/playerStore'
 import { isTrackSounded, type TrackMode, type TrackRole } from '../../../modules/game/trackProperties'
-import { getInstrumentByProgram, getInstrumentIconClass } from '../../../modules/audio/gmInstrumentCatalog'
+import { getEmojiFontFamily, getInstrumentByProgram, getInstrumentEmoji } from '../../../modules/audio/gmInstrumentCatalog'
 import BasePopover from './BasePopover.vue'
 import ColorPickerDialog from './ColorPickerDialog.vue'
 import TrackInstrumentDialog from './TrackInstrumentDialog.vue'
@@ -19,7 +19,7 @@ interface TrackData {
   trackId: number
   instrumentProgram: number
   instrumentName: string
-  instrumentIconClass: string
+  instrumentEmoji: string
   noteCount: number
   channel: number
   color: string
@@ -32,6 +32,7 @@ const props = defineProps<Props>()
 
 const { t } = useI18n()
 const player = usePlayerStore()
+const emojiStyle = { fontFamily: getEmojiFontFamily() }
 
 const showColorPicker = ref(false)
 const showInstrumentDialog = ref(false)
@@ -63,7 +64,7 @@ const tracksData = computed<TrackData[]>(() => {
       trackId: track.trackId,
       instrumentProgram: instrument.program,
       instrumentName: instrument.name,
-      instrumentIconClass: getInstrumentIconClass(instrument),
+      instrumentEmoji: getInstrumentEmoji(instrument),
       noteCount: trackNotes.length,
       channel: trackNotes[0]?.channel ?? 0,
       color: track.color,
@@ -199,8 +200,8 @@ function isSounded(mode: TrackMode) {
 
           <div class="track-card-header">
             <button class="track-icon" :title="t('trackSettings.selectInstrument')" @click="(event) => openInstrumentDialog(event, track.trackId)">
-              <span class="track-instrument-icon-wrap">
-                <i class="track-instrument-icon" :class="track.instrumentIconClass"></i>
+              <span class="track-emoji-wrap">
+                <span class="track-emoji" :style="emojiStyle">{{ track.instrumentEmoji }}</span>
               </span>
             </button>
             <div class="track-info">
@@ -321,7 +322,7 @@ function isSounded(mode: TrackMode) {
   background: rgba(0, 0, 0, 0.28);
 }
 
-.track-instrument-icon-wrap {
+.track-emoji-wrap {
   width: 42px;
   height: 42px;
   display: flex;
@@ -331,20 +332,23 @@ function isSounded(mode: TrackMode) {
   pointer-events: none;
 }
 
-.track-instrument-icon {
-  color: rgba(255, 255, 255, 0.92);
-  font-size: 1.65rem;
+.track-emoji {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.2em;
+  height: 1.2em;
+  font-size: 1.45rem;
   line-height: 1;
   text-align: center;
-  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.32));
+  transform: translate(-1px, 0);
   pointer-events: none;
   user-select: none;
-  transition: transform 0.15s ease;
 }
 
-.track-icon:hover .track-instrument-icon,
-.track-icon:focus-visible .track-instrument-icon {
-  transform: scale(1.04);
+.track-icon:hover .track-emoji,
+.track-icon:focus-visible .track-emoji {
+  transform: translate(-1px, 0) scale(1.02);
 }
 
 .track-info {

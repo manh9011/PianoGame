@@ -22,7 +22,6 @@ const props = defineProps<{
 const USER_BOOKMARK_COLOR = '#FFBB32'
 const BOOKMARK_GAP_WIDTH = 24
 const PIANO_ROLL_BACKGROUND = '#303030'
-const VIEWPORT_SCALE_EVENT = 'pianogame:viewport-scale-change'
 
 const player = usePlayerStore()
 const settings = useSettingsStore()
@@ -179,13 +178,12 @@ function roundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: num
 function resizeCanvas() {
   const canvas = canvasRef.value
   if (!canvas) return
-  const width = Math.max(1, canvas.offsetWidth)
-  const height = Math.max(1, canvas.offsetHeight)
+  const rect = canvas.getBoundingClientRect()
   const nextPixelRatio = window.devicePixelRatio || 1
-  const nextWidth = Math.round(width * nextPixelRatio)
-  const nextHeight = Math.round(height * nextPixelRatio)
-  logicalWidth = width
-  logicalHeight = height
+  const nextWidth = Math.round(rect.width * nextPixelRatio)
+  const nextHeight = Math.round(rect.height * nextPixelRatio)
+  logicalWidth = rect.width
+  logicalHeight = rect.height
   pixelRatio = nextPixelRatio
   if (canvas.width !== nextWidth) canvas.width = nextWidth
   if (canvas.height !== nextHeight) canvas.height = nextHeight
@@ -944,14 +942,6 @@ function drawFrame() {
   rafId = requestAnimationFrame(drawFrame)
 }
 
-function viewportDeltaYToLocal(deltaY: number) {
-  const canvas = canvasRef.value
-  if (!canvas) return deltaY
-  const rect = canvas.getBoundingClientRect()
-  const scaleY = rect.height > 0 ? canvas.offsetHeight / rect.height : 1
-  return deltaY * scaleY
-}
-
 function handleTouchStart(event: TouchEvent) {
   if (!player.canSeek || !player.session) return
   if (event.touches.length !== 1) return
@@ -960,7 +950,6 @@ function handleTouchStart(event: TouchEvent) {
   touchStartY = touch.clientY
   touchStartUs = player.session.currentUs
   isTouchDragging = true
-  player.blockPlaybackOutput()
 }
 
 function handleTouchMove(event: TouchEvent) {
@@ -973,7 +962,7 @@ function handleTouchMove(event: TouchEvent) {
   event.preventDefault()
 
   const touch = event.touches[0]
-  const deltaY = viewportDeltaYToLocal(touch.clientY - touchStartY)
+  const deltaY = touch.clientY - touchStartY
 
   // Kéo lên (deltaY < 0) -> tua thuận (tăng currentUs)
   // Kéo xuống (deltaY > 0) -> tua ngược (giảm currentUs)
@@ -986,7 +975,6 @@ function handleTouchMove(event: TouchEvent) {
 }
 
 function handleTouchEnd() {
-  if (isTouchDragging) player.unblockPlaybackOutput()
   isTouchDragging = false
 }
 
@@ -994,11 +982,9 @@ function getCanvasCoordinates(event: MouseEvent) {
   const canvas = canvasRef.value
   if (!canvas) return null
   const rect = canvas.getBoundingClientRect()
-  const scaleX = rect.width > 0 ? canvas.offsetWidth / rect.width : 1
-  const scaleY = rect.height > 0 ? canvas.offsetHeight / rect.height : 1
   return {
-    x: (event.clientX - rect.left) * scaleX,
-    y: (event.clientY - rect.top) * scaleY
+    x: event.clientX - rect.left,
+    y: event.clientY - rect.top
   }
 }
 
@@ -1061,7 +1047,6 @@ function handleLoopEdgeDrag(event: MouseEvent) {
 }
 
 function handleLoopEdgeDragEnd() {
-  if (draggingLoopEdge) player.unblockPlaybackOutput()
   draggingLoopEdge = null
   window.removeEventListener('mousemove', handleLoopEdgeDrag)
   window.removeEventListener('mouseup', handleLoopEdgeDragEnd)
@@ -1073,15 +1058,10 @@ function handleWheel(event: WheelEvent) {
 
   event.preventDefault()
 
-  const localDeltaY = viewportDeltaYToLocal(event.deltaY)
   const windowUs = session.showDuration * 1_000_000
-  const scrollUs = (-localDeltaY / 100) * (windowUs * 0.1)
+  const scrollUs = (-event.deltaY / 100) * (windowUs * 0.1)
 
   player.seekToUs(session.currentUs + scrollUs)
-}
-
-function handleViewportScaleChange() {
-  resizeCanvas()
 }
 
 function handleBookmarkGapClick(event: MouseEvent) {
@@ -1119,7 +1099,6 @@ function handleMouseDown(event: MouseEvent) {
   const edge = getHoveredLoopEdge(coords.y, session)
   if (edge) {
     draggingLoopEdge = edge
-    player.blockPlaybackOutput()
     window.addEventListener('mousemove', handleLoopEdgeDrag)
     window.addEventListener('mouseup', handleLoopEdgeDragEnd)
     return
@@ -1130,7 +1109,6 @@ function handleMouseDown(event: MouseEvent) {
   touchStartY = event.clientY
   touchStartUs = session.currentUs
   isTouchDragging = true
-  player.blockPlaybackOutput()
 
   window.addEventListener('mousemove', handleMouseMove)
   window.addEventListener('mouseup', handleMouseUp)
@@ -1141,7 +1119,7 @@ function handleMouseMove(event: MouseEvent) {
 
   event.preventDefault()
 
-  const deltaY = viewportDeltaYToLocal(event.clientY - touchStartY)
+  const deltaY = event.clientY - touchStartY
 
   const windowUs = player.session.showDuration * 1_000_000
   const usPerPixel = windowUs / logicalHeight * SCROLL_SENSITIVITY
@@ -1152,7 +1130,6 @@ function handleMouseMove(event: MouseEvent) {
 }
 
 function handleMouseUp() {
-  if (isTouchDragging) player.unblockPlaybackOutput()
   isTouchDragging = false
   window.removeEventListener('mousemove', handleMouseMove)
   window.removeEventListener('mouseup', handleMouseUp)
@@ -1165,7 +1142,6 @@ onMounted(() => {
     resizeObserver = new ResizeObserver(() => resizeCanvas())
     resizeObserver.observe(canvas)
 
-    window.addEventListener(VIEWPORT_SCALE_EVENT, handleViewportScaleChange)
     canvas.addEventListener('touchstart', handleTouchStart, { passive: true })
     canvas.addEventListener('touchmove', handleTouchMove, { passive: false })
     canvas.addEventListener('touchend', handleTouchEnd)
@@ -1178,7 +1154,6 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => {
-  if (isTouchDragging || draggingLoopEdge) player.unblockPlaybackOutput(true)
   if (rafId !== null) cancelAnimationFrame(rafId)
   resizeObserver?.disconnect()
   clearEffects()
@@ -1195,7 +1170,6 @@ onBeforeUnmount(() => {
     canvas.removeEventListener('mousemove', handleCanvasMouseMove)
     canvas.removeEventListener('wheel', handleWheel)
   }
-  window.removeEventListener(VIEWPORT_SCALE_EVENT, handleViewportScaleChange)
   window.removeEventListener('mousemove', handleMouseMove)
   window.removeEventListener('mouseup', handleMouseUp)
   window.removeEventListener('mousemove', handleLoopEdgeDrag)

@@ -27,9 +27,7 @@ const keys: { key: SongSortKey; labelKey: string }[] = [
       @click="library.setSort(item.key)"
     >
       <span class="sort-label">{{ t(item.labelKey) }}</span>
-      <span v-if="library.sortKey === item.key" class="sort-direction" aria-hidden="true">
-        <i :class="library.sortDirection === 'asc' ? 'fa-solid fa-arrow-up' : 'fa-solid fa-arrow-down'" />
-      </span>
+      <span v-if="library.sortKey === item.key" class="sort-direction">{{ library.sortDirection === 'asc' ? '↑' : '↓' }}</span>
     </button>
   </nav>
 </template>

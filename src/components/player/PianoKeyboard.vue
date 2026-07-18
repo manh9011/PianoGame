@@ -17,7 +17,6 @@ const canvasRef = ref<HTMLCanvasElement | null>(null)
 const pointerNotes = new Map<number, number>()
 const pressedComputerKeys = new Set<string>()
 const HIT_LINE_HEIGHT = 4
-const VIEWPORT_SCALE_EVENT = 'pianogame:viewport-scale-change'
 
 let resizeObserver: ResizeObserver | null = null
 let rafId: number | null = null
@@ -101,14 +100,13 @@ function currentKeySignatureAccidentals() {
 function resizeCanvas() {
   const canvas = canvasRef.value
   if (!canvas) return
-  const width = Math.max(1, canvas.offsetWidth)
-  const height = Math.max(1, canvas.offsetHeight)
+  const rect = canvas.getBoundingClientRect()
   const nextPixelRatio = window.devicePixelRatio || 1
-  const nextWidth = Math.round(width * nextPixelRatio)
-  const nextHeight = Math.round(height * nextPixelRatio)
-  const sizeChanged = logicalWidth !== width || logicalHeight !== height || pixelRatio !== nextPixelRatio
-  logicalWidth = width
-  logicalHeight = height
+  const nextWidth = Math.round(rect.width * nextPixelRatio)
+  const nextHeight = Math.round(rect.height * nextPixelRatio)
+  const sizeChanged = logicalWidth !== rect.width || logicalHeight !== rect.height || pixelRatio !== nextPixelRatio
+  logicalWidth = rect.width
+  logicalHeight = rect.height
   pixelRatio = nextPixelRatio
   if (canvas.width !== nextWidth) canvas.width = nextWidth
   if (canvas.height !== nextHeight) canvas.height = nextHeight
@@ -679,11 +677,9 @@ function pointFromEvent(event: PointerEvent) {
   const canvas = canvasRef.value
   if (!canvas) return null
   const rect = canvas.getBoundingClientRect()
-  const scaleX = rect.width > 0 ? canvas.offsetWidth / rect.width : 1
-  const scaleY = rect.height > 0 ? canvas.offsetHeight / rect.height : 1
-  const x = (event.clientX - rect.left) * scaleX
-  const y = (event.clientY - rect.top) * scaleY
-  return { x, y, inside: x >= 0 && x <= canvas.offsetWidth && y >= 0 && y <= canvas.offsetHeight }
+  const x = event.clientX - rect.left
+  const y = event.clientY - rect.top
+  return { x, y, inside: x >= 0 && x <= rect.width && y >= 0 && y <= rect.height }
 }
 
 function hitTest(event: PointerEvent) {
@@ -810,12 +806,6 @@ function onVisibilityChange() {
   if (document.visibilityState === 'hidden') releaseAllInput()
 }
 
-function handleViewportScaleChange() {
-  resizeCanvas()
-  invalidateKeyboardBaseLayer()
-  requestDraw()
-}
-
 onMounted(() => {
   resizeCanvas()
   if (canvasRef.value) {
@@ -828,7 +818,6 @@ onMounted(() => {
   window.addEventListener('blur', releaseAllInput)
   window.addEventListener('keydown', onComputerKeyDown)
   window.addEventListener('keyup', onComputerKeyUp)
-  window.addEventListener(VIEWPORT_SCALE_EVENT, handleViewportScaleChange)
   document.addEventListener('visibilitychange', onVisibilityChange)
   requestDraw()
 })
@@ -838,7 +827,6 @@ onBeforeUnmount(() => {
   window.removeEventListener('blur', releaseAllInput)
   window.removeEventListener('keydown', onComputerKeyDown)
   window.removeEventListener('keyup', onComputerKeyUp)
-  window.removeEventListener(VIEWPORT_SCALE_EVENT, handleViewportScaleChange)
   document.removeEventListener('visibilitychange', onVisibilityChange)
   if (resizeObserver) {
     resizeObserver.disconnect()
