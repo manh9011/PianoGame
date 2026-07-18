@@ -208,6 +208,8 @@ export const usePlayerStore = defineStore('player', {
     performanceAutoPlayUsed: false,
     playbackManuallyStopped: false,
     playbackRunning: false,
+    playbackOutputBlocked: false,
+    playbackOutputBlockCount: 0,
     loopAttemptHistory: [] as LoopAttemptSummary[],
     loopAttemptCounter: 0,
   }),
@@ -261,6 +263,7 @@ export const usePlayerStore = defineStore('player', {
       this.performanceAutoPlayUsed = false
       this.playbackManuallyStopped = false
       this.playbackRunning = false
+      this.unblockPlaybackOutput(true)
       this.resetLoopAttemptHistory()
       this.restoreSavedLoopRegion(song.id)
       this.clock?.stop()
@@ -354,12 +357,19 @@ export const usePlayerStore = defineStore('player', {
           })
           session.currentUs = state.currentUs
           session.finished = state.finished
-          measurePlaybackSpan(tickProfile, 'tick.autoPlayer', () => this.autoPlayer.tick(session))
-          measurePlaybackSpan(tickProfile, 'tick.metronome', () => this.metronome.tick(session.metronomeBeatGrid, state.currentUs, {
-            volume: settings.metronomeVolume,
-            doubleSpeed: settings.metronomeDoubleSpeed,
-            emphasizeFirstBeat: settings.metronomeEmphasizeFirstBeat,
-          }))
+          if (this.playbackOutputBlocked) {
+            measurePlaybackSpan(tickProfile, 'tick.outputBlocked', () => {
+              this.autoPlayer.allNotesOff(session)
+              this.metronome.reset(state.currentUs)
+            })
+          } else {
+            measurePlaybackSpan(tickProfile, 'tick.autoPlayer', () => this.autoPlayer.tick(session))
+            measurePlaybackSpan(tickProfile, 'tick.metronome', () => this.metronome.tick(session.metronomeBeatGrid, state.currentUs, {
+              volume: settings.metronomeVolume,
+              doubleSpeed: settings.metronomeDoubleSpeed,
+              emphasizeFirstBeat: settings.metronomeEmphasizeFirstBeat,
+            }))
+          }
           const misses = measurePlaybackSpan(tickProfile, 'tick.markMisses', () => markMisses(session.notes, session.tracks, session.handSelection, state.currentUs, session))
           addPlaybackCounter(tickProfile, 'missesThisTick', misses.length)
           if (session.modeConfig.scoringEnabled) {
@@ -406,6 +416,7 @@ export const usePlayerStore = defineStore('player', {
       this.performanceAutoPlayUsed = false
       this.playbackManuallyStopped = false
       this.playbackRunning = false
+      this.unblockPlaybackOutput(true)
       this.resetLoopAttemptHistory()
       this.applyLoopBoundsToClock()
       recordPlaybackEvent('configure', { durationMs: performance.now() - configureStartMs, notesTouched: session.notes.length, currentUs: session.currentUs })
@@ -441,6 +452,33 @@ export const usePlayerStore = defineStore('player', {
       this.currentProgress = this.clock?.state.progress ?? this.currentProgress
       session.currentUs = this.clock?.state.currentUs ?? session.currentUs
       this.autoPlayer.allNotesOff(session)
+    },
+    blockPlaybackOutput() {
+      this.playbackOutputBlockCount += 1
+      this.playbackOutputBlocked = true
+      this.autoPlayer.allNotesOff(this.session)
+      this.inputSynth.allNotesOff()
+      if (this.session) {
+        this.session.activeNotes.clear()
+        this.session.activeNoteHands.clear()
+        this.session.activeNoteTrackIds.clear()
+      }
+    },
+    unblockPlaybackOutput(force = false) {
+      this.playbackOutputBlockCount = force ? 0 : Math.max(0, this.playbackOutputBlockCount - 1)
+      this.playbackOutputBlocked = this.playbackOutputBlockCount > 0
+      if (!this.playbackOutputBlocked) this.metronome.reset(this.session?.currentUs ?? 0)
+    },
+    withPlaybackOutputBlocked<T>(action: () => T): T {
+      const wasBlocked = this.playbackOutputBlocked
+      this.playbackOutputBlocked = true
+      this.autoPlayer.allNotesOff(this.session)
+      this.inputSynth.allNotesOff()
+      try {
+        return action()
+      } finally {
+        this.playbackOutputBlocked = wasBlocked || this.playbackOutputBlockCount > 0
+      }
     },
     setSpeed(v: number) {
       const session = this.session
@@ -491,7 +529,7 @@ export const usePlayerStore = defineStore('player', {
       const seekUs = Math.max(0, Math.min(clock.seekableDurationUs, targetUs))
       this.recordSkippedPlayableNotes(seekUs)
       this.resetSessionForSeek(seekUs)
-      clock.seek(seekUs)
+      this.withPlaybackOutputBlocked(() => clock.seek(seekUs))
       this.metronome.reset(seekUs)
       session.paused = !clock.state.running
       recordPlaybackEvent('seek', { durationMs: performance.now() - seekStartMs, currentUs: seekUs, notesTouched: session.notes.length })
@@ -884,6 +922,7 @@ export const usePlayerStore = defineStore('player', {
     },
     noteInput(noteId: number, on: boolean) {
       const session = this.session
+      if (this.playbackOutputBlocked) return
       if (!session?.setupComplete || session.finished || this.stats) return
       if (!on) {
         session.activeNotes.delete(noteId)

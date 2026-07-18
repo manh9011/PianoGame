@@ -29,7 +29,7 @@ const { t } = useI18n()
 
 <style scoped>
 .settings-view {
-  height: 100vh;
+  height: 100%;
   min-height: 0;
   display: grid;
   grid-template-rows: 2.75rem minmax(0, 1fr);
@@ -122,21 +122,4 @@ const { t } = useI18n()
   font-size: 0.78rem;
 }
 
-@media (max-width: 820px) {
-  .settings-view {
-    grid-template-rows: auto minmax(0, 1fr);
-  }
-
-  .settings-topbar {
-    min-height: 2.75rem;
-  }
-
-  .settings-brand {
-    display: none;
-  }
-
-  .settings-frame {
-    flex-direction: column;
-  }
-}
 </style>

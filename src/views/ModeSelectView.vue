@@ -487,7 +487,7 @@ function goToTrackSettings() {
 
 <style scoped>
 .setup-wrap {
-  height: 100vh;
+  height: 100%;
   display: grid;
   grid-template-rows: auto auto auto minmax(0, 1fr);
   background: #3b3b3b;
@@ -879,44 +879,4 @@ function goToTrackSettings() {
   overflow: hidden;
 }
 
-@media (max-width: 1100px) {
-  .setup-modes {
-    grid-template-columns: repeat(2, minmax(12rem, 1fr));
-    padding-inline: 1rem;
-  }
-}
-
-@media (max-width: 760px) {
-  .setup-wrap {
-    height: 100vh;
-    overflow: hidden;
-  }
-
-  .setup-header,
-  .setup-detail-area {
-    grid-template-columns: 1fr;
-  }
-
-  .song-heading {
-    order: -1;
-  }
-
-  .setup-modes {
-    grid-template-columns: 1fr;
-  }
-
-  .detail-tabs {
-    grid-template-columns: repeat(2, 1fr);
-    border-inline-end: 0;
-  }
-
-  .breakdown-row {
-    grid-template-columns: minmax(12rem, 1fr) repeat(4, minmax(4.5rem, 0.18fr));
-    font-size: 0.85rem;
-  }
-
-  .breakdown-header-row {
-    font-size: 1rem;
-  }
-}
 </style>

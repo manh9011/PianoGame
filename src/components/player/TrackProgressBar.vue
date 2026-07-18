@@ -12,6 +12,7 @@ const props = defineProps<{
 
 const player = usePlayerStore()
 const settings = useSettingsStore()
+const VIEWPORT_SCALE_EVENT = 'pianogame:viewport-scale-change'
 const seekBarRef = ref<HTMLElement | null>(null)
 const progressCanvasRef = ref<HTMLCanvasElement | null>(null)
 const popoverRef = ref<HTMLElement | null>(null)
@@ -65,6 +66,7 @@ const loopRegion = computed(() => {
 })
 
 let isDraggingLoop = false
+let isSeekingProgress = false
 let dragStartUs = 0
 let previewStartUs = 0
 let previewEndUs = 0
@@ -89,10 +91,9 @@ const playedRegions = computed(() => {
 })
 
 function syncCanvasSize(canvas: HTMLCanvasElement) {
-  const rect = canvas.getBoundingClientRect()
   const dpr = window.devicePixelRatio || 1
-  const width = Math.max(1, Math.round(rect.width * dpr))
-  const height = Math.max(1, Math.round(rect.height * dpr))
+  const width = Math.max(1, Math.round(canvas.offsetWidth * dpr))
+  const height = Math.max(1, Math.round(canvas.offsetHeight * dpr))
   if (canvas.width !== width) canvas.width = width
   if (canvas.height !== height) canvas.height = height
   return { width, height }
@@ -123,8 +124,13 @@ function drawCanvases() {
 }
 
 function handleMouseDown(event: MouseEvent) {
+  if (!props.loopSetupActive && !player.canSeek) return
+  player.blockPlaybackOutput()
   if (!props.loopSetupActive) {
+    isSeekingProgress = true
     seekFromPointer(event)
+    window.addEventListener('mousemove', handleSeekMove)
+    window.addEventListener('mouseup', handleSeekEnd)
     return
   }
   const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
@@ -136,6 +142,19 @@ function handleMouseDown(event: MouseEvent) {
   loopPreview.value = { left: ratio * 100, width: 0 }
   window.addEventListener('mousemove', handleDragMove)
   window.addEventListener('mouseup', handleDragEnd)
+}
+
+function handleSeekMove(event: MouseEvent) {
+  if (!isSeekingProgress || !seekBarRef.value) return
+  seekFromPointer(event)
+}
+
+function handleSeekEnd() {
+  if (!isSeekingProgress) return
+  isSeekingProgress = false
+  player.unblockPlaybackOutput()
+  window.removeEventListener('mousemove', handleSeekMove)
+  window.removeEventListener('mouseup', handleSeekEnd)
 }
 
 function handleDragMove(event: MouseEvent) {
@@ -158,12 +177,19 @@ function handleDragEnd() {
   if (Math.abs(previewEndUs - previewStartUs) > 10000) {
     player.setLoopRegion(previewStartUs, previewEndUs)
   }
+  player.unblockPlaybackOutput()
   window.removeEventListener('mousemove', handleDragMove)
   window.removeEventListener('mouseup', handleDragEnd)
 }
 
+function handleViewportScaleChange() {
+  drawCanvases()
+  if (hoverPopover.value.visible) nextTick(() => clampPopoverPosition(hoverPopoverLeftPx.value))
+}
+
 onMounted(() => {
   drawCanvases()
+  window.addEventListener(VIEWPORT_SCALE_EVENT, handleViewportScaleChange)
   if (typeof ResizeObserver !== 'undefined' && seekBarRef.value) {
     canvasResizeObserver = new ResizeObserver(() => drawCanvases())
     canvasResizeObserver.observe(seekBarRef.value)
@@ -180,8 +206,12 @@ watch(
 )
 
 onBeforeUnmount(() => {
+  if (isDraggingLoop || isSeekingProgress) player.unblockPlaybackOutput(true)
+  window.removeEventListener('mousemove', handleSeekMove)
+  window.removeEventListener('mouseup', handleSeekEnd)
   window.removeEventListener('mousemove', handleDragMove)
   window.removeEventListener('mouseup', handleDragEnd)
+  window.removeEventListener(VIEWPORT_SCALE_EVENT, handleViewportScaleChange)
   canvasResizeObserver?.disconnect()
 })
 
@@ -219,16 +249,19 @@ function clampPopoverPosition(anchorX: number) {
 
   const margin = 10
   const rect = seekBar.getBoundingClientRect()
+  const scaleX = rect.width > 0 ? seekBar.offsetWidth / rect.width : 1
   const popoverWidth = popover.offsetWidth
-  const minLeft = margin - rect.left
-  const maxLeft = window.innerWidth - margin - rect.left - popoverWidth
+  const minLeft = (margin - rect.left) * scaleX
+  const maxLeft = (window.innerWidth - margin - rect.left) * scaleX - popoverWidth
   const centeredLeft = anchorX - popoverWidth / 2
   hoverPopoverLeftPx.value = Math.max(minLeft, Math.min(maxLeft, centeredLeft))
 }
 
 function updateHoverPopover(event: MouseEvent) {
-  const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
+  const target = event.currentTarget as HTMLElement
+  const rect = target.getBoundingClientRect()
   const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width))
+  const anchorX = ratio * target.offsetWidth
   const timeUs = ratio * totalUs.value
   hoverPopover.value = {
     visible: true,
@@ -236,8 +269,8 @@ function updateHoverPopover(event: MouseEvent) {
     timeUs,
     measure: measureAt(timeUs),
   }
-  hoverPopoverLeftPx.value = ratio * rect.width
-  nextTick(() => clampPopoverPosition(ratio * rect.width))
+  hoverPopoverLeftPx.value = anchorX
+  nextTick(() => clampPopoverPosition(anchorX))
 }
 
 function hideHoverPopover() {

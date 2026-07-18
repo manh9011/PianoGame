@@ -207,7 +207,8 @@ async function selectAndStart(nextMode: PlayMode, nextHand: HandSelection) {
 
 <style scoped>
 .setup-wrap {
-  min-height: 100vh;
+  height: 100%;
+  min-height: 0;
   display: grid;
   grid-template-rows: auto auto auto minmax(0, 1fr);
   background: #3b3b3b;
@@ -479,39 +480,4 @@ async function selectAndStart(nextMode: PlayMode, nextHand: HandSelection) {
   background: #8ae234;
 }
 
-@media (max-width: 1100px) {
-  .setup-modes {
-    grid-template-columns: repeat(2, minmax(12rem, 1fr));
-    padding-inline: 1rem;
-  }
-}
-
-@media (max-width: 760px) {
-  .setup-wrap {
-    min-height: 100vh;
-    overflow: auto;
-  }
-
-  .setup-header,
-  .setup-detail-area {
-    grid-template-columns: 1fr;
-  }
-
-  .song-heading {
-    order: -1;
-  }
-
-  .setup-modes {
-    grid-template-columns: 1fr;
-  }
-
-  .detail-tabs {
-    grid-template-columns: repeat(2, 1fr);
-    border-right: 0;
-  }
-
-  .breakdown-grid {
-    grid-template-columns: 1fr;
-  }
-}
 </style>

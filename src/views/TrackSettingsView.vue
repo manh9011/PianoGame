@@ -5,7 +5,7 @@ import { useRouter } from 'vue-router'
 import { usePlayerStore } from '../stores/playerStore'
 import { useSettingsStore } from '../stores/settingsStore'
 import { isTrackSounded, type TrackMode, type TrackRole } from '../modules/game/trackProperties'
-import { getEmojiFontFamily, getInstrumentByProgram, getInstrumentEmoji } from '../modules/audio/gmInstrumentCatalog'
+import { getInstrumentByProgram, getInstrumentIconClass } from '../modules/audio/gmInstrumentCatalog'
 import ColorPickerDialog from '../components/player/dialogs/ColorPickerDialog.vue'
 import TrackInstrumentDialog from '../components/player/dialogs/TrackInstrumentDialog.vue'
 import TrackRoleDialog from '../components/player/dialogs/TrackRoleDialog.vue'
@@ -27,7 +27,7 @@ interface TrackData {
   trackId: number
   instrumentProgram: number
   instrumentName: string
-  instrumentEmoji: string
+  instrumentIconClass: string
   noteCount: number
   channel: number
   color: string
@@ -35,8 +35,6 @@ interface TrackData {
   role?: TrackRole
   predominantHand: 'left' | 'right' | 'both' | 'background'
 }
-
-const emojiStyle = { fontFamily: getEmojiFontFamily() }
 
 const tracksData = computed<TrackData[]>(() => {
   if (!player.session) return []
@@ -63,7 +61,7 @@ const tracksData = computed<TrackData[]>(() => {
       trackId: track.trackId,
       instrumentProgram: instrument.program,
       instrumentName: instrument.name,
-      instrumentEmoji: getInstrumentEmoji(instrument),
+      instrumentIconClass: getInstrumentIconClass(instrument),
       noteCount,
       channel,
       color: track.color,
@@ -248,8 +246,8 @@ onBeforeUnmount(() => player.stopTrackPreview())
         <div class="track-accent"></div>
         <div class="track-card-header">
           <button class="track-icon" :title="t('trackSettings.selectInstrument')" @click="(e) => openInstrumentDialog(e, track.trackId)">
-            <span class="track-emoji-wrap">
-              <span class="track-emoji" :style="emojiStyle">{{ track.instrumentEmoji }}</span>
+            <span class="track-instrument-icon-wrap">
+              <i class="track-instrument-icon" :class="track.instrumentIconClass"></i>
             </span>
           </button>
           <div class="track-info">
@@ -321,7 +319,8 @@ onBeforeUnmount(() => player.stopTrackPreview())
 
 <style scoped>
 .track-settings-wrap {
-  min-height: 100vh;
+  height: 100%;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   background: #383838;
@@ -434,7 +433,7 @@ onBeforeUnmount(() => player.stopTrackPreview())
   background: rgba(0, 0, 0, 0.28);
 }
 
-.track-emoji-wrap {
+.track-instrument-icon-wrap {
   width: 42px;
   height: 42px;
   display: flex;
@@ -444,23 +443,20 @@ onBeforeUnmount(() => player.stopTrackPreview())
   pointer-events: none;
 }
 
-.track-emoji {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.2em;
-  height: 1.2em;
-  font-size: 1.45rem;
+.track-instrument-icon {
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 1.65rem;
   line-height: 1;
   text-align: center;
-  transform: translate(-1px, 0);
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.32));
   pointer-events: none;
   user-select: none;
+  transition: transform 0.15s ease;
 }
 
-.track-icon:hover .track-emoji,
-.track-icon:focus-visible .track-emoji {
-  transform: translate(-1px, 0) scale(1.02);
+.track-icon:hover .track-instrument-icon,
+.track-icon:focus-visible .track-instrument-icon {
+  transform: scale(1.04);
 }
 
 .track-info {

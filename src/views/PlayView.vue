@@ -30,6 +30,7 @@ import { freezePlaybackProfiler, resumePlaybackProfiler, setPlaybackProfilerMode
 const WHITE_KEY_ASPECT_RATIO = 150 / 23.5  // 6.383
 const BLACK_KEY_HEIGHT_RATIO = 95 / 150    // 0.633
 const BENCHMARK_STORAGE_KEY = 'pianogame:perf'
+const VIEWPORT_SCALE_EVENT = 'pianogame:viewport-scale-change'
 
 const route = useRoute()
 const router = useRouter()
@@ -141,6 +142,11 @@ function updateKeyboardHeight() {
   const whiteKeyWidth = containerWidth / WHITE_KEY_COUNT
   keyboardHeight.value = whiteKeyWidth * WHITE_KEY_ASPECT_RATIO
   blackKeyHeight.value = keyboardHeight.value * BLACK_KEY_HEIGHT_RATIO
+}
+
+function syncViewportDependentLayout() {
+  updateFullscreenState()
+  void nextTick(updateKeyboardHeight)
 }
 
 let resizeObserver: ResizeObserver | null = null
@@ -360,8 +366,9 @@ onMounted(async () => {
   midiAccess = await requestMidiAccess()
   bindInput(midiAccess, settings.midiInputId, (note, _velocity, on) => player.noteInput(note, on))
 
-  document.addEventListener('fullscreenchange', updateFullscreenState)
-  window.addEventListener('resize', updateFullscreenState)
+  document.addEventListener('fullscreenchange', syncViewportDependentLayout)
+  window.addEventListener('resize', syncViewportDependentLayout)
+  window.addEventListener(VIEWPORT_SCALE_EVENT, syncViewportDependentLayout)
   window.addEventListener('keyup', handleFullscreenShortcut)
   updateFullscreenState()
 
@@ -375,8 +382,9 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   bindInput(midiAccess, '', () => {})
-  document.removeEventListener('fullscreenchange', updateFullscreenState)
-  window.removeEventListener('resize', updateFullscreenState)
+  document.removeEventListener('fullscreenchange', syncViewportDependentLayout)
+  window.removeEventListener('resize', syncViewportDependentLayout)
+  window.removeEventListener(VIEWPORT_SCALE_EVENT, syncViewportDependentLayout)
   window.removeEventListener('keyup', handleFullscreenShortcut)
   if (resizeObserver) {
     resizeObserver.disconnect()
@@ -552,7 +560,8 @@ watch(() => player.stats, stats => {
 
 <style scoped>
 .play-layout {
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr) var(--keyboard-height);
   background: #2b2d31;

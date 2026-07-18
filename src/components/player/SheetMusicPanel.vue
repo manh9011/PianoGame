@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePlayerStore } from '../../stores/playerStore'
 import { base64ToBuffer, loadSongData } from '../../modules/library/songLibrary'
@@ -31,6 +31,13 @@ const includedSheetTrackIds = computed(() => getSheetTrackIds(player.session?.tr
 const sheetTrackSignature = computed(() => getSheetTrackSelectionKey(player.session?.tracks ?? []))
 const statusMessage = computed(() => status.value.code ? t(`sheetMusic.progress.${status.value.code}`, status.value.values ?? {}) : status.value.message)
 const errorMessage = computed(() => errorCode.value ? t(`sheetMusic.errors.${errorCode.value}`, errorValues.value) : errorFallback.value)
+const VIEWPORT_SCALE_EVENT = 'pianogame:viewport-scale-change'
+const SHEET_DRAG_SEEK_SENSITIVITY = 2.5
+
+const sheetDragActive = ref(false)
+let sheetDragPointerId: number | null = null
+let sheetDragStartClientX = 0
+let sheetDragStartUs = 0
 
 let toolkit: Awaited<ReturnType<typeof loadVerovio>>['toolkit']['prototype'] | null = null
 let requestToken = 0
@@ -43,6 +50,41 @@ let currentPlayheadX = 0
 let lastAnchorOnsetMs = -Infinity
 let lastPlaybackUs = 0
 let resizeObserver: ResizeObserver | null = null
+
+function localScaleForElement(element: HTMLElement | SVGGraphicsElement | null) {
+  if (!element) return { scaleX: 1, scaleY: 1 }
+  const rect = element.getBoundingClientRect()
+  const htmlElement = element as HTMLElement
+  const localWidth = htmlElement.offsetWidth || rect.width
+  const localHeight = htmlElement.offsetHeight || rect.height
+  return {
+    scaleX: rect.width > 0 ? localWidth / rect.width : 1,
+    scaleY: rect.height > 0 ? localHeight / rect.height : 1,
+  }
+}
+
+function visualXToStageLocal(x: number, stageRect: DOMRect) {
+  const { scaleX } = localScaleForElement(stageRef.value)
+  return (x - stageRect.left) * scaleX
+}
+
+function visualWidthToStageLocal(width: number) {
+  const { scaleX } = localScaleForElement(stageRef.value)
+  return width * scaleX
+}
+
+function visualHeightToStageLocal(height: number) {
+  const { scaleY } = localScaleForElement(stageRef.value)
+  return height * scaleY
+}
+
+function getScoreContentWidth() {
+  if (!scoreSvgElement) return 0
+  const stageRect = stageRef.value?.getBoundingClientRect()
+  const rect = scoreSvgElement.getBoundingClientRect()
+  if (!stageRect) return rect.width
+  return visualWidthToStageLocal(rect.width)
+}
 
 function clearHighlights() {
   for (const id of activeNoteIds) {
@@ -67,10 +109,10 @@ function updateMeasureHighlight(measureElement: Element, stageRect: DOMRect) {
 
   currentMeasureElement = measureElement
   const rect = measureElement.getBoundingClientRect()
-  highlight.style.transform = `translateX(${rect.left - stageRect.left}px)`
+  highlight.style.transform = `translateX(${visualXToStageLocal(rect.left, stageRect)}px)`
   highlight.style.top = '0px'
-  highlight.style.width = `${rect.width}px`
-  highlight.style.height = `${stageRect.height}px`
+  highlight.style.width = `${visualWidthToStageLocal(rect.width)}px`
+  highlight.style.height = `${visualHeightToStageLocal(stageRect.height)}px`
   highlight.style.opacity = '1'
 }
 
@@ -143,7 +185,7 @@ function updatePlaybackWindow() {
   const noteRects = anchorItems.map(item => item.element.getBoundingClientRect())
   const left = Math.min(...noteRects.map(rect => rect.left))
   const right = Math.max(...noteRects.map(rect => rect.right))
-  const candidateX = (left + right) / 2 - stageRect.left
+  const candidateX = visualXToStageLocal((left + right) / 2, stageRect)
 
   if (latestOnset > lastAnchorOnsetMs + onsetToleranceMs) {
     lastAnchorOnsetMs = latestOnset
@@ -157,17 +199,20 @@ function updatePlaybackWindow() {
 }
 
 function updatePanelHeight() {
-  const svgHeight = scoreSvgElement?.getBoundingClientRect().height ?? 0
-  if (!svgHeight) return
-  const maxHeight = Math.max(128, Math.floor(window.innerHeight * 0.42))
+  const svgRect = scoreSvgElement?.getBoundingClientRect()
+  if (!svgRect?.height) return
+  const svgHeight = visualHeightToStageLocal(svgRect.height)
+  const playStageHeight = viewportRef.value?.closest('.play-layout')?.clientHeight ?? 720
+  const maxHeight = Math.max(128, Math.floor(playStageHeight * 0.42))
   panelHeight.value = Math.min(maxHeight, Math.max(128, Math.ceil(svgHeight + 20)))
 }
 
-function updateSheetFollow(force = false) {
+function updateSheetFollow(force = false, allowDuringDrag = false) {
+  if (sheetDragActive.value && !allowDuringDrag) return
   const viewport = viewportRef.value
   if (!viewport || !scoreSvgElement) return
 
-  const contentWidth = Math.max(scoreContentWidth, viewport.scrollWidth, scoreSvgElement.getBoundingClientRect().width)
+  const contentWidth = Math.max(scoreContentWidth, viewport.scrollWidth, getScoreContentWidth())
   if (contentWidth <= viewport.clientWidth) {
     viewport.scrollLeft = 0
     return
@@ -178,6 +223,72 @@ function updateSheetFollow(force = false) {
   const targetScrollLeft = Math.min(maxScrollLeft, Math.max(0, currentPlayheadX - anchorX))
   if (force) viewport.scrollLeft = targetScrollLeft
   else viewport.scrollLeft += (targetScrollLeft - viewport.scrollLeft) * 0.18
+}
+
+function previewSheetFollowAt(timeUs: number, durationUs: number) {
+  const viewport = viewportRef.value
+  if (!viewport || !scoreSvgElement || durationUs <= 0) return
+
+  const contentWidth = Math.max(scoreContentWidth, viewport.scrollWidth, getScoreContentWidth())
+  if (contentWidth <= viewport.clientWidth) {
+    viewport.scrollLeft = 0
+    return
+  }
+
+  const progressX = Math.max(0, Math.min(1, timeUs / durationUs)) * contentWidth
+  const anchorX = viewport.clientWidth * 0.35
+  const maxScrollLeft = contentWidth - viewport.clientWidth
+  viewport.scrollLeft = Math.min(maxScrollLeft, Math.max(0, progressX - anchorX))
+}
+
+function viewportDeltaXToLocal(deltaX: number) {
+  const viewport = viewportRef.value
+  if (!viewport) return deltaX
+  const rect = viewport.getBoundingClientRect()
+  const scaleX = rect.width > 0 ? viewport.clientWidth / rect.width : 1
+  return deltaX * scaleX
+}
+
+function seekSheetFromDrag(clientX: number) {
+  const session = player.session
+  const durationUs = player.clock?.seekableDurationUs ?? session?.loopState.durationUs ?? 0
+  if (!session || !player.canSeek || durationUs <= 0 || !viewportRef.value) return
+
+  const deltaX = viewportDeltaXToLocal(clientX - sheetDragStartClientX)
+  const contentWidth = Math.max(scoreContentWidth, viewportRef.value.scrollWidth, getScoreContentWidth(), viewportRef.value.clientWidth)
+  const usableWidth = Math.max(viewportRef.value.clientWidth, contentWidth)
+  const usPerPixel = durationUs / usableWidth * SHEET_DRAG_SEEK_SENSITIVITY
+  const targetUs = Math.max(0, Math.min(durationUs, sheetDragStartUs - deltaX * usPerPixel))
+  player.seekToUs(targetUs)
+  previewSheetFollowAt(targetUs, durationUs)
+}
+
+function handleSheetPointerDown(event: PointerEvent) {
+  if (!player.canSeek || !player.session) return
+  if (event.button !== 0 && event.pointerType === 'mouse') return
+  sheetDragActive.value = true
+  player.blockPlaybackOutput()
+  sheetDragPointerId = event.pointerId
+  sheetDragStartClientX = event.clientX
+  sheetDragStartUs = player.session.currentUs
+  ;(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId)
+}
+
+function handleSheetPointerMove(event: PointerEvent) {
+  if (!sheetDragActive.value || sheetDragPointerId !== event.pointerId) return
+  event.preventDefault()
+  seekSheetFromDrag(event.clientX)
+}
+
+function endSheetDrag(event?: PointerEvent) {
+  if (!sheetDragActive.value) return
+  const viewport = viewportRef.value
+  if (event && viewport?.hasPointerCapture(event.pointerId)) viewport.releasePointerCapture(event.pointerId)
+  sheetDragActive.value = false
+  sheetDragPointerId = null
+  player.unblockPlaybackOutput()
+  updatePlaybackWindow()
+  updateSheetFollow(true, true)
 }
 
 function playbackLoop() {
@@ -231,7 +342,7 @@ async function renderArtifact(nextArtifact: SheetMusicArtifact, token: number) {
 
   requestAnimationFrame(() => {
     if (token !== requestToken) return
-    scoreContentWidth = scoreSvgElement?.getBoundingClientRect().width ?? 0
+    scoreContentWidth = getScoreContentWidth()
     updatePanelHeight()
     resetFollowState()
     updatePlaybackWindow()
@@ -281,12 +392,20 @@ watch(() => player.session?.currentUs ?? 0, (currentUs, previousUs) => {
   if (currentUs < previousUs - 50_000) resetFollowState()
 })
 
+function syncSheetScaleLayout() {
+  scoreContentWidth = getScoreContentWidth()
+  updatePanelHeight()
+  currentMeasureElement = null
+  updatePlaybackWindow()
+  updateSheetFollow(true)
+}
+
 watch(svgMarkup, () => {
   resizeObserver?.disconnect()
   nextTick(() => {
     if (!viewportRef.value) return
     resizeObserver = new ResizeObserver(() => {
-      scoreContentWidth = scoreSvgElement?.getBoundingClientRect().width ?? 0
+      scoreContentWidth = getScoreContentWidth()
       updatePanelHeight()
       updatePlaybackWindow()
       updateSheetFollow(true)
@@ -295,11 +414,17 @@ watch(svgMarkup, () => {
   })
 })
 
+onMounted(() => {
+  window.addEventListener(VIEWPORT_SCALE_EVENT, syncSheetScaleLayout)
+})
+
 startPlaybackLoop()
 
 onBeforeUnmount(() => {
   requestToken++
   stopPlaybackLoop()
+  endSheetDrag()
+  window.removeEventListener(VIEWPORT_SCALE_EVENT, syncSheetScaleLayout)
   resizeObserver?.disconnect()
   clearHighlights()
 })
@@ -307,7 +432,16 @@ onBeforeUnmount(() => {
 
 <template>
   <section class="sheet-panel" :style="{ height: `${panelHeight}px` }" :aria-label="t('sheetMusic.aria')">
-    <div ref="viewportRef" class="sheet-viewport">
+    <div
+      ref="viewportRef"
+      class="sheet-viewport"
+      :class="{ dragging: sheetDragActive }"
+      @pointerdown="handleSheetPointerDown"
+      @pointermove="handleSheetPointerMove"
+      @pointerup="endSheetDrag"
+      @pointercancel="endSheetDrag"
+      @lostpointercapture="endSheetDrag"
+    >
       <div v-if="loading" class="sheet-message">
         <span class="spinner" />
         <span>{{ statusMessage }}</span>
@@ -329,7 +463,6 @@ onBeforeUnmount(() => {
   position: relative;
   z-index: 1;
   min-height: 128px;
-  max-height: 42vh;
   background: #f8fafc;
   border-bottom: 1px solid rgba(15, 23, 42, 0.28);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
@@ -344,6 +477,12 @@ onBeforeUnmount(() => {
   scrollbar-width: none;
   -ms-overflow-style: none;
   white-space: nowrap;
+  cursor: grab;
+  touch-action: none;
+}
+
+.sheet-viewport.dragging {
+  cursor: grabbing;
 }
 
 .sheet-viewport::-webkit-scrollbar {

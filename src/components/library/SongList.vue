@@ -856,44 +856,4 @@ function clearDifficulty() {
   color: rgba(255, 200, 200, 1);
 }
 
-@media (max-width: 1100px) {
-  .song-row {
-    grid-template-columns: 2.5rem minmax(0, 1fr) 8.4rem 4.8rem 5.5rem 5.2rem 6rem 2.3rem;
-    gap: 0.6rem;
-    padding-inline: 0.16rem 0.56rem;
-  }
-
-  .detail-button {
-    width: 1.6rem;
-    height: 1.6rem;
-    font-size: 0.9rem;
-  }
-}
-
-@media (max-width: 760px) {
-  .song-row {
-    grid-template-columns: 2.2rem minmax(0, 1fr) 4.6rem 3.8rem 3.8rem 5rem 2rem;
-    gap: 0.42rem;
-    font-size: 0.82rem;
-  }
-
-  .song-last-played {
-    display: none;
-  }
-
-  .song-duration,
-  .song-rating {
-    font-size: 0.78rem;
-  }
-
-  .detail-button {
-    width: 1.5rem;
-    height: 1.5rem;
-    font-size: 0.85rem;
-  }
-
-  .difficulty-bar {
-    width: 0.2rem;
-  }
-}
 </style>
