@@ -28,11 +28,21 @@ export function pulseToMicroseconds(pulse: number, ticksPerQuarter: number, temp
 }
 
 export function microsecondsToPulse(microseconds: number, ticksPerQuarter: number, tempoMap: TempoPoint[]) {
-  let point = tempoMap[0]
+  const point = getTempoPointAtMicroseconds(microseconds, tempoMap)
+  const deltaUs = microseconds - point.microseconds
+  return point.pulse + (deltaUs * ticksPerQuarter) / point.microsecondsPerQuarter
+}
+
+export function getTempoPointAtMicroseconds(microseconds: number, tempoMap: TempoPoint[]) {
+  let point = tempoMap[0] ?? { pulse: 0, microseconds: 0, microsecondsPerQuarter: DEFAULT_TEMPO }
   for (const candidate of tempoMap) {
     if (candidate.microseconds <= microseconds) point = candidate
     else break
   }
-  const deltaUs = microseconds - point.microseconds
-  return point.pulse + (deltaUs * ticksPerQuarter) / point.microsecondsPerQuarter
+  return point
+}
+
+export function microsecondsPerQuarterToBpm(microsecondsPerQuarter: number) {
+  if (microsecondsPerQuarter <= 0) return 120
+  return 60_000_000 / microsecondsPerQuarter
 }

@@ -84,6 +84,7 @@ export const hi = {
     nextBookmark: "अगला बुकमार्क",
     speedDown: "गति घटाएँ",
     speedUp: "गति बढ़ाएँ",
+    bpmLabel: "{value} BPM",
     metronome: "मेट्रोनोम",
     trackConfig: "ट्रैक सेटअप",
     keyboardRange: "कीबोर्ड रेंज",

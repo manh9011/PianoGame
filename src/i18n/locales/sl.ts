@@ -84,6 +84,7 @@ export const sl = {
     nextBookmark: "Naslednji zaznamek",
     speedDown: "Zmanjšaj hitrost",
     speedUp: "Povečaj hitrost",
+    bpmLabel: "{value} BPM",
     metronome: "Metronom",
     trackConfig: "Nastavitev sledi",
     keyboardRange: "Obseg tipkovnice",

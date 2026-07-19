@@ -84,6 +84,7 @@ export const ru = {
     nextBookmark: "Следующая закладка",
     speedDown: "Уменьшить скорость",
     speedUp: "Увеличить скорость",
+    bpmLabel: "{value} BPM",
     metronome: "Метроном",
     trackConfig: "Настройка треков",
     keyboardRange: "Диапазон клавиатуры",

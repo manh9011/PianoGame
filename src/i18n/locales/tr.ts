@@ -84,6 +84,7 @@ export const tr = {
     nextBookmark: "Sonraki yer imi",
     speedDown: "Hızı azalt",
     speedUp: "Hızı artır",
+    bpmLabel: "{value} BPM",
     metronome: "Metronom",
     trackConfig: "Track ayarları",
     keyboardRange: "Klavye aralığı",

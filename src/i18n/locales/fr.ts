@@ -84,6 +84,7 @@ export const fr = {
     nextBookmark: "Signet suivant",
     speedDown: "Réduire la vitesse",
     speedUp: "Augmenter la vitesse",
+    bpmLabel: "{value} BPM",
     metronome: "Métronome",
     trackConfig: "Configuration des pistes",
     keyboardRange: "Étendue du clavier",

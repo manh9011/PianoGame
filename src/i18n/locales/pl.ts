@@ -84,6 +84,7 @@ export const pl = {
     nextBookmark: "Następna zakładka",
     speedDown: "Zmniejsz prędkość",
     speedUp: "Zwiększ prędkość",
+    bpmLabel: "{value} BPM",
     metronome: "Metronom",
     trackConfig: "Ustawienia ścieżek",
     keyboardRange: "Zakres klawiatury",

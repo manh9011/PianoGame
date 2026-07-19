@@ -84,6 +84,7 @@ export const zh = {
     nextBookmark: "下一个书签",
     speedDown: "降低速度",
     speedUp: "提高速度",
+    bpmLabel: "{value} BPM",
     metronome: "节拍器",
     trackConfig: "轨道设置",
     keyboardRange: "键盘范围",

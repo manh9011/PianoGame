@@ -84,6 +84,7 @@ export const th = {
     nextBookmark: "บุ๊กมาร์กถัดไป",
     speedDown: "ลดความเร็ว",
     speedUp: "เพิ่มความเร็ว",
+    bpmLabel: "{value} BPM",
     metronome: "เมโทรนอม",
     trackConfig: "ตั้งค่าแทร็ก",
     keyboardRange: "ช่วงคีย์บอร์ด",

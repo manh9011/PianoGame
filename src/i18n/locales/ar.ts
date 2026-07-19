@@ -84,6 +84,7 @@ export const ar = {
     nextBookmark: "الإشارة المرجعية التالية",
     speedDown: "خفض السرعة",
     speedUp: "زيادة السرعة",
+    bpmLabel: "{value} BPM",
     metronome: "المترونوم",
     trackConfig: "إعداد المسارات",
     keyboardRange: "نطاق لوحة المفاتيح",

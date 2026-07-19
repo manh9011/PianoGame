@@ -84,6 +84,7 @@ export const ko = {
     nextBookmark: "다음 북마크",
     speedDown: "속도 낮추기",
     speedUp: "속도 높이기",
+    bpmLabel: "{value} BPM",
     metronome: "메트로놈",
     trackConfig: "트랙 설정",
     keyboardRange: "키보드 범위",

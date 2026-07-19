@@ -82,6 +82,7 @@ export const en = {
     nextBookmark: 'Next bookmark',
     speedDown: 'Decrease speed',
     speedUp: 'Increase speed',
+    bpmLabel: '{value} BPM',
     metronome: 'Metronome',
     trackConfig: 'Track setup',
     keyboardRange: 'Keyboard range',

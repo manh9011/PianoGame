@@ -84,6 +84,7 @@ export const ja = {
     nextBookmark: "次のブックマーク",
     speedDown: "速度を下げる",
     speedUp: "速度を上げる",
+    bpmLabel: "{value} BPM",
     metronome: "メトロノーム",
     trackConfig: "トラック設定",
     keyboardRange: "キーボード範囲",

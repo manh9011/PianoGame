@@ -84,6 +84,7 @@ export const de = {
     nextBookmark: "Nächstes Lesezeichen",
     speedDown: "Tempo verringern",
     speedUp: "Tempo erhöhen",
+    bpmLabel: "{value} BPM",
     metronome: "Metronom",
     trackConfig: "Spureinstellungen",
     keyboardRange: "Tastaturbereich",

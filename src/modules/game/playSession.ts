@@ -1,4 +1,5 @@
 import type { MetronomeBeat } from '../audio/metronomePlayer'
+import type { TempoPoint } from '../midi/midiTempo'
 import type { MidiBookmarkSource, TranslatedNote } from '../midi/midiTypes'
 import { resolveTrackModeForSession, type TrackProperties } from './trackProperties'
 import { createScoreState, type ScoreState } from './scoring'
@@ -22,7 +23,7 @@ export interface LoopState {
   restartAfterErrors: number
 }
 export interface PlayModeConfig { mode: PlayMode; scoringEnabled: boolean; pauseAllowed: boolean; speedChangeAllowed: boolean; stopOnWrongNote: boolean; fixedSpeed?: number }
-export interface PlaySessionOptions { mode?: PlayMode; handSelection?: HandSelection; speed: number; showDuration: number; octaveShift: number; measureGridUs?: number[]; metronomeBeatGrid?: MetronomeBeat[]; bookmarks?: SessionBookmark[]; keySignatures?: SessionKeySignature[]; durationUs?: number }
+export interface PlaySessionOptions { mode?: PlayMode; handSelection?: HandSelection; speed: number; showDuration: number; octaveShift: number; tempoMap?: TempoPoint[]; measureGridUs?: number[]; metronomeBeatGrid?: MetronomeBeat[]; bookmarks?: SessionBookmark[]; keySignatures?: SessionKeySignature[]; durationUs?: number }
 export interface ConfigureSessionOptions { mode: PlayMode; handSelection: HandSelection; speed: number }
 
 export interface PlaySession {
@@ -37,6 +38,7 @@ export interface PlaySession {
   paused: boolean
   showDuration: number
   octaveShift: number
+  tempoMap: TempoPoint[]
   measureGridUs: number[]
   metronomeBeatGrid: MetronomeBeat[]
   bookmarks: SessionBookmark[]
@@ -96,6 +98,7 @@ export function createPlaySession(notes: SessionNote[], tracks: TrackProperties[
     paused: true,
     showDuration: clampShowDuration(options.showDuration),
     octaveShift: options.octaveShift,
+    tempoMap: options.tempoMap ?? [],
     measureGridUs: options.measureGridUs ?? [],
     metronomeBeatGrid: options.metronomeBeatGrid ?? [],
     bookmarks: options.bookmarks ?? [],

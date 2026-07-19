@@ -256,7 +256,7 @@ export const usePlayerStore = defineStore('player', {
       const bookmarks = createSessionBookmarks(midi, tempoMap)
       const keySignatures = createSessionKeySignatures(midi, tempoMap)
       this.song = song
-      this.session = createPlaySession(notes, tracks, { speed, showDuration, octaveShift, measureGridUs, metronomeBeatGrid, bookmarks, keySignatures, needsTrackConfiguration: needsManualAssignment, durationUs: duration })
+      this.session = createPlaySession(notes, tracks, { speed, showDuration, octaveShift, tempoMap, measureGridUs, metronomeBeatGrid, bookmarks, keySignatures, needsTrackConfiguration: needsManualAssignment, durationUs: duration })
       this.refreshKeyboardRange()
       this.stats = null
       this.performanceAutoPlay = false

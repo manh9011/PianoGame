@@ -3,9 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { usePlayerStore } from '../../stores/playerStore'
-import { parseMidi } from '../../modules/midi/midiParser'
-import { buildTempoMap } from '../../modules/midi/midiTempo'
-import { base64ToBuffer } from '../../modules/library/songLibrary'
+import { getTempoPointAtMicroseconds, microsecondsPerQuarterToBpm } from '../../modules/midi/midiTempo'
 
 const DEBUG = import.meta.env.DEV
 const router = useRouter()
@@ -40,15 +38,11 @@ const emit = defineEmits<{
 const currentSpeed = computed(() => player.session?.speed ?? 100)
 
 const baseBPM = computed(() => {
-  try {
-    if (!player.song?.data) return 120
-    const midi = parseMidi(base64ToBuffer(player.song.data))
-    const tempoMap = buildTempoMap(midi)
-    const baseTempo = tempoMap[0].microsecondsPerQuarter
-    return 60_000_000 / baseTempo
-  } catch {
-    return 120
-  }
+  const session = player.session
+  if (!session?.tempoMap.length) return 120
+  const currentUs = Math.max(0, session.currentUs)
+  const tempoPoint = getTempoPointAtMicroseconds(currentUs, session.tempoMap)
+  return microsecondsPerQuarterToBpm(tempoPoint.microsecondsPerQuarter)
 })
 
 const currentBPM = computed(() => Math.round(baseBPM.value * (currentSpeed.value / 100)))
@@ -148,7 +142,7 @@ function decreaseSpeed() {
           </button>
           <div class="tempo-display">
             <div class="tempo-percent">{{ currentSpeed }}%</div>
-            <div class="tempo-bpm">{{ currentBPM }} BPM</div>
+            <div class="tempo-bpm">{{ t('play.bpmLabel', { value: currentBPM }) }}</div>
           </div>
           <button
             class="tempo-btn"

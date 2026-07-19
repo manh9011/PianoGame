@@ -84,6 +84,7 @@ export const vi = {
     nextBookmark: "Dấu mốc tiếp theo",
     speedDown: "Giảm tốc độ",
     speedUp: "Tăng tốc độ",
+    bpmLabel: "{value} BPM",
     metronome: "Máy đếm nhịp",
     trackConfig: "Thiết lập track",
     keyboardRange: "Phạm vi bàn phím",

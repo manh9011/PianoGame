@@ -84,6 +84,7 @@ export const ca = {
     nextBookmark: "Marcador següent",
     speedDown: "Redueix la velocitat",
     speedUp: "Augmenta la velocitat",
+    bpmLabel: "{value} BPM",
     metronome: "Metrònom",
     trackConfig: "Configuració de pistes",
     keyboardRange: "Rang del teclat",

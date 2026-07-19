@@ -84,6 +84,7 @@ export const nl = {
     nextBookmark: "Volgende bladwijzer",
     speedDown: "Snelheid verlagen",
     speedUp: "Snelheid verhogen",
+    bpmLabel: "{value} BPM",
     metronome: "Metronoom",
     trackConfig: "Trackinstellingen",
     keyboardRange: "Toetsenbordbereik",
