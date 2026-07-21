@@ -527,6 +527,7 @@ export const ja = {
     continue: "続ける",
     togglePreview: "プレビューを切り替え",
     deleteSong: "曲を削除",
+    renameSong: "曲名を変更",
     deleteConfirm: "「{title}」を削除しますか？",
     missingHash: "この曲にはハッシュがないため、再インポートが必要です:",
     importToStart: ".mid または .midi ファイルをインポートして開始します。",

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { SongMetadata } from '../../types/song'
 import { useLibraryStore } from '../../stores/libraryStore'
@@ -10,7 +10,7 @@ import { achievementColorStyle } from '../../modules/game/achievementColors'
 import { achievementFromHistory } from '../../modules/game/achievementScoring'
 
 defineProps<{ songs: SongMetadata[]; selectedId?: string | null }>()
-defineEmits<{
+const emit = defineEmits<{
   select: [song: SongMetadata]
   play: []
 }>()
@@ -20,6 +20,9 @@ const library = useLibraryStore()
 const profiles = useProfileStore()
 const settings = useSettingsStore()
 const MAX_LIBRARY_ACHIEVEMENT = 105
+const editingSongId = ref<string | null>(null)
+const editingTitle = ref('')
+const titleInputRef = ref<HTMLInputElement | null>(null)
 
 const songAchievementScores = computed(() => {
   const scores: Record<string, number> = {}
@@ -92,6 +95,63 @@ function formatDuration(durationUs: number) {
 
   if (hours) return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
   return `${mins}:${secs.toString().padStart(2, '0')}`
+}
+
+function isRenaming(song: SongMetadata) {
+  return editingSongId.value === song.id
+}
+
+function setTitleInputRef(element: unknown) {
+  titleInputRef.value = element instanceof HTMLInputElement ? element : null
+}
+
+function focusTitleInput() {
+  titleInputRef.value?.focus()
+  titleInputRef.value?.select()
+}
+
+async function startRename(event: Event, song: SongMetadata) {
+  event.stopPropagation()
+  editingSongId.value = song.id
+  editingTitle.value = song.title
+  await nextTick()
+  focusTitleInput()
+}
+
+function saveRename(event?: Event) {
+  event?.stopPropagation()
+  const id = editingSongId.value
+  if (!id) return
+  const saved = library.renameSong(id, editingTitle.value)
+  if (!saved) {
+    focusTitleInput()
+    return
+  }
+  editingSongId.value = null
+  editingTitle.value = ''
+}
+
+function cancelRename(event?: Event) {
+  event?.stopPropagation()
+  editingSongId.value = null
+  editingTitle.value = ''
+}
+
+function handleRowClick(song: SongMetadata) {
+  if (isRenaming(song)) return
+  emit('select', song)
+}
+
+function handleRowDoubleClick(song: SongMetadata) {
+  if (isRenaming(song)) return
+  emit('play')
+}
+
+function handleRowKeydown(event: KeyboardEvent, song: SongMetadata) {
+  if (isRenaming(song)) return
+  if (event.key !== 'Enter' && event.key !== ' ') return
+  event.preventDefault()
+  emit('select', song)
 }
 
 function stars(value: number | undefined) {
@@ -219,17 +279,71 @@ function clearDifficulty() {
 
 <template>
   <div v-if="songs.length" class="song-list">
-    <button
+    <div
       v-for="song in songs"
       :key="song.id"
-      type="button"
       class="song-row"
-      :class="{ selected: song.id === selectedId }"
-      @click="$emit('select', song)"
-      @dblclick="$emit('play')"
+      :class="{ selected: song.id === selectedId, renaming: isRenaming(song) }"
+      role="button"
+      tabindex="0"
+      @click="handleRowClick(song)"
+      @dblclick="handleRowDoubleClick(song)"
+      @keydown="handleRowKeydown($event, song)"
     >
       <span class="song-score" :style="songScoreStyle(song.id)">{{ formatScore(achievementScore(song.id)) }}</span>
-      <span class="song-title">{{ song.title }}</span>
+      <span class="song-title-cell">
+        <template v-if="isRenaming(song)">
+          <input
+            :ref="setTitleInputRef"
+            v-model="editingTitle"
+            class="song-title-input"
+            type="text"
+            :aria-label="t('library.renameSong')"
+            @click.stop
+            @dblclick.stop
+            @keydown.stop
+            @keyup.enter="saveRename"
+            @keyup.escape="cancelRename"
+          />
+          <button
+            type="button"
+            class="rename-button rename-confirm-button"
+            :aria-label="t('common.save')"
+            :title="t('common.save')"
+            :disabled="!editingTitle.trim()"
+            @mousedown.prevent
+            @click.stop="saveRename"
+            @dblclick.stop
+          >
+            <i class="fa-solid fa-check" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            class="rename-button rename-cancel-button"
+            :aria-label="t('common.cancel')"
+            :title="t('common.cancel')"
+            @mousedown.prevent
+            @click.stop="cancelRename"
+            @dblclick.stop
+          >
+            <i class="fa-solid fa-xmark" aria-hidden="true" />
+          </button>
+        </template>
+        <template v-else>
+          <span class="song-title-text">{{ song.title }}</span>
+          <button
+            type="button"
+            class="rename-button"
+            :aria-label="t('library.renameSong')"
+            :title="t('library.renameSong')"
+            @mousedown.prevent
+            @click="startRename($event, song)"
+            @dblclick.stop
+          >
+            <i class="fa-solid fa-pencil" aria-hidden="true" />
+          </button>
+        </template>
+      </span>
       <span class="song-last-played muted">{{ formatLastPlayed(song.lastPlayed) }}</span>
       <span class="song-duration muted">{{ formatDuration(song.duration) }}</span>
       <span class="song-play-count">{{ song.playCount }}</span>
@@ -261,7 +375,7 @@ function clearDifficulty() {
       >
         <i class="fa fa-info"></i>
       </div>
-    </button>
+    </div>
   </div>
   <p v-else class="muted empty-list">{{ t('library.importToStart') }}</p>
 
@@ -419,7 +533,7 @@ function clearDifficulty() {
   font-variant-numeric: tabular-nums;
 }
 
-.song-title,
+.song-title-cell,
 .song-last-played,
 .song-duration {
   min-width: 0;
@@ -428,8 +542,83 @@ function clearDifficulty() {
   white-space: nowrap;
 }
 
-.song-title {
+.song-title-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.28rem;
   font-size: 0.95rem;
+}
+
+.song-title-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.song-title-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 1.8rem;
+  padding: 0.18rem 0.42rem;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 0.22rem;
+  background: rgba(30, 30, 30, 0.72);
+  color: rgba(255, 255, 255, 0.96);
+  font: inherit;
+}
+
+.song-title-input:focus {
+  outline: 1px solid rgba(255, 255, 255, 0.42);
+  outline-offset: 1px;
+}
+
+.rename-button {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 1.45rem;
+  height: 1.45rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.rename-button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.92);
+  transform: scale(1.08);
+}
+
+.rename-button:disabled {
+  opacity: 0.36;
+  cursor: not-allowed;
+}
+
+.rename-confirm-button {
+  color: rgba(134, 239, 172, 0.88);
+}
+
+.rename-cancel-button {
+  color: rgba(252, 165, 165, 0.88);
+}
+
+.song-row.selected .rename-button {
+  background: rgba(255, 255, 255, 0.22);
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.song-row.selected .rename-confirm-button {
+  color: #86efac;
+}
+
+.song-row.selected .rename-cancel-button {
+  color: #fca5a5;
 }
 
 .song-last-played,

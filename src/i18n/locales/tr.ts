@@ -527,6 +527,7 @@ export const tr = {
     continue: "Devam et",
     togglePreview: "Önizlemeyi değiştir",
     deleteSong: "Şarkıyı sil",
+    renameSong: "Şarkıyı yeniden adlandır",
     deleteConfirm: "“{title}” silinsin mi?",
     missingHash: "Bu şarkının hash değeri yok ve yeniden içe aktarılması gerekiyor:",
     importToStart: "Başlamak için bir .mid veya .midi dosyası içe aktarın.",

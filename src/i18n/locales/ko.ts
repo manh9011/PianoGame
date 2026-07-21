@@ -527,6 +527,7 @@ export const ko = {
     continue: "계속",
     togglePreview: "미리듣기 전환",
     deleteSong: "곡 삭제",
+    renameSong: "곡 이름 바꾸기",
     deleteConfirm: "“{title}”을(를) 삭제할까요?",
     missingHash: "이 곡에는 해시가 없어 다시 가져와야 합니다:",
     importToStart: ".mid 또는 .midi 파일을 가져와 시작하세요.",

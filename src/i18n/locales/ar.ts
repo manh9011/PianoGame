@@ -527,6 +527,7 @@ export const ar = {
     continue: "متابعة",
     togglePreview: "تبديل المعاينة",
     deleteSong: "حذف الأغنية",
+    renameSong: "إعادة تسمية الأغنية",
     deleteConfirm: "حذف \"{title}\"؟",
     missingHash: "لا تحتوي هذه الأغنية على قيمة تجزئة ويجب استيرادها من جديد:",
     importToStart: "استورد ملف .mid أو .midi للبدء.",

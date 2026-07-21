@@ -527,6 +527,7 @@ export const zh = {
     continue: "继续",
     togglePreview: "切换预览",
     deleteSong: "删除歌曲",
+    renameSong: "重命名歌曲",
     deleteConfirm: "删除“{title}”？",
     missingHash: "此歌曲没有哈希，需要重新导入：",
     importToStart: "导入 .mid 或 .midi 文件开始。",

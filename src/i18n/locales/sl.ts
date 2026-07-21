@@ -527,6 +527,7 @@ export const sl = {
     continue: "Nadaljuj",
     togglePreview: "Preklopi predogled",
     deleteSong: "Izbriši skladbo",
+    renameSong: "Preimenuj skladbo",
     deleteConfirm: "Izbrisati »{title}«?",
     missingHash: "Ta skladba nima zgoščene vrednosti in jo je treba znova uvoziti:",
     importToStart: "Uvozite datoteko .mid ali .midi za začetek.",

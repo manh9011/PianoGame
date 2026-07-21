@@ -527,6 +527,7 @@ export const ru = {
     continue: "Продолжить",
     togglePreview: "Переключить предпросмотр",
     deleteSong: "Удалить песню",
+    renameSong: "Переименовать песню",
     deleteConfirm: "Удалить «{title}»?",
     missingHash: "У этой песни нет хеша, её нужно импортировать снова:",
     importToStart: "Импортируйте файл .mid или .midi, чтобы начать.",

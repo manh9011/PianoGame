@@ -527,6 +527,7 @@ export const it = {
     continue: "Continua",
     togglePreview: "Attiva/disattiva anteprima",
     deleteSong: "Elimina brano",
+    renameSong: "Rinomina brano",
     deleteConfirm: "Eliminare \"{title}\"?",
     missingHash: "Questo brano non ha un hash e deve essere importato di nuovo:",
     importToStart: "Importa un file .mid o .midi per iniziare.",

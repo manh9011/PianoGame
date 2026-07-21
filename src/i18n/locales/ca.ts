@@ -527,6 +527,7 @@ export const ca = {
     continue: "Continua",
     togglePreview: "Commuta la previsualització",
     deleteSong: "Suprimeix la cançó",
+    renameSong: "Canvia el nom de la cançó",
     deleteConfirm: "Vols suprimir \"{title}\"?",
     missingHash: "Aquesta cançó no té hash i cal tornar-la a importar:",
     importToStart: "Importa un fitxer .mid o .midi per començar.",

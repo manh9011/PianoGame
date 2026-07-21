@@ -527,6 +527,7 @@ export const nl = {
     continue: "Doorgaan",
     togglePreview: "Voorbeeld aan/uit zetten",
     deleteSong: "Nummer verwijderen",
+    renameSong: "Nummer hernoemen",
     deleteConfirm: "\"{title}\" verwijderen?",
     missingHash: "Dit nummer heeft geen hash en moet opnieuw worden geïmporteerd:",
     importToStart: "Importeer een .mid- of .midi-bestand om te beginnen.",

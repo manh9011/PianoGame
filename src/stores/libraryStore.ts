@@ -149,6 +149,15 @@ export const useLibraryStore = defineStore('library', {
       this.sortKey = key
       this.sortDirection = key === 'title' ? 'asc' : 'desc'
     },
+    renameSong(id: string, rawTitle: string) {
+      const title = rawTitle.trim()
+      const song = this.songs.find(s => s.id === id)
+      if (!song || !title) return false
+      if (song.title === title) return true
+      song.title = title
+      this.persist()
+      return true
+    },
     updateSongPreferences(id: string, values: { rating?: number; difficulty?: number }) {
       const song = this.songs.find(s => s.id === id)
       if (!song) return

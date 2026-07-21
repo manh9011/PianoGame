@@ -527,6 +527,7 @@ export const vi = {
     continue: "Tiếp tục",
     togglePreview: "Bật/tắt nghe thử",
     deleteSong: "Xóa bài hát",
+    renameSong: "Đổi tên bài hát",
     deleteConfirm: "Xóa “{title}”?",
     missingHash: "Bài hát này chưa có mã băm và cần được nhập lại:",
     importToStart: "Nhập tệp .mid hoặc .midi để bắt đầu.",

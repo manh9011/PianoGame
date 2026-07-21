@@ -527,6 +527,7 @@ export const th = {
     continue: "ดำเนินการต่อ",
     togglePreview: "สลับตัวอย่างเสียง",
     deleteSong: "ลบเพลง",
+    renameSong: "เปลี่ยนชื่อเพลง",
     deleteConfirm: "ลบ “{title}” หรือไม่?",
     missingHash: "เพลงนี้ไม่มีแฮชและจำเป็นต้องนำเข้าอีกครั้ง:",
     importToStart: "นำเข้าไฟล์ .mid หรือ .midi เพื่อเริ่มต้น",

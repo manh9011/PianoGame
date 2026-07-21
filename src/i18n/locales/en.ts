@@ -519,6 +519,7 @@ export const en = {
     continue: 'Continue',
     togglePreview: 'Toggle preview',
     deleteSong: 'Delete song',
+    renameSong: 'Rename song',
     deleteConfirm: 'Delete "{title}"?',
     missingHash: 'This song has no hash and needs to be imported again:',
     importToStart: 'Import a .mid or .midi file to begin.',

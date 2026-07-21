@@ -527,6 +527,7 @@ export const hi = {
     continue: "जारी रखें",
     togglePreview: "पूर्वावलोकन चालू/बंद करें",
     deleteSong: "गीत हटाएँ",
+    renameSong: "गीत का नाम बदलें",
     deleteConfirm: "\"{title}\" हटाएँ?",
     missingHash: "इस गीत में हैश नहीं है और इसे फिर से आयात करना होगा:",
     importToStart: "शुरू करने के लिए .mid या .midi फ़ाइल आयात करें।",
