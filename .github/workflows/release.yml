@@ -1,0 +1,123 @@
+name: Release Tauri App
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+      - 'v*.*.*-*'
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Git tag cần release, ví dụ v0.1.0 hoặc v0.1.0-rc.1'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
+
+jobs:
+  release:
+    name: Build ${{ matrix.name }}
+    runs-on: ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows
+            platform: windows-latest
+            args: --bundles nsis
+          - name: macOS
+            platform: macos-latest
+            args: --bundles dmg
+          - name: Linux
+            platform: ubuntu-latest
+            args: --bundles appimage,deb,rpm
+
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@1.77.2
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - name: Install Linux dependencies
+        if: matrix.platform == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libgtk-3-dev \
+            libwebkit2gtk-4.1-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            rpm
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Validate release version
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+
+          const tag = process.env.RELEASE_TAG || '';
+          if (!/^v\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/.test(tag)) {
+            throw new Error(`Release tag "${tag}" must match vX.Y.Z or vX.Y.Z-prerelease.`);
+          }
+
+          const expectedVersion = tag.replace(/^v/, '');
+          const tauriConfig = JSON.parse(fs.readFileSync('src-tauri/tauri.conf.json', 'utf8'));
+          const cargoToml = fs.readFileSync('src-tauri/Cargo.toml', 'utf8');
+          const cargoVersion = cargoToml.match(/^version\s*=\s*"([^"]+)"/m)?.[1];
+
+          const mismatches = [];
+          if (tauriConfig.version !== expectedVersion) {
+            mismatches.push(`src-tauri/tauri.conf.json version is ${tauriConfig.version}, expected ${expectedVersion}`);
+          }
+          if (cargoVersion !== expectedVersion) {
+            mismatches.push(`src-tauri/Cargo.toml version is ${cargoVersion ?? 'missing'}, expected ${expectedVersion}`);
+          }
+
+          if (mismatches.length > 0) {
+            throw new Error(`Release version mismatch:\n${mismatches.join('\n')}`);
+          }
+
+          console.log(`Release version ${expectedVersion} matches ${tag}.`);
+          NODE
+
+      - name: Build and upload release assets
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ env.RELEASE_TAG }}
+          releaseName: PianoGame ${{ env.RELEASE_TAG }}
+          releaseBody: 'Tải file cài đặt phù hợp với hệ điều hành của bạn trong phần Assets.'
+          releaseDraft: false
+          prerelease: ${{ contains(env.RELEASE_TAG, '-') }}
+          args: ${{ matrix.args }}
