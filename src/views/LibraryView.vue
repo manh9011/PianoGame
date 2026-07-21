@@ -1,21 +1,28 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import MidiImportButton from '../components/library/MidiImportButton.vue'
 import FolderSelector from '../components/library/FolderSelector.vue'
 import SongList from '../components/library/SongList.vue'
 import SongSortBar from '../components/library/SongSortBar.vue'
+import { base64ToBuffer, loadSongData } from '../modules/library/songLibrary'
+import { generateSheetMusic } from '../modules/sheet/sheetMusicClient'
+import { SheetMusicError, toSheetMusicError } from '../modules/sheet/sheetTypes'
 import { useLibraryStore } from '../stores/libraryStore'
 import { useSettingsStore } from '../stores/settingsStore'
+import { useToastStore } from '../stores/toastStore'
 import type { SongMetadata } from '../types/song'
 
 const router = useRouter()
 const { t } = useI18n()
 const library = useLibraryStore()
 const settings = useSettingsStore()
+const toastStore = useToastStore()
 const selectedSong = computed(() => library.selectedSong)
 const visibleSongCount = computed(() => library.sortedSongs.length)
+const musicXmlDownloadingSongId = ref<string | null>(null)
+const downloadMenuOpen = ref(false)
 
 function startPreview(song: SongMetadata | null) {
   if (!song) return
@@ -45,6 +52,63 @@ function togglePreview() {
   else library.stopPreview()
 }
 
+function downloadBlob(blob: Blob, fileName: string) {
+  const link = document.createElement('a')
+  const url = URL.createObjectURL(blob)
+  link.href = url
+  link.download = fileName
+  link.click()
+  URL.revokeObjectURL(url)
+}
+
+function toggleDownloadMenu() {
+  if (!selectedSong.value) return
+  downloadMenuOpen.value = !downloadMenuOpen.value
+}
+
+function closeDownloadMenu() {
+  downloadMenuOpen.value = false
+}
+
+async function downloadSong() {
+  closeDownloadMenu()
+  const song = selectedSong.value
+  if (!song) return
+  const data = song.data ?? await loadSongData(song.id)
+  if (!data) return
+
+  downloadBlob(new Blob([base64ToBuffer(data)], { type: 'audio/midi' }), `${song.title || t('library.downloadFallbackName')}.mid`)
+}
+
+async function downloadMusicXml() {
+  closeDownloadMenu()
+  const song = selectedSong.value
+  if (!song || musicXmlDownloadingSongId.value) return
+  musicXmlDownloadingSongId.value = song.id
+  toastStore.showLoading(t('library.musicXmlDownloadProgress'))
+
+  try {
+    const data = song.data ?? await loadSongData(song.id)
+    if (!data) throw new SheetMusicError('sheetMusic.errors.missingMidiData', 'missingMidiData')
+
+    const cacheKey = `${song.hash ?? song.id}:sheet-v20:tracks=all`
+    const generated = await generateSheetMusic(cacheKey, base64ToBuffer(data), progress => {
+      if (progress.code) toastStore.showLoading(t(`sheetMusic.progress.${progress.code}`, progress.values ?? {}))
+    })
+    downloadBlob(
+      new Blob([generated.musicXml], { type: 'application/vnd.recordare.musicxml+xml' }),
+      `${song.title || t('library.downloadFallbackName')}.musicxml`,
+    )
+    toastStore.showSuccess(t('library.musicXmlDownloadSuccess'))
+  } catch (error) {
+    const sheetError = toSheetMusicError(error)
+    const message = sheetError.code ? t(`sheetMusic.errors.${sheetError.code}`, sheetError.values) : sheetError.message
+    toastStore.showError(t('library.musicXmlDownloadFailed', { message }))
+  } finally {
+    musicXmlDownloadingSongId.value = null
+  }
+}
+
 function deleteSong() {
   const song = selectedSong.value
   if (!song) return
@@ -59,9 +123,13 @@ function seekPreviewFromPointer(event: MouseEvent) {
 
 onMounted(() => {
   if (settings.libraryAutoPreviewEnabled) startPreview(selectedSong.value)
+  window.addEventListener('click', closeDownloadMenu)
 })
 
-onBeforeUnmount(() => library.stopPreview())
+onBeforeUnmount(() => {
+  library.stopPreview()
+  window.removeEventListener('click', closeDownloadMenu)
+})
 </script>
 
 <template>
@@ -79,6 +147,31 @@ onBeforeUnmount(() => library.stopPreview())
           <div class="preview-song">{{ selectedSong?.title ?? t('common.noSongSelected') }}</div>
           <div class="preview-track" @click="seekPreviewFromPointer">
             <div class="preview-fill" :style="{ width: `${Math.round(library.previewProgress * 100)}%` }" />
+          </div>
+        </div>
+
+        <div class="download-menu" @click.stop>
+          <button
+            class="icon-button"
+            :disabled="!selectedSong || !!musicXmlDownloadingSongId"
+            :aria-label="t('library.downloadSong')"
+            :aria-expanded="downloadMenuOpen"
+            aria-haspopup="menu"
+            @click="toggleDownloadMenu"
+          >
+            <i v-if="musicXmlDownloadingSongId" class="fa-solid fa-spinner fa-spin" aria-hidden="true" />
+            <i v-else class="fa-solid fa-download" aria-hidden="true" />
+          </button>
+
+          <div v-if="downloadMenuOpen" class="download-options" role="menu">
+            <button type="button" role="menuitem" @click="downloadSong">
+              <span>{{ t('library.downloadMidi') }}</span>
+              <span class="download-extension">.mid</span>
+            </button>
+            <button type="button" role="menuitem" :disabled="!!musicXmlDownloadingSongId" @click="downloadMusicXml">
+              <span>{{ t('library.downloadMusicXml') }}</span>
+              <span class="download-extension">.musicxml</span>
+            </button>
           </div>
         </div>
 
@@ -181,7 +274,7 @@ onBeforeUnmount(() => library.stopPreview())
 
 .library-playback {
   display: grid;
-  grid-template-columns: 2.2rem minmax(0, 25rem) 2.2rem;
+  grid-template-columns: 2.2rem minmax(0, 25rem) 2.2rem 2.2rem;
   align-items: center;
   gap: 0.48rem;
   justify-self: center;
@@ -197,6 +290,54 @@ onBeforeUnmount(() => library.stopPreview())
 
 .icon-button i {
   font-size: 0.92rem;
+}
+
+.download-menu {
+  position: relative;
+}
+
+.download-options {
+  position: absolute;
+  top: calc(100% + 0.28rem);
+  right: 0;
+  display: grid;
+  min-width: 14.75rem;
+  padding: 0.35rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.48rem;
+  background: #3f3f3f;
+  box-shadow: 0 0.5rem 1.2rem rgba(0, 0, 0, 0.28);
+  z-index: 20;
+}
+
+.download-options button {
+  display: grid;
+  grid-template-columns: minmax(max-content, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  min-height: 2.25rem;
+  padding: 0.35rem 0.65rem;
+  border: 0;
+  border-radius: 0.35rem;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.9);
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.download-options button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.download-options button:disabled {
+  color: rgba(255, 255, 255, 0.42);
+  cursor: not-allowed;
+}
+
+.download-extension {
+  color: rgba(255, 255, 255, 0.52);
+  font-size: 0.78rem;
 }
 
 .preview-center {
@@ -378,7 +519,7 @@ onBeforeUnmount(() => library.stopPreview())
 
 @media (max-width: 900px) {
   .library-playback {
-    grid-template-columns: 2.2rem minmax(0, 1fr) 2.2rem;
+    grid-template-columns: 2.2rem minmax(0, 1fr) 2.2rem 2.2rem;
   }
 
   .library-footer {
