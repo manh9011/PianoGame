@@ -43,6 +43,7 @@ export interface UserSettings {
   defaultSpeed: number
   showDuration: number
   octaveShift: number
+  libraryAutoPreviewEnabled: boolean
   metronomeVolume: number
   metronomeDoubleSpeed: boolean
   metronomeEmphasizeFirstBeat: boolean

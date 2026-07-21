@@ -25,7 +25,7 @@ interface TrackData {
   color: string
   mode: TrackMode
   role?: TrackRole
-  predominantHand: 'left' | 'right' | 'both' | 'background'
+  predominantHand: 'left' | 'right' | 'background'
 }
 
 const props = defineProps<Props>()
@@ -56,8 +56,10 @@ const tracksData = computed<TrackData[]>(() => {
       predominantHand = 'background'
     } else if (track.handAssignment !== undefined) {
       predominantHand = track.handAssignment
+    } else if (leftCount > 0 && rightCount > 0) {
+      predominantHand = 'background'
     } else {
-      predominantHand = leftCount > 0 && rightCount > 0 ? 'both' : leftCount > rightCount ? 'left' : 'right'
+      predominantHand = leftCount > rightCount ? 'left' : 'right'
     }
 
     return {
@@ -82,7 +84,6 @@ const currentTrack = computed(() => selectedTrackId.value === null
 const roleLabelKeys: Record<TrackData['predominantHand'], string> = {
   left: 'trackSettings.left',
   right: 'trackSettings.right',
-  both: 'trackSettings.both',
   background: 'trackSettings.background',
 }
 

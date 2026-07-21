@@ -27,6 +27,7 @@ export const defaultSettings: UserSettings = {
   defaultSpeed: 100,
   showDuration: 3.25,
   octaveShift: 0,
+  libraryAutoPreviewEnabled: false,
   metronomeVolume: 0,
   metronomeDoubleSpeed: false,
   metronomeEmphasizeFirstBeat: true,

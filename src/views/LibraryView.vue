@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import MidiImportButton from '../components/library/MidiImportButton.vue'
@@ -7,18 +7,25 @@ import FolderSelector from '../components/library/FolderSelector.vue'
 import SongList from '../components/library/SongList.vue'
 import SongSortBar from '../components/library/SongSortBar.vue'
 import { useLibraryStore } from '../stores/libraryStore'
-import { usePlayerStore } from '../stores/playerStore'
 import { useSettingsStore } from '../stores/settingsStore'
-import { useProfileStore } from '../stores/profileStore'
+import type { SongMetadata } from '../types/song'
 
 const router = useRouter()
 const { t } = useI18n()
 const library = useLibraryStore()
-const player = usePlayerStore()
 const settings = useSettingsStore()
-const profiles = useProfileStore()
 const selectedSong = computed(() => library.selectedSong)
 const visibleSongCount = computed(() => library.sortedSongs.length)
+
+function startPreview(song: SongMetadata | null) {
+  if (!song) return
+  library.startPreview(song, settings.midiOutputId, settings.defaultSpeed, settings.showDuration, settings.octaveShift)
+}
+
+function handleSelectSong(song: SongMetadata) {
+  library.selectSong(song.id)
+  if (settings.libraryAutoPreviewEnabled) startPreview(song)
+}
 
 function continuePlay() {
   const song = selectedSong.value
@@ -32,7 +39,10 @@ function continuePlay() {
 }
 
 function togglePreview() {
-  library.togglePreview(selectedSong.value, settings.midiOutputId, settings.defaultSpeed, settings.showDuration, settings.octaveShift)
+  const enabled = !settings.libraryAutoPreviewEnabled
+  settings.setLibraryAutoPreviewEnabled(enabled)
+  if (enabled) startPreview(selectedSong.value)
+  else library.stopPreview()
 }
 
 function deleteSong() {
@@ -47,6 +57,10 @@ function seekPreviewFromPointer(event: MouseEvent) {
   library.seekPreviewToProgress((event.clientX - rect.left) / rect.width)
 }
 
+onMounted(() => {
+  if (settings.libraryAutoPreviewEnabled) startPreview(selectedSong.value)
+})
+
 onBeforeUnmount(() => library.stopPreview())
 </script>
 
@@ -56,7 +70,7 @@ onBeforeUnmount(() => library.stopPreview())
       <button class="secondary header-tab" @click="router.push('/')">{{ t('common.back') }}</button>
 
       <div class="library-playback">
-        <button class="icon-button" :disabled="!selectedSong" :aria-label="t('library.togglePreview')" @click="togglePreview">
+        <button class="icon-button" :disabled="!selectedSong" :aria-label="t('library.togglePreview')" :aria-pressed="settings.libraryAutoPreviewEnabled" @click="togglePreview">
           <i v-if="library.previewSongId === selectedSong?.id && library.previewRunning" class="fa-solid fa-pause" aria-hidden="true" />
           <i v-else class="fa-solid fa-play" aria-hidden="true" />
         </button>
@@ -99,7 +113,7 @@ onBeforeUnmount(() => library.stopPreview())
     </section>
 
     <section class="library-main">
-      <SongList :songs="library.sortedSongs" :selected-id="selectedSong?.id" @select="library.selectSong($event.id)" @play="continuePlay" />
+      <SongList :songs="library.sortedSongs" :selected-id="selectedSong?.id" @select="handleSelectSong" @play="continuePlay" />
     </section>
 
     <footer class="library-footer">

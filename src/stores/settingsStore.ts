@@ -54,5 +54,6 @@ export const useSettingsStore = defineStore('settings', {
     setKeyLabelSize(size: number) { this.keyLabelSize = Math.max(-10, Math.min(25, size)); this.persist() },
     setNoteLabelSize(size: number) { this.noteLabelSize = Math.max(-10, Math.min(25, size)); this.persist() },
     setKeyboardRangeMode(mode: KeyboardRangeMode) { this.keyboardRangeMode = mode; this.persist() },
+    setLibraryAutoPreviewEnabled(v: boolean) { this.libraryAutoPreviewEnabled = v; this.persist() },
   },
 })

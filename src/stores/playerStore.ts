@@ -241,7 +241,7 @@ export const usePlayerStore = defineStore('player', {
         const info = midi.tracks.find(track => track.trackId === trackId)
         const trackNotes = notes.filter(note => note.trackId === trackId)
         const hands = [...new Set(trackNotes.map(note => note.hand).filter(hand => hand === 'left' || hand === 'right'))]
-        const role = info?.isPercussion ? 'background' : hands.length === 1 ? hands[0] : undefined
+        const role = info?.isPercussion ? 'background' : hands.length === 1 ? hands[0] : hands.length > 1 ? 'background' : undefined
         return {
           trackId,
           instrumentProgram: info?.instrumentProgram,
@@ -256,7 +256,7 @@ export const usePlayerStore = defineStore('player', {
       const bookmarks = createSessionBookmarks(midi, tempoMap)
       const keySignatures = createSessionKeySignatures(midi, tempoMap)
       this.song = song
-      this.session = createPlaySession(notes, tracks, { speed, showDuration, octaveShift, tempoMap, measureGridUs, metronomeBeatGrid, bookmarks, keySignatures, needsTrackConfiguration: needsManualAssignment, durationUs: duration })
+      this.session = createPlaySession(notes, tracks, { speed, showDuration, octaveShift, tempoMap, measureGridUs, metronomeBeatGrid, bookmarks, keySignatures, needsTrackConfiguration: needsManualAssignment && tracks.some(track => !isTrackRoleComplete(track)), durationUs: duration })
       this.refreshKeyboardRange()
       this.stats = null
       this.performanceAutoPlay = false

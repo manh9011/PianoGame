@@ -3,7 +3,10 @@
         "dev": "vite",
         "build": "vue-tsc -b && vite build",
         "typecheck": "vue-tsc -b",
-        "preview": "vite preview"
+        "preview": "vite preview",
+        "tauri": "tauri",
+        "tauri:dev": "tauri dev",
+        "tauri:build": "tauri build"
     },
     "dependencies": {
         "@fortawesome/fontawesome-free": "^7.3.0",
@@ -19,5 +22,8 @@
         "vue-i18n": "^11.4.6",
         "vue-router": "latest",
         "vue-tsc": "latest"
+    },
+    "devDependencies": {
+        "@tauri-apps/cli": "^2.11.4"
     }
 }

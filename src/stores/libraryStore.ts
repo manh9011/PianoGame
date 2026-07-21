@@ -44,6 +44,7 @@ export const useLibraryStore = defineStore('library', {
     previewCurrentUs: 0,
     previewRunning: false,
     previewDurationUs: 0,
+    previewRequestId: 0,
   }),
   getters: {
     filteredSongs(state): SongMetadata[] {
@@ -156,11 +157,17 @@ export const useLibraryStore = defineStore('library', {
       this.persist()
     },
     async startPreview(song: SongMetadata, outputId: string, speed: number, showDuration: number, octaveShift: number) {
+      const requestId = this.previewRequestId + 1
+      this.previewRequestId = requestId
+      const isCurrentRequest = () => this.previewRequestId === requestId
       const data = song.data ?? await loadSongData(song.id)
-      if (!data) return
+      if (!data || !isCurrentRequest()) return
       this.stopPreview()
+      this.previewRequestId = requestId
       await this.previewPlayer.configure(outputId)
+      if (!isCurrentRequest()) return
       const midi = parseMidi(base64ToBuffer(data))
+      if (!isCurrentRequest()) return
       const { notes } = assignHands(translateNotes(midi))
       const trackIds = [...new Set(notes.map(note => note.trackId))]
       const tracks = createDefaultTrackProperties(trackIds)
@@ -172,10 +179,12 @@ export const useLibraryStore = defineStore('library', {
       session.setupComplete = true
       session.paused = false
       session.tracks.forEach(track => { track.mode = 'playedAutomatically' })
+      if (!isCurrentRequest()) return
       this.previewSession = session
       this.previewSongId = song.id
       this.previewDurationUs = duration
       this.previewClock = new MidiPlayerClock(duration, () => speed, state => {
+        if (!isCurrentRequest()) return
         const previewSession = this.previewSession
         if (!previewSession) return
         previewSession.currentUs = state.currentUs
@@ -211,6 +220,7 @@ export const useLibraryStore = defineStore('library', {
       this.previewRunning = false
     },
     stopPreview() {
+      this.previewRequestId++
       this.previewClock?.stop()
       this.previewPlayer.allNotesOff(this.previewSession)
       this.previewClock = null
