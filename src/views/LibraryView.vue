@@ -237,7 +237,7 @@ onBeforeUnmount(() => {
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr) auto;
   gap: 0.22rem;
-  height: 100vh;
+  height: 100dvh;
   padding: 0;
   overflow: hidden;
   background: #373737;
@@ -494,7 +494,7 @@ onBeforeUnmount(() => {
   display: grid;
   gap: 0.9rem;
   width: min(40rem, 100%);
-  max-height: 92vh;
+  max-height: 92dvh;
   padding: 0.85rem;
   overflow: auto;
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -545,7 +545,7 @@ onBeforeUnmount(() => {
 @media (max-width: 760px) {
   .library-page {
     height: auto;
-    min-height: 100vh;
+    min-height: 100dvh;
     overflow: visible;
   }
 

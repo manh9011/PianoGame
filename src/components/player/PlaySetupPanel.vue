@@ -207,7 +207,7 @@ async function selectAndStart(nextMode: PlayMode, nextHand: HandSelection) {
 
 <style scoped>
 .setup-wrap {
-  min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   grid-template-rows: auto auto auto minmax(0, 1fr);
   background: #3b3b3b;
@@ -488,7 +488,7 @@ async function selectAndStart(nextMode: PlayMode, nextHand: HandSelection) {
 
 @media (max-width: 760px) {
   .setup-wrap {
-    min-height: 100vh;
+    min-height: 100dvh;
     overflow: auto;
   }
 

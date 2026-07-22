@@ -29,7 +29,7 @@ const labelKeys: Record<TrackMode, string> = {
 </template>
 
 <style scoped>
-.track-modes { position: absolute; left: 0.5rem; top: 4.5rem; z-index: 10; width: min(360px, calc(100vw - 1rem)); max-height: min(36vh, 240px); overflow: auto; display: grid; gap: 0.45rem; padding: 0.55rem; border: 1px solid rgba(255,255,255,0.14); border-radius: 10px; background: rgba(15, 18, 23, 0.72); box-shadow: 0 8px 22px rgba(0,0,0,0.22); backdrop-filter: blur(8px); }
+.track-modes { position: absolute; left: 0.5rem; top: 4.5rem; z-index: 10; width: min(360px, calc(100vw - 1rem)); max-height: min(36dvh, 240px); overflow: auto; display: grid; gap: 0.45rem; padding: 0.55rem; border: 1px solid rgba(255,255,255,0.14); border-radius: 10px; background: rgba(15, 18, 23, 0.72); box-shadow: 0 8px 22px rgba(0,0,0,0.22); backdrop-filter: blur(8px); }
 .track-grid { display: grid; gap: 0.4rem; }
 .track-row { display: grid; grid-template-columns: auto 1fr minmax(8rem, auto); gap: 0.45rem; align-items: center; font-size: 0.82rem; }
 .track-row select { padding: 0.3rem 0.4rem; font-size: 0.82rem; }

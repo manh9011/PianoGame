@@ -489,7 +489,7 @@ function goToTrackSettings() {
 
 <style scoped>
 .setup-wrap {
-  height: 100vh;
+  height: 100dvh;
   display: grid;
   grid-template-rows: auto auto auto minmax(0, 1fr);
   background: #3b3b3b;
@@ -890,7 +890,7 @@ function goToTrackSettings() {
 
 @media (max-width: 760px) {
   .setup-wrap {
-    height: 100vh;
+    height: 100dvh;
     overflow: hidden;
   }
 

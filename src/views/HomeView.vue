@@ -132,7 +132,7 @@ function closeProfileManager() {
 .home-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: 100dvh;
   background: #4a4a4a;
   color: #e0e0e0;
 }

@@ -203,7 +203,7 @@ function clearAllUserBookmarks() {
   flex-direction: column;
   gap: 0.5rem;
   padding: 1rem;
-  max-height: min(90vh, 500px);
+  max-height: min(90dvh, 500px);
   overflow-y: auto;
 }
 

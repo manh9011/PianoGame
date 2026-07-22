@@ -113,7 +113,7 @@ const comboDisplay = computed(() => `${comboBonus.value.label} (${comboBonus.val
 .modal {
   max-width: 920px;
   width: min(94vw, 920px);
-  max-height: 92vh;
+  max-height: 92dvh;
   overflow: auto;
 }
 

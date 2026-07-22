@@ -552,7 +552,7 @@ watch(() => player.stats, stats => {
 
 <style scoped>
 .play-layout {
-  height: 100vh;
+  height: 100dvh;
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr) var(--keyboard-height);
   background: #2b2d31;

@@ -50,7 +50,7 @@ function handleOverlayClick(event: MouseEvent) {
 
 .dialog-container {
   width: min(94vw, 100%);
-  max-height: 90vh;
+  max-height: 90dvh;
   display: flex;
   flex-direction: column;
   border-radius: 12px;

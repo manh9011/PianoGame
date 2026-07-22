@@ -73,7 +73,7 @@ function handleClickOutside(event: MouseEvent) {
 .popover-content {
   padding: 1rem;
   overflow: auto;
-  max-height: min(90vh, 600px);
+  max-height: min(90dvh, 600px);
   border-radius: 12px;
 }
 

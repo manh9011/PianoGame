@@ -144,7 +144,7 @@ small {
   position: absolute;
   bottom: -2rem;
   width: 44vw;
-  height: 82vh;
+  height: 82dvh;
 }
 
 .confetti.left { left: 0; }

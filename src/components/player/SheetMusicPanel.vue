@@ -418,7 +418,7 @@ onBeforeUnmount(() => {
   position: relative;
   z-index: 1;
   min-height: 128px;
-  max-height: 42vh;
+  max-height: 42dvh;
   background: #f8fafc;
   border-bottom: 1px solid rgba(15, 23, 42, 0.28);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
