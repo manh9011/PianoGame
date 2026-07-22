@@ -576,6 +576,8 @@ export const ru = {
     musicXmlDownloadFailed: "Не удалось скачать MusicXML: {message}",
     renameSong: "Переименовать песню",
     deleteConfirm: "Удалить «{title}»?",
+    deleteSuccess: "«{title}» удалена.",
+    deleteFailed: "Не удалось удалить «{title}».",
     missingHash: "У этой песни нет хеша, её нужно импортировать снова:",
     importToStart: "Import a MIDI or MusicXML file to begin.",
     detail: "Подробности",

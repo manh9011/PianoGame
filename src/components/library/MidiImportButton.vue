@@ -30,7 +30,7 @@ async function onFiles(files: FileList | null) {
 <template>
   <div class="midi-import">
     <label class="import-button">
-      <input type="file" accept=".mid,.midi,.rmi,.rmid,.musicxml,.xml" multiple @change="onFiles(($event.target as HTMLInputElement).files)" />
+      <input type="file" accept=".mid,.midi,.rmi,.rmid,.musicxml,.xml,.mxl" multiple @change="onFiles(($event.target as HTMLInputElement).files)" />
       {{ t('library.importSongs') }}
     </label>
   </div>

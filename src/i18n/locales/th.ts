@@ -576,6 +576,8 @@ export const th = {
     musicXmlDownloadFailed: "ไม่สามารถดาวน์โหลด MusicXML ได้: {message}",
     renameSong: "เปลี่ยนชื่อเพลง",
     deleteConfirm: "ลบ “{title}” หรือไม่?",
+    deleteSuccess: "ลบ “{title}” แล้ว",
+    deleteFailed: "ไม่สามารถลบ “{title}” ได้",
     missingHash: "เพลงนี้ไม่มีแฮชและจำเป็นต้องนำเข้าอีกครั้ง:",
     importToStart: "Import a MIDI or MusicXML file to begin.",
     detail: "รายละเอียด",

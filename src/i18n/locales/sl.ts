@@ -576,6 +576,8 @@ export const sl = {
     musicXmlDownloadFailed: "MusicXML ni bilo mogoče prenesti: {message}",
     renameSong: "Preimenuj skladbo",
     deleteConfirm: "Izbrisati »{title}«?",
+    deleteSuccess: "»{title}« je izbrisana.",
+    deleteFailed: "»{title}« ni bilo mogoče izbrisati.",
     missingHash: "Ta skladba nima zgoščene vrednosti in jo je treba znova uvoziti:",
     importToStart: "Import a MIDI or MusicXML file to begin.",
     detail: "Podrobnosti",

@@ -576,6 +576,8 @@ export const zh = {
     musicXmlDownloadFailed: "无法下载 MusicXML：{message}",
     renameSong: "重命名歌曲",
     deleteConfirm: "删除“{title}”？",
+    deleteSuccess: "已删除“{title}”。",
+    deleteFailed: "无法删除“{title}”。",
     missingHash: "此歌曲没有哈希，需要重新导入：",
     importToStart: "Import a MIDI or MusicXML file to begin.",
     detail: "详情",

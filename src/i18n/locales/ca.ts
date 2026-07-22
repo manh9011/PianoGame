@@ -576,6 +576,8 @@ export const ca = {
     musicXmlDownloadFailed: "No s’ha pogut descarregar MusicXML: {message}",
     renameSong: "Canvia el nom de la cançó",
     deleteConfirm: "Vols suprimir \"{title}\"?",
+    deleteSuccess: "S’ha suprimit \"{title}\".",
+    deleteFailed: "No s’ha pogut suprimir \"{title}\".",
     missingHash: "Aquesta cançó no té hash i cal tornar-la a importar:",
     importToStart: "Import a MIDI or MusicXML file to begin.",
     detail: "Detall",

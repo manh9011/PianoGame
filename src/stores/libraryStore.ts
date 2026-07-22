@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import type { SongMetadata, SongSortKey, SortDirection } from '../types/song'
-import { base64ToBuffer, loadLibrary, saveLibrary, sortSongs, loadSongMidiData, loadSongMusicXmlData } from '../modules/library/songLibrary'
+import { base64ToBuffer, deleteSongFromLibrary, loadLibrary, saveLibrary, sortSongs, loadSongCompressedMusicXmlData, loadSongMidiData, loadSongMusicXmlData } from '../modules/library/songLibrary'
 import { persistQueue } from '../modules/storage/indexedDb'
 import { parseMidi } from '../modules/midi/midiParser'
 import { translateNotes } from '../modules/midi/midiNoteTranslator'
@@ -134,6 +134,7 @@ export const useLibraryStore = defineStore('library', {
       const importedAt = Date.now()
       const existing = findMergeTarget(this.songs, candidate)
       const existingMusicXmlData = existing?.musicXmlData ?? (existing?.hasMusicXmlSource ? await loadSongMusicXmlData(existing.id) : undefined)
+      const existingCompressedMusicXmlData = existing?.compressedMusicXmlData ?? (existing?.hasMusicXmlSource ? await loadSongCompressedMusicXmlData(existing.id) : undefined)
       const song: SongMetadata = {
         id: existing?.id ?? crypto.randomUUID?.() ?? `${file.name}-${Date.now()}`,
         title: existing?.title ?? candidate.title,
@@ -148,6 +149,7 @@ export const useLibraryStore = defineStore('library', {
         data: candidate.midiData,
         midiData: candidate.midiData,
         musicXmlData: candidate.musicXmlData ?? existingMusicXmlData,
+        compressedMusicXmlData: candidate.compressedMusicXmlData ?? existingCompressedMusicXmlData,
         hash: candidate.playbackHash,
         playbackHash: candidate.playbackHash,
         notationHash: candidate.notationHash ?? existing?.notationHash,
@@ -298,11 +300,20 @@ export const useLibraryStore = defineStore('library', {
       this.previewPlayer.allNotesOff(this.previewSession)
       this.previewClock.seek(clamped * this.previewClock.seekableDurationUs)
     },
-    deleteSong(id: string) {
+    async deleteSong(id: string) {
       if (this.previewSongId === id) this.stopPreview()
+      const previousSongs = this.songs
+      const previousSelectedSongId = this.selectedSongId
       this.songs = this.songs.filter(s => s.id !== id)
       if (this.selectedSongId === id) this.selectedSongId = this.sortedSongs[0]?.id ?? null
-      this.persist()
+
+      try {
+        await persistQueue.run(() => deleteSongFromLibrary(id))
+      } catch (error) {
+        this.songs = previousSongs
+        this.selectedSongId = previousSelectedSongId
+        throw error
+      }
     },
   },
 })

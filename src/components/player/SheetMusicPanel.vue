@@ -2,7 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePlayerStore } from '../../stores/playerStore'
-import { base64ToBuffer, loadSongMidiData, loadSongMusicXmlData } from '../../modules/library/songLibrary'
+import { base64ToBuffer, loadSongCompressedMusicXmlData, loadSongMidiData, loadSongMusicXmlData } from '../../modules/library/songLibrary'
 import { generateSheetMusic } from '../../modules/sheet/sheetMusicClient'
 import { loadVerovio } from '../../modules/sheet/verovioLoader'
 import { getSheetTrackIds, getSheetTrackSelectionKey } from '../../modules/game/trackProperties'
@@ -279,7 +279,8 @@ async function renderArtifact(nextArtifact: SheetMusicArtifact, token: number) {
     pageMarginLeft: 100,
     pageMarginRight: 100,
   })
-  toolkit.loadData(nextArtifact.musicXml)
+  if (nextArtifact.compressedMusicXmlData) toolkit.loadZipDataBase64(nextArtifact.compressedMusicXmlData)
+  else toolkit.loadData(nextArtifact.musicXml)
   toolkit.renderToMIDI()
   svgMarkup.value = toolkit.renderToSVG(1, {})
   artifact.value = nextArtifact
@@ -322,10 +323,12 @@ async function loadSheet() {
     if (song.hasMusicXmlSource) {
       status.value = { stage: 'building-model', message: 'sheetMusic.progress.loadingMusicXmlData', code: 'loadingMusicXmlData' }
       const musicXml = song.musicXmlData ?? await loadSongMusicXmlData(song.id)
-      if (musicXml) {
+      const compressedMusicXmlData = musicXml ? undefined : song.compressedMusicXmlData ?? await loadSongCompressedMusicXmlData(song.id)
+      if (musicXml || compressedMusicXmlData) {
         await renderArtifact({
           cacheKey: `${song.id}:sheet-source:musicxml:${song.notationHash ?? 'unknown'}`,
-          musicXml,
+          musicXml: musicXml ?? '',
+          compressedMusicXmlData,
           warnings: [],
           stats: { staffCount: 0, voiceCount: 0, noteCount: song.noteCount },
         }, token)

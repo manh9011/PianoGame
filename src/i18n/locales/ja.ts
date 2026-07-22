@@ -576,6 +576,8 @@ export const ja = {
     musicXmlDownloadFailed: "MusicXML をダウンロードできませんでした: {message}",
     renameSong: "曲名を変更",
     deleteConfirm: "「{title}」を削除しますか？",
+    deleteSuccess: "「{title}」を削除しました。",
+    deleteFailed: "「{title}」を削除できませんでした。",
     missingHash: "この曲にはハッシュがないため、再インポートが必要です:",
     importToStart: "Import a MIDI or MusicXML file to begin.",
     detail: "詳細",

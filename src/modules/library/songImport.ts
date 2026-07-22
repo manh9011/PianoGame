@@ -3,7 +3,7 @@ import { parseMidi } from '../midi/midiParser'
 import { translateNotes } from '../midi/midiNoteTranslator'
 import { buildTempoMap, pulseToMicroseconds } from '../midi/midiTempo'
 import { SheetMusicError } from '../sheet/sheetTypes'
-import { createMidiCacheFromMusicXml, isMusicXmlText } from '../musicxml/musicXmlPlaybackCache'
+import { createMidiCacheFromCompressedMusicXml, createMidiCacheFromMusicXml, isMusicXmlText } from '../musicxml/musicXmlPlaybackCache'
 import { bufferToBase64 } from './songLibrary'
 
 export type SupportedSongFileKind = 'midi' | 'musicxml'
@@ -15,6 +15,7 @@ export interface ImportedSongCandidate {
   folderPath?: string
   midiData: string
   musicXmlData?: string
+  compressedMusicXmlData?: string
   playbackHash: string
   notationHash?: string
   duration: number
@@ -23,7 +24,8 @@ export interface ImportedSongCandidate {
 }
 
 const MIDI_EXTENSION = /\.(mid|midi|rmi|rmid)$/i
-const MUSIC_XML_EXTENSION = /\.(musicxml|xml)$/i
+const MUSIC_XML_EXTENSION = /\.(musicxml|xml|mxl)$/i
+const COMPRESSED_MUSIC_XML_EXTENSION = /\.mxl$/i
 
 export function getSupportedSongFileKind(name: string): SupportedSongFileKind | null {
   if (MIDI_EXTENSION.test(name)) return 'midi'
@@ -82,12 +84,13 @@ export async function createImportedSongCandidate(file: File, folderPath?: strin
     }
   }
 
-  const musicXmlData = normalizeMusicXmlText(await file.text())
-  if (!isMusicXmlText(musicXmlData)) throw new SheetMusicError('sheetMusic.errors.invalidMusicXml', 'invalidMusicXml')
+  const compressed = COMPRESSED_MUSIC_XML_EXTENSION.test(file.name)
+  const sourceBuffer = await file.arrayBuffer()
+  const musicXmlData = compressed ? undefined : normalizeMusicXmlText(await file.text())
+  if (musicXmlData !== undefined && !isMusicXmlText(musicXmlData)) throw new SheetMusicError('sheetMusic.errors.invalidMusicXml', 'invalidMusicXml')
 
-  const notationBytes = new TextEncoder().encode(musicXmlData)
-  const notationHash = await computeMidiHash(arrayBufferFromView(notationBytes))
-  const midiBuffer = await createMidiCacheFromMusicXml(musicXmlData)
+  const notationHash = await computeMidiHash(musicXmlData !== undefined ? arrayBufferFromView(new TextEncoder().encode(musicXmlData)) : sourceBuffer)
+  const midiBuffer = musicXmlData !== undefined ? await createMidiCacheFromMusicXml(musicXmlData) : await createMidiCacheFromCompressedMusicXml(sourceBuffer)
   const playbackHash = await computeMidiHash(midiBuffer)
   const { midi, notes, duration } = summarizeMidi(midiBuffer)
 
@@ -98,6 +101,7 @@ export async function createImportedSongCandidate(file: File, folderPath?: strin
     folderPath,
     midiData: bufferToBase64(midiBuffer),
     musicXmlData,
+    compressedMusicXmlData: compressed ? bufferToBase64(sourceBuffer) : undefined,
     playbackHash,
     notationHash,
     duration,

@@ -576,6 +576,8 @@ export const tr = {
     musicXmlDownloadFailed: "MusicXML indirilemedi: {message}",
     renameSong: "Şarkıyı yeniden adlandır",
     deleteConfirm: "“{title}” silinsin mi?",
+    deleteSuccess: "“{title}” silindi.",
+    deleteFailed: "“{title}” silinemedi.",
     missingHash: "Bu şarkının hash değeri yok ve yeniden içe aktarılması gerekiyor:",
     importToStart: "Import a MIDI or MusicXML file to begin.",
     detail: "Detay",

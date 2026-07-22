@@ -576,6 +576,8 @@ export const ko = {
     musicXmlDownloadFailed: "MusicXML을 다운로드할 수 없습니다: {message}",
     renameSong: "곡 이름 바꾸기",
     deleteConfirm: "“{title}”을(를) 삭제할까요?",
+    deleteSuccess: "“{title}”을(를) 삭제했습니다.",
+    deleteFailed: "“{title}”을(를) 삭제할 수 없습니다.",
     missingHash: "이 곡에는 해시가 없어 다시 가져와야 합니다:",
     importToStart: "Import a MIDI or MusicXML file to begin.",
     detail: "상세",

@@ -12,6 +12,13 @@ function base64ToBuffer(value: string) {
   return binaryStringToBuffer(binary)
 }
 
+function bufferToBase64(buffer: ArrayBuffer) {
+  let binary = ''
+  const bytes = new Uint8Array(buffer)
+  for (const byte of bytes) binary += String.fromCharCode(byte)
+  return btoa(binary)
+}
+
 function looksLikeMidi(buffer: ArrayBuffer) {
   const bytes = new Uint8Array(buffer, 0, Math.min(4, buffer.byteLength))
   return bytes.length >= 4 && bytes[0] === 0x4d && bytes[1] === 0x54 && bytes[2] === 0x68 && bytes[3] === 0x64
@@ -49,6 +56,18 @@ export async function createMidiCacheFromMusicXml(musicXml: string) {
     const verovio = await loadVerovio()
     const toolkit = new verovio.toolkit()
     toolkit.loadData(musicXml)
+    return decodeRenderedMidi(toolkit.renderToMIDI())
+  } catch (error) {
+    if (error instanceof SheetMusicError) throw error
+    throw new SheetMusicError(error instanceof Error ? error.message : 'sheetMusic.errors.musicXmlToMidiFailed', 'musicXmlToMidiFailed')
+  }
+}
+
+export async function createMidiCacheFromCompressedMusicXml(buffer: ArrayBuffer) {
+  try {
+    const verovio = await loadVerovio()
+    const toolkit = new verovio.toolkit()
+    toolkit.loadZipDataBase64(bufferToBase64(buffer))
     return decodeRenderedMidi(toolkit.renderToMIDI())
   } catch (error) {
     if (error instanceof SheetMusicError) throw error

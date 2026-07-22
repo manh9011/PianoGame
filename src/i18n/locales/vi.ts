@@ -576,6 +576,8 @@ export const vi = {
     musicXmlDownloadFailed: "Không thể tải MusicXML xuống: {message}",
     renameSong: "Đổi tên bài hát",
     deleteConfirm: "Xóa “{title}”?",
+    deleteSuccess: "Đã xóa “{title}”.",
+    deleteFailed: "Không thể xóa “{title}”.",
     missingHash: "Bài hát này chưa có mã băm và cần được nhập lại:",
     importToStart: "Import a MIDI or MusicXML file to begin.",
     detail: "Chi tiết",

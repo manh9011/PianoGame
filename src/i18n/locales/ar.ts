@@ -576,6 +576,8 @@ export const ar = {
     musicXmlDownloadFailed: "تعذر تنزيل MusicXML: {message}",
     renameSong: "إعادة تسمية الأغنية",
     deleteConfirm: "حذف \"{title}\"؟",
+    deleteSuccess: "تم حذف \"{title}\".",
+    deleteFailed: "تعذر حذف \"{title}\".",
     missingHash: "لا تحتوي هذه الأغنية على قيمة تجزئة ويجب استيرادها من جديد:",
     importToStart: "Import a MIDI or MusicXML file to begin.",
     detail: "التفاصيل",

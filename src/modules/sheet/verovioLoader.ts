@@ -3,6 +3,7 @@ import { SheetMusicError } from './sheetTypes'
 interface VerovioToolkit {
   setOptions(options: Record<string, unknown>): void
   loadData(data: string): void
+  loadZipDataBase64(data: string): void
   renderToMIDI(): string
   renderToSVG(page: number, options?: Record<string, unknown>): string
   getElementsAtTime(milliseconds: number): { page?: number; notes?: string[] }

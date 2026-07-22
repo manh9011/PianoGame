@@ -14,6 +14,7 @@ export interface SongMetadata {
   data?: string
   midiData?: string
   musicXmlData?: string
+  compressedMusicXmlData?: string
   hash?: string
   playbackHash?: string
   notationHash?: string

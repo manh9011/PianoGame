@@ -576,6 +576,8 @@ export const it = {
     musicXmlDownloadFailed: "Impossibile scaricare MusicXML: {message}",
     renameSong: "Rinomina brano",
     deleteConfirm: "Eliminare \"{title}\"?",
+    deleteSuccess: "\"{title}\" eliminato.",
+    deleteFailed: "Impossibile eliminare \"{title}\".",
     missingHash: "Questo brano non ha un hash e deve essere importato di nuovo:",
     importToStart: "Import a MIDI or MusicXML file to begin.",
     detail: "Dettaglio",

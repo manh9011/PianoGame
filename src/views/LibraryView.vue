@@ -6,7 +6,7 @@ import MidiImportButton from '../components/library/MidiImportButton.vue'
 import FolderSelector from '../components/library/FolderSelector.vue'
 import SongList from '../components/library/SongList.vue'
 import SongSortBar from '../components/library/SongSortBar.vue'
-import { base64ToBuffer, loadSongMidiData, loadSongMusicXmlData } from '../modules/library/songLibrary'
+import { base64ToBuffer, loadSongCompressedMusicXmlData, loadSongMidiData, loadSongMusicXmlData } from '../modules/library/songLibrary'
 import { generateSheetMusic } from '../modules/sheet/sheetMusicClient'
 import { SheetMusicError, toSheetMusicError } from '../modules/sheet/sheetTypes'
 import { useLibraryStore } from '../stores/libraryStore'
@@ -21,6 +21,7 @@ const settings = useSettingsStore()
 const toastStore = useToastStore()
 const selectedSong = computed(() => library.selectedSong)
 const visibleSongCount = computed(() => library.sortedSongs.length)
+const downloadMusicXmlExtension = computed(() => selectedSong.value?.originalFileName?.toLowerCase().endsWith('.mxl') && !selectedSong.value.musicXmlData ? '.mxl' : '.musicxml')
 const musicXmlDownloadingSongId = ref<string | null>(null)
 const downloadMenuOpen = ref(false)
 
@@ -105,6 +106,16 @@ async function downloadMusicXml() {
       return
     }
 
+    const compressedMusicXmlData = song.compressedMusicXmlData ?? await loadSongCompressedMusicXmlData(song.id)
+    if (compressedMusicXmlData) {
+      downloadBlob(
+        new Blob([base64ToBuffer(compressedMusicXmlData)], { type: 'application/vnd.recordare.musicxml' }),
+        `${song.title || t('library.downloadFallbackName')}.mxl`,
+      )
+      toastStore.showSuccess(t('library.musicXmlDownloadSuccess'))
+      return
+    }
+
     const data = song.data ?? song.midiData ?? await loadSongMidiData(song.id)
     if (!data) throw new SheetMusicError('sheetMusic.errors.missingMidiData', 'missingMidiData')
 
@@ -126,11 +137,18 @@ async function downloadMusicXml() {
   }
 }
 
-function deleteSong() {
+async function deleteSong() {
   const song = selectedSong.value
   if (!song) return
   if (!confirm(t('library.deleteConfirm', { title: song.title }))) return
-  library.deleteSong(song.id)
+
+  try {
+    await library.deleteSong(song.id)
+    toastStore.showSuccess(t('library.deleteSuccess', { title: song.title }))
+  } catch (error) {
+    console.error('[Library View] Lỗi khi xóa bài:', error)
+    toastStore.showError(t('library.deleteFailed', { title: song.title }))
+  }
 }
 
 function seekPreviewFromPointer(event: MouseEvent) {
@@ -187,7 +205,7 @@ onBeforeUnmount(() => {
             </button>
             <button type="button" role="menuitem" :disabled="!!musicXmlDownloadingSongId" @click="downloadMusicXml">
               <span>{{ t('library.downloadMusicXml') }}</span>
-              <span class="download-extension">.musicxml</span>
+              <span class="download-extension">{{ downloadMusicXmlExtension }}</span>
             </button>
           </div>
         </div>

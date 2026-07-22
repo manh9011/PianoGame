@@ -1,32 +1,36 @@
 import type { SongMetadata, SongSortKey, SortDirection } from '../../types/song'
 import { STORAGE_KEYS } from '../settings/storageKeys'
-import { getAll, put, get, type SongDataRecord } from '../storage/indexedDb'
+import { getAll, put, get, deleteRecord, type SongDataRecord } from '../storage/indexedDb'
 
 export interface SongPayload {
   midiData?: string
   musicXmlData?: string
+  compressedMusicXmlData?: string
 }
 
-type SongMeta = Omit<SongMetadata, 'data' | 'midiData' | 'musicXmlData'>
+type SongMeta = Omit<SongMetadata, 'data' | 'midiData' | 'musicXmlData' | 'compressedMusicXmlData'>
 
 function normalizePayload(record?: SongDataRecord): SongPayload {
   return {
     midiData: record?.midiData ?? record?.data,
     musicXmlData: record?.musicXmlData,
+    compressedMusicXmlData: record?.compressedMusicXmlData,
   }
 }
 
 function normalizeMetadata(meta: SongMeta, payload?: SongPayload): SongMetadata {
   const midiData = payload?.midiData
   const musicXmlData = payload?.musicXmlData
+  const compressedMusicXmlData = payload?.compressedMusicXmlData
   const hasMidiSource = meta.hasMidiSource ?? !!midiData
-  const hasMusicXmlSource = meta.hasMusicXmlSource ?? !!musicXmlData
+  const hasMusicXmlSource = meta.hasMusicXmlSource ?? (!!musicXmlData || !!compressedMusicXmlData)
   const sourceType = meta.sourceType ?? (hasMidiSource && hasMusicXmlSource ? 'hybrid' : hasMusicXmlSource ? 'musicxml' : 'midi')
   return {
     ...meta,
     data: undefined,
     midiData: undefined,
     musicXmlData: undefined,
+    compressedMusicXmlData: undefined,
     playbackHash: meta.playbackHash ?? meta.hash,
     importedAt: meta.importedAt ?? 0,
     sourceType,
@@ -44,26 +48,40 @@ export async function loadLibrary(): Promise<SongMetadata[]> {
     const raw = localStorage.getItem(STORAGE_KEYS.library)
     if (!raw) return []
     const songs = JSON.parse(raw) as SongMetadata[]
-    return songs.map(song => normalizeMetadata(song as SongMeta, { midiData: song.midiData ?? song.data, musicXmlData: song.musicXmlData }))
+    return songs.map(song => normalizeMetadata(song as SongMeta, { midiData: song.midiData ?? song.data, musicXmlData: song.musicXmlData, compressedMusicXmlData: song.compressedMusicXmlData }))
   }
 }
 
 export async function saveLibrary(songs: SongMetadata[]): Promise<void> {
   try {
+    const existing = await getAll<SongMeta>('songs-metadata')
+    const songIds = new Set(songs.map(song => song.id))
+    const deletedIds = existing.map(song => song.id).filter(id => !songIds.has(id))
+
+    for (const id of deletedIds) {
+      await deleteSongFromLibrary(id)
+    }
+
     for (const song of songs) {
-      const { data, midiData, musicXmlData, ...metadata } = song
+      const { data, midiData, musicXmlData, compressedMusicXmlData, ...metadata } = song
       await put('songs-metadata', metadata)
       const payload: SongDataRecord = {
         id: song.id,
         midiData: midiData ?? data,
         musicXmlData,
+        compressedMusicXmlData,
       }
-      if (payload.midiData || payload.musicXmlData) await put('songs-data', payload)
+      if (payload.midiData || payload.musicXmlData || payload.compressedMusicXmlData) await put('songs-data', payload)
     }
   } catch (error) {
     console.error('[Song Library] Lỗi khi save:', error)
     throw error
   }
+}
+
+export async function deleteSongFromLibrary(songId: string): Promise<void> {
+  await deleteRecord('songs-metadata', songId)
+  await deleteRecord('songs-data', songId)
 }
 
 export async function loadSongPayload(songId: string): Promise<SongPayload> {
@@ -82,6 +100,10 @@ export async function loadSongMidiData(songId: string): Promise<string | undefin
 
 export async function loadSongMusicXmlData(songId: string): Promise<string | undefined> {
   return (await loadSongPayload(songId)).musicXmlData
+}
+
+export async function loadSongCompressedMusicXmlData(songId: string): Promise<string | undefined> {
+  return (await loadSongPayload(songId)).compressedMusicXmlData
 }
 
 export async function loadSongData(songId: string): Promise<string | undefined> {

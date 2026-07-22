@@ -57,6 +57,7 @@ export function toSheetMusicError(error: unknown, fallbackCode: SheetErrorCode =
 export interface SheetMusicArtifact {
   cacheKey: string
   musicXml: string
+  compressedMusicXmlData?: string
   warnings: string[]
   stats: {
     staffCount: number

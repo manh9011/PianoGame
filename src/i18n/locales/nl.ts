@@ -576,6 +576,8 @@ export const nl = {
     musicXmlDownloadFailed: "Kan MusicXML niet downloaden: {message}",
     renameSong: "Nummer hernoemen",
     deleteConfirm: "\"{title}\" verwijderen?",
+    deleteSuccess: "\"{title}\" verwijderd.",
+    deleteFailed: "Kan \"{title}\" niet verwijderen.",
     missingHash: "Dit nummer heeft geen hash en moet opnieuw worden geïmporteerd:",
     importToStart: "Import a MIDI or MusicXML file to begin.",
     detail: "Details",

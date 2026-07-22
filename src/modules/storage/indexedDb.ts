@@ -6,6 +6,7 @@ export interface SongDataRecord {
   data?: string
   midiData?: string
   musicXmlData?: string
+  compressedMusicXmlData?: string
 }
 
 export interface SettingsRecord {
@@ -116,9 +117,10 @@ export async function deleteRecord(storeName: string, key: IDBValidKey): Promise
   const db = await openDatabase()
   return new Promise((resolve, reject) => {
     const tx = db.transaction(storeName, 'readwrite')
-    const request = tx.objectStore(storeName).delete(key)
-    request.onsuccess = () => resolve()
-    request.onerror = () => reject(request.error)
+    tx.oncomplete = () => resolve()
+    tx.onerror = () => reject(tx.error)
+    tx.onabort = () => reject(tx.error)
+    tx.objectStore(storeName).delete(key)
   })
 }
 
@@ -136,11 +138,15 @@ class PersistQueue {
   private queue: Promise<void> = Promise.resolve()
 
   enqueue(operation: () => Promise<void>): void {
-    this.queue = this.queue
-      .then(operation)
-      .catch(err => {
-        console.error('Persist operation failed:', err)
-      })
+    this.run(operation).catch(err => {
+      console.error('Persist operation failed:', err)
+    })
+  }
+
+  run(operation: () => Promise<void>): Promise<void> {
+    const next = this.queue.then(operation)
+    this.queue = next.catch(() => {})
+    return next
   }
 }
 
