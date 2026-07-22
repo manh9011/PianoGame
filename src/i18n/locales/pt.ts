@@ -528,6 +528,8 @@ export const pt = {
     noteLabelModeDescription: "Estilo do rótulo para as notas descendentes.",
     noteLabelSize: "Tamanho do rótulo das notas",
     noteLabelSizeDescription: "Aumente ou diminua o tamanho dos rótulos das notas descendentes.",
+    coloredFingerHints: "Colorir números dos dedos",
+    coloredFingerHintsDescription: "Use uma cor separada para cada número de dedo nos rótulos de dedilhado.",
     advancedDescription: "Opções avançadas para experiência e depuração.",
     interface: "Interface",
     reduceMotion: "Reduzir movimento",

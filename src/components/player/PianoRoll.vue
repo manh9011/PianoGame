@@ -782,18 +782,35 @@ function drawNote(ctx: CanvasRenderingContext2D, note: LaidOutNote<SessionNote>)
   if (settings.showFingerHints && note.finger && settings.noteLabelMode !== 'finger-hint') drawFingerBadge(ctx, note, true)
 }
 
+function fingerBadgeColor(finger?: number | null) {
+  if (!settings.showColoredFingerHints) return '#ffffff'
+  switch (finger) {
+    case 1: return '#22C55E'
+    case 2: return '#FACC15'
+    case 3: return '#A855F7'
+    case 4: return '#3B82F6'
+    case 5: return '#EF4444'
+    default: return '#ffffff'
+  }
+}
+
 function drawFingerBadge(ctx: CanvasRenderingContext2D, note: LaidOutNote<SessionNote>, belowNote = false) {
   const radius = Math.max(9, Math.min(15, note.width * 0.32))
   const x = note.x + note.width / 2
   const y = belowNote
     ? note.y + radius + 6
     : Math.max(note.y - note.height + radius + 4, note.y - radius - 5)
+  const size = radius * 2
   ctx.save()
-  ctx.fillStyle = note.fingerSource === 'manual' ? 'rgba(251,191,36,0.95)' : 'rgba(255,255,255,0.92)'
+  ctx.fillStyle = fingerBadgeColor(note.finger)
   ctx.strokeStyle = 'rgba(0,0,0,0.75)'
   ctx.lineWidth = 2
   ctx.beginPath()
-  ctx.arc(x, y, radius, 0, Math.PI * 2)
+  if (note.fingerSource === 'manual') {
+    roundedRect(ctx, x - radius, y - radius, size, size, 3)
+  } else {
+    ctx.arc(x, y, radius, 0, Math.PI * 2)
+  }
   ctx.fill()
   ctx.stroke()
   ctx.fillStyle = '#111827'

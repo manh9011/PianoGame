@@ -528,6 +528,8 @@ export const hi = {
     noteLabelModeDescription: "गिरते नोट्स के लिए लेबल शैली।",
     noteLabelSize: "नोट लेबल आकार",
     noteLabelSizeDescription: "गिरते नोट लेबल का आकार बढ़ाएँ/घटाएँ।",
+    coloredFingerHints: "उँगली संख्याओं को रंग दें",
+    coloredFingerHintsDescription: "फिंगर हिंट लेबल पर हर उँगली संख्या के लिए अलग रंग उपयोग करें।",
     advancedDescription: "अनुभव और डिबगिंग के लिए उन्नत विकल्प।",
     interface: "इंटरफ़ेस",
     reduceMotion: "गतिशीलता कम करें",

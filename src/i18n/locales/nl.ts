@@ -528,6 +528,8 @@ export const nl = {
     noteLabelModeDescription: "Labelstijl voor vallende noten.",
     noteLabelSize: "Grootte van nootlabels",
     noteLabelSizeDescription: "Vergroot/verklein de grootte van labels op vallende noten.",
+    coloredFingerHints: "Vingernummers kleuren",
+    coloredFingerHintsDescription: "Gebruik een aparte kleur voor elk vingernummer op vingerhintlabels.",
     advancedDescription: "Geavanceerde opties voor gebruikservaring en debugging.",
     interface: "Interface",
     reduceMotion: "Beweging verminderen",

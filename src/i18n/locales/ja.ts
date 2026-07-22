@@ -528,6 +528,8 @@ export const ja = {
     noteLabelModeDescription: "落下ノートのラベルスタイルです。",
     noteLabelSize: "ノートラベルサイズ",
     noteLabelSizeDescription: "落下ノートラベルのサイズを増減します。",
+    coloredFingerHints: "指番号に色を付ける",
+    coloredFingerHintsDescription: "指番号ヒントラベルで各指番号に別々の色を使います。",
     advancedDescription: "体験とデバッグのための詳細オプションです。",
     interface: "インターフェイス",
     reduceMotion: "動きを減らす",

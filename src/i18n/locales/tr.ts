@@ -528,6 +528,8 @@ export const tr = {
     noteLabelModeDescription: "Düşen notalar için etiket stili.",
     noteLabelSize: "Nota etiketi boyutu",
     noteLabelSizeDescription: "Düşen nota etiketi boyutunu artır/azalt.",
+    coloredFingerHints: "Parmak numaralarını renklendir",
+    coloredFingerHintsDescription: "Parmak ipucu etiketlerinde her parmak numarası için ayrı renk kullan.",
     advancedDescription: "Deneyim ve hata ayıklama için gelişmiş seçenekler.",
     interface: "Arayüz",
     reduceMotion: "Hareketi azalt",

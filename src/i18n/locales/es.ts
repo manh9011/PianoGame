@@ -528,6 +528,8 @@ export const es = {
     noteLabelModeDescription: "Estilo de etiqueta para las notas descendentes.",
     noteLabelSize: "Tamaño de etiquetas de notas",
     noteLabelSizeDescription: "Aumenta o reduce el tamaño de las etiquetas de notas descendentes.",
+    coloredFingerHints: "Colorear números de dedos",
+    coloredFingerHintsDescription: "Usa un color distinto para cada número de dedo en las etiquetas de digitación.",
     advancedDescription: "Opciones avanzadas para la experiencia y la depuración.",
     interface: "Interfaz",
     reduceMotion: "Reducir movimiento",

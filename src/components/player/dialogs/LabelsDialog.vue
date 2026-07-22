@@ -66,7 +66,7 @@ function selectNoteLabel(value: LabelOptionValue) {
     :popup-style="popupStyle"
     :arrow-style="arrowStyle"
     :arrow-placement="arrowPlacement"
-    width="360px"
+    width="430px"
     @close="emit('close')"
   >
     <div class="labels-dialog">
@@ -132,16 +132,30 @@ function selectNoteLabel(value: LabelOptionValue) {
           </button>
         </div>
 
-        <div class="toggle-row">
-          <span class="toggle-label">{{ t('labelsDialog.showFingerHints') }}</span>
-          <button
-            class="toggle-switch"
-            :class="{ active: settings.showFingerHints }"
-            @click="settings.setShowFingerHints(!settings.showFingerHints)"
-          >
-            <span class="toggle-track"></span>
-            <span class="toggle-thumb"></span>
-          </button>
+        <div class="toggles-grid">
+          <div class="toggle-row compact">
+            <span class="toggle-label">{{ t('labelsDialog.showFingerHints') }}</span>
+            <button
+              class="toggle-switch"
+              :class="{ active: settings.showFingerHints }"
+              @click="settings.setShowFingerHints(!settings.showFingerHints)"
+            >
+              <span class="toggle-track"></span>
+              <span class="toggle-thumb"></span>
+            </button>
+          </div>
+
+          <div class="toggle-row compact">
+            <span class="toggle-label">{{ t('settings.coloredFingerHints') }}</span>
+            <button
+              class="toggle-switch"
+              :class="{ active: settings.showColoredFingerHints }"
+              @click="settings.setShowColoredFingerHints(!settings.showColoredFingerHints)"
+            >
+              <span class="toggle-track"></span>
+              <span class="toggle-thumb"></span>
+            </button>
+          </div>
         </div>
 
         <div class="slider-row">
@@ -165,30 +179,35 @@ function selectNoteLabel(value: LabelOptionValue) {
 </template>
 
 <style scoped>
-.labels-dialog { display: flex; flex-direction: column; gap: 0.5rem; }
+.labels-dialog { display: flex; flex-direction: column; gap: 0.42rem; }
 .tabs { display: flex; gap: 0; border-radius: 8px; overflow: hidden; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.1); }
-.tab { flex: 1; padding: 0.75rem 1rem; border: none; background: transparent; color: #9ca3af; font-size: 0.95rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease; border-radius: 0; }
+.tab { flex: 1; padding: 0.58rem 0.9rem; border: none; background: transparent; color: #9ca3af; font-size: 0.95rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease; border-radius: 0; }
 .tab.active { background: rgba(74, 222, 128, 0.15); color: #e3e4e8; }
-.tab-content { display: flex; flex-direction: column; gap: 0.5rem; }
-.options-list { display: flex; flex-direction: column; gap: 0; border-radius: 8px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.1); max-height: 400px; overflow-y: auto; }
-.option-item { display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 0.5rem; border: none; border-bottom: 1px solid rgba(255, 255, 255, 0.08); background: rgba(0, 0, 0, 0.2); color: #e3e4e8; font-size: 0.95rem; text-align: start; cursor: pointer; transition: all 0.2s ease; border-radius: 0; }
+.tab-content { display: flex; flex-direction: column; gap: 0.42rem; }
+.options-list { display: flex; flex-direction: column; gap: 0; border-radius: 8px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.1); }
+.option-item { display: flex; align-items: center; justify-content: space-between; padding: 0.42rem 0.5rem; border: none; border-bottom: 1px solid rgba(255, 255, 255, 0.08); background: rgba(0, 0, 0, 0.2); color: #e3e4e8; font-size: 0.92rem; text-align: start; cursor: pointer; transition: all 0.2s ease; border-radius: 0; }
 .option-item:last-child { border-bottom: none; }
 .option-item:hover { background: rgba(255, 255, 255, 0.05); }
 .option-item.selected { background: rgba(74, 222, 128, 0.15); }
 .option-label { flex: 1; }
-.checkmark { color: #4ade80; font-size: 1.2rem; font-weight: bold; }
-.toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.75rem 1rem; border-radius: 8px; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.1); }
-.toggle-label { color: #e3e4e8; font-size: 0.95rem; font-weight: 500; }
+.checkmark { color: #4ade80; font-size: 1.05rem; font-weight: bold; }
+.toggles-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.42rem; }
+.toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.6rem 0.75rem; border-radius: 8px; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.1); }
+.toggle-row.compact { min-width: 0; }
+.toggle-label { color: #e3e4e8; font-size: 0.88rem; font-weight: 500; line-height: 1.25; }
 .toggle-switch { position: relative; width: 50px; height: 28px; padding: 0; border: none; border-radius: 14px; background: transparent; cursor: pointer; flex-shrink: 0; transition: all 0.3s ease; }
 .toggle-track { position: absolute; inset: 0; border-radius: 14px; background: #5a5c61; transition: background 0.3s ease; }
 .toggle-switch.active .toggle-track { background: #4ade80; }
 .toggle-thumb { position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #ffffff; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); transition: transform 0.3s ease; }
 .toggle-switch.active .toggle-thumb { transform: translateX(22px); }
-.slider-row { display: flex; flex-direction: column; gap: 0.75rem; padding: 0.75rem 1rem; border-radius: 8px; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.1); }
+.slider-row { display: flex; flex-direction: column; gap: 0.55rem; padding: 0.6rem 0.75rem; border-radius: 8px; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.1); }
 .slider-header { display: flex; align-items: center; justify-content: space-between; }
-.slider-label { color: #e3e4e8; font-size: 0.95rem; font-weight: 500; }
-.slider-value { color: #9ca3af; font-size: 0.9rem; }
+.slider-label { color: #e3e4e8; font-size: 0.9rem; font-weight: 500; }
+.slider-value { color: #9ca3af; font-size: 0.86rem; }
 .size-slider { width: 100%; height: 6px; border-radius: 3px; background: #5a5c61; outline: none; -webkit-appearance: none; appearance: none; }
 .size-slider::-webkit-slider-thumb { width: 18px; height: 18px; border-radius: 50%; background: #e3e4e8; cursor: pointer; -webkit-appearance: none; appearance: none; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); }
 .size-slider::-moz-range-thumb { width: 18px; height: 18px; border: none; border-radius: 50%; background: #e3e4e8; cursor: pointer; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); }
+@media (max-width: 520px) {
+  .toggles-grid { grid-template-columns: 1fr; }
+}
 </style>

@@ -528,6 +528,8 @@ export const ru = {
     noteLabelModeDescription: "Стиль меток для падающих нот.",
     noteLabelSize: "Размер меток нот",
     noteLabelSizeDescription: "Увеличить/уменьшить размер меток падающих нот.",
+    coloredFingerHints: "Окрашивать номера пальцев",
+    coloredFingerHintsDescription: "Использовать отдельный цвет для каждого номера пальца на метках аппликатуры.",
     advancedDescription: "Расширенные параметры для опыта использования и отладки.",
     interface: "Интерфейс",
     reduceMotion: "Уменьшить движение",

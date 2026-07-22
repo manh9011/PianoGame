@@ -14,6 +14,7 @@ export const defaultSettings: UserSettings = {
   showKeyLabels: true,
   showNoteLabels: false,
   showFingerHints: true,
+  showColoredFingerHints: true,
   keyLabelMode: 'octaves',
   noteLabelMode: 'octaves',
   keyLabelSize: 0,

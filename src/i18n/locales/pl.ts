@@ -528,6 +528,8 @@ export const pl = {
     noteLabelModeDescription: "Styl etykiet dla spadających nut.",
     noteLabelSize: "Rozmiar etykiet nut",
     noteLabelSizeDescription: "Zwiększaj/zmniejszaj rozmiar etykiet spadających nut.",
+    coloredFingerHints: "Koloruj numery palców",
+    coloredFingerHintsDescription: "Użyj osobnego koloru dla każdego numeru palca na etykietach palcowania.",
     advancedDescription: "Zaawansowane opcje dotyczące działania i debugowania.",
     interface: "Interfejs",
     reduceMotion: "Ogranicz ruch",

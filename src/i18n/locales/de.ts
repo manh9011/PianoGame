@@ -528,6 +528,8 @@ export const de = {
     noteLabelModeDescription: "Beschriftungsstil für fallende Noten.",
     noteLabelSize: "Größe der Notenbeschriftung",
     noteLabelSizeDescription: "Größe der Beschriftung fallender Noten erhöhen/verringern.",
+    coloredFingerHints: "Fingernummern einfärben",
+    coloredFingerHintsDescription: "Für jede Fingernummer auf Fingerhinweis-Labels eine eigene Farbe verwenden.",
     advancedDescription: "Erweiterte Optionen für Erlebnis und Debugging.",
     interface: "Oberfläche",
     reduceMotion: "Bewegung reduzieren",

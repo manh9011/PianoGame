@@ -528,6 +528,8 @@ export const zh = {
     noteLabelModeDescription: "下落音符的标签样式。",
     noteLabelSize: "音符标签大小",
     noteLabelSizeDescription: "增大/减小下落音符标签大小。",
+    coloredFingerHints: "为指法数字着色",
+    coloredFingerHintsDescription: "在指法提示标签上为每个手指数字使用不同颜色。",
     advancedDescription: "体验和调试的高级选项。",
     interface: "界面",
     reduceMotion: "减少动画",

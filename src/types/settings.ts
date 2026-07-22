@@ -30,6 +30,7 @@ export interface UserSettings {
   showKeyLabels: boolean
   showNoteLabels: boolean
   showFingerHints: boolean
+  showColoredFingerHints: boolean
   keyLabelMode: LabelMode
   noteLabelMode: LabelMode
   keyLabelSize: number

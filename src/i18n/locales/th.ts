@@ -528,6 +528,8 @@ export const th = {
     noteLabelModeDescription: "รูปแบบป้ายกำกับสำหรับโน้ตที่ตกลงมา",
     noteLabelSize: "ขนาดป้ายกำกับโน้ต",
     noteLabelSizeDescription: "เพิ่ม/ลดขนาดป้ายกำกับโน้ตที่ตกลงมา",
+    coloredFingerHints: "ระบายสีหมายเลขนิ้ว",
+    coloredFingerHintsDescription: "ใช้สีแยกกันสำหรับหมายเลขนิ้วแต่ละนิ้วบนป้าย finger hint",
     advancedDescription: "ตัวเลือกขั้นสูงสำหรับประสบการณ์ใช้งานและการดีบัก",
     interface: "อินเทอร์เฟซ",
     reduceMotion: "ลดการเคลื่อนไหว",

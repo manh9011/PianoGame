@@ -528,6 +528,8 @@ export const vi = {
     noteLabelModeDescription: "Kiểu nhãn cho nốt rơi.",
     noteLabelSize: "Cỡ nhãn nốt",
     noteLabelSizeDescription: "Tăng/giảm kích thước nhãn nốt rơi.",
+    coloredFingerHints: "Tô màu số ngón tay",
+    coloredFingerHintsDescription: "Dùng màu riêng cho từng ngón tay trên nhãn finger hint.",
     advancedDescription: "Các tùy chọn nâng cao dành cho trải nghiệm và gỡ lỗi.",
     interface: "Giao diện",
     reduceMotion: "Giảm chuyển động",

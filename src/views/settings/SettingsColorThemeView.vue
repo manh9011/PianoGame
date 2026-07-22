@@ -68,6 +68,9 @@ const labelModes: Array<{ value: LabelMode; labelKey: string }> = [
       <SettingsRow :title="t('settings.noteLabelSize')" :description="t('settings.noteLabelSizeDescription')">
         <input class="settings-control compact" type="number" min="-10" max="25" step="1" :value="settings.noteLabelSize" @change="settings.setNoteLabelSize(Number(($event.target as HTMLInputElement).value))" />
       </SettingsRow>
+      <SettingsRow :title="t('settings.coloredFingerHints')" :description="t('settings.coloredFingerHintsDescription')">
+        <SettingsToggle :model-value="settings.showColoredFingerHints" @change="settings.setShowColoredFingerHints($event)" />
+      </SettingsRow>
     </SettingsSection>
   </div>
 </template>

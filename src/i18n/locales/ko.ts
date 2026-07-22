@@ -528,6 +528,8 @@ export const ko = {
     noteLabelModeDescription: "떨어지는 노트의 라벨 스타일입니다.",
     noteLabelSize: "노트 라벨 크기",
     noteLabelSizeDescription: "떨어지는 노트 라벨 크기를 키우거나 줄입니다.",
+    coloredFingerHints: "손가락 번호 색상 표시",
+    coloredFingerHintsDescription: "손가락 힌트 라벨에서 각 손가락 번호에 서로 다른 색상을 사용합니다.",
     advancedDescription: "사용 경험과 디버깅을 위한 고급 옵션입니다.",
     interface: "인터페이스",
     reduceMotion: "움직임 줄이기",

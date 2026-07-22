@@ -528,6 +528,8 @@ export const ar = {
     noteLabelModeDescription: "نمط التسمية للنغمات الهابطة.",
     noteLabelSize: "حجم تسميات النغمات",
     noteLabelSizeDescription: "زد/قلّل حجم تسميات النغمات الهابطة.",
+    coloredFingerHints: "تلوين أرقام الأصابع",
+    coloredFingerHintsDescription: "استخدم لونًا منفصلًا لكل رقم إصبع على تسميات إرشاد الأصابع.",
     advancedDescription: "خيارات متقدمة للتجربة وتصحيح الأخطاء.",
     interface: "الواجهة",
     reduceMotion: "تقليل الحركة",

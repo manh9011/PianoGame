@@ -528,6 +528,8 @@ export const sl = {
     noteLabelModeDescription: "Slog oznak za padajoče note.",
     noteLabelSize: "Velikost oznak not",
     noteLabelSizeDescription: "Povečaj/zmanjšaj velikost oznak padajočih not.",
+    coloredFingerHints: "Obarvaj številke prstov",
+    coloredFingerHintsDescription: "Uporabi ločeno barvo za vsako številko prsta na oznakah prstnih namigov.",
     advancedDescription: "Napredne možnosti za izkušnjo in odpravljanje napak.",
     interface: "Vmesnik",
     reduceMotion: "Zmanjšaj gibanje",

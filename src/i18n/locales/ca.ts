@@ -528,6 +528,8 @@ export const ca = {
     noteLabelModeDescription: "Estil d’etiqueta per a les notes descendents.",
     noteLabelSize: "Mida de les etiquetes de notes",
     noteLabelSizeDescription: "Augmenta o redueix la mida de les etiquetes de notes descendents.",
+    coloredFingerHints: "Acoloreix els números dels dits",
+    coloredFingerHintsDescription: "Fes servir un color diferent per a cada número de dit a les etiquetes de digitació.",
     advancedDescription: "Opcions avançades per a l’experiència i la depuració.",
     interface: "Interfície",
     reduceMotion: "Redueix el moviment",

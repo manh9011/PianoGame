@@ -528,6 +528,8 @@ export const it = {
     noteLabelModeDescription: "Stile delle etichette per le note in caduta.",
     noteLabelSize: "Dimensione etichetta note",
     noteLabelSizeDescription: "Aumenta o riduci la dimensione delle etichette delle note in caduta.",
+    coloredFingerHints: "Colora i numeri delle dita",
+    coloredFingerHintsDescription: "Usa un colore diverso per ogni numero di dito sulle etichette di diteggiatura.",
     advancedDescription: "Opzioni avanzate per esperienza e debug.",
     interface: "Interfaccia",
     reduceMotion: "Riduci movimento",

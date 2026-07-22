@@ -520,6 +520,8 @@ export const en = {
     noteLabelModeDescription: 'Label style for falling notes.',
     noteLabelSize: 'Note label size',
     noteLabelSizeDescription: 'Increase/decrease falling note label size.',
+    coloredFingerHints: 'Color finger numbers',
+    coloredFingerHintsDescription: 'Use a separate color for each finger number on finger hint labels.',
     advancedDescription: 'Advanced options for experience and debugging.',
     interface: 'Interface',
     reduceMotion: 'Reduce motion',
