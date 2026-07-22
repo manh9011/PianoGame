@@ -5,7 +5,7 @@ import type { SongMetadata } from '../../types/song'
 import { useLibraryStore } from '../../stores/libraryStore'
 import { useProfileStore } from '../../stores/profileStore'
 import { useSettingsStore } from '../../stores/settingsStore'
-import { formatDate } from '../../i18n/formatters'
+import { formatDate, formatDateTime } from '../../i18n/formatters'
 import { achievementColorStyle } from '../../modules/game/achievementColors'
 import { achievementFromHistory } from '../../modules/game/achievementScoring'
 
@@ -76,13 +76,27 @@ const difficultyPopupStyle = ref<{ top: string; left: string }>({ top: '0px', le
 const difficultyArrowStyle = ref<{ top: string; left?: string; right?: string }>({ top: '0px' })
 const difficultyArrowPlacement = ref<'left' | 'right'>('left')
 
-function formatLastPlayed(value: number) {
-  if (!value) return t('common.never')
+function formatShortDate(value: number) {
   return formatDate(value, settings.locale, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
   })
+}
+
+function formatLastPlayed(value: number) {
+  if (!value) return t('common.never')
+  return formatShortDate(value)
+}
+
+function formatImportedAt(value: number) {
+  if (!value) return '—'
+  return formatShortDate(value)
+}
+
+function formatImportedAtDetail(value: number) {
+  if (!value) return '—'
+  return formatDateTime(value, settings.locale)
 }
 
 function formatDuration(durationUs: number) {
@@ -205,7 +219,7 @@ function calculatePopupPosition(element: HTMLElement, popupWidth: number, popupH
 function showDetail(event: MouseEvent, song: SongMetadata) {
   event.stopPropagation()
   const element = event.currentTarget as HTMLElement
-  const { popupStyle, arrowStyle, arrowPlacement } = calculatePopupPosition(element, 288, 350)
+  const { popupStyle, arrowStyle, arrowPlacement } = calculatePopupPosition(element, 288, 370)
 
   detailPopupStyle.value = popupStyle
   detailArrowStyle.value = arrowStyle
@@ -344,6 +358,7 @@ function clearDifficulty() {
           </button>
         </template>
       </span>
+      <span class="song-imported-at muted">{{ formatImportedAt(song.importedAt) }}</span>
       <span class="song-last-played muted">{{ formatLastPlayed(song.lastPlayed) }}</span>
       <span class="song-duration muted">{{ formatDuration(song.duration) }}</span>
       <span class="song-play-count">{{ song.playCount }}</span>
@@ -407,6 +422,10 @@ function clearDifficulty() {
             <div class="detail-row">
               <span class="detail-label">{{ t('library.playCount') }}:</span>
               <span class="detail-value">{{ detailSong.playCount }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">{{ t('library.importedAt') }}:</span>
+              <span class="detail-value">{{ formatImportedAtDetail(detailSong.importedAt) }}</span>
             </div>
             <div class="detail-row">
               <span class="detail-label">{{ t('library.lastPlayed') }}:</span>
@@ -489,7 +508,7 @@ function clearDifficulty() {
 
 .song-row {
   display: grid;
-  grid-template-columns: 2.7rem minmax(0, 1fr) 10rem 5.5rem 6.4rem 5.9rem 6.8rem 2.5rem;
+  grid-template-columns: 2.7rem minmax(0, 1fr) 9.2rem 9.2rem 5.2rem 5.8rem 5.6rem 6.4rem 2.5rem;
   align-items: center;
   gap: 0.8rem;
   width: 100%;
@@ -534,6 +553,7 @@ function clearDifficulty() {
 }
 
 .song-title-cell,
+.song-imported-at,
 .song-last-played,
 .song-duration {
   min-width: 0;
@@ -621,6 +641,7 @@ function clearDifficulty() {
   color: #fca5a5;
 }
 
+.song-imported-at,
 .song-last-played,
 .song-duration {
   color: rgba(255, 255, 255, 0.56);
@@ -632,6 +653,7 @@ function clearDifficulty() {
   font-variant-numeric: tabular-nums;
 }
 
+.song-row.selected .song-imported-at,
 .song-row.selected .song-last-played,
 .song-row.selected .song-duration {
   color: rgba(255, 255, 255, 0.82);
@@ -1047,8 +1069,8 @@ function clearDifficulty() {
 
 @media (max-width: 1100px) {
   .song-row {
-    grid-template-columns: 2.5rem minmax(0, 1fr) 8.4rem 4.8rem 5.5rem 5.2rem 6rem 2.3rem;
-    gap: 0.6rem;
+    grid-template-columns: 2.5rem minmax(0, 1fr) 8rem 8rem 4.6rem 5rem 4.9rem 5.8rem 2.3rem;
+    gap: 0.52rem;
     padding-inline: 0.16rem 0.56rem;
   }
 
@@ -1061,7 +1083,7 @@ function clearDifficulty() {
 
 @media (max-width: 760px) {
   .song-row {
-    grid-template-columns: 2.2rem minmax(0, 1fr) 4.6rem 3.8rem 3.8rem 5rem 2rem;
+    grid-template-columns: 2.2rem minmax(0, 1fr) 5.4rem 3.8rem 3.8rem 5rem 2rem;
     gap: 0.42rem;
     font-size: 0.82rem;
   }

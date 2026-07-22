@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import MidiImportButton from '../components/library/MidiImportButton.vue'
@@ -23,6 +23,12 @@ const selectedSong = computed(() => library.selectedSong)
 const visibleSongCount = computed(() => library.sortedSongs.length)
 const musicXmlDownloadingSongId = ref<string | null>(null)
 const downloadMenuOpen = ref(false)
+
+watch(
+  () => settings.songsSortByRecentlyImported,
+  recentlyImportedFirst => library.setDefaultSortFromSettings(recentlyImportedFirst),
+  { immediate: true },
+)
 
 function startPreview(song: SongMetadata | null) {
   if (!song) return

@@ -75,6 +75,7 @@ export const useLibraryStore = defineStore('library', {
     initialized: false,
     sortKey: 'title' as SongSortKey,
     sortDirection: 'asc' as SortDirection,
+    sortTouched: false,
     searchQuery: '',
     selectedSongId: null as string | null,
     previewClock: null as MidiPlayerClock | null,
@@ -130,6 +131,7 @@ export const useLibraryStore = defineStore('library', {
     },
     async importFile(file: File, folderPath?: string) {
       const candidate = await createImportedSongCandidate(file, folderPath)
+      const importedAt = Date.now()
       const existing = findMergeTarget(this.songs, candidate)
       const existingMusicXmlData = existing?.musicXmlData ?? (existing?.hasMusicXmlSource ? await loadSongMusicXmlData(existing.id) : undefined)
       const song: SongMetadata = {
@@ -141,6 +143,7 @@ export const useLibraryStore = defineStore('library', {
         bestScore: existing?.bestScore ?? 0,
         playCount: existing?.playCount ?? 0,
         lastPlayed: existing?.lastPlayed ?? 0,
+        importedAt,
         recent: existing?.recent ?? false,
         data: candidate.midiData,
         midiData: candidate.midiData,
@@ -185,12 +188,18 @@ export const useLibraryStore = defineStore('library', {
       if (this.previewSongId && this.previewSongId !== id) this.stopPreview()
     },
     setSort(key: SongSortKey) {
+      this.sortTouched = true
       if (this.sortKey === key) {
         this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc'
         return
       }
       this.sortKey = key
       this.sortDirection = key === 'title' ? 'asc' : 'desc'
+    },
+    setDefaultSortFromSettings(recentlyImportedFirst: boolean) {
+      if (this.sortTouched) return
+      this.sortKey = recentlyImportedFirst ? 'importedAt' : 'title'
+      this.sortDirection = recentlyImportedFirst ? 'desc' : 'asc'
     },
     renameSong(id: string, rawTitle: string) {
       const title = rawTitle.trim()

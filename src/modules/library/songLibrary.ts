@@ -28,6 +28,7 @@ function normalizeMetadata(meta: SongMeta, payload?: SongPayload): SongMetadata 
     midiData: undefined,
     musicXmlData: undefined,
     playbackHash: meta.playbackHash ?? meta.hash,
+    importedAt: meta.importedAt ?? 0,
     sourceType,
     hasMidiSource,
     hasMusicXmlSource,

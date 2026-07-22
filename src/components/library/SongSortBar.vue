@@ -8,6 +8,7 @@ const library = useLibraryStore()
 const keys: { key: SongSortKey; labelKey: string }[] = [
   { key: 'bestScore', labelKey: 'library.sort.points' },
   { key: 'title', labelKey: 'library.sort.title' },
+  { key: 'importedAt', labelKey: 'library.sort.importedAt' },
   { key: 'lastPlayed', labelKey: 'library.sort.lastPlayed' },
   { key: 'duration', labelKey: 'library.sort.duration' },
   { key: 'playCount', labelKey: 'library.sort.playCount' },

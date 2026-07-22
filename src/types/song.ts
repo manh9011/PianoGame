@@ -9,6 +9,7 @@ export interface SongMetadata {
   bestScore: number
   playCount: number
   lastPlayed: number
+  importedAt: number
   recent: boolean
   data?: string
   midiData?: string
@@ -25,5 +26,5 @@ export interface SongMetadata {
   folderPath?: string
 }
 
-export type SongSortKey = 'bestScore' | 'playCount' | 'lastPlayed' | 'title' | 'duration' | 'rating' | 'difficulty'
+export type SongSortKey = 'bestScore' | 'playCount' | 'lastPlayed' | 'importedAt' | 'title' | 'duration' | 'rating' | 'difficulty'
 export type SortDirection = 'asc' | 'desc'

@@ -1,5 +1,5 @@
 const DB_NAME = 'piano-game'
-const DB_VERSION = 2
+const DB_VERSION = 3
 
 export interface SongDataRecord {
   id: string
@@ -18,6 +18,29 @@ export interface AppStateRecord {
   value: any
 }
 
+function ensureIndex(store: IDBObjectStore, name: string, keyPath: string) {
+  if (!store.indexNames.contains(name)) store.createIndex(name, keyPath, { unique: false })
+}
+
+function ensureSongMetadataIndexes(store: IDBObjectStore) {
+  ensureIndex(store, 'hash', 'hash')
+  ensureIndex(store, 'lastPlayed', 'lastPlayed')
+  ensureIndex(store, 'title', 'title')
+  ensureIndex(store, 'importedAt', 'importedAt')
+}
+
+function backfillSongMetadata(store: IDBObjectStore) {
+  const request = store.openCursor()
+  request.onsuccess = () => {
+    const cursor = request.result
+    if (!cursor) return
+
+    const value = cursor.value as { importedAt?: number }
+    if (value.importedAt == null) cursor.update({ ...value, importedAt: 0 })
+    cursor.continue()
+  }
+}
+
 export async function openDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION)
@@ -30,9 +53,13 @@ export async function openDatabase(): Promise<IDBDatabase> {
 
       if (!db.objectStoreNames.contains('songs-metadata')) {
         const metaStore = db.createObjectStore('songs-metadata', { keyPath: 'id' })
-        metaStore.createIndex('hash', 'hash', { unique: false })
-        metaStore.createIndex('lastPlayed', 'lastPlayed', { unique: false })
-        metaStore.createIndex('title', 'title', { unique: false })
+        ensureSongMetadataIndexes(metaStore)
+      } else {
+        const metaStore = request.transaction?.objectStore('songs-metadata')
+        if (metaStore) {
+          ensureSongMetadataIndexes(metaStore)
+          backfillSongMetadata(metaStore)
+        }
       }
 
       if (!db.objectStoreNames.contains('songs-data')) {
