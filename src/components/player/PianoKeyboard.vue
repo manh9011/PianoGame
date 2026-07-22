@@ -72,6 +72,35 @@ function activeColor(noteId: number) {
   return HAND_COLORS[hand]
 }
 
+function activeFingerLabel(noteId: number) {
+  const session = player.session
+  if (!session || !active(noteId)) return null
+  const playableNoteId = noteId - session.octaveShift * 12
+  const noteIds = new Set([noteId, playableNoteId])
+  const activeTrackId = session.autoActiveNoteTrackIds.get(noteId) ?? session.activeNoteTrackIds.get(noteId)
+  const activeHand = session.autoActiveNoteHands.get(noteId) ?? session.activeNoteHands.get(noteId)
+  let best: { finger: number; score: number } | null = null
+
+  for (const note of session.notes) {
+    if (!note.finger || !noteIds.has(note.noteId)) continue
+    const overlapsCurrentTime = note.start <= session.currentUs && note.end >= session.currentUs
+    const distance = overlapsCurrentTime
+      ? 0
+      : Math.min(Math.abs(note.start - session.currentUs), Math.abs(note.end - session.currentUs))
+    const trackPenalty = activeTrackId !== undefined && note.trackId !== activeTrackId ? 10_000_000 : 0
+    const handPenalty = activeHand && note.hand !== activeHand ? 5_000_000 : 0
+    const score = distance + trackPenalty + handPenalty
+    if (!best || score < best.score) best = { finger: note.finger, score }
+  }
+
+  return best ? String(best.finger) : null
+}
+
+function keyboardLabel(noteId: number) {
+  if (settings.keyLabelMode === 'finger-hint') return activeFingerLabel(noteId)
+  return getKeyboardLabel(settings.keyLabelMode, noteId, currentKeySignatureAccidentals())
+}
+
 function melodyWaitNote() {
   const session = player.session
   if (!session?.melodyWaitNoteId) return null
@@ -180,12 +209,12 @@ function drawWhiteKey(ctx: CanvasRenderingContext2D, rect: KeyRect, isActive = a
     ctx.fill()
   }
 
-  if (settings.showKeyLabels) drawWhiteLabel(ctx, rect, drawActive)
+  if (settings.showKeyLabels && (settings.keyLabelMode !== 'finger-hint' || drawActive)) drawWhiteLabel(ctx, rect, drawActive)
 }
 
 function drawWhiteLabel(ctx: CanvasRenderingContext2D, rect: KeyRect, isActive = active(rect.key.noteId)) {
   const { key, x, width, height } = rect
-  const label = getKeyboardLabel(settings.keyLabelMode, key.noteId, currentKeySignatureAccidentals())
+  const label = keyboardLabel(key.noteId)
   if (!label) return
 
   const baseFontSize = 16
@@ -355,14 +384,14 @@ function drawBlackKey(ctx: CanvasRenderingContext2D, rect: KeyRect, isDown = act
     : isDisabled ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.14)'
   ctx.stroke()
 
-  if (settings.showKeyLabels) drawBlackLabel(ctx, rect, drawDown)
+  if (settings.showKeyLabels && (settings.keyLabelMode !== 'finger-hint' || drawDown)) drawBlackLabel(ctx, rect, drawDown)
 
   ctx.restore()
 }
 
 function drawBlackLabel(ctx: CanvasRenderingContext2D, rect: KeyRect, isActive = active(rect.key.noteId)) {
   const { key, x, width, height } = rect
-  const label = getKeyboardLabel(settings.keyLabelMode, key.noteId, currentKeySignatureAccidentals())
+  const label = keyboardLabel(key.noteId)
   if (!label) return
 
   const baseFontSize = 9
@@ -510,7 +539,7 @@ function getKeyboardBaseCacheKey() {
     Math.round(blackKeyHeight()),
     `${range.lowNote}-${range.highNote}`,
     settings.showKeyLabels,
-    settings.keyLabelMode,
+    settings.keyLabelMode === 'finger-hint' ? 'finger-hint-base' : settings.keyLabelMode,
     settings.keyLabelSize,
     currentKeySignatureAccidentals(),
   ].join(':')
@@ -650,6 +679,7 @@ function activeStateKey() {
   return [
     [...session.activeNotes].sort((a, b) => a - b).join(','),
     [...session.autoActiveNotes].sort((a, b) => a - b).join(','),
+    settings.keyLabelMode === 'finger-hint' ? session.notes.map(note => note.finger ? `${note.id}:${note.finger}` : '').join(',') : '',
     session.melodyWaitNoteId ?? '',
     session.keyboardRange ? `${session.keyboardRange.lowNote}:${session.keyboardRange.highNote}` : '',
   ].join('|')

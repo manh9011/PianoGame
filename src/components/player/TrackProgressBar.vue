@@ -8,6 +8,7 @@ import type { MidiBookmarkSource } from '../../modules/midi/midiTypes'
 const { t } = useI18n()
 const props = defineProps<{
   loopSetupActive?: boolean
+  fingerModeActive?: boolean
 }>()
 
 const player = usePlayerStore()
@@ -87,6 +88,41 @@ const playedRegions = computed(() => {
       }
     })
     .filter(region => region.width > 0)
+})
+
+function mergeSegments(segments: Array<{ startUs: number; endUs: number }>) {
+  const sorted = segments
+    .filter(segment => segment.endUs > segment.startUs)
+    .sort((a, b) => a.startUs - b.startUs || a.endUs - b.endUs)
+  const merged: Array<{ startUs: number; endUs: number }> = []
+  for (const segment of sorted) {
+    const previous = merged[merged.length - 1]
+    if (previous && segment.startUs <= previous.endUs + 10_000) {
+      previous.endUs = Math.max(previous.endUs, segment.endUs)
+    } else {
+      merged.push({ ...segment })
+    }
+  }
+  return merged
+}
+
+const unassignedFingerRegions = computed(() => {
+  const total = totalUs.value
+  const session = player.session
+  if (!props.fingerModeActive || !session || !total) return []
+
+  const segments = session.notes
+    .filter(note => !note.finger || note.hand === 'unknown')
+    .map(note => ({
+      startUs: Math.max(0, Math.min(total, note.start)),
+      endUs: Math.max(0, Math.min(total, note.end)),
+    }))
+
+  return mergeSegments(segments).map((segment, index) => ({
+    key: `${segment.startUs}:${segment.endUs}:${index}`,
+    left: (segment.startUs / total) * 100,
+    width: Math.max(0.12, ((segment.endUs - segment.startUs) / total) * 100),
+  }))
 })
 
 function syncCanvasSize(canvas: HTMLCanvasElement) {
@@ -306,6 +342,12 @@ function seekFromPointer(event: MouseEvent) {
     >
       <canvas ref="progressCanvasRef" class="progress-canvas" />
       <div
+        v-for="region in unassignedFingerRegions"
+        :key="region.key"
+        class="unassigned-finger-region"
+        :style="{ left: `${region.left}%`, width: `${region.width}%` }"
+      />
+      <div
         v-for="region in playedRegions"
         :key="region.key"
         class="played-region"
@@ -399,6 +441,15 @@ function seekFromPointer(event: MouseEvent) {
   height: 7px;
   background: #fbbf24;
   box-shadow: 0 0 8px rgba(251, 191, 36, 0.42);
+  pointer-events: none;
+}
+.unassigned-finger-region {
+  position: absolute;
+  z-index: 4;
+  top: 0;
+  height: 7px;
+  background: #a855f7;
+  box-shadow: 0 0 8px rgba(168, 85, 247, 0.48);
   pointer-events: none;
 }
 .measure-tick {

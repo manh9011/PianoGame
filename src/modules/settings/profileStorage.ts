@@ -13,6 +13,7 @@ export function createDefaultProfile(name = 'Người chơi'): UserProfile {
     bestScoresBySongMode: {},
     scoresByMode: {},
     loopRegionsBySongId: {},
+    fingeringsBySongId: {},
   }
 }
 
@@ -25,6 +26,7 @@ function normalizeProfile(profile: Partial<UserProfile>): UserProfile {
     bestScoresBySongMode: profile.bestScoresBySongMode ?? {},
     scoresByMode: profile.scoresByMode ?? {},
     loopRegionsBySongId: profile.loopRegionsBySongId ?? {},
+    fingeringsBySongId: profile.fingeringsBySongId ?? {},
   }
 }
 

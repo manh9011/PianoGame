@@ -17,6 +17,11 @@ const props = defineProps<{
   bookmarkMode?: boolean
   benchmarkMode?: boolean
   loopSetupActive?: boolean
+  fingerMode?: boolean
+}>()
+
+const emit = defineEmits<{
+  selectFingerNote: [note: SessionNote, anchor: { x: number; y: number; width: number; height: number }]
 }>()
 
 const USER_BOOKMARK_COLOR = '#FFBB32'
@@ -774,6 +779,29 @@ function drawNote(ctx: CanvasRenderingContext2D, note: LaidOutNote<SessionNote>)
   })
 
   ctx.drawImage(sprite, x - NOTE_BODY_PAD_X, y - NOTE_BODY_PAD_Y)
+  if (note.finger && settings.noteLabelMode !== 'finger-hint') drawFingerBadge(ctx, note, true)
+}
+
+function drawFingerBadge(ctx: CanvasRenderingContext2D, note: LaidOutNote<SessionNote>, belowNote = false) {
+  const radius = Math.max(9, Math.min(15, note.width * 0.32))
+  const x = note.x + note.width / 2
+  const y = belowNote
+    ? note.y + radius + 6
+    : Math.max(note.y - note.height + radius + 4, note.y - radius - 5)
+  ctx.save()
+  ctx.fillStyle = note.fingerSource === 'manual' ? 'rgba(251,191,36,0.95)' : 'rgba(255,255,255,0.92)'
+  ctx.strokeStyle = 'rgba(0,0,0,0.75)'
+  ctx.lineWidth = 2
+  ctx.beginPath()
+  ctx.arc(x, y, radius, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+  ctx.fillStyle = '#111827'
+  ctx.font = `800 ${Math.round(radius * 1.2)}px sans-serif`
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(String(note.finger), x, y + 0.5)
+  ctx.restore()
 }
 
 type NoteLabelSpriteOptions = {
@@ -893,6 +921,12 @@ function draw(dt: number, nowMs: number, frameProfile: PlaybackProfilerContext |
       measurePlaybackSpan(frameProfile, 'frame.drawLabels', () => {
         const keyAccidentals = currentKeySignatureAccidentals(session)
         for (const note of visibleNotes) {
+          if (settings.noteLabelMode === 'finger-hint') {
+            if (!note.finger) continue
+            labelsDrawn += 1
+            drawFingerBadge(ctx, note, false)
+            continue
+          }
           const text = getNoteLabel(settings.noteLabelMode, note.noteId, keyAccidentals)
           if (!text) continue
           labelsDrawn += 1
@@ -1020,6 +1054,8 @@ function handleCanvasMouseMove(event: MouseEvent) {
   const edge = getHoveredLoopEdge(coords.y, session)
   if (edge) {
     canvas.style.cursor = 'ns-resize'
+  } else if (props.fingerMode) {
+    canvas.style.cursor = 'pointer'
   } else if (player.canSeek) {
     canvas.style.cursor = isTouchDragging ? 'grabbing' : 'grab'
   } else {
@@ -1086,10 +1122,35 @@ function handleBookmarkGapClick(event: MouseEvent) {
   return true
 }
 
+function handleFingerNoteClick(event: MouseEvent) {
+  if (!props.fingerMode) return false
+  const session = player.session
+  if (!session) return false
+  const coords = getCanvasCoordinates(event)
+  if (!coords) return false
+  const notes = layoutNotes(session.notes, session.currentUs, session.showDuration, logicalWidth, logicalHeight)
+    .filter(note => visible(note))
+  for (let index = notes.length - 1; index >= 0; index -= 1) {
+    const note = notes[index]
+    const top = note.y - note.height
+    if (coords.x < note.x || coords.x > note.x + note.width || coords.y < top || coords.y > note.y) continue
+    const canvas = canvasRef.value
+    const rect = canvas?.getBoundingClientRect()
+    emit('selectFingerNote', note, {
+      x: rect ? rect.left + note.x : event.clientX,
+      y: rect ? rect.top + top : event.clientY,
+      width: note.width,
+      height: note.height,
+    })
+    return true
+  }
+  return false
+}
+
 function handleMouseDown(event: MouseEvent) {
   if (event.button !== 0) return
 
-  if (handleBookmarkGapClick(event)) {
+  if (handleBookmarkGapClick(event) || handleFingerNoteClick(event)) {
     event.preventDefault()
     return
   }

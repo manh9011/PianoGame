@@ -10,7 +10,7 @@ export type HandSelection = 'left' | 'right' | 'both'
 export type Hand = 'left' | 'right' | 'unknown'
 export type FailureReason = 'wrongNote' | 'missedNote' | 'strayNote'
 
-export interface SessionNote extends TranslatedNote { hand: Hand }
+export interface SessionNote extends TranslatedNote { hand: Hand; finger?: number | null; fingerSource?: 'manual' | 'auto'; fingerCost?: number }
 export interface SessionBookmark { id: string; timeUs: number; source: MidiBookmarkSource | 'user'; label: string; color: string }
 export interface UserBookmark { id: string; timeUs: number; label: string }
 export interface SessionKeySignature { id: string; timeUs: number; label: string; accidentals: number }

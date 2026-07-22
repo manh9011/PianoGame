@@ -14,6 +14,7 @@ const props = defineProps<{
   isFullscreen: boolean
   bookmarksDialogOpen?: boolean
   loopDialogOpen?: boolean
+  fingerDialogOpen?: boolean
   helpOverlayOpen?: boolean
   benchmarkMode?: boolean
   performanceAutoPlay?: boolean
@@ -24,6 +25,7 @@ const emit = defineEmits<{
   openMetronome: [event: MouseEvent]
   openTrackConfig: [event: MouseEvent]
   openKeyboardRange: [event: MouseEvent]
+  openFinger: [event: MouseEvent]
   openLabels: [event: MouseEvent]
   openBookmarks: []
   openLoop: [event: MouseEvent]
@@ -162,7 +164,7 @@ function decreaseSpeed() {
         <button class="icon-button" data-help-anchor="metronome" :title="t('play.metronome')" :aria-label="t('play.metronome')" @click="(e) => emit('openMetronome', e)"><i class="fas fa-drum"></i></button>
         <button class="icon-button" data-help-anchor="track-config" :title="t('play.trackConfig')" :aria-label="t('play.trackConfig')" @click="(e) => emit('openTrackConfig', e)"><i class="fas fa-sliders-h"></i></button>
         <button class="icon-button" data-help-anchor="keyboard-range" :title="t('play.keyboardRange')" :aria-label="t('play.keyboardRange')" @click="(e) => emit('openKeyboardRange', e)"><i class="fas fa-keyboard"></i></button>
-        <button class="icon-button" data-help-anchor="finger-hints" :title="t('play.fingerHints')" :aria-label="t('play.fingerHints')"><i class="fas fa-hand"></i></button>
+        <button class="icon-button" data-help-anchor="finger-hints" :class="{ 'finger-active': fingerDialogOpen }" :title="t('play.fingerHints')" :aria-label="t('play.fingerHints')" @click="(e) => emit('openFinger', e)"><i class="fas fa-hand"></i></button>
         <button class="icon-button" data-help-anchor="bookmarks" :class="{ 'bookmark-active': bookmarksDialogOpen }" :title="t('play.bookmarks')" :aria-label="t('play.bookmarks')" @click="emit('openBookmarks')"><i class="fas fa-bookmark"></i></button>
         <button class="icon-button" data-help-anchor="note-labels" :title="t('play.noteLabels')" :aria-label="t('play.noteLabels')" @click="(e) => emit('openLabels', e)"><i class="fas fa-tags"></i></button>
         <button class="icon-button" data-help-anchor="looping" :class="{ 'loop-active': loopActive || loopDialogOpen }" :title="t('play.loop')" :aria-label="t('play.loop')" @click="(e) => emit('openLoop', e)"><i class="fas fa-repeat"></i></button>
@@ -274,13 +276,15 @@ function decreaseSpeed() {
   border-color: rgba(255, 187, 50, 0.5);
 }
 
-.icon-button.loop-active {
+.icon-button.loop-active,
+.icon-button.finger-active {
   color: #fbbf24;
   background: rgba(251, 191, 36, 0.15);
   border-color: rgba(251, 191, 36, 0.4);
 }
 
-.icon-button.loop-active:hover {
+.icon-button.loop-active:hover,
+.icon-button.finger-active:hover {
   background: rgba(251, 191, 36, 0.25);
   border-color: rgba(251, 191, 36, 0.5);
 }

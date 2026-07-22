@@ -150,6 +150,7 @@ export function getKeyboardLabel(mode: LabelMode, noteId: number, keySignatureAc
   return getLabelForMode(mode, noteId, keySignatureAccidentals)
 }
 
-export function getNoteLabel(mode: LabelMode, noteId: number, keySignatureAccidentals = 0) {
+export function getNoteLabel(mode: LabelMode, noteId: number, keySignatureAccidentals = 0, finger?: number | null) {
+  if (mode === 'finger-hint') return finger ? String(finger) : null
   return getLabelForMode(mode, noteId, keySignatureAccidentals)
 }

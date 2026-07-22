@@ -14,6 +14,8 @@ import { collectChordAtStart, findEarliestPlayableWaitingStart, findHit, HIT_WIN
 import { awardHoldPoints, createScoreState, recordHit, recordMiss, recordMisses, recordStray, recordWrong, resetSpeedTrackingAnchor, stopHoldsForInput, summarizeScoreWithinRange, trimScoreAfter, updateSpeedTracking } from '../modules/game/scoring'
 import { summarizeStats, type SongPlayStats } from '../modules/game/songStatistics'
 import { assignHands } from '../modules/game/handAssignment'
+import { requestPianoFingering } from '../modules/fingering/fingeringClient'
+import type { FingeringAssignment, FingerNumber, HandSizePreset } from '../modules/fingering/fingeringTypes'
 import { AutoNotePlayer } from '../modules/audio/autoNotePlayer'
 import { MetronomePlayer, type MetronomeBeat } from '../modules/audio/metronomePlayer'
 import { SimpleSynth } from '../modules/audio/simpleSynth'
@@ -93,6 +95,57 @@ function applyTrackRoleToNotes(session: PlaySession, trackId: number, role: Trac
   const hand = handForRole(role)
   if (!hand) return
   session.notes = session.notes.map(note => note.trackId === trackId ? { ...note, hand } : note)
+}
+
+function applyFingeringAssignments(session: PlaySession, assignments: FingeringAssignment[]) {
+  const byNoteId = new Map(assignments.map(assignment => [assignment.noteId, assignment]))
+  session.notes = session.notes.map(note => {
+    const assignment = byNoteId.get(note.id)
+    if (!assignment) return note
+    return {
+      ...note,
+      hand: assignment.hand,
+      finger: assignment.finger,
+      fingerSource: assignment.source,
+      fingerCost: assignment.cost,
+    }
+  })
+}
+
+function toFingerNumber(value: number | null | undefined): FingerNumber | null {
+  return value && value >= 1 && value <= 5 ? value as FingerNumber : null
+}
+
+function persistSessionFingering(songId: string | undefined, session: PlaySession, handSize?: HandSizePreset) {
+  if (!songId) return
+  const assignments = session.notes
+    .filter(note => note.finger && (note.hand === 'left' || note.hand === 'right'))
+    .map(note => ({
+      noteId: note.id,
+      hand: note.hand as 'left' | 'right',
+      finger: note.finger as number,
+      source: note.fingerSource ?? 'manual' as const,
+      cost: note.fingerCost,
+    }))
+  useProfileStore().saveFingering(songId, assignments, handSize)
+}
+
+function restoreSavedFingering(songId: string, session: PlaySession) {
+  const saved = useProfileStore().fingeringFor(songId)
+  if (!saved?.assignments.length) return
+  const byNoteId = new Map(saved.assignments.map(assignment => [assignment.noteId, assignment]))
+  session.notes = session.notes.map(note => {
+    const assignment = byNoteId.get(note.id)
+    const finger = toFingerNumber(assignment?.finger)
+    if (!assignment || !finger) return note
+    return {
+      ...note,
+      hand: assignment.hand,
+      finger,
+      fingerSource: assignment.source,
+      fingerCost: assignment.cost,
+    }
+  })
 }
 
 function clearActiveNoteMetadata(session: PlaySession) {
@@ -206,6 +259,8 @@ export const usePlayerStore = defineStore('player', {
     trackPreviewRunning: false,
     performanceAutoPlay: false,
     performanceAutoPlayUsed: false,
+    fingeringGenerating: false,
+    fingeringError: null as string | null,
     playbackManuallyStopped: false,
     playbackRunning: false,
     playbackOutputBlocked: false,
@@ -266,6 +321,7 @@ export const usePlayerStore = defineStore('player', {
       this.unblockPlaybackOutput(true)
       this.resetLoopAttemptHistory()
       this.restoreSavedLoopRegion(song.id)
+      restoreSavedFingering(song.id, this.session)
       this.clock?.stop()
       this.metronome.restart()
       this.clock = new MidiPlayerClock(duration, () => this.session?.speed ?? 100, state => {
@@ -827,6 +883,56 @@ export const usePlayerStore = defineStore('player', {
         completedAt: Date.now(),
       })
       if (this.loopAttemptHistory.length > 50) this.loopAttemptHistory.splice(0, this.loopAttemptHistory.length - 50)
+    },
+    setNoteFinger(noteId: string, finger: number | null, hand?: 'left' | 'right', source: 'manual' | 'auto' = 'manual') {
+      const session = this.session
+      if (!session) return
+      session.notes = session.notes.map(note => {
+        if (note.id !== noteId) return note
+        const validFinger = finger && finger >= 1 && finger <= 5 ? finger : null
+        return {
+          ...note,
+          hand: hand ?? note.hand,
+          finger: validFinger,
+          fingerSource: validFinger ? source : undefined,
+          fingerCost: validFinger ? note.fingerCost : undefined,
+        }
+      })
+      persistSessionFingering(this.song?.id, session)
+    },
+    clearAllFingers() {
+      const session = this.session
+      if (!session) return
+      session.notes = session.notes.map(note => ({
+        ...note,
+        finger: null,
+        fingerSource: undefined,
+        fingerCost: undefined,
+      }))
+      persistSessionFingering(this.song?.id, session)
+    },
+    async autoAssignFingers(handSize: HandSizePreset = 'M') {
+      const session = this.session
+      if (!session) return
+      this.fingeringGenerating = true
+      this.fingeringError = null
+      try {
+        const result = await requestPianoFingering(session.notes.map(note => ({
+          id: note.id,
+          start: note.start,
+          end: note.end,
+          noteId: note.noteId,
+          hand: note.hand,
+          finger: toFingerNumber(note.finger),
+          fingerSource: note.fingerSource,
+        })), { hand: 'both', handSize })
+        applyFingeringAssignments(session, result.assignments)
+        persistSessionFingering(this.song?.id, session, result.handSize)
+      } catch (error) {
+        this.fingeringError = error instanceof Error ? error.message : String(error)
+      } finally {
+        this.fingeringGenerating = false
+      }
     },
     setTrackMode(trackId: number, mode: TrackMode) { const track = this.session?.tracks.find(t => t.trackId === trackId); if (track) track.mode = mode },
     setTrackColor(trackId: number, color: string) {

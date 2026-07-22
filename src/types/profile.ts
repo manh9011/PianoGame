@@ -42,6 +42,20 @@ export interface StoredLoopRegion {
   updatedAt: number
 }
 
+export interface StoredFingeringAssignment {
+  noteId: string
+  hand: 'left' | 'right'
+  finger: number
+  source: 'manual' | 'auto'
+  cost?: number
+}
+
+export interface StoredSongFingering {
+  assignments: StoredFingeringAssignment[]
+  handSize?: string
+  updatedAt: number
+}
+
 export interface UserProfile {
   id: string
   name: string
@@ -50,4 +64,5 @@ export interface UserProfile {
   bestScoresBySongMode: Record<string, ModeScoreEntry>
   scoresByMode: Partial<Record<PlayMode, ModeScoreEntry[]>>
   loopRegionsBySongId: Record<string, StoredLoopRegion>
+  fingeringsBySongId: Record<string, StoredSongFingering>
 }

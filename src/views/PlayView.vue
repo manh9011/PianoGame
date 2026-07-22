@@ -1,13 +1,15 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { usePlayerStore } from '../stores/playerStore'
 import { useLibraryStore } from '../stores/libraryStore'
 import { useProfileStore } from '../stores/profileStore'
 import { useSettingsStore } from '../stores/settingsStore'
+import { useToastStore } from '../stores/toastStore'
 import { bindInput, requestMidiAccess } from '../modules/midi/webMidi'
 import { WHITE_KEY_COUNT } from '../modules/render/pianoGeometry'
-import type { HandSelection, PlayMode } from '../modules/game/playSession'
+import type { HandSelection, PlayMode, SessionNote } from '../modules/game/playSession'
 import PlayTopBar from '../components/player/PlayTopBar.vue'
 import TrackProgressBar from '../components/player/TrackProgressBar.vue'
 import SheetMusicPanel from '../components/player/SheetMusicPanel.vue'
@@ -25,18 +27,23 @@ import LoopControl from '../components/player/LoopControl.vue'
 import LoopPerformanceOverlay from '../components/player/LoopPerformanceOverlay.vue'
 import SettingsDialog from '../components/player/dialogs/SettingsDialog.vue'
 import TrackConfigDialog from '../components/player/dialogs/TrackConfigDialog.vue'
+import FingerDialog from '../components/player/dialogs/FingerDialog.vue'
+import FingerPickerDialog from '../components/player/dialogs/FingerPickerDialog.vue'
 import { freezePlaybackProfiler, resumePlaybackProfiler, setPlaybackProfilerMode, type PlaybackProfilerSnapshot } from '../modules/perf/playbackProfiler'
+import type { HandSizePreset } from '../modules/fingering/fingeringTypes'
 
 const WHITE_KEY_ASPECT_RATIO = 150 / 23.5  // 6.383
 const BLACK_KEY_HEIGHT_RATIO = 95 / 150    // 0.633
 const BENCHMARK_STORAGE_KEY = 'pianogame:perf'
 
+const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
 const player = usePlayerStore()
 const library = useLibraryStore()
 const profiles = useProfileStore()
 const settings = useSettingsStore()
+const toast = useToastStore()
 let saved = false
 let midiAccess: Awaited<ReturnType<typeof requestMidiAccess>> = null
 
@@ -50,7 +57,13 @@ const showKeyboardRangeDialog = ref(false)
 const showLabelsDialog = ref(false)
 const showBookmarksDialog = ref(false)
 const showLoopControl = ref(false)
+const showFingerDialog = ref(false)
 const showSettingsDialog = ref(false)
+const showFingerPicker = ref(false)
+const selectedFingerNote = ref<SessionNote | null>(null)
+const fingerPickerStyle = ref({ top: '0px', left: '0px' })
+const fingerPickerArrowStyle = ref({ left: '50%' })
+const fingerHandSize = ref<HandSizePreset>('M')
 const showHelpOverlay = ref(false)
 const showPerformanceDetail = ref(false)
 const frozenPerformanceSnapshot = ref<PlaybackProfilerSnapshot | null>(null)
@@ -152,6 +165,8 @@ function closeAllDialogs() {
   showLabelsDialog.value = false
   showBookmarksDialog.value = false
   showLoopControl.value = false
+  showFingerDialog.value = false
+  showFingerPicker.value = false
   showSettingsDialog.value = false
 }
 
@@ -227,6 +242,75 @@ function openLoop() {
   }
   closeAllDialogs()
   showLoopControl.value = true
+}
+
+function openFinger() {
+  if (showFingerDialog.value) {
+    showFingerDialog.value = false
+    showFingerPicker.value = false
+    return
+  }
+  closeAllDialogs()
+  showFingerDialog.value = true
+}
+
+function openFingerForNote(note: SessionNote, anchor: { x: number; y: number; width: number; height: number }) {
+  selectedFingerNote.value = note
+  showFingerDialog.value = true
+  showFingerPicker.value = true
+  const dialogWidth = 250
+  const dialogHeight = 64
+  const margin = 10
+  const gap = 10
+  const anchorCenterX = anchor.x + anchor.width / 2
+  let left = anchorCenterX - dialogWidth / 2
+  let top = anchor.y + anchor.height + gap
+  if (left < margin) left = margin
+  if (left + dialogWidth > window.innerWidth - margin) left = window.innerWidth - margin - dialogWidth
+  if (top + dialogHeight > window.innerHeight - margin) top = Math.max(margin, anchor.y - dialogHeight - gap)
+  const arrowLeft = Math.max(14, Math.min(dialogWidth - 14, anchorCenterX - left))
+  fingerPickerStyle.value = { top: `${top}px`, left: `${left}px` }
+  fingerPickerArrowStyle.value = { left: `${arrowLeft - 7}px` }
+}
+
+function closeFingerPicker() {
+  showFingerPicker.value = false
+}
+
+function assignSelectedFinger(hand: 'left' | 'right', finger: number) {
+  if (!selectedFingerNote.value) return
+  player.setNoteFinger(selectedFingerNote.value.id, finger, hand)
+  selectedFingerNote.value = { ...selectedFingerNote.value, hand, finger, fingerSource: 'manual' }
+}
+
+function clearSelectedFinger() {
+  if (!selectedFingerNote.value) return
+  player.setNoteFinger(selectedFingerNote.value.id, null)
+  selectedFingerNote.value = { ...selectedFingerNote.value, finger: null, fingerSource: undefined }
+}
+
+async function autoAssignFingers() {
+  toast.showLoading(t('fingerDialog.autoAssignLoading'))
+  try {
+    await player.autoAssignFingers(fingerHandSize.value)
+    if (player.fingeringError) {
+      toast.showError(t('fingerDialog.autoAssignError', { message: player.fingeringError }))
+      return
+    }
+    toast.showSuccess(t('fingerDialog.autoAssignSuccess'))
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    toast.showError(t('fingerDialog.autoAssignError', { message }))
+  }
+}
+
+function clearAllFingers() {
+  if (!confirm(t('fingerDialog.clearAllConfirm'))) return
+  player.clearAllFingers()
+  if (selectedFingerNote.value) {
+    selectedFingerNote.value = { ...selectedFingerNote.value, finger: null, fingerSource: undefined, fingerCost: undefined }
+  }
+  toast.showSuccess(t('fingerDialog.clearAllSuccess'))
 }
 
 function openSettings(event: MouseEvent) {
@@ -464,6 +548,7 @@ watch(() => player.stats, stats => {
       :is-fullscreen="isFullscreen"
       :bookmarks-dialog-open="showBookmarksDialog"
       :loop-dialog-open="showLoopControl"
+      :finger-dialog-open="showFingerDialog"
       :help-overlay-open="showHelpOverlay"
       :benchmark-mode="benchmarkMode"
       :performance-auto-play="player.performanceAutoPlay"
@@ -471,6 +556,7 @@ watch(() => player.stats, stats => {
       @open-metronome="openMetronome"
       @open-track-config="openTrackConfig"
       @open-keyboard-range="openKeyboardRange"
+      @open-finger="openFinger"
       @open-labels="openLabels"
       @open-bookmarks="openBookmarks"
       @open-loop="openLoop"
@@ -481,11 +567,17 @@ watch(() => player.stats, stats => {
       @stop-playback="stopPlayback"
       @toggle-fullscreen="toggleFullscreen"
     />
-    <TrackProgressBar :loop-setup-active="showLoopControl" />
+    <TrackProgressBar :loop-setup-active="showLoopControl" :finger-mode-active="showFingerDialog" />
     <SheetMusicPanel v-if="settings.showSheetMusic" @ready="handleSheetReady" />
     <section class="play-stage">
       <section class="kbd-area">
-        <PianoRoll :bookmark-mode="showBookmarksDialog" :benchmark-mode="benchmarkMode" :loop-setup-active="showLoopControl" />
+        <PianoRoll
+          :bookmark-mode="showBookmarksDialog"
+          :benchmark-mode="benchmarkMode"
+          :loop-setup-active="showLoopControl"
+          :finger-mode="showFingerDialog"
+          @select-finger-note="openFingerForNote"
+        />
       </section>
       <PerformanceOverlay
         v-if="showPerformanceOverlay && !showPerformanceDetail"
@@ -496,7 +588,27 @@ watch(() => player.stats, stats => {
       <LoopPerformanceOverlay />
       <GameplayFeedbackOverlay />
     </section>
-    <PianoKeyboard />
+    <section class="keyboard-shell">
+      <PianoKeyboard />
+      <div class="finger-control-layer">
+        <FingerDialog
+          :show="showFingerDialog"
+          :hand-size="fingerHandSize"
+          @select-hand-size="fingerHandSize = $event"
+          @clear-all-fingers="clearAllFingers"
+          @auto-assign="autoAssignFingers"
+        />
+      </div>
+    </section>
+    <FingerPickerDialog
+      :show="showFingerPicker"
+      :selected-note="selectedFingerNote"
+      :popup-style="fingerPickerStyle"
+      :arrow-style="fingerPickerArrowStyle"
+      @assign-finger="assignSelectedFinger"
+      @clear-finger="clearSelectedFinger"
+      @close="closeFingerPicker"
+    />
     <HelpOverlay :show="showHelpOverlay" />
     <PerformanceOverlay
       v-if="showPerformanceDetail && frozenPerformanceSnapshot"
@@ -575,6 +687,27 @@ watch(() => player.stats, stats => {
   width: 100%;
   height: 100%;
   overflow: hidden;
+}
+
+.keyboard-shell {
+  position: relative;
+  height: var(--keyboard-height);
+  min-height: 0;
+}
+
+.finger-control-layer {
+  position: absolute;
+  z-index: 12;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: fit-content;
+  max-width: calc(100% - 24px);
+  pointer-events: none;
+}
+
+.finger-control-layer :deep(.finger-dialog) {
+  pointer-events: auto;
 }
 
 @media (max-width: 900px) {
