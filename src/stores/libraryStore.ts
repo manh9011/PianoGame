@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import type { SongMetadata, SongSortKey, SortDirection } from '../types/song'
-import { base64ToBuffer, bufferToBase64, loadLibrary, saveLibrary, sortSongs, loadSongData } from '../modules/library/songLibrary'
+import { base64ToBuffer, loadLibrary, saveLibrary, sortSongs, loadSongMidiData, loadSongMusicXmlData } from '../modules/library/songLibrary'
 import { persistQueue } from '../modules/storage/indexedDb'
 import { parseMidi } from '../modules/midi/midiParser'
 import { translateNotes } from '../modules/midi/midiNoteTranslator'
@@ -10,7 +10,7 @@ import { PLAY_MODE_CONFIGS, createPlaySession, type PlaySession } from '../modul
 import { MidiPlayerClock } from '../modules/midi/midiPlayerClock'
 import { assignHands } from '../modules/game/handAssignment'
 import { AutoNotePlayer } from '../modules/audio/autoNotePlayer'
-import { computeMidiHash } from '../modules/midi/midiHash'
+import { createImportedSongCandidate, type ImportedSongCandidate } from '../modules/library/songImport'
 
 export interface ImportResult {
   imported: number
@@ -25,6 +25,47 @@ function ratingValue(value: number | undefined) {
 function difficultyValue(value: number | undefined) {
   if (!value) return undefined
   return Math.max(1, Math.min(10, Math.round(value)))
+}
+
+function playbackHash(song: SongMetadata) {
+  return song.playbackHash ?? song.hash
+}
+
+function normalizeTitle(title: string) {
+  return title
+    .toLocaleLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[\s_\-()[\]{}.,]+/g, ' ')
+    .trim()
+}
+
+function closeEnough(value: number, target: number, toleranceRatio: number) {
+  if (!value || !target) return false
+  return Math.abs(value - target) <= Math.max(value, target) * toleranceRatio
+}
+
+function findMergeTarget(songs: SongMetadata[], candidate: ImportedSongCandidate) {
+  const byPlaybackHash = songs.find(song => playbackHash(song) === candidate.playbackHash)
+  if (byPlaybackHash) return byPlaybackHash
+
+  const candidateTitle = normalizeTitle(candidate.title)
+  const exactTitleMatches = songs.filter(song => normalizeTitle(song.title) === candidateTitle)
+  if (exactTitleMatches.length === 1) return exactTitleMatches[0]
+
+  const nearMatches = songs.filter(song => {
+    const songTitle = normalizeTitle(song.title)
+    const titleMatches = songTitle === candidateTitle || songTitle.includes(candidateTitle) || candidateTitle.includes(songTitle)
+    return titleMatches && closeEnough(song.duration, candidate.duration, 0.05) && closeEnough(song.noteCount, candidate.noteCount, 0.12)
+  })
+  return nearMatches.length === 1 ? nearMatches[0] : undefined
+}
+
+function sourceTypeFor(existing: SongMetadata | undefined, candidate: ImportedSongCandidate) {
+  const hasMidiSource = candidate.kind === 'midi' || existing?.hasMidiSource
+  const hasMusicXmlSource = candidate.kind === 'musicxml' || existing?.hasMusicXmlSource
+  if (hasMidiSource && hasMusicXmlSource) return 'hybrid'
+  return hasMusicXmlSource ? 'musicxml' : 'midi'
 }
 
 export const useLibraryStore = defineStore('library', {
@@ -66,7 +107,7 @@ export const useLibraryStore = defineStore('library', {
     songByHash(): (hash: string | undefined) => SongMetadata | null {
       return (hash: string | undefined) => {
         if (!hash) return null
-        return this.songs.find(song => song.hash === hash) ?? null
+        return this.songs.find(song => playbackHash(song) === hash) ?? null
       }
     },
   },
@@ -88,32 +129,34 @@ export const useLibraryStore = defineStore('library', {
       persistQueue.enqueue(() => saveLibrary(songs))
     },
     async importFile(file: File, folderPath?: string) {
-      const buffer = await file.arrayBuffer()
-      const hash = await computeMidiHash(buffer)
-      const title = file.name.replace(/\.(mid|midi|rmi|rmid)$/i, '')
-      const existingByHash = this.songs.find(s => s.hash === hash)
-      const existingByTitle = this.songs.find(s => s.title === title)
-      const existing = existingByHash ?? existingByTitle
-      const midi = parseMidi(buffer)
-      const notes = translateNotes(midi)
-      const duration = pulseToMicroseconds(midi.durationPulse, midi.header.ticksPerQuarter, buildTempoMap(midi))
+      const candidate = await createImportedSongCandidate(file, folderPath)
+      const existing = findMergeTarget(this.songs, candidate)
+      const existingMusicXmlData = existing?.musicXmlData ?? (existing?.hasMusicXmlSource ? await loadSongMusicXmlData(existing.id) : undefined)
       const song: SongMetadata = {
         id: existing?.id ?? crypto.randomUUID?.() ?? `${file.name}-${Date.now()}`,
-        title,
-        duration,
-        trackCount: midi.header.trackCount,
-        noteCount: notes.length,
+        title: existing?.title ?? candidate.title,
+        duration: candidate.duration,
+        trackCount: candidate.trackCount,
+        noteCount: candidate.noteCount,
         bestScore: existing?.bestScore ?? 0,
         playCount: existing?.playCount ?? 0,
         lastPlayed: existing?.lastPlayed ?? 0,
         recent: existing?.recent ?? false,
-        data: bufferToBase64(buffer),
-        hash,
+        data: candidate.midiData,
+        midiData: candidate.midiData,
+        musicXmlData: candidate.musicXmlData ?? existingMusicXmlData,
+        hash: candidate.playbackHash,
+        playbackHash: candidate.playbackHash,
+        notationHash: candidate.notationHash ?? existing?.notationHash,
+        sourceType: sourceTypeFor(existing, candidate),
+        hasMidiSource: candidate.kind === 'midi' || existing?.hasMidiSource || false,
+        hasMusicXmlSource: candidate.kind === 'musicxml' || existing?.hasMusicXmlSource || false,
+        originalFileName: candidate.originalFileName,
         rating: existing?.rating,
         difficulty: existing?.difficulty,
         folderPath: folderPath ?? existing?.folderPath,
       }
-      this.songs = [song, ...this.songs.filter(s => s.id !== song.id && s.hash !== hash)]
+      this.songs = [song, ...this.songs.filter(s => s.id !== song.id && playbackHash(s) !== candidate.playbackHash)]
       this.selectedSongId ??= song.id
       this.persist()
       return song
@@ -125,7 +168,7 @@ export const useLibraryStore = defineStore('library', {
           await this.importFile(file, folderPath)
           result.imported++
         } catch (e) {
-          result.failed.push({ name: file.name, reason: e instanceof Error ? e.message : 'Không import được MIDI' })
+          result.failed.push({ name: file.name, reason: e instanceof Error ? e.message : 'library.importUnsupportedFile' })
         }
       }
       return result
@@ -169,7 +212,7 @@ export const useLibraryStore = defineStore('library', {
       const requestId = this.previewRequestId + 1
       this.previewRequestId = requestId
       const isCurrentRequest = () => this.previewRequestId === requestId
-      const data = song.data ?? await loadSongData(song.id)
+      const data = song.data ?? song.midiData ?? await loadSongMidiData(song.id)
       if (!data || !isCurrentRequest()) return
       this.stopPreview()
       this.previewRequestId = requestId

@@ -1,3 +1,5 @@
+export type SongSourceType = 'midi' | 'musicxml' | 'hybrid'
+
 export interface SongMetadata {
   id: string
   title: string
@@ -9,7 +11,15 @@ export interface SongMetadata {
   lastPlayed: number
   recent: boolean
   data?: string
+  midiData?: string
+  musicXmlData?: string
   hash?: string
+  playbackHash?: string
+  notationHash?: string
+  sourceType?: SongSourceType
+  hasMidiSource?: boolean
+  hasMusicXmlSource?: boolean
+  originalFileName?: string
   rating?: number
   difficulty?: number
   folderPath?: string

@@ -6,7 +6,7 @@ import MidiImportButton from '../components/library/MidiImportButton.vue'
 import FolderSelector from '../components/library/FolderSelector.vue'
 import SongList from '../components/library/SongList.vue'
 import SongSortBar from '../components/library/SongSortBar.vue'
-import { base64ToBuffer, loadSongData } from '../modules/library/songLibrary'
+import { base64ToBuffer, loadSongMidiData, loadSongMusicXmlData } from '../modules/library/songLibrary'
 import { generateSheetMusic } from '../modules/sheet/sheetMusicClient'
 import { SheetMusicError, toSheetMusicError } from '../modules/sheet/sheetTypes'
 import { useLibraryStore } from '../stores/libraryStore'
@@ -37,12 +37,13 @@ function handleSelectSong(song: SongMetadata) {
 function continuePlay() {
   const song = selectedSong.value
   if (!song) return
-  if (!song.hash) {
+  const hash = song.playbackHash ?? song.hash
+  if (!hash) {
     console.warn('Bài hát chưa có hash, cần import lại:', song.title)
     return
   }
   library.stopPreview()
-  router.push(`/mode-select/${song.hash}`)
+  router.push(`/mode-select/${hash}`)
 }
 
 function togglePreview() {
@@ -74,7 +75,7 @@ async function downloadSong() {
   closeDownloadMenu()
   const song = selectedSong.value
   if (!song) return
-  const data = song.data ?? await loadSongData(song.id)
+  const data = song.data ?? song.midiData ?? await loadSongMidiData(song.id)
   if (!data) return
 
   downloadBlob(new Blob([base64ToBuffer(data)], { type: 'audio/midi' }), `${song.title || t('library.downloadFallbackName')}.mid`)
@@ -88,10 +89,20 @@ async function downloadMusicXml() {
   toastStore.showLoading(t('library.musicXmlDownloadProgress'))
 
   try {
-    const data = song.data ?? await loadSongData(song.id)
+    const musicXml = song.musicXmlData ?? await loadSongMusicXmlData(song.id)
+    if (musicXml) {
+      downloadBlob(
+        new Blob([musicXml], { type: 'application/vnd.recordare.musicxml+xml' }),
+        `${song.title || t('library.downloadFallbackName')}.musicxml`,
+      )
+      toastStore.showSuccess(t('library.musicXmlDownloadSuccess'))
+      return
+    }
+
+    const data = song.data ?? song.midiData ?? await loadSongMidiData(song.id)
     if (!data) throw new SheetMusicError('sheetMusic.errors.missingMidiData', 'missingMidiData')
 
-    const cacheKey = `${song.hash ?? song.id}:sheet-v20:tracks=all`
+    const cacheKey = `${song.playbackHash ?? song.hash ?? song.id}:sheet-v20:tracks=all`
     const generated = await generateSheetMusic(cacheKey, base64ToBuffer(data), progress => {
       if (progress.code) toastStore.showLoading(t(`sheetMusic.progress.${progress.code}`, progress.values ?? {}))
     })

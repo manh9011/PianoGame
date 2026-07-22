@@ -7,6 +7,10 @@ const { t } = useI18n()
 const library = useLibraryStore()
 const toastStore = useToastStore()
 
+function importFailureReason(reason: string) {
+  return reason.includes('.') ? t(reason) : reason
+}
+
 async function onFiles(files: FileList | null) {
   const selected = files ? [...files] : []
   if (!selected.length) return
@@ -16,7 +20,7 @@ async function onFiles(files: FileList | null) {
   const result = await library.importFiles(selected)
 
   if (result.failed.length) {
-    toastStore.showError(t('library.importFailed', { imported: result.imported, failed: result.failed.length, details: result.failed.map(f => `${f.name} (${f.reason})`).join('; ') }))
+    toastStore.showError(t('library.importFailed', { imported: result.imported, failed: result.failed.length, details: result.failed.map(f => `${f.name} (${importFailureReason(f.reason)})`).join('; ') }))
   } else {
     toastStore.showSuccess(t('library.importSuccess', { count: result.imported }))
   }
@@ -26,8 +30,8 @@ async function onFiles(files: FileList | null) {
 <template>
   <div class="midi-import">
     <label class="import-button">
-      <input type="file" accept=".mid,.midi,.rmi,.rmid" multiple @change="onFiles(($event.target as HTMLInputElement).files)" />
-      {{ t('library.importMidi') }}
+      <input type="file" accept=".mid,.midi,.rmi,.rmid,.musicxml,.xml" multiple @change="onFiles(($event.target as HTMLInputElement).files)" />
+      {{ t('library.importSongs') }}
     </label>
   </div>
 </template>

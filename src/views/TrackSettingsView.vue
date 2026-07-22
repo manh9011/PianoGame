@@ -82,7 +82,8 @@ const currentTrack = computed(() => selectedTrackId.value === null
 
 function back() {
   player.stopTrackPreview()
-  router.push(`/mode-select/${player.song?.hash}`)
+  const hash = player.song?.playbackHash ?? player.song?.hash
+  router.push(`/mode-select/${hash}`)
 }
 
 if (!player.session || !player.song) {

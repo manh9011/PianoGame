@@ -2,7 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePlayerStore } from '../../stores/playerStore'
-import { base64ToBuffer, loadSongData } from '../../modules/library/songLibrary'
+import { base64ToBuffer, loadSongMidiData, loadSongMusicXmlData } from '../../modules/library/songLibrary'
 import { generateSheetMusic } from '../../modules/sheet/sheetMusicClient'
 import { loadVerovio } from '../../modules/sheet/verovioLoader'
 import { getSheetTrackIds, getSheetTrackSelectionKey } from '../../modules/game/trackProperties'
@@ -319,10 +319,24 @@ async function loadSheet() {
   status.value = { stage: 'building-model', message: 'sheetMusic.progress.loadingMidiData', code: 'loadingMidiData' }
 
   try {
-    const data = song.data ?? await loadSongData(song.id)
+    if (song.hasMusicXmlSource) {
+      status.value = { stage: 'building-model', message: 'sheetMusic.progress.loadingMusicXmlData', code: 'loadingMusicXmlData' }
+      const musicXml = song.musicXmlData ?? await loadSongMusicXmlData(song.id)
+      if (musicXml) {
+        await renderArtifact({
+          cacheKey: `${song.id}:sheet-source:musicxml:${song.notationHash ?? 'unknown'}`,
+          musicXml,
+          warnings: [],
+          stats: { staffCount: 0, voiceCount: 0, noteCount: song.noteCount },
+        }, token)
+        return
+      }
+    }
+
+    const data = song.data ?? song.midiData ?? await loadSongMidiData(song.id)
     if (!data) throw new SheetMusicError('sheetMusic.errors.missingMidiData', 'missingMidiData')
     const includedTrackIds = includedSheetTrackIds.value
-    const cacheKey = `${song.hash}:sheet-v20:tracks=${sheetTrackSignature.value || 'none'}`
+    const cacheKey = `${song.playbackHash ?? song.hash}:sheet-v20:tracks=${sheetTrackSignature.value || 'none'}`
     const generated = await generateSheetMusic(cacheKey, base64ToBuffer(data), progress => {
       if (token === requestToken) status.value = progress
     }, { includedTrackIds })
@@ -338,7 +352,7 @@ async function loadSheet() {
   }
 }
 
-watch(() => [player.song?.hash, sheetTrackSignature.value], () => {
+watch(() => [player.song?.playbackHash ?? player.song?.hash, player.song?.notationHash, sheetTrackSignature.value], () => {
   void loadSheet()
 }, { immediate: true })
 

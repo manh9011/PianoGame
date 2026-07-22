@@ -126,7 +126,7 @@ onMounted(async () => {
     return
   }
 
-  if (!player.song || player.song.hash !== hash) {
+  if (!player.song || (player.song.playbackHash ?? player.song.hash) !== hash) {
     await player.loadSong(song, settings.defaultSpeed, settings.showDuration, settings.octaveShift)
   }
 
@@ -258,11 +258,12 @@ function toggleSort(column: typeof sortColumn.value) {
 
 async function startPlay() {
   const song = player.song
-  if (!song || !song.hash) return
+  const hash = song?.playbackHash ?? song?.hash
+  if (!song || !hash) return
   await player.prepareAudio(settings.midiOutputId)
   player.configureSession({ mode: mode.value, handSelection: handSelection.value, speed: speed.value })
   const modeId = mode.value === 'listen' ? 'listen' : `${mode.value}-${handSelection.value}`
-  router.push(`/play/${song.hash}/${modeId}`)
+  router.push(`/play/${hash}/${modeId}`)
 }
 
 async function selectAndStart(nextMode: PlayMode, nextHand: HandSelection) {
@@ -273,8 +274,9 @@ async function selectAndStart(nextMode: PlayMode, nextHand: HandSelection) {
 
 function goToTrackSettings() {
   const song = player.song
-  if (!song || !song.hash) return
-  router.push(`/track-settings/${song.hash}`)
+  const hash = song?.playbackHash ?? song?.hash
+  if (!song || !hash) return
+  router.push(`/track-settings/${hash}`)
 }
 </script>
 

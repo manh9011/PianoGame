@@ -32,8 +32,9 @@ function formatTimeAgo(timestamp: number): string {
 
 function playSong(songId: string) {
   const song = library.songs.find(s => s.id === songId)
-  if (!song?.hash) return
-  router.push(`/mode-select/${song.hash}`)
+  const hash = song?.playbackHash ?? song?.hash
+  if (!hash) return
+  router.push(`/mode-select/${hash}`)
 }
 
 function toggleProfileManager() {

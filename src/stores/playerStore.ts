@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import type { SongMetadata } from '../types/song'
-import { base64ToBuffer, loadSongData } from '../modules/library/songLibrary'
+import { base64ToBuffer, loadSongMidiData } from '../modules/library/songLibrary'
 import { parseMidi } from '../modules/midi/midiParser'
 import { translateNotes } from '../modules/midi/midiNoteTranslator'
 import type { MidiBookmarkSource } from '../modules/midi/midiTypes'
@@ -232,7 +232,7 @@ export const usePlayerStore = defineStore('player', {
       session.keyboardRange = getKeyboardRange(settings.keyboardRangeMode, session.notes)
     },
     async loadSong(song: SongMetadata, speed = 100, showDuration = 3.25, octaveShift = 0) {
-      const data = song.data ?? await loadSongData(song.id)
+      const data = song.data ?? song.midiData ?? await loadSongMidiData(song.id)
       if (!data) throw new Error('Bài hát không có dữ liệu MIDI')
       const midi = parseMidi(base64ToBuffer(data))
       const { notes, needsManualAssignment } = assignHands(translateNotes(midi))

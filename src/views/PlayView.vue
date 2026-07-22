@@ -345,7 +345,7 @@ onMounted(async () => {
     handSelection = parts[1] as HandSelection
   }
 
-  if (!player.song || player.song.hash !== hash) {
+  if (!player.song || (player.song.playbackHash ?? player.song.hash) !== hash) {
     await player.loadSong(song, settings.defaultSpeed, settings.showDuration, settings.octaveShift)
   }
 
@@ -447,7 +447,7 @@ watch(() => player.stats, stats => {
   }
 
   setTimeout(() => {
-    router.push(`/mode-select/${song.hash}`)
+    router.push(`/mode-select/${song.playbackHash ?? song.hash}`)
   }, 250)
 })
 </script>

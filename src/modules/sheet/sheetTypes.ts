@@ -6,6 +6,8 @@ export type SheetProgressCode =
   | 'preparing'
   | 'preparingData'
   | 'loadingMidiData'
+  | 'loadingMusicXmlData'
+  | 'convertingMusicXmlToMidi'
   | 'loadingPyodide'
   | 'installingMusic21'
   | 'analyzingMidi'
@@ -17,6 +19,9 @@ export type SheetProgressCode =
 
 export type SheetErrorCode =
   | 'missingMidiData'
+  | 'invalidMusicXml'
+  | 'musicXmlToMidiFailed'
+  | 'missingGeneratedMidi'
   | 'generationFailed'
   | 'noVoices'
   | 'noVoiceShard'

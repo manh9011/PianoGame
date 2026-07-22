@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { supportsFileSystemAccess, pickMidiFilesFromFolder } from '../../modules/library/fileSystemAccess'
+import { supportsFileSystemAccess, pickSongFilesFromFolder } from '../../modules/library/fileSystemAccess'
 import { useLibraryStore } from '../../stores/libraryStore'
 import { useSettingsStore } from '../../stores/settingsStore'
 import { useToastStore } from '../../stores/toastStore'
@@ -11,12 +11,12 @@ const library = useLibraryStore()
 const toastStore = useToastStore()
 
 async function pick() {
-  const picked = await pickMidiFilesFromFolder()
+  const picked = await pickSongFilesFromFolder()
   if (!picked) return
   settings.folders = [...new Set([...settings.folders, picked.name])]
   settings.persist()
   if (!picked.files.length) {
-    toastStore.showError(t('library.folderNoMidi', { name: picked.name }))
+    toastStore.showError(t('library.folderNoSupportedFiles', { name: picked.name }))
     return
   }
 

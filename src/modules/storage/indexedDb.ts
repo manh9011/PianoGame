@@ -1,9 +1,11 @@
 const DB_NAME = 'piano-game'
-const DB_VERSION = 1
+const DB_VERSION = 2
 
 export interface SongDataRecord {
   id: string
-  data: string
+  data?: string
+  midiData?: string
+  musicXmlData?: string
 }
 
 export interface SettingsRecord {
