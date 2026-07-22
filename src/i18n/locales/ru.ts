@@ -312,7 +312,7 @@ export const ru = {
     keyLabels: "Метки клавиш",
     noteLabels: "Метки нот",
     noLabels: "Без меток",
-    onlyShowOnMyNotes: "Показывать метки только на моих нотах",
+    showFingerHints: "Показывать номера пальцев на падающих нотах",
     labelSize: "Размер меток",
     options: {
       octaves: "Октавы (только C)",

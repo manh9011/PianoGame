@@ -312,7 +312,7 @@ export const zh = {
     keyLabels: "琴键标签",
     noteLabels: "音符标签",
     noLabels: "无标签",
-    onlyShowOnMyNotes: "仅在我的音符上显示标签",
+    showFingerHints: "在下落音符上显示指法数字",
     labelSize: "标签大小",
     options: {
       octaves: "八度（仅 C）",

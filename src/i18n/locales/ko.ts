@@ -312,7 +312,7 @@ export const ko = {
     keyLabels: "건반 라벨",
     noteLabels: "노트 라벨",
     noLabels: "라벨 없음",
-    onlyShowOnMyNotes: "내 노트에만 라벨 표시",
+    showFingerHints: "떨어지는 노트에 손가락 번호 표시",
     labelSize: "라벨 크기",
     options: {
       octaves: "옥타브(C만)",

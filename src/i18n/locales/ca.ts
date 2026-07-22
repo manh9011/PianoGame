@@ -312,7 +312,7 @@ export const ca = {
     keyLabels: "Etiquetes de tecles",
     noteLabels: "Etiquetes de notes",
     noLabels: "Sense etiquetes",
-    onlyShowOnMyNotes: "Mostra etiquetes només a les meves notes",
+    showFingerHints: "Mostra números de dits a les notes descendents",
     labelSize: "Mida de l’etiqueta",
     options: {
       octaves: "Octaves (només C)",

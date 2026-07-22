@@ -312,7 +312,7 @@ export const ja = {
     keyLabels: "鍵盤ラベル",
     noteLabels: "ノートラベル",
     noLabels: "ラベルなし",
-    onlyShowOnMyNotes: "自分のノートにのみラベルを表示",
+    showFingerHints: "落下ノートに指番号を表示",
     labelSize: "ラベルサイズ",
     options: {
       octaves: "オクターブ（C のみ）",

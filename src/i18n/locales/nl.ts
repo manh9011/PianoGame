@@ -312,7 +312,7 @@ export const nl = {
     keyLabels: "Toetslabels",
     noteLabels: "Nootlabels",
     noLabels: "Geen labels",
-    onlyShowOnMyNotes: "Labels alleen op mijn noten tonen",
+    showFingerHints: "Vingernummers op vallende noten tonen",
     labelSize: "Labelgrootte",
     options: {
       octaves: "Octaven (alleen C)",

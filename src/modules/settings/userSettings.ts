@@ -13,6 +13,7 @@ export const defaultSettings: UserSettings = {
   musicDevicesPreferBuiltInSynth: true,
   showKeyLabels: true,
   showNoteLabels: false,
+  showFingerHints: true,
   keyLabelMode: 'octaves',
   noteLabelMode: 'octaves',
   keyLabelSize: 0,

@@ -312,7 +312,7 @@ export const hi = {
     keyLabels: "की लेबल",
     noteLabels: "नोट लेबल",
     noLabels: "कोई लेबल नहीं",
-    onlyShowOnMyNotes: "केवल मेरे नोट्स पर लेबल दिखाएँ",
+    showFingerHints: "गिरते नोट्स पर उँगली संख्या दिखाएँ",
     labelSize: "लेबल आकार",
     options: {
       octaves: "ऑक्टेव (केवल C)",

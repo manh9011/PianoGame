@@ -29,6 +29,7 @@ export interface UserSettings {
   musicDevicesPreferBuiltInSynth: boolean
   showKeyLabels: boolean
   showNoteLabels: boolean
+  showFingerHints: boolean
   keyLabelMode: LabelMode
   noteLabelMode: LabelMode
   keyLabelSize: number

@@ -312,7 +312,7 @@ export const th = {
     keyLabels: "ป้ายกำกับคีย์",
     noteLabels: "ป้ายกำกับโน้ต",
     noLabels: "ไม่มีป้ายกำกับ",
-    onlyShowOnMyNotes: "แสดงป้ายกำกับเฉพาะบนโน้ตของฉัน",
+    showFingerHints: "แสดงหมายเลขนิ้วบนโน้ตที่ตกลงมา",
     labelSize: "ขนาดป้ายกำกับ",
     options: {
       octaves: "อ็อกเทฟ (เฉพาะ C)",

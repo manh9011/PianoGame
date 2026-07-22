@@ -312,7 +312,7 @@ export const ar = {
     keyLabels: "تسميات المفاتيح",
     noteLabels: "تسميات النغمات",
     noLabels: "بلا تسميات",
-    onlyShowOnMyNotes: "أظهر التسميات على نغماتي فقط",
+    showFingerHints: "إظهار أرقام الأصابع على النغمات الهابطة",
     labelSize: "حجم التسمية",
     options: {
       octaves: "الأوكتافات (C فقط)",

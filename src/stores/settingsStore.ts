@@ -45,6 +45,7 @@ export const useSettingsStore = defineStore('settings', {
     setLocale(locale: SupportedLocale) { this.locale = locale; setI18nLocale(locale); this.persist() },
     setShowKeyLabels(show: boolean) { this.showKeyLabels = show; this.persist() },
     setShowNoteLabels(show: boolean) { this.showNoteLabels = show; this.persist() },
+    setShowFingerHints(show: boolean) { this.showFingerHints = show; this.persist() },
     setShowMyBookmarks(show: boolean) { this.showMyBookmarks = show; this.persist() },
     setShowMetadataBookmarks(show: boolean) { this.showMetadataBookmarks = show; this.persist() },
     setShowKeySignatureBookmarks(show: boolean) { this.showKeySignatureBookmarks = show; this.persist() },

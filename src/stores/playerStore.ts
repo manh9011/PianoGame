@@ -187,6 +187,7 @@ function playableAutoTestNotes(session: PlaySession, currentUs: number) {
 
 const BOOKMARK_SEEK_EPSILON_US = 10_000
 const FALLBACK_BOOKMARK_US = 1_000_000
+const SEEK_PRE_ROLL_US = 3_000_000
 
 export interface LoopAttemptSummary {
   id: string
@@ -575,18 +576,20 @@ export const usePlayerStore = defineStore('player', {
     },
     seekToProgress(ratio: number) {
       const durationUs = this.clock?.seekableDurationUs ?? 0
-      this.seekToUs(Math.max(0, Math.min(1, ratio)) * durationUs)
+      const seekableStartUs = -SEEK_PRE_ROLL_US
+      this.seekToUs(seekableStartUs + Math.max(0, Math.min(1, ratio)) * (durationUs - seekableStartUs))
     },
     seekToUs(targetUs: number) {
       const session = this.session
       const clock = this.clock
       if (!session || !clock || !this.canSeek) return
       const seekStartMs = performance.now()
-      const seekUs = Math.max(0, Math.min(clock.seekableDurationUs, targetUs))
+      const seekableStartUs = -SEEK_PRE_ROLL_US
+      const seekUs = Math.max(seekableStartUs, Math.min(clock.seekableDurationUs, targetUs))
       this.recordSkippedPlayableNotes(seekUs)
       this.resetSessionForSeek(seekUs)
       this.withPlaybackOutputBlocked(() => clock.seek(seekUs))
-      this.metronome.reset(seekUs)
+      this.metronome.reset(Math.max(0, seekUs))
       session.paused = !clock.state.running
       recordPlaybackEvent('seek', { durationMs: performance.now() - seekStartMs, currentUs: seekUs, notesTouched: session.notes.length })
     },

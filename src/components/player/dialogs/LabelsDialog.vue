@@ -38,10 +38,8 @@ const keyLabelOptions: { value: LabelOptionValue; labelKey: string }[] = [
 const noteLabelOptions = keyLabelOptions
 
 const selectedKeyLabel = computed<LabelOptionValue>(() => settings.showKeyLabels ? settings.keyLabelMode : 'none')
-const onlyShowOnMyNotes = ref(false)
 
 const selectedNoteLabel = computed<LabelOptionValue>(() => settings.showNoteLabels ? settings.noteLabelMode : 'none')
-const onlyShowNoteLabelsOnMyNotes = ref(false)
 
 function selectKeyLabel(value: LabelOptionValue) {
   if (value === 'none') {
@@ -103,18 +101,6 @@ function selectNoteLabel(value: LabelOptionValue) {
           </button>
         </div>
 
-        <div class="toggle-row">
-          <span class="toggle-label">{{ t('labelsDialog.onlyShowOnMyNotes') }}</span>
-          <button
-            class="toggle-switch"
-            :class="{ active: onlyShowOnMyNotes }"
-            @click="onlyShowOnMyNotes = !onlyShowOnMyNotes"
-          >
-            <span class="toggle-track"></span>
-            <span class="toggle-thumb"></span>
-          </button>
-        </div>
-
         <div class="slider-row">
           <div class="slider-header">
             <span class="slider-label">{{ t('labelsDialog.labelSize') }}</span>
@@ -147,11 +133,11 @@ function selectNoteLabel(value: LabelOptionValue) {
         </div>
 
         <div class="toggle-row">
-          <span class="toggle-label">{{ t('labelsDialog.onlyShowOnMyNotes') }}</span>
+          <span class="toggle-label">{{ t('labelsDialog.showFingerHints') }}</span>
           <button
             class="toggle-switch"
-            :class="{ active: onlyShowNoteLabelsOnMyNotes }"
-            @click="onlyShowNoteLabelsOnMyNotes = !onlyShowNoteLabelsOnMyNotes"
+            :class="{ active: settings.showFingerHints }"
+            @click="settings.setShowFingerHints(!settings.showFingerHints)"
           >
             <span class="toggle-track"></span>
             <span class="toggle-thumb"></span>

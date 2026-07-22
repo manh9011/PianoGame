@@ -310,7 +310,7 @@ export const en = {
     keyLabels: 'Key Labels',
     noteLabels: 'Note Labels',
     noLabels: 'No labels',
-    onlyShowOnMyNotes: 'Only show labels on my notes',
+    showFingerHints: 'Show finger numbers on falling notes',
     labelSize: 'Label Size',
     options: {
       octaves: 'Octaves (C only)',

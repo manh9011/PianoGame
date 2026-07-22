@@ -312,7 +312,7 @@ export const sl = {
     keyLabels: "Oznake tipk",
     noteLabels: "Oznake not",
     noLabels: "Brez oznak",
-    onlyShowOnMyNotes: "Oznake pokaži samo na mojih notah",
+    showFingerHints: "Pokaži številke prstov na padajočih notah",
     labelSize: "Velikost oznak",
     options: {
       octaves: "Oktave (samo C)",

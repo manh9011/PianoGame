@@ -312,7 +312,7 @@ export const pt = {
     keyLabels: "Rótulos das teclas",
     noteLabels: "Rótulos das notas",
     noLabels: "Sem rótulos",
-    onlyShowOnMyNotes: "Mostrar rótulos apenas nas minhas notas",
+    showFingerHints: "Mostrar números dos dedos nas notas descendentes",
     labelSize: "Tamanho do rótulo",
     options: {
       octaves: "Oitavas (apenas C)",

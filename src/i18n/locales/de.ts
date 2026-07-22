@@ -312,7 +312,7 @@ export const de = {
     keyLabels: "Tastenbeschriftungen",
     noteLabels: "Notenbeschriftungen",
     noLabels: "Keine Beschriftungen",
-    onlyShowOnMyNotes: "Beschriftungen nur auf meinen Noten anzeigen",
+    showFingerHints: "Fingernummern auf fallenden Noten anzeigen",
     labelSize: "Beschriftungsgröße",
     options: {
       octaves: "Oktaven (nur C)",

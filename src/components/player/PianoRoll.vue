@@ -779,7 +779,7 @@ function drawNote(ctx: CanvasRenderingContext2D, note: LaidOutNote<SessionNote>)
   })
 
   ctx.drawImage(sprite, x - NOTE_BODY_PAD_X, y - NOTE_BODY_PAD_Y)
-  if (note.finger && settings.noteLabelMode !== 'finger-hint') drawFingerBadge(ctx, note, true)
+  if (settings.showFingerHints && note.finger && settings.noteLabelMode !== 'finger-hint') drawFingerBadge(ctx, note, true)
 }
 
 function drawFingerBadge(ctx: CanvasRenderingContext2D, note: LaidOutNote<SessionNote>, belowNote = false) {

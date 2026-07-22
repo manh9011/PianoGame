@@ -312,7 +312,7 @@ export const es = {
     keyLabels: "Etiquetas de teclas",
     noteLabels: "Etiquetas de notas",
     noLabels: "Sin etiquetas",
-    onlyShowOnMyNotes: "Mostrar etiquetas solo en mis notas",
+    showFingerHints: "Mostrar números de dedos en las notas descendentes",
     labelSize: "Tamaño de etiqueta",
     options: {
       octaves: "Octavas (solo C)",

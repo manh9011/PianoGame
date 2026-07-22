@@ -312,7 +312,7 @@ export const tr = {
     keyLabels: "Tuş etiketleri",
     noteLabels: "Nota etiketleri",
     noLabels: "Etiket yok",
-    onlyShowOnMyNotes: "Etiketleri yalnızca benim notalarımda göster",
+    showFingerHints: "Düşen notalarda parmak numaralarını göster",
     labelSize: "Etiket boyutu",
     options: {
       octaves: "Oktavlar (yalnızca C)",

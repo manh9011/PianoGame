@@ -312,7 +312,7 @@ export const vi = {
     keyLabels: "Nhãn phím",
     noteLabels: "Nhãn nốt",
     noLabels: "Không có nhãn",
-    onlyShowOnMyNotes: "Chỉ hiện nhãn trên nốt của tôi",
+    showFingerHints: "Hiện số ngón tay trên nốt rơi",
     labelSize: "Cỡ nhãn",
     options: {
       octaves: "Quãng tám (chỉ C)",

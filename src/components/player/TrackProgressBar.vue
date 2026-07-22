@@ -18,13 +18,19 @@ const progressCanvasRef = ref<HTMLCanvasElement | null>(null)
 const popoverRef = ref<HTMLElement | null>(null)
 const hoverPopover = ref({ visible: false, left: 0, timeUs: 0, measure: 1 })
 const hoverPopoverLeftPx = ref(0)
+const SEEK_PRE_ROLL_US = 3_000_000
 const totalUs = computed(() => player.clock?.seekableDurationUs ?? 0)
+const seekStartUs = computed(() => player.canSeek ? -SEEK_PRE_ROLL_US : 0)
+const seekSpanUs = computed(() => Math.max(1, totalUs.value - seekStartUs.value))
 const loopTotalUs = computed(() => player.session?.loopState.durationUs || totalUs.value)
+function timeToPercent(timeUs: number) {
+  return ((timeUs - seekStartUs.value) / seekSpanUs.value) * 100
+}
 const measureTicks = computed(() => {
   if (!totalUs.value) return []
   return (player.session?.measureGridUs ?? [])
     .filter(us => us >= 0 && us <= totalUs.value)
-    .map(us => ({ us, left: (us / totalUs.value) * 100 }))
+    .map(us => ({ us, left: timeToPercent(us) }))
 })
 
 function bookmarkVisible(source: MidiBookmarkSource | 'user') {
@@ -39,7 +45,7 @@ const bookmarkMarkers = computed(() => {
   if (!total) return []
   const midiBookmarks = (player.session?.bookmarks ?? [])
     .filter(bookmark => bookmarkVisible(bookmark.source) && bookmark.timeUs >= 0 && bookmark.timeUs <= total)
-    .map(bookmark => ({ ...bookmark, left: (bookmark.timeUs / total) * 100 }))
+    .map(bookmark => ({ ...bookmark, left: timeToPercent(bookmark.timeUs) }))
   const userBookmarks = settings.showMyBookmarks
     ? (player.session?.userBookmarks ?? [])
         .filter(bookmark => bookmark.timeUs >= 0 && bookmark.timeUs <= total)
@@ -49,7 +55,7 @@ const bookmarkMarkers = computed(() => {
           source: 'user' as const,
           label: bookmark.label,
           color: '#FFBB32',
-          left: (bookmark.timeUs / total) * 100,
+          left: timeToPercent(bookmark.timeUs),
         }))
     : []
   return [...midiBookmarks, ...userBookmarks]
@@ -57,11 +63,10 @@ const bookmarkMarkers = computed(() => {
 
 const loopRegion = computed(() => {
   const loop = player.session?.loopState
-  const total = loopTotalUs.value
-  if (!loop || !total || !player.loopRegionConfigured) return null
+  if (!loop || !player.loopRegionConfigured) return null
   return {
-    left: (loop.startUs / total) * 100,
-    width: ((loop.endUs - loop.startUs) / total) * 100,
+    left: timeToPercent(loop.startUs),
+    width: ((loop.endUs - loop.startUs) / seekSpanUs.value) * 100,
   }
 })
 
@@ -83,8 +88,8 @@ const playedRegions = computed(() => {
       const endUs = Math.max(0, Math.min(total, segment.endUs))
       return {
         key: `${startUs}:${endUs}:${index}`,
-        left: (startUs / total) * 100,
-        width: ((endUs - startUs) / total) * 100,
+        left: timeToPercent(startUs),
+        width: ((endUs - startUs) / seekSpanUs.value) * 100,
       }
     })
     .filter(region => region.width > 0)
@@ -120,8 +125,8 @@ const unassignedFingerRegions = computed(() => {
 
   return mergeSegments(segments).map((segment, index) => ({
     key: `${segment.startUs}:${segment.endUs}:${index}`,
-    left: (segment.startUs / total) * 100,
-    width: Math.max(0.12, ((segment.endUs - segment.startUs) / total) * 100),
+    left: timeToPercent(segment.startUs),
+    width: Math.max(0.12, ((segment.endUs - segment.startUs) / seekSpanUs.value) * 100),
   }))
 })
 
@@ -144,7 +149,8 @@ function drawProgressCanvas() {
   if (!ctx) return
   ctx.clearRect(0, 0, width, height)
 
-  const progressWidth = Math.max(0, Math.min(1, player.currentProgress)) * width
+  const currentUs = player.session?.currentUs ?? 0
+  const progressWidth = Math.max(0, Math.min(1, (currentUs - seekStartUs.value) / seekSpanUs.value)) * width
   if (progressWidth <= 0) return
 
   const progressGradient = ctx.createLinearGradient(0, 0, 0, height)
@@ -173,10 +179,10 @@ function handleMouseDown(event: MouseEvent) {
   const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
   const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width))
   isDraggingLoop = true
-  dragStartUs = ratio * loopTotalUs.value
+  dragStartUs = Math.max(0, Math.min(loopTotalUs.value, seekStartUs.value + ratio * seekSpanUs.value))
   previewStartUs = dragStartUs
   previewEndUs = dragStartUs
-  loopPreview.value = { left: ratio * 100, width: 0 }
+  loopPreview.value = { left: timeToPercent(dragStartUs), width: 0 }
   window.addEventListener('mousemove', handleDragMove)
   window.addEventListener('mouseup', handleDragEnd)
 }
@@ -198,12 +204,12 @@ function handleDragMove(event: MouseEvent) {
   if (!isDraggingLoop || !seekBarRef.value) return
   const rect = seekBarRef.value.getBoundingClientRect()
   const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width))
-  const currentUs = ratio * loopTotalUs.value
+  const currentUs = Math.max(0, Math.min(loopTotalUs.value, seekStartUs.value + ratio * seekSpanUs.value))
   previewStartUs = Math.min(dragStartUs, currentUs)
   previewEndUs = Math.max(dragStartUs, currentUs)
   loopPreview.value = {
-    left: (previewStartUs / loopTotalUs.value) * 100,
-    width: ((previewEndUs - previewStartUs) / loopTotalUs.value) * 100,
+    left: timeToPercent(previewStartUs),
+    width: ((previewEndUs - previewStartUs) / seekSpanUs.value) * 100,
   }
 }
 
@@ -230,7 +236,10 @@ onMounted(() => {
 watch(
   () => [
     player.currentProgress,
+    player.session?.currentUs,
     totalUs.value,
+    seekStartUs.value,
+    seekSpanUs.value,
   ],
   () => nextTick(drawCanvases),
   { flush: 'post' },
@@ -246,16 +255,17 @@ onBeforeUnmount(() => {
 })
 
 function formatTime(microseconds: number): string {
-  const totalSeconds = Math.max(0, microseconds) / 1_000_000
+  const sign = microseconds < 0 ? '-' : ''
+  const totalSeconds = Math.abs(microseconds) / 1_000_000
   const hours = Math.floor(totalSeconds / 3600)
   const minutes = Math.floor((totalSeconds % 3600) / 60)
   const seconds = Math.floor(totalSeconds % 60)
   const fraction = Math.floor((totalSeconds % 1) * 10)
 
   if (hours > 0) {
-    return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${fraction}`
+    return `${sign}${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${fraction}`
   }
-  return `${minutes}:${seconds.toString().padStart(2, '0')}.${fraction}`
+  return `${sign}${minutes}:${seconds.toString().padStart(2, '0')}.${fraction}`
 }
 
 function measureAt(timeUs: number): number {
@@ -289,7 +299,7 @@ function clampPopoverPosition(anchorX: number) {
 function updateHoverPopover(event: MouseEvent) {
   const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
   const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width))
-  const timeUs = ratio * totalUs.value
+  const timeUs = seekStartUs.value + ratio * seekSpanUs.value
   hoverPopover.value = {
     visible: true,
     left: ratio * 100,
@@ -305,8 +315,9 @@ function hideHoverPopover() {
 }
 
 function formatPopoverTime(microseconds: number): string {
-  const totalSeconds = Math.max(0, microseconds) / 1_000_000
-  if (totalSeconds < 60) return totalSeconds.toFixed(1)
+  const sign = microseconds < 0 ? '-' : ''
+  const totalSeconds = Math.abs(microseconds) / 1_000_000
+  if (totalSeconds < 60) return `${sign}${totalSeconds.toFixed(1)}`
   return formatTime(microseconds)
 }
 
@@ -323,8 +334,8 @@ const totalTime = computed(() => {
 })
 
 function seekFromPointer(event: MouseEvent) {
-  if (!player.canSeek) return
-  const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
+  if (!player.canSeek || !seekBarRef.value) return
+  const rect = seekBarRef.value.getBoundingClientRect()
   const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width))
   player.seekToProgress(ratio)
 }

@@ -312,7 +312,7 @@ export const pl = {
     keyLabels: "Etykiety klawiszy",
     noteLabels: "Etykiety nut",
     noLabels: "Brak etykiet",
-    onlyShowOnMyNotes: "Pokazuj etykiety tylko na moich nutach",
+    showFingerHints: "Pokaż numery palców na spadających nutach",
     labelSize: "Rozmiar etykiety",
     options: {
       octaves: "Oktawy (tylko C)",
