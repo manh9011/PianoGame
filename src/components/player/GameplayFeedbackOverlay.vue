@@ -80,12 +80,12 @@ const comboText = computed(() => t('score.combo', { count: feedback.value?.combo
 }
 
 .combo-text {
-  font-size: clamp(1.45rem, 3.1vw, 2.6rem);
+  font-size: clamp(0.725rem, 1.55vw, 1.3rem);
 }
 
 .judgement-text {
   margin-top: 0.05rem;
-  font-size: clamp(1.25rem, 2.5vw, 2.15rem);
+  font-size: clamp(0.625rem, 1.25vw, 1.075rem);
 }
 
 .judgement-text.perfect { color: #fef08a; }

@@ -20,6 +20,7 @@ export function calculateAchievementBreakdown(score: {
   rawPoints: number
   notesUserCouldHavePlayed: number
   notesUserActuallyPlayed: number
+  totalPlayableNotes?: number
   strayNotes: number
   missedNotes: number
   wrongNotes: number
@@ -27,15 +28,15 @@ export function calculateAchievementBreakdown(score: {
   const weights = achievementWeightsFor(handSelection)
   const max = achievementMaxFor(handSelection)
   const possibleNotes = Math.max(score.notesUserCouldHavePlayed, score.notesUserActuallyPlayed)
-  const notesRatio = possibleNotes > 0 ? score.notesUserActuallyPlayed / possibleNotes : 0
+  const totalNotes = score.totalPlayableNotes && score.totalPlayableNotes > 0 ? score.totalPlayableNotes : possibleNotes
   const mistakes = score.strayNotes + score.wrongNotes + score.missedNotes + (failed ? 1 : 0)
-  const mistakePenalty = Math.max(0, 1 - mistakes * 0.08)
+  const notesRatio = totalNotes > 0 ? Math.max(0, Math.min(1, (score.notesUserActuallyPlayed - mistakes) / totalNotes)) : 0
   const perfectHoldPoints = score.notesUserActuallyPlayed * DEFAULT_SCORING_CONFIG.pointScale
   const holdRatio = perfectHoldPoints > 0 ? Math.min(1, score.rawPoints / perfectHoldPoints) : 0
   const totalErrors = score.strayNotes + score.wrongNotes + score.missedNotes
   const baseSpeedRatio = possibleNotes > 0 ? (score.rawPoints / Math.max(1, possibleNotes * DEFAULT_SCORING_CONFIG.pointScale)) : 0
   const speedRatio = Math.max(0, Math.min(1, baseSpeedRatio * Math.max(0.25, 1 - totalErrors * 0.03)))
-  const notes = roundAchievementScore(weights.notes * notesRatio * mistakePenalty)
+  const notes = roundAchievementScore(weights.notes * notesRatio)
   const hold = roundAchievementScore(weights.hold * holdRatio)
   const speed = roundAchievementScore(weights.speed * speedRatio)
   const total = Math.min(max, roundAchievementScore(notes + hold + speed))
@@ -58,6 +59,7 @@ export function entryAchievementBreakdown(entry: ModeScoreEntry): AchievementBre
     rawPoints: entry.rawPoints ?? entry.gameplayPoints ?? 0,
     notesUserCouldHavePlayed: entry.notesUserCouldHavePlayed ?? entry.notesHit ?? 0,
     notesUserActuallyPlayed: entry.notesUserActuallyPlayed ?? entry.notesHit ?? 0,
+    totalPlayableNotes: entry.totalPlayableNotes,
     strayNotes: entry.strayNotes ?? 0,
     missedNotes: entry.missedNotes ?? entry.errors ?? 0,
     wrongNotes: entry.wrongNotes ?? 0,

@@ -21,12 +21,17 @@ export interface SongPlayStats extends ScoreState {
   ratingMax: number
   progressRatio: number
   notesHit: number
+  totalPlayableNotes: number
   errors: number
   timeSpentUs: number
 }
 
+function playableNotesFor(session: PlaySession) {
+  return session.notes.filter(note => isPlayableNote(note, session.tracks, session.handSelection, session))
+}
+
 function playableProgressRatio(session: PlaySession) {
-  const playableNotes = session.notes.filter(note => isPlayableNote(note, session.tracks, session.handSelection, session))
+  const playableNotes = playableNotesFor(session)
   if (!playableNotes.length) return 0
   const completedNotes = playableNotes.filter(note => session.score.noteOutcomes[note.id])
   return Math.max(0, Math.min(1, completedNotes.length / playableNotes.length))
@@ -46,8 +51,10 @@ export function summarizeStats(score: ScoreState, session: PlaySession): SongPla
   const scoringEnabled = session.modeConfig.scoringEnabled
   const progressRatio = playedProgressRatio(session)
   const finishedEnough = progressRatio >= 0.995 && session.finished
+  const totalPlayableNotes = playableNotesFor(session).length
   const weights = achievementWeightsFor(session.handSelection)
-  const achievementBreakdown = scoringEnabled && finishedEnough ? calculateAchievementBreakdown(score, session.handSelection, session.failed) : {
+  const achievementScore = { ...score, totalPlayableNotes }
+  const achievementBreakdown = scoringEnabled && finishedEnough ? calculateAchievementBreakdown(achievementScore, session.handSelection, session.failed) : {
     notes: 0,
     notesMax: weights.notes,
     hold: 0,
@@ -77,6 +84,7 @@ export function summarizeStats(score: ScoreState, session: PlaySession): SongPla
     ratingMax: achievementMaxFor(session.handSelection),
     progressRatio,
     notesHit: score.notesUserActuallyPlayed,
+    totalPlayableNotes,
     errors: Math.max(score.strayNotes, score.missedNotes),
     timeSpentUs,
   }

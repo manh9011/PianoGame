@@ -8,6 +8,7 @@ import { useProfileStore } from '../stores/profileStore'
 import { useSettingsStore } from '../stores/settingsStore'
 import { useToastStore } from '../stores/toastStore'
 import { bindInput, requestMidiAccess } from '../modules/midi/webMidi'
+import { LEAD_IN_US } from '../modules/midi/midiPlayerClock'
 import { WHITE_KEY_COUNT } from '../modules/render/pianoGeometry'
 import type { HandSelection, PlayMode, SessionNote } from '../modules/game/playSession'
 import PlayTopBar from '../components/player/PlayTopBar.vue'
@@ -18,6 +19,7 @@ import PianoKeyboard from '../components/player/PianoKeyboard.vue'
 import ScorePanel from '../components/player/ScorePanel.vue'
 import PerformanceOverlay from '../components/player/PerformanceOverlay.vue'
 import GameplayFeedbackOverlay from '../components/player/GameplayFeedbackOverlay.vue'
+import SongTitleIntroOverlay from '../components/player/SongTitleIntroOverlay.vue'
 import HelpOverlay from '../components/player/HelpOverlay.vue'
 import MetronomeDialog from '../components/player/dialogs/MetronomeDialog.vue'
 import KeyboardRangeDialog from '../components/player/dialogs/KeyboardRangeDialog.vue'
@@ -34,8 +36,6 @@ import type { HandSizePreset } from '../modules/fingering/fingeringTypes'
 
 const WHITE_KEY_ASPECT_RATIO = 150 / 23.5  // 6.383
 const BLACK_KEY_HEIGHT_RATIO = 95 / 150    // 0.633
-const BENCHMARK_STORAGE_KEY = 'pianogame:perf'
-
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
@@ -72,11 +72,10 @@ const wasPlayingBeforeDialog = ref(false)
 const sheetReady = ref(!settings.showSheetMusic)
 const shouldStartAfterSheetReady = ref(false)
 const wasPlayingBeforeSheetLoad = ref(false)
-const benchmarkMode = ref(
-  window.location.search.includes('perf=1') ||
-  window.location.hash.includes('perf=1') ||
-  localStorage.getItem(BENCHMARK_STORAGE_KEY) === '1'
-)
+const songTitleIntroStarted = ref(false)
+if (window.location.search.includes('perf=1') || window.location.hash.includes('perf=1')) {
+  settings.patchSettings({ advancedEnableDebugOverlay: true })
+}
 
 const hasBlockingOverlay = computed(() =>
   showMetronomeDialog.value ||
@@ -88,8 +87,9 @@ const hasBlockingOverlay = computed(() =>
   showHelpOverlay.value ||
   showPerformanceDetail.value
 )
-const showPerformanceOverlay = computed(() => benchmarkMode.value || settings.advancedEnableDebugOverlay)
-const showPerformanceDetails = computed(() => benchmarkMode.value)
+const performanceMode = computed(() => settings.advancedEnableDebugOverlay)
+const showPerformanceOverlay = computed(() => performanceMode.value)
+const showPerformanceDetails = computed(() => performanceMode.value)
 
 // Popover positions
 const metronomePopupStyle = ref({ top: '0px', left: '0px' })
@@ -328,8 +328,7 @@ function openSettings(event: MouseEvent) {
 }
 
 function toggleBenchmark() {
-  benchmarkMode.value = !benchmarkMode.value
-  localStorage.setItem(BENCHMARK_STORAGE_KEY, benchmarkMode.value ? '1' : '0')
+  settings.patchSettings({ advancedEnableDebugOverlay: !settings.advancedEnableDebugOverlay })
 }
 
 function togglePerformanceAutoPlay() {
@@ -385,6 +384,7 @@ function startWhenSheetIsReady() {
     return
   }
   shouldStartAfterSheetReady.value = false
+  songTitleIntroStarted.value = true
   player.start()
 }
 
@@ -392,6 +392,7 @@ function handleSheetReady() {
   sheetReady.value = true
   if (shouldStartAfterSheetReady.value) {
     shouldStartAfterSheetReady.value = false
+    songTitleIntroStarted.value = true
     player.start()
   }
 }
@@ -431,12 +432,14 @@ onMounted(async () => {
 
   if (!player.song || (player.song.playbackHash ?? player.song.hash) !== hash) {
     await player.loadSong(song, settings.defaultSpeed, settings.showDuration, settings.octaveShift)
+    songTitleIntroStarted.value = false
   }
 
   if (!player.session || !player.session.setupComplete ||
       player.session.mode !== mode || player.session.handSelection !== handSelection) {
     await player.prepareAudio(settings.midiOutputId)
     player.configureSession({ mode, handSelection, speed: settings.defaultSpeed })
+    songTitleIntroStarted.value = false
   }
 
   sheetReady.value = !settings.showSheetMusic
@@ -525,10 +528,8 @@ watch(() => player.stats, stats => {
   if (!stats || !player.song || saved) return
   saved = true
   const song = player.song
-  if (!player.performanceAutoPlayUsed) {
-    profiles.recordScore(song.id, stats)
-    if (stats.mode !== 'listen') library.updateAfterPlay(song.id, stats.score)
-  }
+  profiles.recordScore(song.id, stats)
+  if (stats.mode !== 'listen') library.updateAfterPlay(song.id, stats.score)
 
   setTimeout(() => {
     router.push(`/mode-select/${song.playbackHash ?? song.hash}`)
@@ -550,7 +551,7 @@ watch(() => player.stats, stats => {
       :loop-dialog-open="showLoopControl"
       :finger-dialog-open="showFingerDialog"
       :help-overlay-open="showHelpOverlay"
-      :benchmark-mode="benchmarkMode"
+      :benchmark-mode="performanceMode"
       :performance-auto-play="player.performanceAutoPlay"
       :playback-blocked="settings.showSheetMusic && !sheetReady"
       @open-metronome="openMetronome"
@@ -573,12 +574,18 @@ watch(() => player.stats, stats => {
       <section class="kbd-area">
         <PianoRoll
           :bookmark-mode="showBookmarksDialog"
-          :benchmark-mode="benchmarkMode"
+          :benchmark-mode="performanceMode"
           :loop-setup-active="showLoopControl"
           :finger-mode="showFingerDialog"
           @select-finger-note="openFingerForNote"
         />
       </section>
+      <SongTitleIntroOverlay
+        :title="player.song?.title ?? ''"
+        :current-us="player.session?.currentUs ?? -LEAD_IN_US"
+        :started="songTitleIntroStarted"
+        :manually-stopped="player.playbackManuallyStopped"
+      />
       <PerformanceOverlay
         v-if="showPerformanceOverlay && !showPerformanceDetail"
         variant="mini"

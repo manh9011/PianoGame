@@ -25,6 +25,7 @@ export interface ModeScoreEntry {
   rawPoints?: number
   notesUserCouldHavePlayed?: number
   notesUserActuallyPlayed?: number
+  totalPlayableNotes?: number
   strayNotes?: number
   missedNotes?: number
   wrongNotes?: number

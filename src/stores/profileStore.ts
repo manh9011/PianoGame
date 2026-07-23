@@ -107,6 +107,7 @@ export const useProfileStore = defineStore('profiles', {
         rawPoints: stats.rawPoints,
         notesUserCouldHavePlayed: stats.notesUserCouldHavePlayed,
         notesUserActuallyPlayed: stats.notesUserActuallyPlayed,
+        totalPlayableNotes: stats.totalPlayableNotes,
         strayNotes: stats.strayNotes,
         missedNotes: stats.missedNotes,
         wrongNotes: stats.wrongNotes,

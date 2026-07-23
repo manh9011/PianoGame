@@ -6,7 +6,9 @@ import MidiImportButton from '../components/library/MidiImportButton.vue'
 import FolderSelector from '../components/library/FolderSelector.vue'
 import SongList from '../components/library/SongList.vue'
 import SongSortBar from '../components/library/SongSortBar.vue'
-import { base64ToBuffer, loadSongCompressedMusicXmlData, loadSongMidiData, loadSongMusicXmlData } from '../modules/library/songLibrary'
+import { base64ToBuffer, loadSongMidiData, loadSongMusicXmlData } from '../modules/library/songLibrary'
+import { createCompressedMusicXml } from '../modules/musicxml/musicXmlCompression'
+import { applyMusicXmlExportMetadata } from '../modules/musicxml/musicXmlExportMetadata'
 import { generateSheetMusic } from '../modules/sheet/sheetMusicClient'
 import { SheetMusicError, toSheetMusicError } from '../modules/sheet/sheetTypes'
 import { useLibraryStore } from '../stores/libraryStore'
@@ -21,7 +23,6 @@ const settings = useSettingsStore()
 const toastStore = useToastStore()
 const selectedSong = computed(() => library.selectedSong)
 const visibleSongCount = computed(() => library.sortedSongs.length)
-const downloadMusicXmlExtension = computed(() => selectedSong.value?.originalFileName?.toLowerCase().endsWith('.mxl') && !selectedSong.value.musicXmlData ? '.mxl' : '.musicxml')
 const musicXmlDownloadingSongId = ref<string | null>(null)
 const downloadMenuOpen = ref(false)
 
@@ -60,6 +61,10 @@ function togglePreview() {
   else library.stopPreview()
 }
 
+function exportName(song: SongMetadata) {
+  return song.title || t('library.downloadFallbackName')
+}
+
 function downloadBlob(blob: Blob, fileName: string) {
   const link = document.createElement('a')
   const url = URL.createObjectURL(blob)
@@ -85,7 +90,21 @@ async function downloadSong() {
   const data = song.data ?? song.midiData ?? await loadSongMidiData(song.id)
   if (!data) return
 
-  downloadBlob(new Blob([base64ToBuffer(data)], { type: 'audio/midi' }), `${song.title || t('library.downloadFallbackName')}.mid`)
+  downloadBlob(new Blob([base64ToBuffer(data)], { type: 'audio/midi' }), `${exportName(song)}.mid`)
+}
+
+async function getSongMusicXml(song: SongMetadata) {
+  const musicXml = song.musicXmlData ?? await loadSongMusicXmlData(song.id)
+  if (musicXml) return applyMusicXmlExportMetadata(musicXml, exportName(song))
+
+  const data = song.data ?? song.midiData ?? await loadSongMidiData(song.id)
+  if (!data) throw new SheetMusicError('sheetMusic.errors.missingMidiData', 'missingMidiData')
+
+  const cacheKey = `${song.playbackHash ?? song.hash ?? song.id}:sheet-v20:tracks=all`
+  const generated = await generateSheetMusic(cacheKey, base64ToBuffer(data), progress => {
+    if (progress.code) toastStore.showLoading(t(`sheetMusic.progress.${progress.code}`, progress.values ?? {}))
+  })
+  return applyMusicXmlExportMetadata(generated.musicXml, exportName(song))
 }
 
 async function downloadMusicXml() {
@@ -96,42 +115,39 @@ async function downloadMusicXml() {
   toastStore.showLoading(t('library.musicXmlDownloadProgress'))
 
   try {
-    const musicXml = song.musicXmlData ?? await loadSongMusicXmlData(song.id)
-    if (musicXml) {
-      downloadBlob(
-        new Blob([musicXml], { type: 'application/vnd.recordare.musicxml+xml' }),
-        `${song.title || t('library.downloadFallbackName')}.musicxml`,
-      )
-      toastStore.showSuccess(t('library.musicXmlDownloadSuccess'))
-      return
-    }
-
-    const compressedMusicXmlData = song.compressedMusicXmlData ?? await loadSongCompressedMusicXmlData(song.id)
-    if (compressedMusicXmlData) {
-      downloadBlob(
-        new Blob([base64ToBuffer(compressedMusicXmlData)], { type: 'application/vnd.recordare.musicxml' }),
-        `${song.title || t('library.downloadFallbackName')}.mxl`,
-      )
-      toastStore.showSuccess(t('library.musicXmlDownloadSuccess'))
-      return
-    }
-
-    const data = song.data ?? song.midiData ?? await loadSongMidiData(song.id)
-    if (!data) throw new SheetMusicError('sheetMusic.errors.missingMidiData', 'missingMidiData')
-
-    const cacheKey = `${song.playbackHash ?? song.hash ?? song.id}:sheet-v20:tracks=all`
-    const generated = await generateSheetMusic(cacheKey, base64ToBuffer(data), progress => {
-      if (progress.code) toastStore.showLoading(t(`sheetMusic.progress.${progress.code}`, progress.values ?? {}))
-    })
+    const musicXml = await getSongMusicXml(song)
     downloadBlob(
-      new Blob([generated.musicXml], { type: 'application/vnd.recordare.musicxml+xml' }),
-      `${song.title || t('library.downloadFallbackName')}.musicxml`,
+      new Blob([musicXml], { type: 'application/vnd.recordare.musicxml+xml' }),
+      `${exportName(song)}.musicxml`,
     )
     toastStore.showSuccess(t('library.musicXmlDownloadSuccess'))
   } catch (error) {
     const sheetError = toSheetMusicError(error)
     const message = sheetError.code ? t(`sheetMusic.errors.${sheetError.code}`, sheetError.values) : sheetError.message
     toastStore.showError(t('library.musicXmlDownloadFailed', { message }))
+  } finally {
+    musicXmlDownloadingSongId.value = null
+  }
+}
+
+async function downloadCompressedMusicXml() {
+  closeDownloadMenu()
+  const song = selectedSong.value
+  if (!song || musicXmlDownloadingSongId.value) return
+  musicXmlDownloadingSongId.value = song.id
+  toastStore.showLoading(t('library.mxlDownloadProgress'))
+
+  try {
+    const compressedMusicXml = await createCompressedMusicXml(await getSongMusicXml(song))
+    downloadBlob(
+      new Blob([compressedMusicXml], { type: 'application/vnd.recordare.musicxml' }),
+      `${exportName(song)}.mxl`,
+    )
+    toastStore.showSuccess(t('library.mxlDownloadSuccess'))
+  } catch (error) {
+    const sheetError = toSheetMusicError(error)
+    const message = sheetError.code ? t(`sheetMusic.errors.${sheetError.code}`, sheetError.values) : sheetError.message
+    toastStore.showError(t('library.mxlDownloadFailed', { message }))
   } finally {
     musicXmlDownloadingSongId.value = null
   }
@@ -205,7 +221,11 @@ onBeforeUnmount(() => {
             </button>
             <button type="button" role="menuitem" :disabled="!!musicXmlDownloadingSongId" @click="downloadMusicXml">
               <span>{{ t('library.downloadMusicXml') }}</span>
-              <span class="download-extension">{{ downloadMusicXmlExtension }}</span>
+              <span class="download-extension">.musicxml</span>
+            </button>
+            <button type="button" role="menuitem" :disabled="!!musicXmlDownloadingSongId" @click="downloadCompressedMusicXml">
+              <span>{{ t('library.downloadMxl') }}</span>
+              <span class="download-extension">.mxl</span>
             </button>
           </div>
         </div>
@@ -429,6 +449,11 @@ onBeforeUnmount(() => {
   padding: 5px;
   border: 0;
   background: #4c4c4c;
+  transition: grid-template-columns 0.24s ease;
+}
+
+.library-tools:has(.search-field:focus-within) {
+  grid-template-columns: minmax(0, 1fr) 20.5rem;
 }
 
 .search-field {
@@ -451,6 +476,19 @@ onBeforeUnmount(() => {
 
 .search-field input {
   padding-right: 2.35rem;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.search-field input:focus {
+  border-color: rgba(255, 255, 255, 0.32);
+  outline: none;
+  background: #464646;
+  box-shadow: 0 0.35rem 1rem rgba(0, 0, 0, 0.18);
+  transform: translateY(-1px);
 }
 
 .library-tools input::placeholder {
