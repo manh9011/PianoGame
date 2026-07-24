@@ -1,6 +1,6 @@
 import type { ModeScoreEntry, UserProfile } from '../../types/profile'
 import { achievementFromHistory } from '../game/achievementScoring'
-import { isBetterModeScore, normalizeTrackSelectionKey, scoreBucketKey, trackSelectionKeyForTracks } from '../game/scoreKeys'
+import { isBetterModeScore, LEGACY_TRACK_SELECTION_KEY, normalizeTrackSelectionKey, scoreBucketKey, trackSelectionKeyForTracks } from '../game/scoreKeys'
 import { get, getAll, put } from '../storage/indexedDb'
 import { STORAGE_KEYS } from './storageKeys'
 
@@ -67,6 +67,23 @@ function normalizeProfile(profile: Partial<UserProfile>): UserProfile {
     fingeringsBySongId: profile.fingeringsBySongId ?? {},
     trackSettingsBySongId,
   }
+}
+
+export function migrateLegacyScoresToTrackSelections(profile: UserProfile): boolean {
+  let changed = false
+  for (const entries of Object.values(profile.scoresByMode)) {
+    for (const entry of entries ?? []) {
+      if (normalizeTrackSelectionKey(entry.trackSelectionKey) !== LEGACY_TRACK_SELECTION_KEY) continue
+      const trackSelectionKey = trackSelectionKeyForTracks(profile.trackSettingsBySongId[entry.songId]?.tracks)
+      if (trackSelectionKey === LEGACY_TRACK_SELECTION_KEY) continue
+      entry.trackSelectionKey = trackSelectionKey
+      changed = true
+    }
+  }
+  if (changed) {
+    profile.bestScoresBySongMode = rebuildBestScoresBySongMode(profile.scoresByMode)
+  }
+  return changed
 }
 
 export async function loadProfiles(): Promise<UserProfile[]> {

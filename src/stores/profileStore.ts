@@ -3,7 +3,7 @@ import type { ModeScoreEntry, StoredFingeringAssignment, StoredTrackProperties, 
 import { achievementFromHistory } from '../modules/game/achievementScoring'
 import { isBetterModeScore, isSameScoreBucket, LEGACY_TRACK_SELECTION_KEY, normalizeTrackSelectionKey, scoreBucketKey, trackSelectionKeyForTracks } from '../modules/game/scoreKeys'
 import type { SongPlayStats } from '../modules/game/songStatistics'
-import { createDefaultProfile, loadProfiles, saveProfiles, loadActiveProfileId, saveActiveProfileId } from '../modules/settings/profileStorage'
+import { createDefaultProfile, loadProfiles, saveProfiles, loadActiveProfileId, saveActiveProfileId, migrateLegacyScoresToTrackSelections } from '../modules/settings/profileStorage'
 import { persistQueue } from '../modules/storage/indexedDb'
 
 const SCORE_HISTORY_LIMIT = 50
@@ -53,6 +53,13 @@ export const useProfileStore = defineStore('profiles', {
       try {
         const profiles = await loadProfiles()
         const activeProfileId = await loadActiveProfileId()
+        let migratedScores = false
+        for (const profile of profiles) {
+          migratedScores = migrateLegacyScoresToTrackSelections(profile) || migratedScores
+        }
+        if (migratedScores) {
+          await saveProfiles(profiles)
+        }
         Object.assign(this.$state, {
           profiles,
           activeProfileId: activeProfileId || profiles[0].id,

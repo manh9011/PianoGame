@@ -437,11 +437,21 @@ export const usePlayerStore = defineStore('player', {
 
           if (session.mode === 'noteMemory' && !this.performanceAutoPlay) {
             const waitNote = measurePlaybackSpan(tickProfile, 'tick.noteMemoryWaitLookup', () => {
-              const earliestStart = findEarliestPlayableWaitingStart(session.notes, session.tracks, session.handSelection, session)
-              if (earliestStart === null || earliestStart > state.currentUs) return undefined
-              const chordNotes = collectChordAtStart(session.notes, session.tracks, session.handSelection, earliestStart, session)
-              if (chordNotes.length) addPlaybackCounter(tickProfile, 'noteMemoryWaitFound')
-              return chordNotes[0]
+              let scanned = 0
+              for (const note of session.notes) {
+                scanned += 1
+                if (
+                  isPlayableNote(note, session.tracks, session.handSelection, session) &&
+                  note.state === 'waiting' &&
+                  note.start <= state.currentUs
+                ) {
+                  addPlaybackCounter(tickProfile, 'noteMemoryWaitScanned', scanned)
+                  addPlaybackCounter(tickProfile, 'noteMemoryWaitFound')
+                  return note
+                }
+              }
+              addPlaybackCounter(tickProfile, 'noteMemoryWaitScanned', scanned)
+              return undefined
             })
             if (waitNote) {
               session.melodyWaitNoteId = waitNote.id
