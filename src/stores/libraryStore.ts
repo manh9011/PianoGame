@@ -11,10 +11,22 @@ import { MidiPlayerClock } from '../modules/midi/midiPlayerClock'
 import { assignHands } from '../modules/game/handAssignment'
 import { AutoNotePlayer } from '../modules/audio/autoNotePlayer'
 import { createImportedSongCandidate, type ImportedSongCandidate } from '../modules/library/songImport'
+import { evaluateMidiDifficultyAuto } from '../modules/midi/midiDifficulty'
 
 export interface ImportResult {
   imported: number
   failed: { name: string; reason: string }[]
+}
+
+export interface DifficultyEvaluationProgress {
+  current: number
+  total: number
+  song: SongMetadata
+}
+
+export interface DifficultyEvaluationResult {
+  completed: number
+  failed: { song: SongMetadata; reason: string }[]
 }
 
 function ratingValue(value: number | undefined) {
@@ -29,6 +41,10 @@ function difficultyValue(value: number | undefined) {
 
 function playbackHash(song: SongMetadata) {
   return song.playbackHash ?? song.hash
+}
+
+function needsDifficultyEvaluation(song: SongMetadata) {
+  return song.difficulty == null
 }
 
 function normalizeTitle(title: string) {
@@ -158,7 +174,7 @@ export const useLibraryStore = defineStore('library', {
         hasMusicXmlSource: candidate.kind === 'musicxml' || existing?.hasMusicXmlSource || false,
         originalFileName: candidate.originalFileName,
         rating: existing?.rating,
-        difficulty: existing?.difficulty,
+        difficulty: candidate.difficulty ?? existing?.difficulty,
         folderPath: folderPath ?? existing?.folderPath,
       }
       this.songs = [song, ...this.songs.filter(s => s.id !== song.id && playbackHash(s) !== candidate.playbackHash)]
@@ -218,6 +234,44 @@ export const useLibraryStore = defineStore('library', {
       if ('rating' in values) song.rating = ratingValue(values.rating)
       if ('difficulty' in values) song.difficulty = difficultyValue(values.difficulty)
       this.persist()
+    },
+    async evaluateSongDifficulty(id: string) {
+      const song = this.songs.find(s => s.id === id)
+      if (!song) throw new Error('library.songNotFound')
+      const data = song.data ?? song.midiData ?? await loadSongMidiData(song.id)
+      if (!data) throw new Error('sheetMusic.errors.missingMidiData')
+      const result = evaluateMidiDifficultyAuto(base64ToBuffer(data))
+      song.difficulty = difficultyValue(result.roundedScore)
+      this.persist()
+      return song.difficulty
+    },
+    async evaluateSongDifficulties(ids: string[], onProgress?: (progress: DifficultyEvaluationProgress) => void): Promise<DifficultyEvaluationResult> {
+      const uniqueIds = [...new Set(ids)]
+      const targets = uniqueIds
+        .map(id => this.songs.find(song => song.id === id))
+        .filter((song): song is SongMetadata => Boolean(song))
+      const result: DifficultyEvaluationResult = { completed: 0, failed: [] }
+      const total = targets.length
+
+      for (const song of targets) {
+        try {
+          const data = song.data ?? song.midiData ?? await loadSongMidiData(song.id)
+          if (!data) throw new Error('sheetMusic.errors.missingMidiData')
+          const difficulty = evaluateMidiDifficultyAuto(base64ToBuffer(data)).roundedScore
+          song.difficulty = difficultyValue(difficulty)
+          result.completed++
+        } catch (error) {
+          result.failed.push({ song, reason: error instanceof Error ? error.message : String(error) })
+        } finally {
+          onProgress?.({ current: result.completed + result.failed.length, total, song })
+        }
+      }
+
+      if (total > 0) this.persist()
+      return result
+    },
+    async evaluateMissingSongDifficulties(onProgress?: (progress: DifficultyEvaluationProgress) => void) {
+      return this.evaluateSongDifficulties(this.songs.filter(needsDifficultyEvaluation).map(song => song.id), onProgress)
     },
     async startPreview(song: SongMetadata, outputId: string, speed: number, showDuration: number, octaveShift: number) {
       const requestId = this.previewRequestId + 1

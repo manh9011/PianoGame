@@ -53,7 +53,8 @@ export function summarizeStats(score: ScoreState, session: PlaySession): SongPla
   const finishedEnough = progressRatio >= 0.995 && session.finished
   const totalPlayableNotes = playableNotesFor(session).length
   const weights = achievementWeightsFor(session.handSelection)
-  const achievementScore = { ...score, totalPlayableNotes }
+  const displayedAverageSpeed = averageSpeed(score)
+  const achievementScore = { ...score, totalPlayableNotes, averageSpeed: displayedAverageSpeed }
   const achievementBreakdown = scoringEnabled && finishedEnough ? calculateAchievementBreakdown(achievementScore, session.handSelection, session.failed) : {
     notes: 0,
     notesMax: weights.notes,
@@ -71,7 +72,7 @@ export function summarizeStats(score: ScoreState, session: PlaySession): SongPla
     score: ratingScore,
     gameplayPoints: displayPoints(score.rawPoints),
     achievementBreakdown,
-    averageSpeed: averageSpeed(score),
+    averageSpeed: displayedAverageSpeed,
     grade: scoringEnabled ? grade(score) : 'N/A',
     accuracy: accuracy(score),
     perfect: scoringEnabled ? isPerfect(score) && !session.failed : false,

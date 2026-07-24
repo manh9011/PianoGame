@@ -5,6 +5,7 @@ import type { SongMetadata } from '../../types/song'
 import { useLibraryStore } from '../../stores/libraryStore'
 import { useProfileStore } from '../../stores/profileStore'
 import { useSettingsStore } from '../../stores/settingsStore'
+import { useToastStore } from '../../stores/toastStore'
 import { formatDate, formatDateTime } from '../../i18n/formatters'
 import { achievementColorStyle } from '../../modules/game/achievementColors'
 import { achievementFromHistory } from '../../modules/game/achievementScoring'
@@ -19,6 +20,7 @@ const { t } = useI18n()
 const library = useLibraryStore()
 const profiles = useProfileStore()
 const settings = useSettingsStore()
+const toastStore = useToastStore()
 const MAX_LIBRARY_ACHIEVEMENT = 105
 const editingSongId = ref<string | null>(null)
 const editingTitle = ref('')
@@ -75,6 +77,7 @@ const difficultyDialogSong = ref<SongMetadata | null>(null)
 const difficultyPopupStyle = ref<{ top: string; left: string }>({ top: '0px', left: '0px' })
 const difficultyArrowStyle = ref<{ top: string; left?: string; right?: string }>({ top: '0px' })
 const difficultyArrowPlacement = ref<'left' | 'right'>('left')
+const difficultyAutoRunningSongId = ref<string | null>(null)
 
 function formatShortDate(value: number) {
   return formatDate(value, settings.locale, {
@@ -279,6 +282,24 @@ function setDifficulty(difficulty: number) {
   if (difficultyDialogSong.value) {
     library.updateSongPreferences(difficultyDialogSong.value.id, { difficulty })
     closeDifficultyDialog()
+  }
+}
+
+async function autoDifficulty() {
+  const song = difficultyDialogSong.value
+  if (!song || difficultyAutoRunningSongId.value) return
+  difficultyAutoRunningSongId.value = song.id
+  toastStore.showLoading(t('library.autoDifficultyProgress'))
+
+  try {
+    await library.evaluateSongDifficulty(song.id)
+    toastStore.showSuccess(t('library.autoDifficultySingleSuccess', { title: song.title }))
+    closeDifficultyDialog()
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    toastStore.showError(t('library.autoDifficultyFailed', { title: song.title, message }))
+  } finally {
+    difficultyAutoRunningSongId.value = null
   }
 }
 
@@ -490,7 +511,18 @@ function clearDifficulty() {
               <span class="bar-fill" />
             </button>
           </div>
-          <button type="button" class="clear-button" @click="clearDifficulty">{{ t('common.clear') }}</button>
+          <div class="dialog-actions">
+            <button
+              type="button"
+              class="auto-button"
+              :disabled="difficultyAutoRunningSongId === difficultyDialogSong.id"
+              @click="autoDifficulty"
+            >
+              <i v-if="difficultyAutoRunningSongId === difficultyDialogSong.id" class="fa-solid fa-spinner fa-spin" aria-hidden="true" />
+              <span>{{ t('library.autoDifficulty') }}</span>
+            </button>
+            <button type="button" class="clear-button" :disabled="difficultyAutoRunningSongId === difficultyDialogSong.id" @click="clearDifficulty">{{ t('common.clear') }}</button>
+          </div>
         </div>
       </div>
     </div>
@@ -1050,21 +1082,54 @@ function clearDifficulty() {
 .bar-button.active:nth-child(9) .bar-fill { background: #ef4444; }
 .bar-button.active:nth-child(10) .bar-fill { background: #dc2626; }
 
+.dialog-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+}
+
+.auto-button,
 .clear-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 26px;
   padding: 4px 8px;
-  border: 1px solid rgba(255, 100, 100, 0.4);
   border-radius: 3px;
-  background: rgba(200, 0, 0, 0.3);
-  color: rgba(255, 150, 150, 0.9);
   font-size: 0.75rem;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
-.clear-button:hover {
+.auto-button {
+  border: 1px solid rgba(120, 180, 255, 0.4);
+  background: rgba(40, 100, 180, 0.28);
+  color: rgba(170, 210, 255, 0.94);
+}
+
+.auto-button:hover:not(:disabled) {
+  background: rgba(40, 120, 220, 0.45);
+  border-color: rgba(140, 200, 255, 0.62);
+  color: rgba(220, 240, 255, 1);
+}
+
+.clear-button {
+  border: 1px solid rgba(255, 100, 100, 0.4);
+  background: rgba(200, 0, 0, 0.3);
+  color: rgba(255, 150, 150, 0.9);
+}
+
+.clear-button:hover:not(:disabled) {
   background: rgba(220, 0, 0, 0.5);
   border-color: rgba(255, 100, 100, 0.6);
   color: rgba(255, 200, 200, 1);
+}
+
+.auto-button:disabled,
+.clear-button:disabled {
+  opacity: 0.58;
+  cursor: not-allowed;
 }
 
 @media (max-width: 1100px) {

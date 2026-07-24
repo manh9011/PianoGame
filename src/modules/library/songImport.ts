@@ -4,6 +4,7 @@ import { translateNotes } from '../midi/midiNoteTranslator'
 import { buildTempoMap, pulseToMicroseconds } from '../midi/midiTempo'
 import { SheetMusicError } from '../sheet/sheetTypes'
 import { createMidiCacheFromCompressedMusicXml, createMidiCacheFromMusicXml, isMusicXmlText } from '../musicxml/musicXmlPlaybackCache'
+import { evaluateMidiDifficultyAuto } from '../midi/midiDifficulty'
 import { bufferToBase64 } from './songLibrary'
 
 export type SupportedSongFileKind = 'midi' | 'musicxml'
@@ -21,6 +22,7 @@ export interface ImportedSongCandidate {
   duration: number
   trackCount: number
   noteCount: number
+  difficulty?: number
 }
 
 const MIDI_EXTENSION = /\.(mid|midi|rmi|rmid)$/i
@@ -61,6 +63,15 @@ function summarizeMidi(buffer: ArrayBuffer) {
   }
 }
 
+function evaluateImportDifficulty(buffer: ArrayBuffer, fileName: string) {
+  try {
+    return evaluateMidiDifficultyAuto(buffer).roundedScore
+  } catch (error) {
+    console.warn('[Song Import] Không thể tự đánh giá độ khó:', fileName, error)
+    return undefined
+  }
+}
+
 export async function createImportedSongCandidate(file: File, folderPath?: string): Promise<ImportedSongCandidate> {
   const kind = getSupportedSongFileKind(file.name)
   if (!kind) throw new Error('Unsupported song file')
@@ -71,6 +82,7 @@ export async function createImportedSongCandidate(file: File, folderPath?: strin
     const buffer = await file.arrayBuffer()
     const playbackHash = await computeMidiHash(buffer)
     const { midi, notes, duration } = summarizeMidi(buffer)
+    const difficulty = evaluateImportDifficulty(buffer, file.name)
     return {
       kind,
       title,
@@ -81,6 +93,7 @@ export async function createImportedSongCandidate(file: File, folderPath?: strin
       duration,
       trackCount: midi.header.trackCount,
       noteCount: notes.length,
+      difficulty,
     }
   }
 
@@ -93,6 +106,7 @@ export async function createImportedSongCandidate(file: File, folderPath?: strin
   const midiBuffer = musicXmlData !== undefined ? await createMidiCacheFromMusicXml(musicXmlData) : await createMidiCacheFromCompressedMusicXml(sourceBuffer)
   const playbackHash = await computeMidiHash(midiBuffer)
   const { midi, notes, duration } = summarizeMidi(midiBuffer)
+  const difficulty = evaluateImportDifficulty(midiBuffer, file.name)
 
   return {
     kind,
@@ -107,5 +121,6 @@ export async function createImportedSongCandidate(file: File, folderPath?: strin
     duration,
     trackCount: midi.header.trackCount,
     noteCount: notes.length,
+    difficulty,
   }
 }

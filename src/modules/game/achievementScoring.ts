@@ -24,6 +24,7 @@ export function calculateAchievementBreakdown(score: {
   strayNotes: number
   missedNotes: number
   wrongNotes: number
+  averageSpeed?: number
 }, handSelection: HandSelection, failed = false): AchievementBreakdownScore {
   const weights = achievementWeightsFor(handSelection)
   const max = achievementMaxFor(handSelection)
@@ -33,9 +34,8 @@ export function calculateAchievementBreakdown(score: {
   const notesRatio = totalNotes > 0 ? Math.max(0, Math.min(1, (score.notesUserActuallyPlayed - mistakes) / totalNotes)) : 0
   const perfectHoldPoints = score.notesUserActuallyPlayed * DEFAULT_SCORING_CONFIG.pointScale
   const holdRatio = perfectHoldPoints > 0 ? Math.min(1, score.rawPoints / perfectHoldPoints) : 0
-  const totalErrors = score.strayNotes + score.wrongNotes + score.missedNotes
-  const baseSpeedRatio = possibleNotes > 0 ? (score.rawPoints / Math.max(1, possibleNotes * DEFAULT_SCORING_CONFIG.pointScale)) : 0
-  const speedRatio = Math.max(0, Math.min(1, baseSpeedRatio * Math.max(0.25, 1 - totalErrors * 0.03)))
+  const actualSpeedRatio = score.averageSpeed !== undefined ? score.averageSpeed / 100 : 0
+  const speedRatio = Math.max(0, Math.min(1, actualSpeedRatio))
   const notes = roundAchievementScore(weights.notes * notesRatio)
   const hold = roundAchievementScore(weights.hold * holdRatio)
   const speed = roundAchievementScore(weights.speed * speedRatio)
@@ -63,6 +63,7 @@ export function entryAchievementBreakdown(entry: ModeScoreEntry): AchievementBre
     strayNotes: entry.strayNotes ?? 0,
     missedNotes: entry.missedNotes ?? entry.errors ?? 0,
     wrongNotes: entry.wrongNotes ?? 0,
+    averageSpeed: entry.averageSpeed,
   }
   return calculateAchievementBreakdown(score, entry.handSelection, entry.failed)
 }

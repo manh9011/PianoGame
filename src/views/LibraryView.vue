@@ -25,6 +25,8 @@ const selectedSong = computed(() => library.selectedSong)
 const visibleSongCount = computed(() => library.sortedSongs.length)
 const musicXmlDownloadingSongId = ref<string | null>(null)
 const downloadMenuOpen = ref(false)
+const missingDifficultyPromptShown = ref(false)
+const autoEvaluatingMissingDifficulty = ref(false)
 
 watch(
   () => settings.songsSortByRecentlyImported,
@@ -172,9 +174,40 @@ function seekPreviewFromPointer(event: MouseEvent) {
   library.seekPreviewToProgress((event.clientX - rect.left) / rect.width)
 }
 
+async function promptAutoEvaluateMissingDifficulty() {
+  if (missingDifficultyPromptShown.value || autoEvaluatingMissingDifficulty.value) return
+  const missingSongs = library.songs.filter(song => song.difficulty == null)
+  if (!missingSongs.length) return
+  missingDifficultyPromptShown.value = true
+  if (!confirm(t('library.autoDifficultyMissingConfirm', { n: missingSongs.length }))) return
+
+  autoEvaluatingMissingDifficulty.value = true
+  toastStore.showLoading(t('library.autoDifficultyBatchProgress', { current: 0, total: missingSongs.length }))
+  toastStore.updateProgress(0)
+
+  try {
+    const result = await library.evaluateSongDifficulties(missingSongs.map(song => song.id), progress => {
+      toastStore.showLoading(t('library.autoDifficultyBatchProgress', { current: progress.current, total: progress.total }))
+      toastStore.updateProgress(progress.total ? Math.round((progress.current / progress.total) * 100) : 100)
+    })
+
+    if (result.failed.length) {
+      toastStore.showError(t('library.autoDifficultyBatchPartialFailed', { completed: result.completed, failed: result.failed.length }))
+    } else {
+      toastStore.showSuccess(t('library.autoDifficultyBatchSuccess', { count: result.completed }))
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    toastStore.showError(t('library.autoDifficultyBatchFailed', { message }))
+  } finally {
+    autoEvaluatingMissingDifficulty.value = false
+  }
+}
+
 onMounted(() => {
   if (settings.libraryAutoPreviewEnabled) startPreview(selectedSong.value)
   window.addEventListener('click', closeDownloadMenu)
+  void promptAutoEvaluateMissingDifficulty()
 })
 
 onBeforeUnmount(() => {

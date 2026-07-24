@@ -205,11 +205,14 @@ export function judgementLabel(judgement?: TimingJudgement) {
   return ''
 }
 
+export function actualSpeedFactor(s: ScoreState) {
+  return s.speedTracking.playedRealUs > 0 ? s.speedTracking.playedSongUs / s.speedTracking.playedRealUs : 1
+}
+
 export function effectiveSpeedFactor(s: ScoreState) {
-  const baseFactor = s.speedTracking.playedRealUs > 0 ? s.speedTracking.playedSongUs / s.speedTracking.playedRealUs : 1
   const totalErrors = s.strayNotes + s.wrongNotes + s.missedNotes
   const errorPenalty = Math.max(0.25, 1 - totalErrors * 0.03)
-  return baseFactor * errorPenalty
+  return actualSpeedFactor(s) * errorPenalty
 }
 
 function refreshSpeedIntegral(s: ScoreState) {
@@ -532,7 +535,7 @@ export function accuracy(s: ScoreState) {
 }
 
 export function averageSpeed(s: ScoreState) {
-  if (s.speedTracking.playedRealUs > 0) return Math.round(effectiveSpeedFactor(s) * 100)
+  if (s.speedTracking.playedRealUs > 0) return Math.round(actualSpeedFactor(s) * 100)
   return s.notesUserCouldHavePlayed ? Math.round(s.speedIntegral / s.notesUserCouldHavePlayed) : 0
 }
 
