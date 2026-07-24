@@ -9,6 +9,7 @@ import { useSettingsStore } from '../stores/settingsStore'
 import { PLAY_MODE_CONFIGS, type HandSelection, type PlayMode } from '../modules/game/playSession'
 import { achievementFromHistory, entryAchievementBreakdown, topAchievementAttempts } from '../modules/game/achievementScoring'
 import { achievementColorStyle } from '../modules/game/achievementColors'
+import { trackSelectionKeyForTracks } from '../modules/game/scoreKeys'
 import { HAND_SELECTION_COLORS } from '../modules/game/handAssignment'
 import type { ModeScoreEntry } from '../types/profile'
 import { formatDateTime } from '../i18n/formatters'
@@ -56,14 +57,14 @@ const selectedTitle = computed(() => mode.value === 'listen' ? t(modeTitleKeys.l
 const selectedScoreEntries = computed<ModeScoreEntry[]>(() => {
   const songId = player.song?.id
   if (!songId) return []
-  return (profiles.activeProfile.scoresByMode[mode.value] ?? [])
-    .filter(entry => entry.songId === songId && entry.handSelection === handSelection.value)
+  return profiles.scoreEntriesFor(songId, mode.value, handSelection.value, currentTrackSelectionKey.value)
 })
 const selectedAchievementBreakdown = computed(() => achievementFromHistory(selectedScoreEntries.value))
 const selectedAchievementScore = computed(() => selectedAchievementBreakdown.value?.total ?? 0)
 const selectedBestGameplay = computed(() => formatScore(selectedAchievementScore.value))
 const breakdownAttempts = computed(() => topAchievementAttempts(selectedScoreEntries.value))
 const needsTrackConfig = computed(() => player.session?.needsTrackConfiguration ?? false)
+const currentTrackSelectionKey = computed(() => trackSelectionKeyForTracks(player.session?.tracks))
 const chartEntries = computed<ModeScoreEntry[]>(() => selectedScoreEntries.value.slice().sort((a, b) => a.playedAt - b.playedAt))
 const scoreRows = computed<ModeScoreEntry[]>(() => {
   const entries = selectedScoreEntries.value.slice()
@@ -141,7 +142,7 @@ onMounted(async () => {
   const celebration = profiles.lastAchievementCelebration
   if (celebration?.songId === song.id) {
     selectMode(celebration.mode, celebration.handSelection)
-    achievementCelebration.value = profiles.consumeAchievementCelebration(song.id, celebration.mode, celebration.handSelection)
+    achievementCelebration.value = profiles.consumeAchievementCelebration(song.id, celebration.mode, celebration.handSelection, currentTrackSelectionKey.value)
     if (achievementCelebration.value) animateAchievementScore(achievementCelebration.value)
   }
 })
@@ -158,7 +159,7 @@ function selectMode(nextMode: PlayMode, nextHand: HandSelection = handSelection.
 function scoreEntry(nextMode: PlayMode, nextHand: HandSelection) {
   const songId = player.song?.id
   if (!songId || nextMode === 'listen') return undefined
-  return profiles.bestScoreFor(songId, nextMode, nextHand)
+  return profiles.bestScoreFor(songId, nextMode, nextHand, currentTrackSelectionKey.value)
 }
 
 function achievementKey(nextMode: PlayMode, nextHand: HandSelection) {
@@ -171,9 +172,7 @@ function scoreValue(nextMode: PlayMode, nextHand: HandSelection) {
   if (animated !== undefined) return animated
   const songId = player.song?.id
   if (!songId || nextMode === 'listen') return 0
-  const entries = (profiles.activeProfile.scoresByMode[nextMode] ?? [])
-    .filter(entry => entry.songId === songId && entry.handSelection === nextHand)
-  return achievementFromHistory(entries)?.total ?? 0
+  return achievementFromHistory(profiles.scoreEntriesFor(songId, nextMode, nextHand, currentTrackSelectionKey.value))?.total ?? 0
 }
 
 function animateAchievementScore(celebration: AchievementCelebrationState) {
@@ -245,6 +244,7 @@ async function testAchievementCelebration() {
     songId,
     mode: testMode,
     handSelection: testHand,
+    trackSelectionKey: currentTrackSelectionKey.value,
     from,
     to,
     playedAt: Date.now(),

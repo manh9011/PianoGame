@@ -1,4 +1,6 @@
-import type { UserProfile } from '../../types/profile'
+import type { ModeScoreEntry, UserProfile } from '../../types/profile'
+import { achievementFromHistory } from '../game/achievementScoring'
+import { isBetterModeScore, normalizeTrackSelectionKey, scoreBucketKey, trackSelectionKeyForTracks } from '../game/scoreKeys'
 import { get, getAll, put } from '../storage/indexedDb'
 import { STORAGE_KEYS } from './storageKeys'
 
@@ -18,17 +20,52 @@ export function createDefaultProfile(name = 'Người chơi'): UserProfile {
   }
 }
 
+function normalizeScoresByMode(scoresByMode: Partial<UserProfile['scoresByMode']>, trackSettingsBySongId: UserProfile['trackSettingsBySongId']) {
+  const normalized: UserProfile['scoresByMode'] = {}
+  for (const [mode, entries] of Object.entries(scoresByMode)) {
+    normalized[mode as keyof UserProfile['scoresByMode']] = (entries ?? []).map(entry => ({
+      ...entry,
+      trackSelectionKey: normalizeTrackSelectionKey(entry.trackSelectionKey ?? trackSelectionKeyForTracks(trackSettingsBySongId[entry.songId]?.tracks)),
+    }))
+  }
+  return normalized
+}
+
+function rebuildBestScoresBySongMode(scoresByMode: UserProfile['scoresByMode']) {
+  const bestScoresBySongMode: UserProfile['bestScoresBySongMode'] = {}
+  for (const entries of Object.values(scoresByMode)) {
+    for (const entry of entries ?? []) {
+      const sameBucketEntries = entries.filter(item =>
+        item.songId === entry.songId
+        && item.handSelection === entry.handSelection
+        && normalizeTrackSelectionKey(item.trackSelectionKey) === normalizeTrackSelectionKey(entry.trackSelectionKey),
+      )
+      const achievementBreakdown = achievementFromHistory(sameBucketEntries)
+      const achievementEntry: ModeScoreEntry = achievementBreakdown
+        ? { ...entry, score: achievementBreakdown.total, achievementBreakdown }
+        : entry
+      const key = scoreBucketKey(entry.songId, achievementEntry)
+      if (isBetterModeScore(achievementEntry, bestScoresBySongMode[key])) {
+        bestScoresBySongMode[key] = achievementEntry
+      }
+    }
+  }
+  return bestScoresBySongMode
+}
+
 function normalizeProfile(profile: Partial<UserProfile>): UserProfile {
+  const trackSettingsBySongId = profile.trackSettingsBySongId ?? {}
+  const scoresByMode = normalizeScoresByMode(profile.scoresByMode ?? {}, trackSettingsBySongId)
   return {
     id: profile.id || makeId(),
     name: profile.name || 'Người chơi',
     createdAt: profile.createdAt || Date.now(),
     recentSongIds: profile.recentSongIds ?? [],
-    bestScoresBySongMode: profile.bestScoresBySongMode ?? {},
-    scoresByMode: profile.scoresByMode ?? {},
+    bestScoresBySongMode: rebuildBestScoresBySongMode(scoresByMode),
+    scoresByMode,
     loopRegionsBySongId: profile.loopRegionsBySongId ?? {},
     fingeringsBySongId: profile.fingeringsBySongId ?? {},
-    trackSettingsBySongId: profile.trackSettingsBySongId ?? {},
+    trackSettingsBySongId,
   }
 }
 

@@ -39,8 +39,8 @@ const selectedBest = computed(() => scoreEntry(mode.value, handSelection.value))
 const scoreRows = computed<ModeScoreEntry[]>(() => {
   const songId = player.song?.id
   if (!songId) return []
-  return (profiles.activeProfile.scoresByMode[mode.value] ?? [])
-    .filter(entry => entry.songId === songId && entry.handSelection === handSelection.value)
+  return profiles.scoreEntriesFor(songId, mode.value, handSelection.value)
+    .slice()
     .sort((a, b) => b.score - a.score || b.playedAt - a.playedAt)
 })
 

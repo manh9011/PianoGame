@@ -1,5 +1,6 @@
 import type { AchievementBreakdownScore } from '../../types/profile'
 import { achievementMaxFor, achievementWeightsFor, calculateAchievementBreakdown } from './achievementScoring'
+import { trackSelectionKeyForTracks } from './scoreKeys'
 import { isPlayableNote } from './hitDetection'
 import type { PlaySession } from './playSession'
 import type { ScoreState } from './scoring'
@@ -12,6 +13,7 @@ export interface SongPlayStats extends ScoreState {
   perfect: boolean
   mode: PlaySession['mode']
   handSelection: PlaySession['handSelection']
+  trackSelectionKey: string
   failed: boolean
   failureReason?: PlaySession['failureReason']
   playedAt: number
@@ -78,6 +80,7 @@ export function summarizeStats(score: ScoreState, session: PlaySession): SongPla
     perfect: scoringEnabled ? isPerfect(score) && !session.failed : false,
     mode: session.mode,
     handSelection: session.handSelection,
+    trackSelectionKey: trackSelectionKeyForTracks(session.tracks),
     failed: session.failed,
     failureReason: session.failureReason,
     playedAt: Date.now(),

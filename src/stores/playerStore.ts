@@ -1002,6 +1002,18 @@ export const usePlayerStore = defineStore('player', {
     setTrackRole(trackId: number, role: TrackRole) {
       const session = this.session
       if (!session) return
+      if (this.song?.id) {
+        useProfileStore().assignLegacyScoresToTrackSelection(this.song.id, session.tracks.map(track => ({
+          trackId: track.trackId,
+          mode: track.mode,
+          color: track.color,
+          hitColor: track.hitColor,
+          blackColor: track.blackColor,
+          handAssignment: track.handAssignment,
+          role: track.role,
+          instrumentProgram: track.instrumentProgram,
+        })))
+      }
       const track = session.tracks.find(t => t.trackId === trackId)
       if (!track) return
       track.role = role
@@ -1016,6 +1028,18 @@ export const usePlayerStore = defineStore('player', {
     setTrackHandAssignment(trackId: number, hand: 'left' | 'right' | undefined) {
       const session = this.session
       if (!session) return
+      if (this.song?.id) {
+        useProfileStore().assignLegacyScoresToTrackSelection(this.song.id, session.tracks.map(track => ({
+          trackId: track.trackId,
+          mode: track.mode,
+          color: track.color,
+          hitColor: track.hitColor,
+          blackColor: track.blackColor,
+          handAssignment: track.handAssignment,
+          role: track.role,
+          instrumentProgram: track.instrumentProgram,
+        })))
+      }
       const track = session.tracks.find(t => t.trackId === trackId)
       if (!track) return
       track.handAssignment = hand

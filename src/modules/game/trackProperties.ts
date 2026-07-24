@@ -61,14 +61,16 @@ export function isRoleIncludedInSheet(role: TrackRole | undefined): role is Hand
   return role === 'left' || role === 'right'
 }
 
-export function getSheetTrackIds(tracks: TrackProperties[]): number[] {
+type SheetTrackSelectionSource = Array<Pick<TrackProperties, 'trackId' | 'role'>>
+
+export function getSheetTrackIds(tracks: SheetTrackSelectionSource): number[] {
   return tracks
     .filter(track => isRoleIncludedInSheet(track.role))
     .map(track => track.trackId)
     .sort((a, b) => a - b)
 }
 
-export function getSheetTrackSelectionKey(tracks: TrackProperties[]): string {
+export function getSheetTrackSelectionKey(tracks: SheetTrackSelectionSource): string {
   return tracks
     .filter(track => isRoleIncludedInSheet(track.role))
     .map(track => `${track.trackId}:${track.role}`)

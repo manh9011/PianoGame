@@ -16,6 +16,7 @@ export interface ModeScoreEntry {
   songId: string
   mode: PlayMode
   handSelection: HandSelection
+  trackSelectionKey?: string
   score: number
   gameplayPoints?: number
   achievementBreakdown?: AchievementBreakdownScore
