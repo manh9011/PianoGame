@@ -1,3 +1,4 @@
+import type { TrackMode, TrackRole, HandAssignment } from '../modules/game/trackProperties'
 import type { FailureReason, HandSelection, PlayMode } from '../modules/game/playSession'
 
 export interface AchievementBreakdownScore {
@@ -57,6 +58,22 @@ export interface StoredSongFingering {
   updatedAt: number
 }
 
+export interface StoredTrackProperties {
+  trackId: number
+  mode: TrackMode
+  color: string
+  hitColor?: string
+  blackColor?: string
+  handAssignment?: HandAssignment
+  role?: TrackRole
+  instrumentProgram: number
+}
+
+export interface StoredSongTrackSettings {
+  tracks: StoredTrackProperties[]
+  updatedAt: number
+}
+
 export interface UserProfile {
   id: string
   name: string
@@ -66,4 +83,5 @@ export interface UserProfile {
   scoresByMode: Partial<Record<PlayMode, ModeScoreEntry[]>>
   loopRegionsBySongId: Record<string, StoredLoopRegion>
   fingeringsBySongId: Record<string, StoredSongFingering>
+  trackSettingsBySongId: Record<string, StoredSongTrackSettings>
 }

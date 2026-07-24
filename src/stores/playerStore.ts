@@ -5,7 +5,7 @@ import { parseMidi } from '../modules/midi/midiParser'
 import { translateNotes } from '../modules/midi/midiNoteTranslator'
 import type { MidiBookmarkSource } from '../modules/midi/midiTypes'
 import { buildTempoMap, pulseToMicroseconds } from '../modules/midi/midiTempo'
-import { createDefaultTrackProperties, isTrackRoleComplete, resolveTrackModeForSession, roleToHandAssignment, TRACK_ROLE_COLORS, type TrackMode, type TrackRole } from '../modules/game/trackProperties'
+import { createDefaultTrackProperties, isTrackRoleComplete, resolveTrackModeForSession, roleToHandAssignment, TRACK_ROLE_COLORS, type TrackMode, type TrackProperties, type TrackRole } from '../modules/game/trackProperties'
 import { PLAY_MODE_CONFIGS, clampShowDuration, clampSpeed, createPlaySession, type ConfigureSessionOptions, type FailureReason, type LoopState, type PlaySession, type SessionNote } from '../modules/game/playSession'
 import { getKeyboardRange } from '../modules/render/keyboardRange'
 import { getKeySignatureAccidentals } from '../modules/render/pianoLabels'
@@ -146,6 +146,49 @@ function restoreSavedFingering(songId: string, session: PlaySession) {
       fingerCost: assignment.cost,
     }
   })
+}
+
+function persistSessionTrackSettings(songId: string | undefined, session: PlaySession) {
+  if (!songId) return
+  useProfileStore().saveTrackSettings(songId, session.tracks.map(track => ({
+    trackId: track.trackId,
+    mode: track.mode,
+    color: track.color,
+    hitColor: track.hitColor,
+    blackColor: track.blackColor,
+    handAssignment: track.handAssignment,
+    role: track.role,
+    instrumentProgram: track.instrumentProgram,
+  })))
+}
+
+function restoreSavedTrackSettings(songId: string, session: PlaySession) {
+  const saved = useProfileStore().trackSettingsFor(songId)
+  if (!saved?.tracks.length) return
+  const byTrackId = new Map(saved.tracks.map(track => [track.trackId, track]))
+  session.tracks = session.tracks.map(track => {
+    const savedTrack = byTrackId.get(track.trackId)
+    if (!savedTrack) return track
+    return {
+      ...track,
+      mode: savedTrack.mode,
+      color: savedTrack.color,
+      hitColor: savedTrack.hitColor ?? track.hitColor,
+      blackColor: savedTrack.blackColor ?? track.blackColor,
+      handAssignment: savedTrack.handAssignment,
+      role: savedTrack.role,
+      instrumentProgram: savedTrack.instrumentProgram,
+    }
+  })
+  for (const track of session.tracks) applyTrackRoleToNotes(session, track.trackId, track.role)
+  session.needsTrackConfiguration = session.tracks.some(track => !isTrackRoleComplete(track))
+}
+
+function updateTrack(session: PlaySession | null, trackId: number, updater: (track: TrackProperties) => void) {
+  const track = session?.tracks.find(item => item.trackId === trackId)
+  if (!session || !track) return false
+  updater(track)
+  return true
 }
 
 function clearActiveNoteMetadata(session: PlaySession) {
@@ -315,6 +358,7 @@ export const usePlayerStore = defineStore('player', {
       const keySignatures = createSessionKeySignatures(midi, tempoMap)
       this.song = song
       this.session = createPlaySession(notes, tracks, { speed, showDuration, octaveShift, tempoMap, measureGridUs, metronomeBeatGrid, bookmarks, keySignatures, needsTrackConfiguration: needsManualAssignment && tracks.some(track => !isTrackRoleComplete(track)), durationUs: duration })
+      restoreSavedTrackSettings(song.id, this.session)
       this.refreshKeyboardRange()
       this.stats = null
       this.performanceAutoPlay = false
@@ -940,14 +984,20 @@ export const usePlayerStore = defineStore('player', {
         this.fingeringGenerating = false
       }
     },
-    setTrackMode(trackId: number, mode: TrackMode) { const track = this.session?.tracks.find(t => t.trackId === trackId); if (track) track.mode = mode },
+    setTrackMode(trackId: number, mode: TrackMode) {
+      const session = this.session
+      if (!session || !updateTrack(session, trackId, track => { track.mode = mode })) return
+      persistSessionTrackSettings(this.song?.id, session)
+    },
     setTrackColor(trackId: number, color: string) {
-      const track = this.session?.tracks.find(t => t.trackId === trackId)
-      if (track) track.color = color
+      const session = this.session
+      if (!session || !updateTrack(session, trackId, track => { track.color = color })) return
+      persistSessionTrackSettings(this.song?.id, session)
     },
     setTrackInstrument(trackId: number, program: number) {
-      const track = this.session?.tracks.find(t => t.trackId === trackId)
-      if (track) track.instrumentProgram = program
+      const session = this.session
+      if (!session || !updateTrack(session, trackId, track => { track.instrumentProgram = program })) return
+      persistSessionTrackSettings(this.song?.id, session)
     },
     setTrackRole(trackId: number, role: TrackRole) {
       const session = this.session
@@ -961,6 +1011,7 @@ export const usePlayerStore = defineStore('player', {
       applyTrackRoleToNotes(session, trackId, role)
       this.refreshKeyboardRange()
       session.needsTrackConfiguration = session.tracks.some(t => !isTrackRoleComplete(t))
+      persistSessionTrackSettings(this.song?.id, session)
     },
     setTrackHandAssignment(trackId: number, hand: 'left' | 'right' | undefined) {
       const session = this.session
@@ -973,6 +1024,7 @@ export const usePlayerStore = defineStore('player', {
       applyTrackRoleToNotes(session, trackId, track.role)
       this.refreshKeyboardRange()
       session.needsTrackConfiguration = session.tracks.some(t => !isTrackRoleComplete(t))
+      persistSessionTrackSettings(this.song?.id, session)
     },
     async startTrackPreview(trackId: number, outputId = '') {
       const session = this.session

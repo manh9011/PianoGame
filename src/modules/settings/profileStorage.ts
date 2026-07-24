@@ -14,6 +14,7 @@ export function createDefaultProfile(name = 'Người chơi'): UserProfile {
     scoresByMode: {},
     loopRegionsBySongId: {},
     fingeringsBySongId: {},
+    trackSettingsBySongId: {},
   }
 }
 
@@ -27,6 +28,7 @@ function normalizeProfile(profile: Partial<UserProfile>): UserProfile {
     scoresByMode: profile.scoresByMode ?? {},
     loopRegionsBySongId: profile.loopRegionsBySongId ?? {},
     fingeringsBySongId: profile.fingeringsBySongId ?? {},
+    trackSettingsBySongId: profile.trackSettingsBySongId ?? {},
   }
 }
 

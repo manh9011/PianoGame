@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import type { ModeScoreEntry, StoredFingeringAssignment, UserProfile } from '../types/profile'
+import type { ModeScoreEntry, StoredFingeringAssignment, StoredTrackProperties, UserProfile } from '../types/profile'
 import { achievementFromHistory } from '../modules/game/achievementScoring'
 import type { SongPlayStats } from '../modules/game/songStatistics'
 import { createDefaultProfile, loadProfiles, saveProfiles, loadActiveProfileId, saveActiveProfileId } from '../modules/settings/profileStorage'
@@ -83,6 +83,15 @@ export const useProfileStore = defineStore('profiles', {
       const p = this.activeProfile
       p.fingeringsBySongId ??= {}
       p.fingeringsBySongId[songId] = { assignments, handSize, updatedAt: Date.now() }
+      this.persist()
+    },
+    trackSettingsFor(songId: string) {
+      return this.activeProfile.trackSettingsBySongId?.[songId]
+    },
+    saveTrackSettings(songId: string, tracks: StoredTrackProperties[]) {
+      const p = this.activeProfile
+      p.trackSettingsBySongId ??= {}
+      p.trackSettingsBySongId[songId] = { tracks, updatedAt: Date.now() }
       this.persist()
     },
     recordScore(songId: string, stats: SongPlayStats) {

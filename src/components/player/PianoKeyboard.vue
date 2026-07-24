@@ -5,6 +5,7 @@ import { useSettingsStore } from '../../stores/settingsStore'
 import { createPianoKeys, WHITE_KEY_COUNT, type PianoKey } from '../../modules/render/pianoGeometry'
 import { getKeyboardLabel, getVirtualPianoNoteIdFromKey } from '../../modules/render/pianoLabels'
 import { HAND_COLORS } from '../../modules/game/handAssignment'
+import { TRACK_INVISIBLE_COLOR } from '../../modules/game/trackProperties'
 import { getKeyboardRange, isNoteInRange, type KeyboardRange } from '../../modules/render/keyboardRange'
 import { CanvasSpriteCache, createSpriteCanvas } from '../../modules/render/canvasSpriteCache'
 
@@ -64,15 +65,34 @@ function keyRect(key: PianoKey): KeyRect {
   }
 }
 
+function trackForId(trackId: number | undefined) {
+  const session = player.session
+  return session?.tracks.find(track => track.trackId === trackId) ?? null
+}
+
+function isVisibleTrackId(trackId: number | undefined) {
+  const track = trackForId(trackId)
+  return !track || track.color !== TRACK_INVISIBLE_COLOR
+}
+
 function active(noteId: number) {
   const session = player.session
-  return Boolean(session?.activeNotes.has(noteId) || session?.autoActiveNotes.has(noteId))
+  return Boolean(
+    (session?.activeNotes.has(noteId) && isVisibleTrackId(session.activeNoteTrackIds.get(noteId))) ||
+    (session?.autoActiveNotes.has(noteId) && isVisibleTrackId(session.autoActiveNoteTrackIds.get(noteId)))
+  )
 }
 
 function notePressCount(noteId: number) {
   const session = player.session
   if (!session) return 0
-  return (session.activeNotePressCounts.get(noteId) ?? 0) + (session.autoActiveNotePressCounts.get(noteId) ?? 0)
+  const inputPressCount = isVisibleTrackId(session.activeNoteTrackIds.get(noteId))
+    ? session.activeNotePressCounts.get(noteId) ?? 0
+    : 0
+  const autoPressCount = isVisibleTrackId(session.autoActiveNoteTrackIds.get(noteId))
+    ? session.autoActiveNotePressCounts.get(noteId) ?? 0
+    : 0
+  return inputPressCount + autoPressCount
 }
 
 function updatePressFlashes(nowMs: number) {
@@ -777,6 +797,7 @@ function activeStateKey() {
     [...session.autoActiveNotes].sort((a, b) => a - b).join(','),
     [...session.activeNotePressCounts].sort((a, b) => a[0] - b[0]).map(([noteId, count]) => `${noteId}:${count}`).join(','),
     [...session.autoActiveNotePressCounts].sort((a, b) => a[0] - b[0]).map(([noteId, count]) => `${noteId}:${count}`).join(','),
+    session.tracks.map(track => `${track.trackId}:${track.color}`).join(','),
     settings.keyLabelMode === 'finger-hint' ? session.notes.map(note => note.finger ? `${note.id}:${note.finger}` : '').join(',') : '',
     session.melodyWaitNoteId ?? '',
     session.keyboardRange ? `${session.keyboardRange.lowNote}:${session.keyboardRange.highNote}` : '',
