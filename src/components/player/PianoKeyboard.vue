@@ -17,10 +17,17 @@ const canvasRef = ref<HTMLCanvasElement | null>(null)
 const pointerNotes = new Map<number, number>()
 const pressedComputerKeys = new Set<string>()
 const HIT_LINE_HEIGHT = 4
+const REPRESS_RELEASE_MS = 85
+const REPRESS_FLASH_MS = 130
+const pressFlashStartedAt = new Map<number, number>()
+const renderedPressCounts = new Map<number, number>()
+const renderedActiveNotes = new Map<number, boolean>()
+let pressFlashSession: object | null = null
 
 let resizeObserver: ResizeObserver | null = null
 let rafId: number | null = null
 let dirty = true
+let animatingPressFlash = false
 let logicalWidth = 0
 let logicalHeight = 0
 let pixelRatio = 1
@@ -60,6 +67,55 @@ function keyRect(key: PianoKey): KeyRect {
 function active(noteId: number) {
   const session = player.session
   return Boolean(session?.activeNotes.has(noteId) || session?.autoActiveNotes.has(noteId))
+}
+
+function notePressCount(noteId: number) {
+  const session = player.session
+  if (!session) return 0
+  return (session.activeNotePressCounts.get(noteId) ?? 0) + (session.autoActiveNotePressCounts.get(noteId) ?? 0)
+}
+
+function updatePressFlashes(nowMs: number) {
+  const session = player.session
+  if (pressFlashSession !== session) {
+    pressFlashSession = session
+    pressFlashStartedAt.clear()
+    renderedPressCounts.clear()
+    renderedActiveNotes.clear()
+  }
+  if (!session) return
+
+  for (const key of keys) {
+    const noteId = key.noteId
+    const isActive = active(noteId)
+    const count = notePressCount(noteId)
+    if (renderedPressCounts.get(noteId) !== count) {
+      const wasActive = renderedActiveNotes.get(noteId) ?? false
+      renderedPressCounts.set(noteId, count)
+      if (count > 0 && isActive) {
+        pressFlashStartedAt.set(noteId, wasActive ? nowMs : nowMs - REPRESS_RELEASE_MS)
+      }
+    }
+
+    const startedAt = pressFlashStartedAt.get(noteId)
+    if (!isActive || (startedAt !== undefined && nowMs - startedAt >= REPRESS_RELEASE_MS + REPRESS_FLASH_MS)) {
+      pressFlashStartedAt.delete(noteId)
+    }
+    renderedActiveNotes.set(noteId, isActive)
+  }
+}
+
+function forcingRelease(noteId: number, nowMs: number) {
+  const startedAt = pressFlashStartedAt.get(noteId)
+  return startedAt !== undefined && nowMs - startedAt < REPRESS_RELEASE_MS
+}
+
+function pressFlashStrength(noteId: number, nowMs: number) {
+  const startedAt = pressFlashStartedAt.get(noteId)
+  if (startedAt === undefined) return 0
+  const elapsedAfterRelease = nowMs - startedAt - REPRESS_RELEASE_MS
+  if (elapsedAfterRelease < 0) return 0
+  return Math.max(0, 1 - elapsedAfterRelease / REPRESS_FLASH_MS)
 }
 
 function activeColor(noteId: number) {
@@ -160,7 +216,7 @@ function roundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: num
   ctx.closePath()
 }
 
-function drawWhiteKey(ctx: CanvasRenderingContext2D, rect: KeyRect, isActive = active(rect.key.noteId), isDisabled = isKeyDisabled(rect.key.noteId)) {
+function drawWhiteKey(ctx: CanvasRenderingContext2D, rect: KeyRect, isActive = active(rect.key.noteId), isDisabled = isKeyDisabled(rect.key.noteId), pressFlash = 0) {
   const { key, x, y, width, height } = rect
   const drawX = x + 0.25
   const drawY = y - HIT_LINE_HEIGHT - 4
@@ -199,6 +255,16 @@ function drawWhiteKey(ctx: CanvasRenderingContext2D, rect: KeyRect, isActive = a
     roundedRect(ctx, drawX + 1, drawY + 1, Math.max(0, drawWidth - 2), drawHeight - 2, 3)
     ctx.fillStyle = glow
     ctx.fill()
+
+    if (pressFlash > 0) {
+      const flash = ctx.createLinearGradient(drawX, drawY, drawX, drawY + drawHeight)
+      flash.addColorStop(0, `rgba(255,255,255,${0.52 * pressFlash})`)
+      flash.addColorStop(0.45, `rgba(255,255,255,${0.22 * pressFlash})`)
+      flash.addColorStop(1, `rgba(255,255,255,${0.02 * pressFlash})`)
+      roundedRect(ctx, drawX + 1, drawY + 1, Math.max(0, drawWidth - 2), drawHeight - 2, 3)
+      ctx.fillStyle = flash
+      ctx.fill()
+    }
   } else if (isDisabled) {
     const shade = ctx.createLinearGradient(drawX, drawY, drawX, drawY + drawHeight)
     shade.addColorStop(0, 'rgba(0,0,0,0.22)')
@@ -240,7 +306,7 @@ function drawWhiteLabel(ctx: CanvasRenderingContext2D, rect: KeyRect, isActive =
   ctx.restore()
 }
 
-function drawBlackKey(ctx: CanvasRenderingContext2D, rect: KeyRect, isDown = active(rect.key.noteId), isDisabled = isKeyDisabled(rect.key.noteId)) {
+function drawBlackKey(ctx: CanvasRenderingContext2D, rect: KeyRect, isDown = active(rect.key.noteId), isDisabled = isKeyDisabled(rect.key.noteId), pressFlash = 0) {
   const { key, x, y, width, height } = rect
   const drawDown = isDown && !isDisabled
   const accent = activeColor(key.noteId)
@@ -383,6 +449,16 @@ function drawBlackKey(ctx: CanvasRenderingContext2D, rect: KeyRect, isDown = act
     ? 'rgba(255,255,255,0.08)'
     : isDisabled ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.14)'
   ctx.stroke()
+
+  if (drawDown && pressFlash > 0) {
+    pathRoundedRect(ctx, bx + 1, by + 1, Math.max(0, bw - 2), Math.max(0, bh - 2), 3)
+    const flash = ctx.createLinearGradient(bx, by, bx, by + bh)
+    flash.addColorStop(0, `rgba(255,255,255,${0.48 * pressFlash})`)
+    flash.addColorStop(0.42, `rgba(255,255,255,${0.18 * pressFlash})`)
+    flash.addColorStop(1, `rgba(255,255,255,${0.03 * pressFlash})`)
+    ctx.fillStyle = flash
+    ctx.fill()
+  }
 
   if (settings.showKeyLabels && (settings.keyLabelMode !== 'finger-hint' || drawDown)) drawBlackLabel(ctx, rect, drawDown)
 
@@ -625,6 +701,9 @@ function draw() {
   const ctx = canvas?.getContext('2d')
   if (!canvas || !ctx) return
   if (!logicalWidth || !logicalHeight) resizeCanvas()
+  const nowMs = performance.now()
+  updatePressFlashes(nowMs)
+  animatingPressFlash = false
 
   ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0)
   ctx.clearRect(0, 0, logicalWidth, logicalHeight)
@@ -634,7 +713,12 @@ function draw() {
   }
 
   const activeWhiteKeys = whiteKeys.filter(key => !isKeyDisabled(key.noteId) && active(key.noteId))
-  for (const key of activeWhiteKeys) drawWhiteKey(ctx, keyRect(key), true, false)
+  for (const key of activeWhiteKeys) {
+    const release = forcingRelease(key.noteId, nowMs)
+    const flash = release ? 0 : pressFlashStrength(key.noteId, nowMs)
+    if (release || flash > 0) animatingPressFlash = true
+    drawWhiteKey(ctx, keyRect(key), !release, false, flash)
+  }
 
   if (activeWhiteKeys.length > 0) {
     // Active white keys are drawn above the cached base, so restore the hit line and black-key layer on top.
@@ -650,10 +734,21 @@ function draw() {
       ctx.fillStyle = '#000'
       ctx.fill()
     }
-    for (const key of blackKeys) drawBlackKey(ctx, keyRect(key), active(key.noteId), isKeyDisabled(key.noteId))
+    for (const key of blackKeys) {
+      const isActive = active(key.noteId)
+      const release = isActive && forcingRelease(key.noteId, nowMs)
+      const flash = isActive && !release ? pressFlashStrength(key.noteId, nowMs) : 0
+      if (release || flash > 0) animatingPressFlash = true
+      drawBlackKey(ctx, keyRect(key), isActive && !release, isKeyDisabled(key.noteId), flash)
+    }
   } else {
     for (const key of blackKeys) {
-      if (!isKeyDisabled(key.noteId) && active(key.noteId)) drawBlackKey(ctx, keyRect(key), true, false)
+      if (!isKeyDisabled(key.noteId) && active(key.noteId)) {
+        const release = forcingRelease(key.noteId, nowMs)
+        const flash = release ? 0 : pressFlashStrength(key.noteId, nowMs)
+        if (release || flash > 0) animatingPressFlash = true
+        drawBlackKey(ctx, keyRect(key), !release, false, flash)
+      }
     }
   }
 
@@ -671,6 +766,7 @@ function drawFrame() {
   if (!dirty) return
   dirty = false
   draw()
+  if (animatingPressFlash) requestDraw()
 }
 
 function activeStateKey() {
@@ -679,6 +775,8 @@ function activeStateKey() {
   return [
     [...session.activeNotes].sort((a, b) => a - b).join(','),
     [...session.autoActiveNotes].sort((a, b) => a - b).join(','),
+    [...session.activeNotePressCounts].sort((a, b) => a[0] - b[0]).map(([noteId, count]) => `${noteId}:${count}`).join(','),
+    [...session.autoActiveNotePressCounts].sort((a, b) => a[0] - b[0]).map(([noteId, count]) => `${noteId}:${count}`).join(','),
     settings.keyLabelMode === 'finger-hint' ? session.notes.map(note => note.finger ? `${note.id}:${note.finger}` : '').join(',') : '',
     session.melodyWaitNoteId ?? '',
     session.keyboardRange ? `${session.keyboardRange.lowNote}:${session.keyboardRange.highNote}` : '',

@@ -48,9 +48,11 @@ export interface PlaySession {
   activeNotes: Set<number>
   activeNoteHands: Map<number, Hand>
   activeNoteTrackIds: Map<number, number>
+  activeNotePressCounts: Map<number, number>
   autoActiveNotes: Set<number>
   autoActiveNoteHands: Map<number, Hand>
   autoActiveNoteTrackIds: Map<number, number>
+  autoActiveNotePressCounts: Map<number, number>
   score: ScoreState
   currentUs: number
   finished: boolean
@@ -108,9 +110,11 @@ export function createPlaySession(notes: SessionNote[], tracks: TrackProperties[
     activeNotes: new Set(),
     activeNoteHands: new Map(),
     activeNoteTrackIds: new Map(),
+    activeNotePressCounts: new Map(),
     autoActiveNotes: new Set(),
     autoActiveNoteHands: new Map(),
     autoActiveNoteTrackIds: new Map(),
+    autoActiveNotePressCounts: new Map(),
     score: createScoreState(),
     currentUs: -5_500_000,
     finished: false,
@@ -145,9 +149,11 @@ export function applySessionOptions(session: PlaySession, options: ConfigureSess
   session.activeNotes.clear()
   session.activeNoteHands.clear()
   session.activeNoteTrackIds.clear()
+  session.activeNotePressCounts.clear()
   session.autoActiveNotes.clear()
   session.autoActiveNoteHands.clear()
   session.autoActiveNoteTrackIds.clear()
+  session.autoActiveNotePressCounts.clear()
   session.notes = session.notes.map(n => ({ ...n, state: 'waiting' }))
   session.tracks.forEach(track => { track.mode = resolveTrackModeForSession(track, options.mode) })
 }

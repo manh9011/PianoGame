@@ -161,6 +161,7 @@ export class AutoNotePlayer {
       session.autoActiveNotes.clear()
       session.autoActiveNoteHands.clear()
       session.autoActiveNoteTrackIds.clear()
+      session.autoActiveNotePressCounts.clear()
     }
     this.active.clear()
     this.activeByPitch.clear()
@@ -186,6 +187,7 @@ export class AutoNotePlayer {
     const entries = this.activeByPitch.get(noteId) ?? []
     entries.push({ hand, trackId })
     this.activeByPitch.set(noteId, entries)
+    session.autoActiveNotePressCounts.set(noteId, (session.autoActiveNotePressCounts.get(noteId) ?? 0) + 1)
     session.autoActiveNotes.add(noteId)
     session.autoActiveNoteHands.set(noteId, hand)
     session.autoActiveNoteTrackIds.set(noteId, trackId)

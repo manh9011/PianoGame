@@ -152,9 +152,11 @@ function clearActiveNoteMetadata(session: PlaySession) {
   session.activeNotes.clear()
   session.activeNoteHands.clear()
   session.activeNoteTrackIds.clear()
+  session.activeNotePressCounts.clear()
   session.autoActiveNotes.clear()
   session.autoActiveNoteHands.clear()
   session.autoActiveNoteTrackIds.clear()
+  session.autoActiveNotePressCounts.clear()
 }
 
 function getTrackSoundfont(session: PlaySession, trackId: number | undefined) {
@@ -519,6 +521,7 @@ export const usePlayerStore = defineStore('player', {
         this.session.activeNotes.clear()
         this.session.activeNoteHands.clear()
         this.session.activeNoteTrackIds.clear()
+        this.session.activeNotePressCounts.clear()
       }
     },
     unblockPlaybackOutput(force = false) {
@@ -1044,6 +1047,7 @@ export const usePlayerStore = defineStore('player', {
 
       const playableNoteId = noteId - session.octaveShift * 12
       const hit = session.mode === 'listen' ? null : findHit(session.notes, session.tracks, session.handSelection, playableNoteId, session.currentUs, session)
+      session.activeNotePressCounts.set(noteId, (session.activeNotePressCounts.get(noteId) ?? 0) + 1)
       session.activeNotes.add(noteId)
 
       if (hit) {

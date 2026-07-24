@@ -1,6 +1,6 @@
 [package]
 name = "pianogame"
-version = "0.1.1"
+version = "0.1.2"
 description = "PianoGame desktop app"
 authors = ["Lương Xuân Mạnh"]
 license = ""

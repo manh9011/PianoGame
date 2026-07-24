@@ -143,12 +143,14 @@ const titleStyle = computed(() => ({
 }
 
 .song-title-intro__title {
-  max-width: min(92vw, 1200px);
+  box-sizing: border-box;
+  max-width: min(96vw, 1240px);
+  padding: 0.16em 0.24em 0.26em;
   overflow: hidden;
   color: #ffffff;
   font-size: clamp(1.2rem, 2.7vw, 2.5rem);
   font-weight: 800;
-  line-height: 1.08;
+  line-height: 1.18;
   letter-spacing: 0.018em;
   text-align: center;
   text-overflow: ellipsis;
