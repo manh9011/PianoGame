@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { usePlayerStore } from '../stores/playerStore'
+import { useLibraryStore } from '../stores/libraryStore'
 import { useSettingsStore } from '../stores/settingsStore'
 import { isTrackSounded, type TrackMode, type TrackRole } from '../modules/game/trackProperties'
 import { getEmojiFontFamily, getInstrumentByProgram, getInstrumentEmoji } from '../modules/audio/gmInstrumentCatalog'
@@ -10,8 +11,10 @@ import ColorPickerDialog from '../components/player/dialogs/ColorPickerDialog.vu
 import TrackInstrumentDialog from '../components/player/dialogs/TrackInstrumentDialog.vue'
 import TrackRoleDialog from '../components/player/dialogs/TrackRoleDialog.vue'
 
+const route = useRoute()
 const router = useRouter()
 const { t } = useI18n()
+const library = useLibraryStore()
 const player = usePlayerStore()
 const settings = useSettingsStore()
 
@@ -86,9 +89,31 @@ function back() {
   router.push(`/mode-select/${hash}`)
 }
 
-if (!player.session || !player.song) {
-  router.replace('/mode-select')
-}
+onMounted(async () => {
+  const routeHash = route.params.hash as string | undefined
+  const fallbackHash = player.song?.playbackHash ?? player.song?.hash
+  const hash = routeHash ?? fallbackHash
+
+  if (!hash) {
+    router.replace('/library')
+    return
+  }
+
+  if (!routeHash) {
+    router.replace(`/track-settings/${hash}`)
+  }
+
+  const song = library.songByHash(hash)
+  if (!song) {
+    console.warn('Không tìm thấy bài hát với hash:', hash)
+    router.replace('/library')
+    return
+  }
+
+  if (!player.song || (player.song.playbackHash ?? player.song.hash) !== hash) {
+    await player.loadSong(song, settings.defaultSpeed, settings.showDuration, settings.octaveShift)
+  }
+})
 
 function positionPopup(event: MouseEvent, width: number, height: number) {
   const element = event.currentTarget as HTMLElement

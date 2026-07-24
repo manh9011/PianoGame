@@ -113,10 +113,17 @@ watch(mode, value => {
 })
 
 onMounted(async () => {
-  const hash = route.params.hash as string
+  const routeHash = route.params.hash as string | undefined
+  const fallbackHash = player.song?.playbackHash ?? player.song?.hash
+  const hash = routeHash ?? fallbackHash
+
   if (!hash) {
     router.replace('/library')
     return
+  }
+
+  if (!routeHash) {
+    router.replace(`/mode-select/${hash}`)
   }
 
   const song = library.songByHash(hash)

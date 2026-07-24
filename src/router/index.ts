@@ -11,8 +11,8 @@ export default createRouter({
   routes: [
     { path: '/', name: 'home', component: HomeView },
     { path: '/library', name: 'library', component: LibraryView },
-    { path: '/mode-select/:hash', name: 'mode-select', component: ModeSelectView },
-    { path: '/track-settings/:hash', name: 'track-settings', component: TrackSettingsView },
+    { path: '/mode-select/:hash?', name: 'mode-select', component: ModeSelectView },
+    { path: '/track-settings/:hash?', name: 'track-settings', component: TrackSettingsView },
     { path: '/play/:hash/:modeId', name: 'play', component: PlayView },
     {
       path: '/settings',

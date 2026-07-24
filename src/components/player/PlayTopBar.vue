@@ -54,7 +54,8 @@ const loopActive = computed(() => player.loopRegionConfigured)
 function back() {
   player.clock?.stop()
   player.autoPlayer.allNotesOff(player.session)
-  router.push(`/mode-select/${player.song?.hash}`)
+  const hash = player.song?.playbackHash ?? player.song?.hash
+  router.push(hash ? `/mode-select/${hash}` : '/library')
 }
 function seekToPreviousBookmark() { player.seekToPreviousBookmark() }
 function seekToNextBookmark() { player.seekToNextBookmark() }
