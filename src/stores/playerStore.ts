@@ -95,6 +95,7 @@ function applyTrackRoleToNotes(session: PlaySession, trackId: number, role: Trac
   const hand = handForRole(role)
   if (!hand) return
   session.notes = session.notes.map(note => note.trackId === trackId ? { ...note, hand } : note)
+  markKeyboardVisualChanged(session)
 }
 
 function applyFingeringAssignments(session: PlaySession, assignments: FingeringAssignment[]) {
@@ -110,6 +111,7 @@ function applyFingeringAssignments(session: PlaySession, assignments: FingeringA
       fingerCost: assignment.cost,
     }
   })
+  markFingeringChanged(session)
 }
 
 function toFingerNumber(value: number | null | undefined): FingerNumber | null {
@@ -146,6 +148,7 @@ function restoreSavedFingering(songId: string, session: PlaySession) {
       fingerCost: assignment.cost,
     }
   })
+  markFingeringChanged(session)
 }
 
 function persistSessionTrackSettings(songId: string | undefined, session: PlaySession) {
@@ -191,6 +194,15 @@ function updateTrack(session: PlaySession | null, trackId: number, updater: (tra
   return true
 }
 
+function markKeyboardVisualChanged(session: PlaySession) {
+  session.keyboardVisualVersion += 1
+}
+
+function markFingeringChanged(session: PlaySession) {
+  session.fingeringVersion += 1
+  markKeyboardVisualChanged(session)
+}
+
 function clearActiveNoteMetadata(session: PlaySession) {
   session.activeNotes.clear()
   session.activeNoteHands.clear()
@@ -200,6 +212,7 @@ function clearActiveNoteMetadata(session: PlaySession) {
   session.autoActiveNoteHands.clear()
   session.autoActiveNoteTrackIds.clear()
   session.autoActiveNotePressCounts.clear()
+  markKeyboardVisualChanged(session)
 }
 
 function getTrackSoundfont(session: PlaySession, trackId: number | undefined) {
@@ -424,25 +437,16 @@ export const usePlayerStore = defineStore('player', {
 
           if (session.mode === 'noteMemory' && !this.performanceAutoPlay) {
             const waitNote = measurePlaybackSpan(tickProfile, 'tick.noteMemoryWaitLookup', () => {
-              let scanned = 0
-              for (const note of session.notes) {
-                scanned += 1
-                if (
-                  isPlayableNote(note, session.tracks, session.handSelection, session) &&
-                  note.state === 'waiting' &&
-                  note.start <= state.currentUs
-                ) {
-                  addPlaybackCounter(tickProfile, 'noteMemoryWaitScanned', scanned)
-                  addPlaybackCounter(tickProfile, 'noteMemoryWaitFound')
-                  return note
-                }
-              }
-              addPlaybackCounter(tickProfile, 'noteMemoryWaitScanned', scanned)
-              return undefined
+              const earliestStart = findEarliestPlayableWaitingStart(session.notes, session.tracks, session.handSelection, session)
+              if (earliestStart === null || earliestStart > state.currentUs) return undefined
+              const chordNotes = collectChordAtStart(session.notes, session.tracks, session.handSelection, earliestStart, session)
+              if (chordNotes.length) addPlaybackCounter(tickProfile, 'noteMemoryWaitFound')
+              return chordNotes[0]
             })
             if (waitNote) {
               session.melodyWaitNoteId = waitNote.id
               session.melodyWaitStartedMs = nowMs
+              markKeyboardVisualChanged(session)
               session.currentUs = waitNote.start
               session.finished = false
               session.paused = true
@@ -566,6 +570,7 @@ export const usePlayerStore = defineStore('player', {
         this.session.activeNoteHands.clear()
         this.session.activeNoteTrackIds.clear()
         this.session.activeNotePressCounts.clear()
+        markKeyboardVisualChanged(this.session)
       }
     },
     unblockPlaybackOutput(force = false) {
@@ -677,6 +682,7 @@ export const usePlayerStore = defineStore('player', {
       session.finished = false
       this.stats = null
       if (session.modeConfig.scoringEnabled) trimScoreAfter(session.score, seekUs)
+      session.keyboardVisualVersion += 1
       session.notes = session.notes.map(note => {
         const outcome = session.score.noteOutcomes[note.id]
         let state: typeof note.state = outcome?.status ?? 'waiting'
@@ -948,6 +954,7 @@ export const usePlayerStore = defineStore('player', {
           fingerCost: validFinger ? note.fingerCost : undefined,
         }
       })
+      markFingeringChanged(session)
       persistSessionFingering(this.song?.id, session)
     },
     clearAllFingers() {
@@ -959,6 +966,7 @@ export const usePlayerStore = defineStore('player', {
         fingerSource: undefined,
         fingerCost: undefined,
       }))
+      markFingeringChanged(session)
       persistSessionFingering(this.song?.id, session)
     },
     async autoAssignFingers(handSize: HandSizePreset = 'M') {
@@ -987,11 +995,13 @@ export const usePlayerStore = defineStore('player', {
     setTrackMode(trackId: number, mode: TrackMode) {
       const session = this.session
       if (!session || !updateTrack(session, trackId, track => { track.mode = mode })) return
+      markKeyboardVisualChanged(session)
       persistSessionTrackSettings(this.song?.id, session)
     },
     setTrackColor(trackId: number, color: string) {
       const session = this.session
       if (!session || !updateTrack(session, trackId, track => { track.color = color })) return
+      markKeyboardVisualChanged(session)
       persistSessionTrackSettings(this.song?.id, session)
     },
     setTrackInstrument(trackId: number, program: number) {
@@ -1021,6 +1031,7 @@ export const usePlayerStore = defineStore('player', {
       if (role === 'left' || role === 'right') track.color = TRACK_ROLE_COLORS[role]
       track.mode = resolveTrackModeForSession(track, session.mode)
       applyTrackRoleToNotes(session, trackId, role)
+      markKeyboardVisualChanged(session)
       this.refreshKeyboardRange()
       session.needsTrackConfiguration = session.tracks.some(t => !isTrackRoleComplete(t))
       persistSessionTrackSettings(this.song?.id, session)
@@ -1046,6 +1057,7 @@ export const usePlayerStore = defineStore('player', {
       track.role = hand
       track.mode = resolveTrackModeForSession(track, session.mode)
       applyTrackRoleToNotes(session, trackId, track.role)
+      markKeyboardVisualChanged(session)
       this.refreshKeyboardRange()
       session.needsTrackConfiguration = session.tracks.some(t => !isTrackRoleComplete(t))
       persistSessionTrackSettings(this.song?.id, session)
@@ -1116,6 +1128,7 @@ export const usePlayerStore = defineStore('player', {
         session.activeNotes.delete(noteId)
         session.activeNoteHands.delete(noteId)
         session.activeNoteTrackIds.delete(noteId)
+        markKeyboardVisualChanged(session)
         stopHoldsForInput(session.score, noteId)
         this.inputSynth.noteOff(noteId)
         return
@@ -1130,6 +1143,7 @@ export const usePlayerStore = defineStore('player', {
         session.activeNoteHands.set(noteId, hit.hand)
         session.activeNoteTrackIds.set(noteId, hit.trackId)
       }
+      markKeyboardVisualChanged(session)
       void this.inputSynth.noteOn(String(noteId), noteId, 80, getTrackSoundfont(session, hit?.trackId))
       if (session.mode === 'listen') return
 
@@ -1157,6 +1171,7 @@ export const usePlayerStore = defineStore('player', {
         if (session.mode === 'noteMemory' && chordNotes.some(note => note.id === session.melodyWaitNoteId)) {
           session.melodyWaitNoteId = undefined
           session.melodyWaitStartedMs = undefined
+          markKeyboardVisualChanged(session)
           this.start()
         }
         return

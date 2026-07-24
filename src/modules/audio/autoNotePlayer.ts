@@ -156,12 +156,14 @@ export class AutoNotePlayer {
   }
 
   allNotesOff(session?: PlaySession | null) {
+    const hadActiveNotes = this.active.size > 0
     for (const note of this.active.values()) this.noteOff(note)
     if (session) {
       session.autoActiveNotes.clear()
       session.autoActiveNoteHands.clear()
       session.autoActiveNoteTrackIds.clear()
       session.autoActiveNotePressCounts.clear()
+      if (hadActiveNotes) session.keyboardVisualVersion += 1
     }
     this.active.clear()
     this.activeByPitch.clear()
@@ -191,6 +193,7 @@ export class AutoNotePlayer {
     session.autoActiveNotes.add(noteId)
     session.autoActiveNoteHands.set(noteId, hand)
     session.autoActiveNoteTrackIds.set(noteId, trackId)
+    session.keyboardVisualVersion += 1
   }
 
   private removeAutoActiveNote(session: PlaySession, noteId: number) {
@@ -202,11 +205,13 @@ export class AutoNotePlayer {
       session.autoActiveNotes.delete(noteId)
       session.autoActiveNoteHands.delete(noteId)
       session.autoActiveNoteTrackIds.delete(noteId)
+      session.keyboardVisualVersion += 1
       return
     }
     this.activeByPitch.set(noteId, entries)
     session.autoActiveNoteHands.set(noteId, current.hand)
     session.autoActiveNoteTrackIds.set(noteId, current.trackId)
+    session.keyboardVisualVersion += 1
   }
 
   private noteOn(note: SessionNote) {

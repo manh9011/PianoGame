@@ -8,6 +8,7 @@ import { HAND_COLORS } from '../../modules/game/handAssignment'
 import { TRACK_INVISIBLE_COLOR } from '../../modules/game/trackProperties'
 import { getKeyboardRange, isNoteInRange, type KeyboardRange } from '../../modules/render/keyboardRange'
 import { CanvasSpriteCache, createSpriteCanvas } from '../../modules/render/canvasSpriteCache'
+import type { SessionNote } from '../../modules/game/playSession'
 
 const keys = createPianoKeys()
 const whiteKeys = keys.filter(k => !k.black)
@@ -24,6 +25,9 @@ const pressFlashStartedAt = new Map<number, number>()
 const renderedPressCounts = new Map<number, number>()
 const renderedActiveNotes = new Map<number, boolean>()
 let pressFlashSession: object | null = null
+
+type NotesByPitchCache = { notes: SessionNote[]; fingeringVersion: number; byPitch: Map<number, SessionNote[]> }
+const notesByPitchCache = new WeakMap<object, NotesByPitchCache>()
 
 let resizeObserver: ResizeObserver | null = null
 let rafId: number | null = null
@@ -104,6 +108,10 @@ function updatePressFlashes(nowMs: number) {
     renderedActiveNotes.clear()
   }
   if (!session) return
+  if (settings.advancedReduceAnimations) {
+    pressFlashStartedAt.clear()
+    return
+  }
 
   for (const key of keys) {
     const noteId = key.noteId
@@ -148,17 +156,37 @@ function activeColor(noteId: number) {
   return HAND_COLORS[hand]
 }
 
+function notesByPitch() {
+  const session = player.session
+  if (!session) return null
+  const cached = notesByPitchCache.get(session)
+  if (cached?.notes === session.notes && cached.fingeringVersion === session.fingeringVersion) return cached.byPitch
+
+  const byPitch = new Map<number, SessionNote[]>()
+  for (const note of session.notes) {
+    if (!note.finger) continue
+    const list = byPitch.get(note.noteId) ?? []
+    list.push(note)
+    byPitch.set(note.noteId, list)
+  }
+  notesByPitchCache.set(session, { notes: session.notes, fingeringVersion: session.fingeringVersion, byPitch })
+  return byPitch
+}
+
 function activeFingerLabel(noteId: number) {
   const session = player.session
   if (!session || !active(noteId)) return null
   const playableNoteId = noteId - session.octaveShift * 12
-  const noteIds = new Set([noteId, playableNoteId])
+  const byPitch = notesByPitch()
+  const candidates = playableNoteId === noteId
+    ? byPitch?.get(noteId) ?? []
+    : [...(byPitch?.get(noteId) ?? []), ...(byPitch?.get(playableNoteId) ?? [])]
   const activeTrackId = session.autoActiveNoteTrackIds.get(noteId) ?? session.activeNoteTrackIds.get(noteId)
   const activeHand = session.autoActiveNoteHands.get(noteId) ?? session.activeNoteHands.get(noteId)
   let best: { finger: number; score: number } | null = null
 
-  for (const note of session.notes) {
-    if (!note.finger || !noteIds.has(note.noteId)) continue
+  for (const note of candidates) {
+    if (!note.finger) continue
     const overlapsCurrentTime = note.start <= session.currentUs && note.end >= session.currentUs
     const distance = overlapsCurrentTime
       ? 0
@@ -789,22 +817,17 @@ function drawFrame() {
   if (animatingPressFlash) requestDraw()
 }
 
-function activeStateKey() {
+function keyboardVisualKey() {
   const session = player.session
   if (!session) return ''
   return [
-    [...session.activeNotes].sort((a, b) => a - b).join(','),
-    [...session.autoActiveNotes].sort((a, b) => a - b).join(','),
-    [...session.activeNotePressCounts].sort((a, b) => a[0] - b[0]).map(([noteId, count]) => `${noteId}:${count}`).join(','),
-    [...session.autoActiveNotePressCounts].sort((a, b) => a[0] - b[0]).map(([noteId, count]) => `${noteId}:${count}`).join(','),
-    session.tracks.map(track => `${track.trackId}:${track.color}`).join(','),
-    settings.keyLabelMode === 'finger-hint' ? session.notes.map(note => note.finger ? `${note.id}:${note.finger}` : '').join(',') : '',
-    session.melodyWaitNoteId ?? '',
+    session.keyboardVisualVersion,
+    settings.keyLabelMode === 'finger-hint' ? session.fingeringVersion : 0,
     session.keyboardRange ? `${session.keyboardRange.lowNote}:${session.keyboardRange.highNote}` : '',
   ].join('|')
 }
 
-watch(activeStateKey, requestDraw)
+watch(keyboardVisualKey, requestDraw)
 watch(() => {
   const range = keyboardRange.value
   return `${range.lowNote}:${range.highNote}`
