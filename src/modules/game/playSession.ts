@@ -8,6 +8,7 @@ import type { KeyboardRange } from '../render/keyboardRange'
 export type PlayMode = 'listen' | 'noteMemory' | 'practice' | 'performance'
 export type HandSelection = 'left' | 'right' | 'both'
 export type Hand = 'left' | 'right' | 'unknown'
+export type BackgroundScoreHand = 'left' | 'right'
 export type FailureReason = 'wrongNote' | 'missedNote' | 'strayNote'
 
 export interface SessionNote extends TranslatedNote { hand: Hand; finger?: number | null; fingerSource?: 'manual' | 'auto'; fingerCost?: number }
@@ -56,6 +57,7 @@ export interface PlaySession {
   keyboardVisualVersion: number
   fingeringVersion: number
   score: ScoreState
+  backgroundScores?: Partial<Record<BackgroundScoreHand, ScoreState>>
   currentUs: number
   finished: boolean
   failed: boolean
@@ -83,6 +85,12 @@ export const HAND_LABELS: Record<HandSelection, string> = {
   left: 'Tay trái',
   right: 'Tay phải',
   both: 'Cả hai tay',
+}
+
+export function createBackgroundScores(handSelection: HandSelection, scoringEnabled: boolean): PlaySession['backgroundScores'] {
+  return handSelection === 'both' && scoringEnabled
+    ? { left: createScoreState(), right: createScoreState() }
+    : undefined
 }
 
 export function createPlaySession(notes: SessionNote[], tracks: TrackProperties[], options: PlaySessionOptions & { needsTrackConfiguration?: boolean }): PlaySession {
@@ -120,6 +128,7 @@ export function createPlaySession(notes: SessionNote[], tracks: TrackProperties[
     keyboardVisualVersion: 0,
     fingeringVersion: 0,
     score: createScoreState(),
+    backgroundScores: createBackgroundScores(options.handSelection ?? 'both', modeConfig.scoringEnabled),
     currentUs: -5_500_000,
     finished: false,
     failed: false,
@@ -150,6 +159,7 @@ export function applySessionOptions(session: PlaySession, options: ConfigureSess
   session.melodyWaitStartedMs = undefined
   session.finished = false
   session.score = createScoreState()
+  session.backgroundScores = createBackgroundScores(session.handSelection, session.modeConfig.scoringEnabled)
   session.activeNotes.clear()
   session.activeNoteHands.clear()
   session.activeNoteTrackIds.clear()

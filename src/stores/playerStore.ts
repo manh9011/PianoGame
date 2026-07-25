@@ -6,12 +6,12 @@ import { translateNotes } from '../modules/midi/midiNoteTranslator'
 import type { MidiBookmarkSource } from '../modules/midi/midiTypes'
 import { buildTempoMap, pulseToMicroseconds } from '../modules/midi/midiTempo'
 import { createDefaultTrackProperties, isTrackRoleComplete, resolveTrackModeForSession, roleToHandAssignment, TRACK_ROLE_COLORS, type TrackMode, type TrackProperties, type TrackRole } from '../modules/game/trackProperties'
-import { PLAY_MODE_CONFIGS, clampShowDuration, clampSpeed, createPlaySession, type ConfigureSessionOptions, type FailureReason, type LoopState, type PlaySession, type SessionNote } from '../modules/game/playSession'
+import { PLAY_MODE_CONFIGS, clampShowDuration, clampSpeed, createBackgroundScores, createPlaySession, type BackgroundScoreHand, type ConfigureSessionOptions, type FailureReason, type LoopState, type PlaySession, type SessionNote } from '../modules/game/playSession'
 import { getKeyboardRange } from '../modules/render/keyboardRange'
 import { getKeySignatureAccidentals } from '../modules/render/pianoLabels'
 import { MidiPlayerClock } from '../modules/midi/midiPlayerClock'
 import { collectChordAtStart, findEarliestPlayableWaitingStart, findHit, HIT_WINDOW_US, isPlayableNote, markMisses } from '../modules/game/hitDetection'
-import { awardHoldPoints, createScoreState, recordHit, recordMiss, recordMisses, recordStray, recordWrong, resetSpeedTrackingAnchor, stopHoldsForInput, summarizeScoreWithinRange, trimScoreAfter, updateSpeedTracking } from '../modules/game/scoring'
+import { awardHoldPoints, createScoreState, recordHit, recordMiss, recordMisses, recordStray, resetSpeedTrackingAnchor, stopHoldsForInput, summarizeScoreWithinRange, trimScoreAfter, updateSpeedTracking, type ScoreState } from '../modules/game/scoring'
 import { summarizeStats, type SongPlayStats } from '../modules/game/songStatistics'
 import { assignHands } from '../modules/game/handAssignment'
 import { requestPianoFingering } from '../modules/fingering/fingeringClient'
@@ -243,6 +243,80 @@ function playableAutoTestNotes(session: PlaySession, currentUs: number) {
   )
 }
 
+function resetBackgroundScores(session: PlaySession) {
+  session.backgroundScores = createBackgroundScores(session.handSelection, session.modeConfig.scoringEnabled)
+}
+
+function activeScoresFor(session: PlaySession): ScoreState[] {
+  const scores = [session.score]
+  if (session.backgroundScores?.left) scores.push(session.backgroundScores.left)
+  if (session.backgroundScores?.right) scores.push(session.backgroundScores.right)
+  return scores
+}
+
+function scoreForHand(session: PlaySession, hand: BackgroundScoreHand) {
+  return session.backgroundScores?.[hand]
+}
+
+function backgroundHandForNote(note: SessionNote): BackgroundScoreHand | null {
+  return note.hand === 'left' || note.hand === 'right' ? note.hand : null
+}
+
+function recordMissForSessionNote(session: PlaySession, note: SessionNote) {
+  recordMiss(session.score, note)
+  const hand = backgroundHandForNote(note)
+  const handScore = hand ? scoreForHand(session, hand) : undefined
+  if (handScore) recordMiss(handScore, note)
+}
+
+function recordMissesForSessionNotes(session: PlaySession, notes: SessionNote[]) {
+  recordMisses(session.score, notes)
+  const leftNotes = notes.filter(note => note.hand === 'left')
+  const rightNotes = notes.filter(note => note.hand === 'right')
+  if (leftNotes.length && session.backgroundScores?.left) recordMisses(session.backgroundScores.left, leftNotes)
+  if (rightNotes.length && session.backgroundScores?.right) recordMisses(session.backgroundScores.right, rightNotes)
+}
+
+function recordHitForSessionNote(session: PlaySession, note: SessionNote, hitAtUs: number, inputNoteId: number, nowMs: number) {
+  recordHit(session.score, note, hitAtUs, inputNoteId, nowMs)
+  const hand = backgroundHandForNote(note)
+  const handScore = hand ? scoreForHand(session, hand) : undefined
+  if (handScore) recordHit(handScore, note, hitAtUs, inputNoteId, nowMs)
+}
+
+function inferStrayHand(session: PlaySession, _playableNoteId: number): BackgroundScoreHand | null {
+  const currentUs = session.currentUs
+  const candidates = session.notes.filter(note =>
+    note.state === 'waiting' &&
+    isPlayableNote(note, session.tracks, session.handSelection, session) &&
+    Math.abs(note.start - currentUs) <= HIT_WINDOW_US
+  )
+  const hands = new Set<BackgroundScoreHand>()
+  for (const note of candidates) {
+    const hand = backgroundHandForNote(note)
+    if (hand) hands.add(hand)
+  }
+  return hands.size === 1 ? [...hands][0] : null
+}
+
+function recordStrayForTargets(session: PlaySession, atUs: number, playableNoteId?: number) {
+  recordStray(session.score, atUs)
+  if (playableNoteId === undefined) return
+  const hand = inferStrayHand(session, playableNoteId)
+  const handScore = hand ? scoreForHand(session, hand) : undefined
+  if (handScore) recordStray(handScore, atUs)
+}
+
+function summarizeCompletedStats(session: PlaySession) {
+  const stats = summarizeStats(session.score, session)
+  const batch = [stats]
+  if (session.handSelection === 'both' && session.modeConfig.scoringEnabled) {
+    if (session.backgroundScores?.left) batch.push(summarizeStats(session.backgroundScores.left, session, { handSelection: 'left' }))
+    if (session.backgroundScores?.right) batch.push(summarizeStats(session.backgroundScores.right, session, { handSelection: 'right' }))
+  }
+  return { stats, batch }
+}
+
 const BOOKMARK_SEEK_EPSILON_US = 10_000
 const FALLBACK_BOOKMARK_US = 1_000_000
 const SEEK_PRE_ROLL_US = 3_000_000
@@ -307,6 +381,7 @@ export const usePlayerStore = defineStore('player', {
     session: null as PlaySession | null,
     clock: null as MidiPlayerClock | null,
     stats: null as SongPlayStats | null,
+    completedStatsBatch: [] as SongPlayStats[],
     autoPlayer: new AutoNotePlayer(),
     metronome: new MetronomePlayer(),
     inputSynth: new SimpleSynth(),
@@ -372,8 +447,10 @@ export const usePlayerStore = defineStore('player', {
       this.song = song
       this.session = createPlaySession(notes, tracks, { speed, showDuration, octaveShift, tempoMap, measureGridUs, metronomeBeatGrid, bookmarks, keySignatures, needsTrackConfiguration: needsManualAssignment && tracks.some(track => !isTrackRoleComplete(track)), durationUs: duration })
       restoreSavedTrackSettings(song.id, this.session)
+      resetBackgroundScores(this.session)
       this.refreshKeyboardRange()
       this.stats = null
+      this.completedStatsBatch = []
       this.performanceAutoPlay = false
       this.performanceAutoPlayUsed = false
       this.playbackManuallyStopped = false
@@ -427,7 +504,7 @@ export const usePlayerStore = defineStore('player', {
             session.currentUs = activeWaitNote.start
             session.finished = false
             session.paused = true
-            resetSpeedTrackingAnchor(session.score, activeWaitNote.start, nowMs)
+            for (const score of activeScoresFor(session)) resetSpeedTrackingAnchor(score, activeWaitNote.start, nowMs)
             return
           }
 
@@ -461,7 +538,7 @@ export const usePlayerStore = defineStore('player', {
               session.finished = false
               session.paused = true
               this.autoPlayer.allNotesOff(session)
-              resetSpeedTrackingAnchor(session.score, waitNote.start, nowMs)
+              for (const score of activeScoresFor(session)) resetSpeedTrackingAnchor(score, waitNote.start, nowMs)
               this.clock?.pause()
               this.clock?.seek(waitNote.start)
               return
@@ -469,8 +546,10 @@ export const usePlayerStore = defineStore('player', {
           }
 
           measurePlaybackSpan(tickProfile, 'tick.speedTracking', () => {
-            if (state.running) updateSpeedTracking(session.score, state.currentUs, nowMs)
-            else resetSpeedTrackingAnchor(session.score, state.currentUs, nowMs)
+            for (const score of activeScoresFor(session)) {
+              if (state.running) updateSpeedTracking(score, state.currentUs, nowMs)
+              else resetSpeedTrackingAnchor(score, state.currentUs, nowMs)
+            }
           })
           session.currentUs = state.currentUs
           session.finished = state.finished
@@ -490,8 +569,10 @@ export const usePlayerStore = defineStore('player', {
           const misses = measurePlaybackSpan(tickProfile, 'tick.markMisses', () => markMisses(session.notes, session.tracks, session.handSelection, state.currentUs, session))
           addPlaybackCounter(tickProfile, 'missesThisTick', misses.length)
           if (session.modeConfig.scoringEnabled) {
-            measurePlaybackSpan(tickProfile, 'tick.recordMisses', () => recordMisses(session.score, misses))
-            measurePlaybackSpan(tickProfile, 'tick.awardHoldPoints', () => awardHoldPoints(session.score, state.currentUs, session.mode))
+            measurePlaybackSpan(tickProfile, 'tick.recordMisses', () => recordMissesForSessionNotes(session, misses))
+            measurePlaybackSpan(tickProfile, 'tick.awardHoldPoints', () => {
+              for (const score of activeScoresFor(session)) awardHoldPoints(score, state.currentUs, session.mode)
+            })
             measurePlaybackSpan(tickProfile, 'tick.loopErrorLimit', () => this.restartLoopIfErrorLimitExceeded(session))
           }
           if (state.finished) {
@@ -524,11 +605,13 @@ export const usePlayerStore = defineStore('player', {
       session.melodyWaitStartedMs = undefined
       session.finished = false
       session.score = createScoreState()
+      resetBackgroundScores(session)
       clearActiveNoteMetadata(session)
       session.notes = session.notes.map(n => ({ ...n, state: 'waiting' }))
       session.tracks.forEach(track => { track.mode = resolveTrackModeForSession(track, options.mode) })
       this.refreshKeyboardRange()
       this.stats = null
+      this.completedStatsBatch = []
       this.performanceAutoPlay = false
       this.performanceAutoPlayUsed = false
       this.playbackManuallyStopped = false
@@ -673,7 +756,7 @@ export const usePlayerStore = defineStore('player', {
           isPlayableNote(note, session.tracks, session.handSelection, session)
         ) {
           note.state = 'missed'
-          recordMiss(session.score, note)
+          recordMissForSessionNote(session, note)
           missed += 1
         }
       }
@@ -691,7 +774,10 @@ export const usePlayerStore = defineStore('player', {
       session.melodyWaitStartedMs = undefined
       session.finished = false
       this.stats = null
-      if (session.modeConfig.scoringEnabled) trimScoreAfter(session.score, seekUs)
+      this.completedStatsBatch = []
+      if (session.modeConfig.scoringEnabled) {
+        for (const score of activeScoresFor(session)) trimScoreAfter(score, seekUs)
+      }
       session.keyboardVisualVersion += 1
       session.notes = session.notes.map(note => {
         const outcome = session.score.noteOutcomes[note.id]
@@ -700,7 +786,7 @@ export const usePlayerStore = defineStore('player', {
         if (note.start >= seekUs) state = 'waiting'
         return { ...note, state }
       })
-      resetSpeedTrackingAnchor(session.score, seekUs, performance.now())
+      for (const score of activeScoresFor(session)) resetSpeedTrackingAnchor(score, seekUs, performance.now())
       recordPlaybackEvent('resetSessionForSeek', {
         durationMs: performance.now() - resetStartMs,
         currentUs: seekUs,
@@ -1139,7 +1225,7 @@ export const usePlayerStore = defineStore('player', {
         session.activeNoteHands.delete(noteId)
         session.activeNoteTrackIds.delete(noteId)
         markKeyboardVisualChanged(session)
-        stopHoldsForInput(session.score, noteId)
+        for (const score of activeScoresFor(session)) stopHoldsForInput(score, noteId)
         this.inputSynth.noteOff(noteId)
         return
       }
@@ -1176,7 +1262,7 @@ export const usePlayerStore = defineStore('player', {
           session.activeNoteHands.set(inputNoteId, chordNote.hand)
           session.activeNoteTrackIds.set(inputNoteId, chordNote.trackId)
           chordNote.state = 'hit'
-          if (session.modeConfig.scoringEnabled) recordHit(session.score, chordNote, session.currentUs, inputNoteId, nowMs)
+          if (session.modeConfig.scoringEnabled) recordHitForSessionNote(session, chordNote, session.currentUs, inputNoteId, nowMs)
         }
         if (session.mode === 'noteMemory' && chordNotes.some(note => note.id === session.melodyWaitNoteId)) {
           session.melodyWaitNoteId = undefined
@@ -1188,10 +1274,10 @@ export const usePlayerStore = defineStore('player', {
       }
 
       if (session.mode === 'noteMemory') {
-        recordStray(session.score, session.currentUs)
+        recordStrayForTargets(session, session.currentUs, playableNoteId)
         return
       }
-      if (session.modeConfig.scoringEnabled) recordStray(session.score, session.currentUs)
+      if (session.modeConfig.scoringEnabled) recordStrayForTargets(session, session.currentUs, playableNoteId)
     },
     markFailed(reason: FailureReason, stop: boolean) {
       const session = this.session
@@ -1202,7 +1288,9 @@ export const usePlayerStore = defineStore('player', {
       session.finished = true
       this.clock?.pause()
       this.autoPlayer.allNotesOff(session)
-      this.stats = summarizeStats(session.score, session)
+      const completed = summarizeCompletedStats(session)
+      this.stats = completed.stats
+      this.completedStatsBatch = completed.batch
     },
     finishSession() {
       const session = this.session
@@ -1211,7 +1299,9 @@ export const usePlayerStore = defineStore('player', {
       session.finished = true
       session.paused = true
       this.autoPlayer.allNotesOff(session)
-      this.stats = summarizeStats(session.score, session)
+      const completed = summarizeCompletedStats(session)
+      this.stats = completed.stats
+      this.completedStatsBatch = completed.batch
       recordPlaybackEvent('finishSession', { durationMs: performance.now() - finishStartMs, currentUs: session.currentUs, notesTouched: session.notes.length })
     },
   },

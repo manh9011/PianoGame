@@ -2,7 +2,7 @@ import type { AchievementBreakdownScore } from '../../types/profile'
 import { achievementMaxFor, achievementWeightsFor, calculateAchievementBreakdown } from './achievementScoring'
 import { trackSelectionKeyForTracks } from './scoreKeys'
 import { isPlayableNote } from './hitDetection'
-import type { PlaySession } from './playSession'
+import type { HandSelection, PlaySession } from './playSession'
 import type { ScoreState } from './scoring'
 import { accuracy, averageSpeed, displayPoints, grade, isPerfect } from './scoring'
 
@@ -28,36 +28,37 @@ export interface SongPlayStats extends ScoreState {
   timeSpentUs: number
 }
 
-function playableNotesFor(session: PlaySession) {
-  return session.notes.filter(note => isPlayableNote(note, session.tracks, session.handSelection, session))
+function playableNotesFor(session: PlaySession, handSelection: HandSelection) {
+  return session.notes.filter(note => isPlayableNote(note, session.tracks, handSelection, session))
 }
 
-function playableProgressRatio(session: PlaySession) {
-  const playableNotes = playableNotesFor(session)
+function playableProgressRatio(score: ScoreState, session: PlaySession, handSelection: HandSelection) {
+  const playableNotes = playableNotesFor(session, handSelection)
   if (!playableNotes.length) return 0
-  const completedNotes = playableNotes.filter(note => session.score.noteOutcomes[note.id])
+  const completedNotes = playableNotes.filter(note => score.noteOutcomes[note.id])
   return Math.max(0, Math.min(1, completedNotes.length / playableNotes.length))
 }
 
-function playedProgressRatio(session: PlaySession) {
-  const playableProgress = playableProgressRatio(session)
+function playedProgressRatio(score: ScoreState, session: PlaySession, handSelection: HandSelection) {
+  const playableProgress = playableProgressRatio(score, session, handSelection)
   if (session.mode === 'noteMemory') return playableProgress
 
   const duration = session.loopState.durationUs || Math.max(...session.notes.map(note => note.end), 0)
   if (!duration) return playableProgress
-  const coveredUs = session.score.playedSegments.reduce((sum, segment) => sum + Math.max(0, Math.min(duration, segment.endUs) - Math.max(0, segment.startUs)), 0)
+  const coveredUs = score.playedSegments.reduce((sum, segment) => sum + Math.max(0, Math.min(duration, segment.endUs) - Math.max(0, segment.startUs)), 0)
   return Math.max(0, Math.min(1, coveredUs / duration))
 }
 
-export function summarizeStats(score: ScoreState, session: PlaySession): SongPlayStats {
+export function summarizeStats(score: ScoreState, session: PlaySession, options: { handSelection?: HandSelection } = {}): SongPlayStats {
+  const handSelection = options.handSelection ?? session.handSelection
   const scoringEnabled = session.modeConfig.scoringEnabled
-  const progressRatio = playedProgressRatio(session)
+  const progressRatio = playedProgressRatio(score, session, handSelection)
   const finishedEnough = progressRatio >= 0.995 && session.finished
-  const totalPlayableNotes = playableNotesFor(session).length
-  const weights = achievementWeightsFor(session.handSelection)
+  const totalPlayableNotes = playableNotesFor(session, handSelection).length
+  const weights = achievementWeightsFor(handSelection)
   const displayedAverageSpeed = averageSpeed(score)
   const achievementScore = { ...score, totalPlayableNotes, averageSpeed: displayedAverageSpeed }
-  const achievementBreakdown = scoringEnabled && finishedEnough ? calculateAchievementBreakdown(achievementScore, session.handSelection, session.failed) : {
+  const achievementBreakdown = scoringEnabled && finishedEnough ? calculateAchievementBreakdown(achievementScore, handSelection, session.failed) : {
     notes: 0,
     notesMax: weights.notes,
     hold: 0,
@@ -65,7 +66,7 @@ export function summarizeStats(score: ScoreState, session: PlaySession): SongPla
     speed: 0,
     speedMax: weights.speed,
     total: 0,
-    max: achievementMaxFor(session.handSelection),
+    max: achievementMaxFor(handSelection),
   }
   const ratingScore = achievementBreakdown.total
   const timeSpentUs = Math.round(score.speedTracking.playedRealUs)
@@ -79,13 +80,13 @@ export function summarizeStats(score: ScoreState, session: PlaySession): SongPla
     accuracy: accuracy(score),
     perfect: scoringEnabled ? isPerfect(score) && !session.failed : false,
     mode: session.mode,
-    handSelection: session.handSelection,
+    handSelection,
     trackSelectionKey: trackSelectionKeyForTracks(session.tracks),
     failed: session.failed,
     failureReason: session.failureReason,
     playedAt: Date.now(),
     ratingScore,
-    ratingMax: achievementMaxFor(session.handSelection),
+    ratingMax: achievementMaxFor(handSelection),
     progressRatio,
     notesHit: score.notesUserActuallyPlayed,
     totalPlayableNotes,

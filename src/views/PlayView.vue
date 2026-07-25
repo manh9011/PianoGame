@@ -528,7 +528,7 @@ watch(() => player.stats, stats => {
   if (!stats || !player.song || saved) return
   saved = true
   const song = player.song
-  profiles.recordScore(song.id, stats)
+  profiles.recordScores(song.id, player.completedStatsBatch.length ? player.completedStatsBatch : [stats])
   if (stats.mode !== 'listen') library.updateAfterPlay(song.id, stats.score)
 
   setTimeout(() => {

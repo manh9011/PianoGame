@@ -6,7 +6,48 @@ import type { SongPlayStats } from '../modules/game/songStatistics'
 import { createDefaultProfile, loadProfiles, saveProfiles, loadActiveProfileId, saveActiveProfileId, migrateLegacyScoresToTrackSelections } from '../modules/settings/profileStorage'
 import { persistQueue } from '../modules/storage/indexedDb'
 
-const SCORE_HISTORY_LIMIT = 50
+const SCORE_HISTORY_LIMIT = 300
+
+function modeScoreEntryFromStats(songId: string, stats: SongPlayStats): ModeScoreEntry {
+  return modeScoreEntryWithMode(songId, stats, stats.mode)
+}
+
+function modeScoreEntryWithMode(songId: string, stats: SongPlayStats, mode: ModeScoreEntry['mode']): ModeScoreEntry {
+  const trackSelectionKey = normalizeTrackSelectionKey(stats.trackSelectionKey)
+  return {
+    songId,
+    mode,
+    handSelection: stats.handSelection,
+    trackSelectionKey,
+    score: stats.achievementBreakdown.total,
+    gameplayPoints: stats.gameplayPoints,
+    achievementBreakdown: stats.achievementBreakdown,
+    grade: stats.grade,
+    accuracy: stats.accuracy,
+    perfect: stats.perfect,
+    averageSpeed: stats.averageSpeed,
+    rawPoints: stats.rawPoints,
+    notesUserCouldHavePlayed: stats.notesUserCouldHavePlayed,
+    notesUserActuallyPlayed: stats.notesUserActuallyPlayed,
+    totalPlayableNotes: stats.totalPlayableNotes,
+    strayNotes: stats.strayNotes,
+    missedNotes: stats.missedNotes,
+    wrongNotes: stats.wrongNotes,
+    notesHit: stats.notesHit,
+    errors: stats.errors,
+    timeSpentUs: stats.timeSpentUs,
+    playedAt: stats.playedAt,
+    failed: stats.failed,
+    failureReason: stats.failureReason,
+  }
+}
+
+function modeScoreEntriesFromStats(songId: string, stats: SongPlayStats): ModeScoreEntry[] {
+  const entry = modeScoreEntryFromStats(songId, stats)
+  return stats.mode === 'performance'
+    ? [entry, modeScoreEntryWithMode(songId, stats, 'practice')]
+    : [entry]
+}
 
 function rebuildBestScoresBySongMode(scoresByMode: UserProfile['scoresByMode']) {
   const bestScoresBySongMode: UserProfile['bestScoresBySongMode'] = {}
@@ -143,59 +184,41 @@ export const useProfileStore = defineStore('profiles', {
       return entries.filter(entry => isSameScoreBucket(entry, songId, { mode, handSelection, trackSelectionKey: exactTrackSelectionKey }))
     },
     recordScore(songId: string, stats: SongPlayStats) {
-      this.markRecent(songId)
-      if (stats.mode === 'listen') return
+      this.recordScores(songId, [stats])
+    },
+    recordScores(songId: string, statsBatch: SongPlayStats[]) {
       const p = this.activeProfile
+      p.recentSongIds = [songId, ...p.recentSongIds.filter(id => id !== songId)].slice(0, 8)
       p.bestScoresBySongMode ??= {}
       p.scoresByMode ??= {}
-      const trackSelectionKey = normalizeTrackSelectionKey(stats.trackSelectionKey)
-      const key = scoreBucketKey(songId, { ...stats, trackSelectionKey })
-      const previousBest = p.bestScoresBySongMode[key]
-      const entry: ModeScoreEntry = {
-        songId,
-        mode: stats.mode,
-        handSelection: stats.handSelection,
-        trackSelectionKey,
-        score: stats.achievementBreakdown.total,
-        gameplayPoints: stats.gameplayPoints,
-        achievementBreakdown: stats.achievementBreakdown,
-        grade: stats.grade,
-        accuracy: stats.accuracy,
-        perfect: stats.perfect,
-        averageSpeed: stats.averageSpeed,
-        rawPoints: stats.rawPoints,
-        notesUserCouldHavePlayed: stats.notesUserCouldHavePlayed,
-        notesUserActuallyPlayed: stats.notesUserActuallyPlayed,
-        totalPlayableNotes: stats.totalPlayableNotes,
-        strayNotes: stats.strayNotes,
-        missedNotes: stats.missedNotes,
-        wrongNotes: stats.wrongNotes,
-        notesHit: stats.notesHit,
-        errors: stats.errors,
-        timeSpentUs: stats.timeSpentUs,
-        playedAt: stats.playedAt,
-        failed: stats.failed,
-        failureReason: stats.failureReason,
-      }
-      const list = p.scoresByMode[entry.mode] ?? []
-      const nextList = [entry, ...list].slice(0, SCORE_HISTORY_LIMIT)
-      p.scoresByMode[entry.mode] = nextList
-      const achievementBreakdown = achievementFromHistory(nextList.filter(item => isSameScoreBucket(item, songId, entry)))
-      const achievementEntry = achievementBreakdown
-        ? { ...entry, score: achievementBreakdown.total, achievementBreakdown }
-        : entry
-      if (isBetterModeScore(achievementEntry, previousBest)) {
-        p.bestScoresBySongMode[key] = achievementEntry
-        const previousScore = previousBest?.score ?? 0
-        if (achievementEntry.score > previousScore) {
-          this.lastAchievementCelebration = {
-            songId,
-            mode: achievementEntry.mode,
-            handSelection: achievementEntry.handSelection,
-            trackSelectionKey: achievementEntry.trackSelectionKey,
-            from: previousScore,
-            to: achievementEntry.score,
-            playedAt: achievementEntry.playedAt,
+      const entries = statsBatch
+        .filter(stats => stats.mode !== 'listen')
+        .flatMap(stats => modeScoreEntriesFromStats(songId, stats))
+      const primaryEntry = entries[0]
+
+      for (const entry of entries) {
+        const key = scoreBucketKey(songId, entry)
+        const previousBest = p.bestScoresBySongMode[key]
+        const list = p.scoresByMode[entry.mode] ?? []
+        const nextList = [entry, ...list].slice(0, SCORE_HISTORY_LIMIT)
+        p.scoresByMode[entry.mode] = nextList
+        const achievementBreakdown = achievementFromHistory(nextList.filter(item => isSameScoreBucket(item, songId, entry)))
+        const achievementEntry = achievementBreakdown
+          ? { ...entry, score: achievementBreakdown.total, achievementBreakdown }
+          : entry
+        if (isBetterModeScore(achievementEntry, previousBest)) {
+          p.bestScoresBySongMode[key] = achievementEntry
+          const previousScore = previousBest?.score ?? 0
+          if (achievementEntry.score > previousScore && (!primaryEntry || isSameScoreBucket(entry, songId, primaryEntry))) {
+            this.lastAchievementCelebration = {
+              songId,
+              mode: achievementEntry.mode,
+              handSelection: achievementEntry.handSelection,
+              trackSelectionKey: achievementEntry.trackSelectionKey,
+              from: previousScore,
+              to: achievementEntry.score,
+              playedAt: achievementEntry.playedAt,
+            }
           }
         }
       }
