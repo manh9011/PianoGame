@@ -10,7 +10,7 @@ import { PLAY_MODE_CONFIGS, clampShowDuration, clampSpeed, createBackgroundScore
 import { getKeyboardRange } from '../modules/render/keyboardRange'
 import { getKeySignatureAccidentals } from '../modules/render/pianoLabels'
 import { MidiPlayerClock } from '../modules/midi/midiPlayerClock'
-import { collectChordAtStart, findEarliestPlayableWaitingStart, findHit, HIT_WINDOW_US, isPlayableNote, markMisses } from '../modules/game/hitDetection'
+import { collectChordAtStart, findEarliestPlayableWaitingStart, findHit, findPlayableWaitingNoteDueBy, HIT_WINDOW_US, isPlayableNote, markMisses } from '../modules/game/hitDetection'
 import { awardHoldPoints, createScoreState, recordHit, recordMiss, recordMisses, recordStray, resetSpeedTrackingAnchor, stopHoldsForInput, summarizeScoreWithinRange, trimScoreAfter, updateSpeedTracking, type ScoreState } from '../modules/game/scoring'
 import { summarizeStats, type SongPlayStats } from '../modules/game/songStatistics'
 import { assignHands } from '../modules/game/handAssignment'
@@ -514,21 +514,10 @@ export const usePlayerStore = defineStore('player', {
 
           if (session.mode === 'noteMemory' && !this.performanceAutoPlay) {
             const waitNote = measurePlaybackSpan(tickProfile, 'tick.noteMemoryWaitLookup', () => {
-              let scanned = 0
-              for (const note of session.notes) {
-                scanned += 1
-                if (
-                  isPlayableNote(note, session.tracks, session.handSelection, session) &&
-                  note.state === 'waiting' &&
-                  note.start <= state.currentUs
-                ) {
-                  addPlaybackCounter(tickProfile, 'noteMemoryWaitScanned', scanned)
-                  addPlaybackCounter(tickProfile, 'noteMemoryWaitFound')
-                  return note
-                }
-              }
-              addPlaybackCounter(tickProfile, 'noteMemoryWaitScanned', scanned)
-              return undefined
+              const result = findPlayableWaitingNoteDueBy(session.notes, session.tracks, session.handSelection, state.currentUs, session)
+              addPlaybackCounter(tickProfile, 'noteMemoryWaitScanned', result.scanned)
+              if (result.note) addPlaybackCounter(tickProfile, 'noteMemoryWaitFound')
+              return result.note
             })
             if (waitNote) {
               session.melodyWaitNoteId = waitNote.id

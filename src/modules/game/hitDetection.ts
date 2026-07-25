@@ -7,6 +7,7 @@ export const CHORD_START_TOLERANCE_US = 2000
 const trackLookupCache = new WeakMap<TrackProperties[], Map<number, TrackProperties>>()
 const noteOrderCache = new WeakMap<SessionNote[], boolean>()
 const earliestWaitingCursorCache = new WeakMap<PlaySession, { notes: SessionNote[]; cursor: number; key: string }>()
+const dueWaitingCursorCache = new WeakMap<PlaySession, { notes: SessionNote[]; cursor: number; lastUs: number; key: string }>()
 const missCursorCache = new WeakMap<PlaySession, { notes: SessionNote[]; cursor: number; lastUs: number; key: string }>()
 
 function trackById(tracks: TrackProperties[]) {
@@ -99,6 +100,39 @@ export function findEarliestPlayableWaitingStart(notes: SessionNote[], tracks: T
     state.cursor += 1
   }
   return null
+}
+
+export function findPlayableWaitingNoteDueBy(notes: SessionNote[], tracks: TrackProperties[], handSelection: HandSelection, currentUs: number, session?: PlaySession) {
+  let scanned = 0
+  if (!session || !notesSortedByStart(notes)) {
+    for (const note of notes) {
+      scanned += 1
+      if (isPlayableNote(note, tracks, handSelection, session) && note.state === 'waiting' && note.start <= currentUs) {
+        return { note, scanned }
+      }
+    }
+    return { note: undefined, scanned }
+  }
+
+  const key = playableKey(tracks, handSelection, session)
+  const cached = dueWaitingCursorCache.get(session)
+  const shouldReset = !cached || cached.notes !== notes || cached.lastUs > currentUs || cached.key !== key
+  const state = shouldReset ? { notes, cursor: 0, lastUs: currentUs, key } : cached
+  if (shouldReset) dueWaitingCursorCache.set(session, state)
+
+  while (state.cursor < notes.length) {
+    const note = notes[state.cursor]
+    scanned += 1
+    if (note.start > currentUs) break
+    if (note.state === 'waiting' && isPlayableNote(note, tracks, handSelection, session)) {
+      state.lastUs = currentUs
+      return { note, scanned }
+    }
+    state.cursor += 1
+  }
+
+  state.lastUs = currentUs
+  return { note: undefined, scanned }
 }
 
 export function collectChordAtStart(notes: SessionNote[], tracks: TrackProperties[], handSelection: HandSelection, startUs: number, session?: PlaySession) {
