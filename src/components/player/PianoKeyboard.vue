@@ -38,6 +38,8 @@ let logicalHeight = 0
 let pixelRatio = 1
 let keyboardBaseCanvas: HTMLCanvasElement | null = null
 let keyboardBaseKey = ''
+let keyboardBlackLayerCanvas: HTMLCanvasElement | null = null
+let keyboardBlackLayerKey = ''
 const keyboardLabelSprites = new CanvasSpriteCache(160)
 
 const keyboardRange = computed<KeyboardRange>(() => {
@@ -672,17 +674,11 @@ function getKeyboardBaseCacheKey() {
 function invalidateKeyboardBaseLayer() {
   keyboardBaseCanvas = null
   keyboardBaseKey = ''
+  keyboardBlackLayerCanvas = null
+  keyboardBlackLayerKey = ''
 }
 
-function buildKeyboardBaseLayer(cacheKey: string) {
-  const canvas = createSpriteCanvas(logicalWidth, logicalHeight)
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return null
-
-  ctx.fillStyle = '#000000'
-  ctx.fillRect(0, 0, logicalWidth, logicalHeight)
-  for (const key of whiteKeys) drawWhiteKey(ctx, keyRect(key), false, isKeyDisabled(key.noteId))
-
+function drawBlackKeyLayer(ctx: CanvasRenderingContext2D) {
   for (const k of blackKeys) {
     const { x, y, width, height } = keyRect(k)
     const slotX = Math.round(x) + 0.5
@@ -697,6 +693,17 @@ function buildKeyboardBaseLayer(cacheKey: string) {
 
   drawHitLine(ctx)
   for (const key of blackKeys) drawBlackKey(ctx, keyRect(key), false, isKeyDisabled(key.noteId))
+}
+
+function buildKeyboardBaseLayer(cacheKey: string) {
+  const canvas = createSpriteCanvas(logicalWidth, logicalHeight)
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return null
+
+  ctx.fillStyle = '#000000'
+  ctx.fillRect(0, 0, logicalWidth, logicalHeight)
+  for (const key of whiteKeys) drawWhiteKey(ctx, keyRect(key), false, isKeyDisabled(key.noteId))
+  drawBlackKeyLayer(ctx)
   keyboardBaseCanvas = canvas
   keyboardBaseKey = cacheKey
   return canvas
@@ -706,6 +713,19 @@ function ensureKeyboardBaseLayer() {
   const cacheKey = getKeyboardBaseCacheKey()
   if (keyboardBaseCanvas && keyboardBaseKey === cacheKey) return keyboardBaseCanvas
   return buildKeyboardBaseLayer(cacheKey)
+}
+
+function ensureKeyboardBlackLayer() {
+  const cacheKey = getKeyboardBaseCacheKey()
+  if (keyboardBlackLayerCanvas && keyboardBlackLayerKey === cacheKey) return keyboardBlackLayerCanvas
+  const canvas = createSpriteCanvas(logicalWidth, logicalHeight)
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return null
+  ctx.clearRect(0, 0, logicalWidth, logicalHeight)
+  drawBlackKeyLayer(ctx)
+  keyboardBlackLayerCanvas = canvas
+  keyboardBlackLayerKey = cacheKey
+  return canvas
 }
 
 function drawHitLine(ctx: CanvasRenderingContext2D) {
@@ -769,19 +789,9 @@ function draw() {
   }
 
   if (activeWhiteKeys.length > 0) {
-    // Active white keys are drawn above the cached base, so restore the hit line and black-key layer on top.
-    drawHitLine(ctx)
-    for (const k of blackKeys) {
-      const { x, y, width, height } = keyRect(k)
-      const slotX = Math.round(x) + 0.5
-      const slotY = Math.round(y) + 0.5
-      const slotW = Math.max(10, Math.round(width) - 1)
-      const slotH = Math.max(24, Math.round(height) - 1)
-
-      pathRoundedRect(ctx, slotX, slotY, slotW, slotH, 3)
-      ctx.fillStyle = '#000'
-      ctx.fill()
-    }
+    // Active white keys are drawn above the cached base, so restore the cached hit line and black-key layer on top.
+    const blackLayer = ensureKeyboardBlackLayer()
+    if (blackLayer) ctx.drawImage(blackLayer, 0, 0, logicalWidth, logicalHeight)
     for (const key of blackKeys) {
       const isActive = active(key.noteId)
       const release = isActive && forcingRelease(key.noteId, nowMs)
