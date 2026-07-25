@@ -469,12 +469,14 @@ export const usePlayerStore = defineStore('player', {
           const settings = useSettingsStore()
           this.currentProgress = state.progress
           this.playbackRunning = state.running && !state.finished
-          setPlaybackGauge(tickProfile, 'progressRatio', state.progress)
-          setPlaybackGauge(tickProfile, 'waitingNotes', countWaitingNotes(session))
-          setPlaybackGauge(tickProfile, 'activeHolds', Object.keys(session.score.activeHolds).length)
-          setPlaybackGauge(tickProfile, 'activeInputNotes', session.activeNotes.size)
-          setPlaybackGauge(tickProfile, 'activeAutoNotes', session.autoActiveNotes.size)
-          setPlaybackGauge(tickProfile, 'scoreOutcomeCount', Object.keys(session.score.noteOutcomes).length)
+          measurePlaybackSpan(tickProfile, 'tick.profilerGauges', () => {
+            setPlaybackGauge(tickProfile, 'progressRatio', state.progress)
+            setPlaybackGauge(tickProfile, 'waitingNotes', countWaitingNotes(session))
+            setPlaybackGauge(tickProfile, 'activeHolds', Object.keys(session.score.activeHolds).length)
+            setPlaybackGauge(tickProfile, 'activeInputNotes', session.activeNotes.size)
+            setPlaybackGauge(tickProfile, 'activeAutoNotes', session.autoActiveNotes.size)
+            setPlaybackGauge(tickProfile, 'scoreOutcomeCount', Object.keys(session.score.noteOutcomes).length)
+          })
           if (state.looped) {
             measurePlaybackSpan(tickProfile, 'tick.loopReset', () => {
               this.finalizeLoopAttempt(session)

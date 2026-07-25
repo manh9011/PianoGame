@@ -58,7 +58,6 @@ let draggingLoopEdge: LoopDragEdge = null
 const BOOKMARK_LABEL_MIN_GAP = 18
 const DEFAULT_KEY_SIGNATURE_LABEL = 'C Major'
 const IMPACT_REWIND_THRESHOLD_US = 80_000
-const IMPACT_SPAWN_INTERVAL_MS = 65
 const MAX_PARTICLES = 160
 const MAX_FLOATING_PARTICLES = 36
 const IMPACT_RAY_SPRITE_SIZE = 128
@@ -128,7 +127,7 @@ type FloatingImpactParticle = {
 
 const particles: ImpactParticle[] = []
 const floatingParticles: FloatingImpactParticle[] = []
-const activeImpactSpawns = new Map<string, number>()
+const activeImpacts = new Set<string>()
 const raySprites = IMPACT_RAY_VARIANTS.map(createRaySprite)
 const rayGlowSprites = IMPACT_RAY_VARIANTS.map(createRayGlowSprite)
 const floatSprites = IMPACT_RAY_VARIANTS.map(createFloatSprite)
@@ -199,7 +198,7 @@ function noteKey(note: SessionNote) {
 function clearEffects() {
   particles.length = 0
   floatingParticles.length = 0
-  activeImpactSpawns.clear()
+  activeImpacts.clear()
 }
 function syncEffectSession(session: NonNullable<typeof player.session>) {
   if (session !== lastSessionRef) {
@@ -370,7 +369,7 @@ function spawnImpact(note: LaidOutNote<SessionNote>) {
   while (particles.length > MAX_PARTICLES) particles.shift()
   while (floatingParticles.length > MAX_FLOATING_PARTICLES) floatingParticles.shift()
 }
-function triggerImpacts(notes: LaidOutNote<SessionNote>[], session: NonNullable<typeof player.session>, nowMs: number) {
+function triggerImpacts(notes: LaidOutNote<SessionNote>[], session: NonNullable<typeof player.session>, _nowMs: number) {
   const touchingKeys = new Set<string>()
   const canSpawn = !session.paused && !session.finished
 
@@ -380,17 +379,14 @@ function triggerImpacts(notes: LaidOutNote<SessionNote>[], session: NonNullable<
 
     const key = noteKey(note)
     touchingKeys.add(key)
-    if (!canSpawn) continue
+    if (!canSpawn || activeImpacts.has(key)) continue
 
-    const lastSpawnMs = activeImpactSpawns.get(key)
-    if (lastSpawnMs !== undefined && nowMs - lastSpawnMs < IMPACT_SPAWN_INTERVAL_MS) continue
-
-    activeImpactSpawns.set(key, nowMs)
+    activeImpacts.add(key)
     spawnImpact(note)
   }
 
-  for (const key of activeImpactSpawns.keys()) {
-    if (!touchingKeys.has(key)) activeImpactSpawns.delete(key)
+  for (const key of activeImpacts) {
+    if (!touchingKeys.has(key)) activeImpacts.delete(key)
   }
 }
 function updateEffects(dt: number) {

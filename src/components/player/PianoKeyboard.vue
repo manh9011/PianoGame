@@ -794,10 +794,11 @@ function draw() {
     if (blackLayer) ctx.drawImage(blackLayer, 0, 0, logicalWidth, logicalHeight)
     for (const key of blackKeys) {
       const isActive = active(key.noteId)
-      const release = isActive && forcingRelease(key.noteId, nowMs)
-      const flash = isActive && !release ? pressFlashStrength(key.noteId, nowMs) : 0
+      if (!isActive || isKeyDisabled(key.noteId)) continue
+      const release = forcingRelease(key.noteId, nowMs)
+      const flash = release ? 0 : pressFlashStrength(key.noteId, nowMs)
       if (release || flash > 0) animatingPressFlash = true
-      drawBlackKey(ctx, keyRect(key), isActive && !release, isKeyDisabled(key.noteId), flash)
+      drawBlackKey(ctx, keyRect(key), !release, false, flash)
     }
   } else {
     for (const key of blackKeys) {

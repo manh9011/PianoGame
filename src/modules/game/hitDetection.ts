@@ -116,8 +116,12 @@ export function findPlayableWaitingNoteDueBy(notes: SessionNote[], tracks: Track
 
   const key = playableKey(tracks, handSelection, session)
   const cached = dueWaitingCursorCache.get(session)
-  const shouldReset = !cached || cached.notes !== notes || cached.lastUs > currentUs || cached.key !== key
-  const state = shouldReset ? { notes, cursor: 0, lastUs: currentUs, key } : cached
+  const structuralReset = !cached || cached.notes !== notes || cached.key !== key
+  const rewindReset = !structuralReset && cached.lastUs > currentUs
+  const shouldReset = structuralReset || rewindReset
+  const resetCursor = rewindReset ? lowerBoundStart(notes, currentUs - CHORD_START_TOLERANCE_US) : 0
+  if (rewindReset) addActivePlaybackCounter('simulation', 'noteMemoryDueCursorRewind')
+  const state = shouldReset ? { notes, cursor: resetCursor, lastUs: currentUs, key } : cached
   if (shouldReset) dueWaitingCursorCache.set(session, state)
 
   while (state.cursor < notes.length) {
