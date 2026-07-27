@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import { useConfirmDialog } from '../composables/useConfirmDialog'
 import { usePlayerStore } from '../stores/playerStore'
 import { useLibraryStore } from '../stores/libraryStore'
 import { useProfileStore } from '../stores/profileStore'
@@ -44,6 +45,7 @@ const library = useLibraryStore()
 const profiles = useProfileStore()
 const settings = useSettingsStore()
 const toast = useToastStore()
+const { confirm } = useConfirmDialog()
 let saved = false
 let midiAccess: Awaited<ReturnType<typeof requestMidiAccess>> = null
 
@@ -308,8 +310,16 @@ async function autoAssignFingers() {
   }
 }
 
-function clearAllFingers() {
-  if (!confirm(t('fingerDialog.clearAllConfirm'))) return
+async function clearAllFingers() {
+  if (settings.advancedConfirmBeforeDestructiveAction) {
+    const confirmed = await confirm({
+      message: t('fingerDialog.clearAllConfirm'),
+      confirmLabel: t('common.clear'),
+      cancelLabel: t('common.cancel'),
+      tone: 'danger',
+    })
+    if (!confirmed) return
+  }
   player.clearAllFingers()
   if (selectedFingerNote.value) {
     selectedFingerNote.value = { ...selectedFingerNote.value, finger: null, fingerSource: undefined, fingerCost: undefined }

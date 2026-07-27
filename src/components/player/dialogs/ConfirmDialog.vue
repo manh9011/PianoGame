@@ -1,0 +1,138 @@
+<script setup lang="ts">
+import { computed, nextTick, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useConfirmStore } from '../../../stores/confirmStore'
+import BaseDialog from './BaseDialog.vue'
+
+const { t } = useI18n()
+const confirmStore = useConfirmStore()
+const cancelButtonRef = ref<HTMLButtonElement>()
+
+const title = computed(() => confirmStore.title)
+const cancelLabel = computed(() => confirmStore.cancelLabel || t('common.cancel'))
+const confirmLabel = computed(() => confirmStore.confirmLabel || t('common.continue'))
+const confirmButtonClass = computed(() => [
+  'confirm-dialog__button',
+  confirmStore.tone === 'danger' ? 'danger' : 'primary',
+])
+
+watch(
+  () => confirmStore.visible,
+  async visible => {
+    if (!visible) return
+    await nextTick()
+    cancelButtonRef.value?.focus()
+  },
+)
+</script>
+
+<template>
+  <BaseDialog
+    :show="confirmStore.visible"
+    :title="title"
+    width="800px"
+    :show-close-button="false"
+    :aria-labelledby="title ? 'confirm-dialog-title' : ''"
+    aria-describedby="confirm-dialog-message"
+    @close="confirmStore.cancel()"
+  >
+    <form class="confirm-dialog" @submit.prevent="confirmStore.confirm()" @keydown.esc.prevent="confirmStore.cancel()">
+      <div class="confirm-dialog__topbar">
+        <button ref="cancelButtonRef" type="button" class="confirm-dialog__cancel" @click="confirmStore.cancel()">
+          {{ cancelLabel }}
+        </button>
+      </div>
+      <p id="confirm-dialog-message" class="confirm-dialog__message">{{ confirmStore.message }}</p>
+      <button type="submit" :class="confirmButtonClass">
+        {{ confirmLabel }}
+      </button>
+    </form>
+  </BaseDialog>
+</template>
+
+<style scoped>
+.confirm-dialog {
+  display: grid;
+  gap: 0.7rem;
+  padding: 0.45rem;
+  margin: -1.25rem;
+  background: #666665;
+}
+
+.confirm-dialog__topbar {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.confirm-dialog__cancel {
+  min-height: 34px;
+  padding: 0.3rem 0.65rem;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: #2d2d2d;
+  color: #f6f6f6;
+  font-size: 0.95rem;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08) inset;
+  transition: filter 0.16s ease, transform 0.16s ease;
+}
+
+.confirm-dialog__message {
+  margin: 0;
+  min-height: 9.75rem;
+  display: grid;
+  place-items: center;
+  padding: 1.15rem 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #3e3e3e;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 1.05rem;
+  line-height: 1.65;
+  text-align: center;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.confirm-dialog__button {
+  width: 100%;
+  min-height: 44px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 1.35rem;
+  transition: filter 0.16s ease, transform 0.16s ease, box-shadow 0.16s ease;
+}
+
+.confirm-dialog__cancel:hover,
+.confirm-dialog__cancel:focus-visible,
+.confirm-dialog__button:hover,
+.confirm-dialog__button:focus-visible {
+  filter: brightness(1.12);
+}
+
+.confirm-dialog__cancel:active,
+.confirm-dialog__button:active {
+  transform: translateY(1px);
+}
+
+.confirm-dialog__cancel:focus-visible,
+.confirm-dialog__button:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.88);
+  outline-offset: 2px;
+}
+
+.confirm-dialog__button.primary {
+  background: #3465a4;
+  color: #fff;
+}
+
+.confirm-dialog__button.danger {
+  background: #a82020;
+  color: #fff;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+}
+
+@media (max-width: 720px) {
+  .confirm-dialog__button {
+    font-size: 1.1rem;
+  }
+}
+</style>

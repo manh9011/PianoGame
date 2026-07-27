@@ -3,11 +3,19 @@ interface Props {
   show: boolean
   title?: string
   width?: string
+  showCloseButton?: boolean
+  closeOnOverlay?: boolean
+  ariaLabelledby?: string
+  ariaDescribedby?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
   title: '',
-  width: '480px'
+  width: '480px',
+  showCloseButton: true,
+  closeOnOverlay: true,
+  ariaLabelledby: '',
+  ariaDescribedby: '',
 })
 
 const emit = defineEmits<{
@@ -15,7 +23,7 @@ const emit = defineEmits<{
 }>()
 
 function handleOverlayClick(event: MouseEvent) {
-  if (event.target === event.currentTarget) {
+  if (props.closeOnOverlay && event.target === event.currentTarget) {
     emit('close')
   }
 }
@@ -24,10 +32,17 @@ function handleOverlayClick(event: MouseEvent) {
 <template>
   <Transition name="dialog">
     <div v-if="show" class="dialog-overlay" @click="handleOverlayClick">
-      <div class="dialog-container" :style="{ maxWidth: width }">
+      <div
+        class="dialog-container"
+        :style="{ maxWidth: width }"
+        role="dialog"
+        aria-modal="true"
+        :aria-labelledby="ariaLabelledby || undefined"
+        :aria-describedby="ariaDescribedby || undefined"
+      >
         <header v-if="title" class="dialog-header">
-          <h3>{{ title }}</h3>
-          <button class="close-button" @click="emit('close')">✕</button>
+          <h3 :id="ariaLabelledby || undefined">{{ title }}</h3>
+          <button v-if="showCloseButton" class="close-button" @click="emit('close')">✕</button>
         </header>
         <div class="dialog-content">
           <slot></slot>
@@ -41,7 +56,7 @@ function handleOverlayClick(event: MouseEvent) {
 .dialog-overlay {
   position: fixed;
   inset: 0;
-  z-index: 100;
+  z-index: 1200;
   display: grid;
   place-items: center;
   background: rgba(0, 0, 0, 0.75);

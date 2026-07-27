@@ -12,6 +12,7 @@ import { applyMusicXmlExportMetadata } from '../modules/musicxml/musicXmlExportM
 import { generateSheetMusic } from '../modules/sheet/sheetMusicClient'
 import { SheetMusicError, toSheetMusicError } from '../modules/sheet/sheetTypes'
 import { useLibraryStore } from '../stores/libraryStore'
+import { useConfirmDialog } from '../composables/useConfirmDialog'
 import { useSettingsStore } from '../stores/settingsStore'
 import { useToastStore } from '../stores/toastStore'
 import type { SongMetadata } from '../types/song'
@@ -21,6 +22,7 @@ const { t } = useI18n()
 const library = useLibraryStore()
 const settings = useSettingsStore()
 const toastStore = useToastStore()
+const { confirm } = useConfirmDialog()
 const selectedSong = computed(() => library.selectedSong)
 const visibleSongCount = computed(() => library.sortedSongs.length)
 const musicXmlDownloadingSongId = ref<string | null>(null)
@@ -171,7 +173,15 @@ async function downloadCompressedMusicXml() {
 async function deleteSong() {
   const song = selectedSong.value
   if (!song) return
-  if (!confirm(t('library.deleteConfirm', { title: song.title }))) return
+  if (settings.advancedConfirmBeforeDestructiveAction) {
+    const confirmed = await confirm({
+      message: t('library.deleteConfirm', { title: song.title }),
+      confirmLabel: t('common.delete'),
+      cancelLabel: t('common.cancel'),
+      tone: 'danger',
+    })
+    if (!confirmed) return
+  }
 
   try {
     await library.deleteSong(song.id)
@@ -192,7 +202,13 @@ async function promptAutoEvaluateMissingDifficulty() {
   const missingSongs = library.songs.filter(song => song.difficulty == null)
   if (!missingSongs.length) return
   missingDifficultyPromptShown.value = true
-  if (!confirm(t('library.autoDifficultyMissingConfirm', { n: missingSongs.length }))) return
+  const confirmed = await confirm({
+    message: t('library.autoDifficultyMissingConfirm', { n: missingSongs.length }),
+    confirmLabel: t('common.continue'),
+    cancelLabel: t('common.cancel'),
+    tone: 'primary',
+  })
+  if (!confirmed) return
 
   autoEvaluatingMissingDifficulty.value = true
   toastStore.showLoading(t('library.autoDifficultyBatchProgress', { current: 0, total: missingSongs.length }))
