@@ -114,6 +114,8 @@ function drawLabel(
   ctx.font = `700 ${fontSize}px sans-serif`
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
+  ctx.lineJoin = 'round'
+  ctx.miterLimit = 2
   ctx.lineWidth = rect.key.black ? 2.5 : 3
   ctx.strokeStyle = rect.key.black
     ? isActive ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0.75)'

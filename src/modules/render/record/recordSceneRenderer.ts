@@ -136,6 +136,7 @@ function drawIntroOverlay(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderi
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   ctx.lineJoin = 'round'
+  ctx.miterLimit = 2
   ctx.lineWidth = Math.max(3, fontSize * 0.075)
   ctx.strokeStyle = '#05070a'
   ctx.fillStyle = '#ffffff'

@@ -133,6 +133,8 @@ function drawGrid(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContex
       ctx.textAlign = 'left'
       ctx.textBaseline = 'alphabetic'
       ctx.lineWidth = 3
+      ctx.lineJoin = 'round'
+      ctx.miterLimit = 2
       ctx.strokeStyle = 'rgba(0,0,0,0.62)'
       ctx.fillStyle = 'rgba(255,255,255,0.82)'
       ctx.strokeText(String(index + 1), 4, y - 4)
@@ -151,6 +153,8 @@ function drawCurrentKey(ctx: CanvasRenderingContext2D | OffscreenCanvasRendering
   ctx.textAlign = 'left'
   ctx.textBaseline = 'top'
   ctx.lineWidth = 4
+  ctx.lineJoin = 'round'
+  ctx.miterLimit = 2
   ctx.strokeStyle = 'rgba(0,0,0,0.72)'
   ctx.fillStyle = 'rgba(205,208,214,0.92)'
   ctx.strokeText(text, x, y)
@@ -239,6 +243,7 @@ function drawNoteLabel(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingC
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   ctx.lineJoin = 'round'
+  ctx.miterLimit = 2
   ctx.lineWidth = 3
   ctx.strokeStyle = 'rgba(0,0,0,0.82)'
   ctx.fillStyle = '#ffffff'

@@ -284,6 +284,8 @@ function drawBookmarkLabel(ctx: CanvasRenderingContext2D, bookmark: SessionBookm
   ctx.textAlign = 'left'
   ctx.textBaseline = 'top'
   ctx.lineWidth = 4
+  ctx.lineJoin = 'round'
+  ctx.miterLimit = 2
   ctx.strokeStyle = 'rgba(0,0,0,0.72)'
   ctx.fillStyle = 'rgba(205,208,214,0.92)'
   ctx.strokeText(text, 8, y + 6)
@@ -341,6 +343,8 @@ function drawUserBookmarkLabel(ctx: CanvasRenderingContext2D, bookmark: UserBook
   ctx.textAlign = 'left'
   ctx.textBaseline = 'top'
   ctx.lineWidth = 4
+  ctx.lineJoin = 'round'
+  ctx.miterLimit = 2
   ctx.strokeStyle = 'rgba(0,0,0,0.72)'
   ctx.fillStyle = USER_BOOKMARK_COLOR
   ctx.strokeText(text, BOOKMARK_GAP_WIDTH + 4, y + 4)
@@ -385,6 +389,8 @@ function drawCurrentKey(ctx: CanvasRenderingContext2D, session: NonNullable<type
   ctx.textAlign = 'left'
   ctx.textBaseline = 'top'
   ctx.lineWidth = 4
+  ctx.lineJoin = 'round'
+  ctx.miterLimit = 2
   ctx.strokeStyle = 'rgba(0,0,0,0.72)'
   ctx.fillStyle = 'rgba(205,208,214,0.92)'
   ctx.strokeText(text, x, y)
@@ -427,6 +433,8 @@ function drawGrid(ctx: CanvasRenderingContext2D, session: NonNullable<typeof pla
       ctx.textAlign = 'left'
       ctx.textBaseline = 'alphabetic'
       ctx.lineWidth = 3
+      ctx.lineJoin = 'round'
+      ctx.miterLimit = 2
       ctx.strokeStyle = 'rgba(0,0,0,0.62)'
       ctx.fillStyle = 'rgba(255,255,255,0.82)'
       ctx.strokeText(String(index + 1), 4, y - 4)
@@ -601,6 +609,7 @@ function getNoteLabelSprite(options: NoteLabelSpriteOptions) {
     spriteCtx.textAlign = 'center'
     spriteCtx.textBaseline = 'middle'
     spriteCtx.lineJoin = 'round'
+    spriteCtx.miterLimit = 2
     spriteCtx.lineWidth = options.lineWidth
     spriteCtx.strokeStyle = options.strokeStyle
     spriteCtx.fillStyle = options.fillStyle

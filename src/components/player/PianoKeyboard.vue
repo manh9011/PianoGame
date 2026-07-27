@@ -667,6 +667,7 @@ function drawTextSprite(ctx: CanvasRenderingContext2D, options: TextSpriteOption
     spriteCtx.textAlign = 'center'
     spriteCtx.textBaseline = 'middle'
     spriteCtx.lineJoin = 'round'
+    spriteCtx.miterLimit = 2
     spriteCtx.lineWidth = options.lineWidth
     spriteCtx.strokeStyle = options.strokeStyle
     spriteCtx.fillStyle = options.fillStyle
