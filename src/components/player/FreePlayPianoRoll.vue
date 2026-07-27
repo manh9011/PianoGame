@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { FREE_PLAY_KEY_SIGNATURES, parseFreePlayTimeSignature, useFreePlayStore, type FreePlayRecordedNote } from '../../stores/freePlayStore'
+import { FREE_PLAY_KEY_SIGNATURES, getFreePlayTrackLoopDurationUs, parseFreePlayTimeSignature, useFreePlayStore, type FreePlayRecordedNote } from '../../stores/freePlayStore'
 import { usePlayerStore } from '../../stores/playerStore'
 import { useSettingsStore } from '../../stores/settingsStore'
 import { createPianoKeys, WHITE_KEY_COUNT } from '../../modules/render/pianoGeometry'
 import { getNoteLabel } from '../../modules/render/pianoLabels'
 import { drawRollHitLine, ROLL_HIT_LINE_HEIGHT } from '../../modules/render/hitLineRenderer'
-import { HAND_COLORS } from '../../modules/game/handAssignment'
 import { isNoteInRange } from '../../modules/render/keyboardRange'
 
 const PIANO_ROLL_BACKGROUND = '#303030'
@@ -46,9 +45,34 @@ function currentUs() {
   return freePlay.recordingDurationUs
 }
 
-function visibleNotes(nowUs: number): DrawableNote[] {
+function visibleNotes(nowUs: number, viewStartUs: number): DrawableNote[] {
+  const notes: DrawableNote[] = []
+  for (const track of freePlay.tracks) {
+    if (!track.loop || !track.notes.length) {
+      notes.push(...track.notes)
+      continue
+    }
+
+    const loopDurationUs = getFreePlayTrackLoopDurationUs(track, freePlay.bpm, freePlay.timeSignature)
+    if (loopDurationUs <= 0) continue
+    const firstLoop = Math.max(0, Math.floor(viewStartUs / loopDurationUs) - 1)
+    const lastLoop = Math.floor(nowUs / loopDurationUs) + 1
+    for (let loopIndex = firstLoop; loopIndex <= lastLoop; loopIndex += 1) {
+      const offsetUs = loopIndex * loopDurationUs
+      for (const note of track.notes) {
+        notes.push({
+          ...note,
+          id: loopIndex === 0 ? note.id : `${note.id}:loop:${loopIndex}`,
+          startUs: note.startUs + offsetUs,
+          endUs: note.endUs + offsetUs,
+        })
+      }
+    }
+  }
+
   const activeNotes: DrawableNote[] = freePlay.activeCaptures.map((capture, index) => ({
     id: `active:${capture.noteId}:${index}:${capture.startUs}`,
+    trackId: capture.trackId,
     noteId: capture.noteId,
     startUs: capture.startUs,
     endUs: nowUs,
@@ -56,7 +80,7 @@ function visibleNotes(nowUs: number): DrawableNote[] {
     source: capture.source,
     active: true,
   }))
-  return [...freePlay.notes, ...activeNotes]
+  return [...notes, ...activeNotes]
 }
 
 function noteColumn(noteId: number) {
@@ -135,8 +159,8 @@ function drawGrid(ctx: CanvasRenderingContext2D) {
 }
 
 function noteColor(note: DrawableNote) {
-  if (note.active) return '#A0F0C0'
-  return note.noteId < 60 ? HAND_COLORS.left : HAND_COLORS.right
+  const track = freePlay.tracks.find(track => track.id === note.trackId)
+  return track?.color ?? freePlay.selectedTrack.color
 }
 
 function drawNoteBody(ctx: CanvasRenderingContext2D, note: DrawableNote, x: number, y: number, width: number, height: number) {
@@ -191,7 +215,7 @@ function drawNotes(ctx: CanvasRenderingContext2D) {
   const viewStart = now - windowUs
   const range = keyboardRange.value
 
-  for (const note of visibleNotes(now)) {
+  for (const note of visibleNotes(now, viewStart)) {
     if (range && !isNoteInRange(note.noteId, range)) continue
     if (note.endUs < viewStart || note.startUs > now) continue
     const visibleStart = Math.max(note.startUs, viewStart)
@@ -283,7 +307,7 @@ function requestDraw() {
   draw()
 }
 
-watch(() => [freePlay.status, freePlay.notes.length, freePlay.clockTick, freePlay.bpm, freePlay.timeSignature, freePlay.keySignature, freePlay.keySignatureMode, freePlay.showKeySignature, settings.showGrid, settings.showNoteLabels, settings.noteLabelMode, settings.noteLabelSize, settings.showDuration], requestDraw)
+watch(() => [freePlay.status, freePlay.notes.length, freePlay.clockTick, freePlay.trackVersion, freePlay.selectedTrackId, freePlay.bpm, freePlay.timeSignature, freePlay.keySignature, freePlay.keySignatureMode, freePlay.showKeySignature, settings.showGrid, settings.showNoteLabels, settings.noteLabelMode, settings.noteLabelSize, settings.showDuration], requestDraw)
 watch(() => player.session?.keyboardRange ? `${player.session.keyboardRange.lowNote}:${player.session.keyboardRange.highNote}` : '', requestDraw)
 
 onMounted(() => {

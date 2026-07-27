@@ -1,15 +1,17 @@
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useConfirmDialog } from '../composables/useConfirmDialog'
-import { parseFreePlayTimeSignature, useFreePlayStore } from '../stores/freePlayStore'
+import { getFreePlayTrackLoopDurationUs, parseFreePlayTimeSignature, useFreePlayStore } from '../stores/freePlayStore'
 import { usePlayerStore } from '../stores/playerStore'
 import { useSettingsStore } from '../stores/settingsStore'
 import { useToastStore } from '../stores/toastStore'
 import { bindInput, requestMidiAccess } from '../modules/midi/webMidi'
 import { WHITE_KEY_COUNT } from '../modules/render/pianoGeometry'
 import { createFreePlayMidi } from '../modules/midi/freePlayMidiExport'
+import { getInstrumentByProgram } from '../modules/audio/gmInstrumentCatalog'
 import FreePlayTopBar from '../components/player/FreePlayTopBar.vue'
+import FreePlayTrackManager from '../components/player/FreePlayTrackManager.vue'
 import FreePlayPianoRoll from '../components/player/FreePlayPianoRoll.vue'
 import PianoKeyboard from '../components/player/PianoKeyboard.vue'
 import FreePlaySettingsDialog from '../components/player/dialogs/FreePlaySettingsDialog.vue'
@@ -31,6 +33,7 @@ let midiAccess: Awaited<ReturnType<typeof requestMidiAccess>> = null
 let unsubscribeNoteInput: (() => void) | undefined
 let resizeObserver: ResizeObserver | null = null
 let timerId: number | null = null
+const backingActiveVoiceIds = new Set<string>()
 
 const freePlayLayoutRef = ref<HTMLElement>()
 const keyboardHeight = ref(150)
@@ -52,6 +55,10 @@ const keyboardRangeArrowPlacement = ref<'left' | 'right'>('right')
 const labelsPopupStyle = ref({ top: '0px', left: '0px' })
 const labelsArrowStyle = ref<{ top: string; left?: string; right?: string }>({ top: '0px', right: '-7px' })
 const labelsArrowPlacement = ref<'left' | 'right'>('right')
+const selectedTrackMonitorKey = computed(() => {
+  const track = freePlay.selectedTrack
+  return `${track.id}:${track.instrumentProgram}:${track.color}`
+})
 
 function calculatePopupPosition(element: HTMLElement, popupWidth: number, popupHeight: number) {
   const rect = element.getBoundingClientRect()
@@ -180,14 +187,58 @@ function updateKeyboardHeight() {
   blackKeyHeight.value = keyboardHeight.value * BLACK_KEY_HEIGHT_RATIO
 }
 
+function syncMonitorTrack() {
+  const track = freePlay.selectedTrack
+  player.setFreePlayMonitorTrack(track.id, track.instrumentProgram, track.color)
+}
+
+function backingVoiceId(trackId: number, noteId: string, loopIndex: number) {
+  return `free-play-backing:${trackId}:${noteId}:${loopIndex}`
+}
+
+function stopBackingPlayback() {
+  for (const voiceId of backingActiveVoiceIds) player.inputSynth.noteOff(voiceId)
+  backingActiveVoiceIds.clear()
+}
+
+function tickBackingPlayback(durationUs: number) {
+  const active = new Set<string>()
+  for (const track of freePlay.tracks) {
+    if (track.id === freePlay.recordingTrackId || !track.notes.length) continue
+    const loopDurationUs = getFreePlayTrackLoopDurationUs(track, freePlay.bpm, freePlay.timeSignature)
+    if (loopDurationUs <= 0) continue
+    const loopIndex = track.loop ? Math.floor(durationUs / loopDurationUs) : 0
+    const localUs = track.loop ? durationUs % loopDurationUs : durationUs
+    if (!track.loop && durationUs > loopDurationUs) continue
+    const soundfontId = getInstrumentByProgram(track.instrumentProgram).soundfontId
+    for (const note of track.notes) {
+      if (note.startUs > localUs || note.endUs <= localUs) continue
+      const voiceId = backingVoiceId(track.id, note.id, loopIndex)
+      active.add(voiceId)
+      if (backingActiveVoiceIds.has(voiceId)) continue
+      backingActiveVoiceIds.add(voiceId)
+      void player.inputSynth.noteOn(voiceId, note.noteId, note.velocity, soundfontId)
+    }
+  }
+
+  for (const voiceId of [...backingActiveVoiceIds]) {
+    if (active.has(voiceId)) continue
+    player.inputSynth.noteOff(voiceId)
+    backingActiveVoiceIds.delete(voiceId)
+  }
+}
+
 function startRecording() {
   closeDialogs()
+  stopBackingPlayback()
+  syncMonitorTrack()
   freePlay.startRecording()
   player.metronome.restart()
 }
 
 function stopRecording() {
   freePlay.stopRecording()
+  stopBackingPlayback()
   player.metronome.restart()
   if (!freePlay.hasRecording) toast.showError(t('freePlay.emptyRecording'))
 }
@@ -204,7 +255,7 @@ function triggerDownload(blob: Blob, fileName: string) {
 function exportMidi() {
   if (!freePlay.hasRecording) return
   try {
-    const data = createFreePlayMidi(freePlay.notes, freePlay.bpm)
+    const data = createFreePlayMidi(freePlay.tracks, freePlay.bpm)
     const bytes = new Uint8Array(data.length)
     bytes.set(data)
     triggerDownload(new Blob([bytes.buffer as ArrayBuffer], { type: 'audio/midi' }), t('freePlay.midiFileName'))
@@ -227,7 +278,7 @@ async function deleteRecording() {
     })
     if (!confirmed) return
   }
-  freePlay.clearRecording()
+  freePlay.clearAllTrackNotes()
 }
 
 function toggleFullscreen() {
@@ -256,6 +307,7 @@ function tickFreePlayClock() {
   freePlay.tickClock()
   if (freePlay.status !== 'recording') return
   const durationUs = freePlay.recordingDurationUs
+  tickBackingPlayback(durationUs)
   const signature = parseFreePlayTimeSignature(freePlay.timeSignature)
   if (!signature.enabled) return
   const quarterBeatUs = 60_000_000 / freePlay.bpm
@@ -283,11 +335,15 @@ function stopTimer() {
 }
 
 onMounted(async () => {
-  player.loadFreePlaySession(settings.defaultSpeed, settings.showDuration, settings.octaveShift)
+  player.loadFreePlaySession(settings.defaultSpeed, settings.showDuration, settings.octaveShift, {
+    trackId: freePlay.selectedTrack.id,
+    instrumentProgram: freePlay.selectedTrack.instrumentProgram,
+    color: freePlay.selectedTrack.color,
+  })
   await player.prepareAudio(settings.midiOutputId)
   unsubscribeNoteInput = player.subscribeNoteInput(event => freePlay.handleNoteInput(event))
   midiAccess = await requestMidiAccess()
-  bindInput(midiAccess, settings.midiInputId, (note, velocity, on) => player.noteInput(note, on, { velocity, source: 'midi' }))
+  bindInput(midiAccess, settings.midiInputId, (note, velocity, on) => player.noteInput(note, on, { velocity, source: 'midi', trackId: freePlay.selectedTrack.id }))
 
   document.addEventListener('fullscreenchange', updateFullscreenState)
   window.addEventListener('resize', updateFullscreenState)
@@ -304,6 +360,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   if (freePlay.status === 'recording') freePlay.stopRecording()
+  stopBackingPlayback()
   bindInput(midiAccess, '', () => {})
   unsubscribeNoteInput?.()
   stopTimer()
@@ -317,6 +374,14 @@ onBeforeUnmount(() => {
 
 watch(() => settings.keyboardRangeMode, () => {
   player.refreshKeyboardRange()
+})
+
+watch(selectedTrackMonitorKey, () => {
+  syncMonitorTrack()
+})
+
+watch(() => freePlay.selectedTrackId, () => {
+  stopBackingPlayback()
 })
 
 watch(() => freePlay.status, status => {
@@ -350,6 +415,7 @@ watch(() => freePlay.status, status => {
     />
     <section class="free-play-stage">
       <FreePlayPianoRoll />
+      <FreePlayTrackManager />
     </section>
     <section class="keyboard-shell">
       <PianoKeyboard />

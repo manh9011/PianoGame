@@ -353,6 +353,7 @@ export type NoteInputSource = 'midi' | 'pointer' | 'computer' | 'auto'
 export interface NoteInputOptions {
   velocity?: number
   source?: NoteInputSource
+  trackId?: number
 }
 
 export interface NoteInputEvent {
@@ -464,13 +465,15 @@ export const usePlayerStore = defineStore('player', {
       noteInputListeners.add(listener)
       return () => noteInputListeners.delete(listener)
     },
-    loadFreePlaySession(speed = 100, showDuration = 3.25, octaveShift = 0) {
+    loadFreePlaySession(speed = 100, showDuration = 3.25, octaveShift = 0, monitorTrack: Partial<Pick<TrackProperties, 'trackId' | 'instrumentProgram' | 'color'>> = {}) {
       this.clock?.stop()
       this.stopTrackPreview()
       this.autoPlayer.allNotesOff(this.session)
       this.metronome.restart()
       this.song = null
-      this.session = createPlaySession([], createDefaultTrackProperties([{ trackId: 0, role: 'right', instrumentProgram: 0 }]), {
+      const track = createDefaultTrackProperties([{ trackId: monitorTrack.trackId ?? 0, role: 'background', instrumentProgram: monitorTrack.instrumentProgram ?? 0 }])[0]
+      if (monitorTrack.color) track.color = monitorTrack.color
+      this.session = createPlaySession([], [track], {
         mode: 'listen',
         handSelection: 'both',
         speed,
@@ -690,6 +693,16 @@ export const usePlayerStore = defineStore('player', {
     async prepareAudio(outputId: string) {
       await this.autoPlayer.configure(outputId)
       await this.inputSynth.start()
+    },
+    setFreePlayMonitorTrack(trackId: number, instrumentProgram: number, color: string) {
+      const session = this.session
+      if (!session) return
+      const track = session.tracks[0]
+      if (!track) return
+      track.trackId = trackId
+      track.instrumentProgram = instrumentProgram
+      track.color = color
+      markKeyboardVisualChanged(session)
     },
     start() {
       if (!this.session?.setupComplete || this.stats || this.interactionLocked) return
@@ -1304,6 +1317,7 @@ export const usePlayerStore = defineStore('player', {
       if (!session?.setupComplete || session.finished || this.stats) return
       const velocity = Math.max(0, Math.min(127, Math.round(options.velocity ?? 80)))
       const source = options.source ?? 'midi'
+      const inputTrackId = options.trackId ?? session.tracks[0]?.trackId
       const atMs = performance.now()
       if (!on) {
         session.activeNotes.delete(noteId)
@@ -1324,11 +1338,11 @@ export const usePlayerStore = defineStore('player', {
       if (hit) {
         session.activeNoteHands.set(noteId, hit.hand)
         session.activeNoteTrackIds.set(noteId, hit.trackId)
-      } else if (session.mode === 'listen' && session.tracks.length) {
-        session.activeNoteTrackIds.set(noteId, session.tracks[0].trackId)
+      } else if (session.mode === 'listen' && inputTrackId != null) {
+        session.activeNoteTrackIds.set(noteId, inputTrackId)
       }
       markKeyboardVisualChanged(session)
-      void this.inputSynth.noteOn(String(noteId), noteId, velocity, getTrackSoundfont(session, hit?.trackId))
+      void this.inputSynth.noteOn(String(noteId), noteId, velocity, getTrackSoundfont(session, hit?.trackId ?? inputTrackId))
       emitNoteInput({ noteId, on, velocity, source, atMs })
       if (session.mode === 'listen') return
 

@@ -1,37 +1,11 @@
 import { defineStore } from 'pinia'
+import { DEFAULT_INSTRUMENT_PROGRAM } from '../modules/audio/gmInstrumentCatalog'
+import { TRACK_SETTINGS_PALETTE } from '../modules/game/trackProperties'
 import { get, persistQueue, put } from '../modules/storage/indexedDb'
 import type { NoteInputEvent, NoteInputSource } from './playerStore'
 
 export type FreePlayStatus = 'idle' | 'recording' | 'recorded'
 export type FreePlayTimeSignature = 'disabled' | '2/4' | '3/4' | '4/4' | '5/4' | '6/4' | '3/8' | '4/8' | '5/8' | '6/8' | '7/8' | '8/8' | '9/8' | '10/8' | '11/8' | '12/8' | '2/2' | '3/2' | '4/2'
-
-interface FreePlayPreferences {
-  bpm: number
-  timeSignature: FreePlayTimeSignature
-  metronomeVolume: number
-  metronomeDoubleSpeed: boolean
-  metronomeEmphasizeFirstBeat: boolean
-  showColorInstrument: boolean
-  showRecordedTracks: boolean
-  showChordName: boolean
-  showKeySignature: boolean
-  keySignature: FreePlayKeySignature
-  keySignatureMode: FreePlayKeySignatureMode
-}
-
-const defaultFreePlayPreferences: FreePlayPreferences = {
-  bpm: 120,
-  timeSignature: 'disabled',
-  metronomeVolume: 100,
-  metronomeDoubleSpeed: false,
-  metronomeEmphasizeFirstBeat: true,
-  showColorInstrument: true,
-  showRecordedTracks: true,
-  showChordName: true,
-  showKeySignature: true,
-  keySignature: 'natural',
-  keySignatureMode: 'major',
-}
 
 const FREE_PLAY_KEY_SIGNATURE_DEFINITIONS = [
   { id: 'flat7', fileName: '7b_Cb_Abm.svg', nameKey: 'freePlay.keySignatureNames.flat7' },
@@ -54,6 +28,53 @@ const FREE_PLAY_KEY_SIGNATURE_DEFINITIONS = [
 export type FreePlayKeySignature = (typeof FREE_PLAY_KEY_SIGNATURE_DEFINITIONS)[number]['id']
 export type FreePlayKeySignatureMode = 'major' | 'minor'
 
+export interface FreePlayRecordedNote {
+  id: string
+  trackId: number
+  noteId: number
+  startUs: number
+  endUs: number
+  velocity: number
+  source: NoteInputSource
+}
+
+export interface FreePlayTrack {
+  id: number
+  instrumentProgram: number
+  color: string
+  loop: boolean
+  notes: FreePlayRecordedNote[]
+}
+
+interface FreePlayPreferences {
+  bpm: number
+  timeSignature: FreePlayTimeSignature
+  metronomeVolume: number
+  metronomeDoubleSpeed: boolean
+  metronomeEmphasizeFirstBeat: boolean
+  showColorInstrument: boolean
+  showRecordedTracks: boolean
+  showChordName: boolean
+  showKeySignature: boolean
+  keySignature: FreePlayKeySignature
+  keySignatureMode: FreePlayKeySignatureMode
+  tracks: FreePlayTrack[]
+  selectedTrackId: number
+  nextTrackId: number
+  nextNoteId: number
+}
+
+interface ActiveCapture {
+  trackId: number
+  noteId: number
+  startUs: number
+  velocity: number
+  source: NoteInputSource
+}
+
+export const MAX_FREE_PLAY_TRACKS = 6
+export const FREE_PLAY_DEFAULT_TRACK_COLOR = '#4e9a06'
+
 export const FREE_PLAY_KEY_SIGNATURES = FREE_PLAY_KEY_SIGNATURE_DEFINITIONS.map(signature => ({
   ...signature,
   src: `/assets/${encodeURIComponent(signature.fileName)}`,
@@ -70,6 +91,34 @@ const FREE_PLAY_SETTINGS_KEY = 'free-play-settings'
 const FREE_PLAY_TIME_SIGNATURE_SET = new Set<FreePlayTimeSignature>(FREE_PLAY_TIME_SIGNATURES)
 const FREE_PLAY_KEY_SIGNATURE_SET = new Set<FreePlayKeySignature>(FREE_PLAY_KEY_SIGNATURES.map(signature => signature.id))
 
+function createDefaultTrack(id = 1): FreePlayTrack {
+  return {
+    id,
+    instrumentProgram: DEFAULT_INSTRUMENT_PROGRAM,
+    color: FREE_PLAY_DEFAULT_TRACK_COLOR,
+    loop: false,
+    notes: [],
+  }
+}
+
+const defaultFreePlayPreferences: FreePlayPreferences = {
+  bpm: 120,
+  timeSignature: 'disabled',
+  metronomeVolume: 100,
+  metronomeDoubleSpeed: false,
+  metronomeEmphasizeFirstBeat: true,
+  showColorInstrument: true,
+  showRecordedTracks: true,
+  showChordName: true,
+  showKeySignature: true,
+  keySignature: 'natural',
+  keySignatureMode: 'major',
+  tracks: [createDefaultTrack()],
+  selectedTrackId: 1,
+  nextTrackId: 2,
+  nextNoteId: 1,
+}
+
 function clampBpm(value: number) {
   return Math.max(20, Math.min(300, Math.round(value)))
 }
@@ -78,7 +127,45 @@ function clampMetronomeVolume(value: number) {
   return Math.max(0, Math.min(100, Math.round(value / 5) * 5))
 }
 
+function normalizeProgram(value: number | undefined) {
+  return Number.isInteger(value) && value != null && value >= 0 && value <= 127 ? value : DEFAULT_INSTRUMENT_PROGRAM
+}
+
+function normalizeColor(value: string | undefined, index: number) {
+  return value || TRACK_SETTINGS_PALETTE[index % TRACK_SETTINGS_PALETTE.length] || FREE_PLAY_DEFAULT_TRACK_COLOR
+}
+
+function normalizeTrack(value: Partial<FreePlayTrack> | null | undefined, index: number): FreePlayTrack {
+  const id = Number.isInteger(value?.id) && value!.id! > 0 ? value!.id! : index + 1
+  const notes = Array.isArray(value?.notes) ? value!.notes! : []
+  return {
+    id,
+    instrumentProgram: normalizeProgram(value?.instrumentProgram),
+    color: normalizeColor(value?.color, index),
+    loop: !!value?.loop,
+    notes: notes.map((note, noteIndex) => ({
+      id: note.id || `free:${id}:${noteIndex + 1}`,
+      trackId: id,
+      noteId: Math.max(0, Math.min(127, Math.round(note.noteId ?? 60))),
+      startUs: Math.max(0, Math.round(note.startUs ?? 0)),
+      endUs: Math.max(10_000, Math.round(note.endUs ?? 10_000)),
+      velocity: Math.max(0, Math.min(127, Math.round(note.velocity ?? 80))),
+      source: note.source ?? 'midi',
+    })).map(note => ({ ...note, endUs: Math.max(note.startUs + 10_000, note.endUs) })),
+  }
+}
+
+function normalizeTracks(value?: Partial<FreePlayTrack>[] | null): FreePlayTrack[] {
+  const source = Array.isArray(value) ? value.slice(0, MAX_FREE_PLAY_TRACKS) : []
+  const tracks = source.map(normalizeTrack)
+  return tracks.length ? tracks : [createDefaultTrack()]
+}
+
 function normalizeFreePlayPreferences(value?: Partial<FreePlayPreferences> | null): FreePlayPreferences {
+  const tracks = normalizeTracks(value?.tracks)
+  const trackIds = new Set(tracks.map(track => track.id))
+  const maxTrackId = Math.max(...tracks.map(track => track.id))
+  const maxNoteId = Math.max(0, ...tracks.flatMap(track => track.notes.map(note => Number(note.id.split(':').pop()) || 0)))
   return {
     ...defaultFreePlayPreferences,
     ...value,
@@ -87,6 +174,10 @@ function normalizeFreePlayPreferences(value?: Partial<FreePlayPreferences> | nul
     metronomeVolume: clampMetronomeVolume(value?.metronomeVolume ?? defaultFreePlayPreferences.metronomeVolume),
     keySignature: value?.keySignature && FREE_PLAY_KEY_SIGNATURE_SET.has(value.keySignature) ? value.keySignature : defaultFreePlayPreferences.keySignature,
     keySignatureMode: value?.keySignatureMode === 'minor' ? 'minor' : 'major',
+    tracks,
+    selectedTrackId: value?.selectedTrackId && trackIds.has(value.selectedTrackId) ? value.selectedTrackId : tracks[0].id,
+    nextTrackId: Math.max(value?.nextTrackId ?? 1, maxTrackId + 1),
+    nextNoteId: Math.max(value?.nextNoteId ?? 1, maxNoteId + 1),
   }
 }
 
@@ -96,20 +187,18 @@ export function parseFreePlayTimeSignature(value: FreePlayTimeSignature) {
   return { numerator, denominator, enabled: true }
 }
 
-export interface FreePlayRecordedNote {
-  id: string
-  noteId: number
-  startUs: number
-  endUs: number
-  velocity: number
-  source: NoteInputSource
+export function getFreePlayMeasureUs(bpm: number, timeSignature: FreePlayTimeSignature) {
+  const signature = parseFreePlayTimeSignature(timeSignature)
+  const quarterBeatUs = 60_000_000 / clampBpm(bpm)
+  const beatUs = quarterBeatUs * (4 / signature.denominator)
+  return Math.max(1, Math.round(beatUs * signature.numerator))
 }
 
-interface ActiveCapture {
-  noteId: number
-  startUs: number
-  velocity: number
-  source: NoteInputSource
+export function getFreePlayTrackLoopDurationUs(track: Pick<FreePlayTrack, 'notes'>, bpm: number, timeSignature: FreePlayTimeSignature) {
+  const lastEndUs = Math.max(0, ...track.notes.map(note => note.endUs))
+  if (lastEndUs <= 0) return 0
+  const measureUs = getFreePlayMeasureUs(bpm, timeSignature)
+  return Math.max(measureUs, Math.ceil(lastEndUs / measureUs) * measureUs)
 }
 
 function nowUs(startMs: number) {
@@ -121,23 +210,36 @@ export const useFreePlayStore = defineStore('freePlay', {
     status: 'idle' as FreePlayStatus,
     recordStartMs: 0,
     recordStopMs: 0,
-    notes: [] as FreePlayRecordedNote[],
     activeNotesByPitch: new Map<number, ActiveCapture[]>(),
-    nextNoteId: 1,
+    recordingTrackId: null as number | null,
     clockTick: 0,
+    trackVersion: 0,
     loading: false,
     initialized: false,
     ...defaultFreePlayPreferences,
   }),
   getters: {
+    notes(state): FreePlayRecordedNote[] {
+      return state.tracks.flatMap(track => track.notes)
+    },
+    selectedTrack(state): FreePlayTrack {
+      return state.tracks.find(track => track.id === state.selectedTrackId) ?? state.tracks[0] ?? createDefaultTrack()
+    },
     recordingDurationUs(state) {
-      if (!state.recordStartMs) return 0
+      const notesEndUs = Math.max(0, ...state.tracks.map(track => getFreePlayTrackLoopDurationUs(track, state.bpm, state.timeSignature)))
+      if (!state.recordStartMs) return notesEndUs
       if (state.status === 'recording') return Math.max(0, Math.round((performance.now() - state.recordStartMs) * 1000)) + state.clockTick * 0
-      if (state.recordStopMs) return Math.max(0, Math.round((state.recordStopMs - state.recordStartMs) * 1000))
-      return 0
+      if (state.recordStopMs) return Math.max(notesEndUs, Math.round((state.recordStopMs - state.recordStartMs) * 1000))
+      return notesEndUs
     },
     hasRecording(state) {
-      return state.status === 'recorded' && state.notes.length > 0
+      return state.tracks.some(track => track.notes.length > 0)
+    },
+    selectedTrackHasNotes(state) {
+      return (state.tracks.find(track => track.id === state.selectedTrackId)?.notes.length ?? 0) > 0
+    },
+    canAddTrack(state) {
+      return state.tracks.length < MAX_FREE_PLAY_TRACKS
     },
     activeCaptures(state) {
       return [...state.activeNotesByPitch.values()].flat()
@@ -168,20 +270,101 @@ export const useFreePlayStore = defineStore('freePlay', {
         showKeySignature: this.showKeySignature,
         keySignature: this.keySignature,
         keySignatureMode: this.keySignatureMode,
+        tracks: this.tracks,
+        selectedTrackId: this.selectedTrackId,
+        nextTrackId: this.nextTrackId,
+        nextNoteId: this.nextNoteId,
       }
       persistQueue.enqueue(() => put('app-state', { key: FREE_PLAY_SETTINGS_KEY, value: preferences }))
+    },
+    touchTracks() {
+      this.trackVersion += 1
+      this.clockTick += 1
     },
     tickClock() {
       this.clockTick += 1
     },
+    addTrack() {
+      if (!this.canAddTrack) return
+      const track = createDefaultTrack(this.nextTrackId++)
+      track.color = TRACK_SETTINGS_PALETTE[this.tracks.length % TRACK_SETTINGS_PALETTE.length] ?? FREE_PLAY_DEFAULT_TRACK_COLOR
+      this.tracks.push(track)
+      this.selectedTrackId = track.id
+      this.touchTracks()
+      this.persist()
+    },
+    selectTrack(trackId: number) {
+      if (!this.tracks.some(track => track.id === trackId)) return
+      this.selectedTrackId = trackId
+      this.touchTracks()
+      this.persist()
+    },
+    deleteTrack(trackId: number) {
+      const index = this.tracks.findIndex(track => track.id === trackId)
+      if (index === -1) return
+      this.activeNotesByPitch.clear()
+      if (this.tracks.length === 1) {
+        const reset = createDefaultTrack(this.tracks[0].id)
+        this.tracks.splice(0, 1, reset)
+        this.selectedTrackId = reset.id
+      } else {
+        this.tracks.splice(index, 1)
+        if (this.selectedTrackId === trackId) this.selectedTrackId = this.tracks[Math.max(0, index - 1)]?.id ?? this.tracks[0].id
+      }
+      this.status = this.hasRecording ? 'recorded' : 'idle'
+      this.touchTracks()
+      this.persist()
+    },
+    clearTrack(trackId: number) {
+      const track = this.tracks.find(track => track.id === trackId)
+      if (!track) return
+      track.notes = []
+      if (trackId === this.selectedTrackId) this.activeNotesByPitch.clear()
+      this.status = this.hasRecording ? 'recorded' : 'idle'
+      this.touchTracks()
+      this.persist()
+    },
+    clearAllTrackNotes() {
+      for (const track of this.tracks) track.notes = []
+      this.status = 'idle'
+      this.recordStartMs = 0
+      this.recordStopMs = 0
+      this.recordingTrackId = null
+      this.activeNotesByPitch.clear()
+      this.touchTracks()
+      this.persist()
+    },
+    toggleTrackLoop(trackId: number) {
+      const track = this.tracks.find(track => track.id === trackId)
+      if (!track) return
+      track.loop = !track.loop
+      this.touchTracks()
+      this.persist()
+    },
+    setTrackInstrument(trackId: number, program: number) {
+      const track = this.tracks.find(track => track.id === trackId)
+      if (!track) return
+      track.instrumentProgram = normalizeProgram(program)
+      this.touchTracks()
+      this.persist()
+    },
+    setTrackColor(trackId: number, color: string) {
+      const track = this.tracks.find(track => track.id === trackId)
+      if (!track) return
+      track.color = color || FREE_PLAY_DEFAULT_TRACK_COLOR
+      this.touchTracks()
+      this.persist()
+    },
     startRecording() {
-      this.notes = []
+      const track = this.selectedTrack
+      this.recordingTrackId = track.id
+      track.notes = []
       this.activeNotesByPitch.clear()
       this.recordStartMs = performance.now()
       this.recordStopMs = 0
-      this.nextNoteId = 1
       this.status = 'recording'
-      this.clockTick += 1
+      this.touchTracks()
+      this.persist()
     },
     stopRecording() {
       if (this.status !== 'recording') return
@@ -194,17 +377,13 @@ export const useFreePlayStore = defineStore('freePlay', {
       }
       this.activeNotesByPitch.clear()
       this.recordStopMs = performance.now()
-      this.status = this.notes.length ? 'recorded' : 'idle'
-      this.clockTick += 1
+      this.recordingTrackId = null
+      this.status = this.hasRecording ? 'recorded' : 'idle'
+      this.touchTracks()
+      this.persist()
     },
     clearRecording() {
-      this.status = 'idle'
-      this.recordStartMs = 0
-      this.recordStopMs = 0
-      this.notes = []
-      this.activeNotesByPitch.clear()
-      this.nextNoteId = 1
-      this.clockTick += 1
+      this.clearAllTrackNotes()
     },
     setBpm(value: number) {
       this.bpm = clampBpm(value)
@@ -258,10 +437,11 @@ export const useFreePlayStore = defineStore('freePlay', {
     },
     handleNoteInput(event: NoteInputEvent) {
       if (this.status !== 'recording') return
+      const track = this.tracks.find(track => track.id === this.recordingTrackId) ?? this.selectedTrack
       const atUs = nowUs(this.recordStartMs)
       const list = this.activeNotesByPitch.get(event.noteId) ?? []
       if (event.on) {
-        list.push({ noteId: event.noteId, startUs: atUs, velocity: event.velocity, source: event.source })
+        list.push({ trackId: track.id, noteId: event.noteId, startUs: atUs, velocity: event.velocity, source: event.source })
         this.activeNotesByPitch.set(event.noteId, list)
         this.clockTick += 1
         return
@@ -273,15 +453,19 @@ export const useFreePlayStore = defineStore('freePlay', {
       this.clockTick += 1
     },
     commitNote(capture: ActiveCapture, endUs: number) {
+      const track = this.tracks.find(track => track.id === capture.trackId)
+      if (!track) return
       const safeEndUs = Math.max(capture.startUs + 10_000, endUs)
-      this.notes.push({
+      track.notes.push({
         id: `free:${this.nextNoteId++}`,
+        trackId: capture.trackId,
         noteId: capture.noteId,
         startUs: capture.startUs,
         endUs: safeEndUs,
         velocity: capture.velocity,
         source: capture.source,
       })
+      this.touchTracks()
     },
   },
 })
