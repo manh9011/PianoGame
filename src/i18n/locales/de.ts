@@ -236,6 +236,7 @@ export const de = {
     sounded: "Klingend",
     muted: "Stumm",
     reset: "Zurücksetzen",
+    preview: "Vorschau",
     copySettingsByDragging: "Kopiere Einstellungen, indem du sie ziehst.",
     autoColor: "Automatische Farbe",
     custom: "Benutzerdefiniert",

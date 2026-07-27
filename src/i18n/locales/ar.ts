@@ -236,6 +236,7 @@ export const ar = {
     sounded: "يصدر صوتًا",
     muted: "مكتوم",
     reset: "إعادة تعيين",
+    preview: "معاينة",
     copySettingsByDragging: "انسخ الإعدادات عن طريق سحبها.",
     autoColor: "لون تلقائي",
     custom: "مخصص",

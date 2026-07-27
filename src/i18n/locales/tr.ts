@@ -236,6 +236,7 @@ export const tr = {
     sounded: "Sesli",
     muted: "Sessiz",
     reset: "Sıfırla",
+    preview: "Önizleme",
     copySettingsByDragging: "Ayarları sürükleyerek kopyalayın.",
     autoColor: "Otomatik renk",
     custom: "Özel",

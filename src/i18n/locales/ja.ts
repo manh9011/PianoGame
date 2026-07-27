@@ -236,6 +236,7 @@ export const ja = {
     sounded: "音あり",
     muted: "ミュート",
     reset: "リセット",
+    preview: "プレビュー",
     copySettingsByDragging: "ドラッグして設定をコピーします。",
     autoColor: "自動カラー",
     custom: "カスタム",

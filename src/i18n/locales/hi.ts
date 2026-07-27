@@ -236,6 +236,7 @@ export const hi = {
     sounded: "ध्वनि चालू",
     muted: "म्यूट",
     reset: "रीसेट",
+    preview: "पूर्वावलोकन",
     copySettingsByDragging: "खींचकर सेटिंग्स कॉपी करें।",
     autoColor: "स्वचालित रंग",
     custom: "कस्टम",

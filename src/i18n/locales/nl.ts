@@ -236,6 +236,7 @@ export const nl = {
     sounded: "Klinkt",
     muted: "Gedempt",
     reset: "Resetten",
+    preview: "Voorbeeld",
     copySettingsByDragging: "Kopieer instellingen door ze te slepen.",
     autoColor: "Automatische kleur",
     custom: "Aangepast",

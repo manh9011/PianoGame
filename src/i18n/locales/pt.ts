@@ -236,6 +236,7 @@ export const pt = {
     sounded: "Com som",
     muted: "Silenciado",
     reset: "Redefinir",
+    preview: "Prévia",
     copySettingsByDragging: "Copie as configurações arrastando-as.",
     autoColor: "Cor automática",
     custom: "Personalizado",

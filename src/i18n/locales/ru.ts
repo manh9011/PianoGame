@@ -236,6 +236,7 @@ export const ru = {
     sounded: "Со звуком",
     muted: "Без звука",
     reset: "Сбросить",
+    preview: "Предпросмотр",
     copySettingsByDragging: "Перетащите, чтобы скопировать настройки.",
     autoColor: "Автоцвет",
     custom: "Пользовательский",

@@ -236,6 +236,7 @@ export const th = {
     sounded: "มีเสียง",
     muted: "ปิดเสียง",
     reset: "รีเซ็ต",
+    preview: "ดูตัวอย่าง",
     copySettingsByDragging: "คัดลอกการตั้งค่าด้วยการลาก",
     autoColor: "สีอัตโนมัติ",
     custom: "กำหนดเอง",

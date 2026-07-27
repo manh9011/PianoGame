@@ -236,6 +236,7 @@ export const pl = {
     sounded: "Z dźwiękiem",
     muted: "Wyciszona",
     reset: "Resetuj",
+    preview: "Podgląd",
     copySettingsByDragging: "Kopiuj ustawienia, przeciągając je.",
     autoColor: "Automatyczny kolor",
     custom: "Niestandardowy",

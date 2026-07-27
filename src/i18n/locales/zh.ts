@@ -236,6 +236,7 @@ export const zh = {
     sounded: "有声",
     muted: "静音",
     reset: "重置",
+    preview: "预览",
     copySettingsByDragging: "拖拽即可复制设置。",
     autoColor: "自动配色",
     custom: "自定义",

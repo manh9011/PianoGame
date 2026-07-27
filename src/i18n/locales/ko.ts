@@ -236,6 +236,7 @@ export const ko = {
     sounded: "소리 켜짐",
     muted: "음소거",
     reset: "초기화",
+    preview: "미리보기",
     copySettingsByDragging: "드래그하여 설정을 복사하세요.",
     autoColor: "자동 색상",
     custom: "사용자 지정",

@@ -236,6 +236,7 @@ export const sl = {
     sounded: "Z zvokom",
     muted: "Utišano",
     reset: "Ponastavi",
+    preview: "Predogled",
     copySettingsByDragging: "Kopirajte nastavitve z vlečenjem.",
     autoColor: "Samodejna barva",
     custom: "Po meri",

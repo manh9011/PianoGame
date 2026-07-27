@@ -236,6 +236,7 @@ export const ca = {
     sounded: "Amb so",
     muted: "Silenciat",
     reset: "Restableix",
+    preview: "Vista prèvia",
     copySettingsByDragging: "Copia els paràmetres arrossegant-los.",
     autoColor: "Color automàtic",
     custom: "Personalitzat",
