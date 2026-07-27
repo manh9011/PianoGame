@@ -9,6 +9,8 @@ import { getNoteLabel, notePitchClass } from '../../modules/render/pianoLabels'
 import { FLAT_GRAY, MISSED_NOTE_COLOR, TRACK_INVISIBLE_COLOR } from '../../modules/game/trackProperties'
 import { HAND_COLORS, HAND_HIT_COLORS } from '../../modules/game/handAssignment'
 import { CanvasSpriteCache, createSpriteCanvas } from '../../modules/render/canvasSpriteCache'
+import { drawRollHitLine, ROLL_HIT_LINE_HEIGHT as HIT_LINE_HEIGHT } from '../../modules/render/hitLineRenderer'
+import { createImpactParticleRenderer, IMPACT_REPEAT_THROTTLE_MS, IMPACT_REWIND_THRESHOLD_US } from '../../modules/render/impactParticlesRenderer'
 import { addActivePlaybackCounter, addPlaybackCounter, beginRenderFrame, endRenderFrame, measurePlaybackSpan, setPlaybackGauge, type PlaybackProfilerContext } from '../../modules/perf/playbackProfiler'
 import type { SessionBookmark, SessionNote, UserBookmark } from '../../modules/game/playSession'
 import type { MidiBookmarkSource } from '../../modules/midi/midiTypes'
@@ -18,6 +20,7 @@ const props = defineProps<{
   benchmarkMode?: boolean
   loopSetupActive?: boolean
   fingerMode?: boolean
+  transparentBackground?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -48,8 +51,6 @@ let touchStartUs = 0
 let isTouchDragging = false
 const SCROLL_SENSITIVITY = 2.5 // microseconds per pixel
 const pianoKeys = createPianoKeys()
-const HIT_LINE_HEIGHT = 6
-
 // Loop edge dragging state
 const LOOP_EDGE_HIT_ZONE = 12
 type LoopDragEdge = 'start' | 'end' | null
@@ -57,80 +58,8 @@ let draggingLoopEdge: LoopDragEdge = null
 
 const BOOKMARK_LABEL_MIN_GAP = 18
 const DEFAULT_KEY_SIGNATURE_LABEL = 'C Major'
-const IMPACT_REWIND_THRESHOLD_US = 80_000
-const MAX_PARTICLES = 160
-const MAX_FLOATING_PARTICLES = 36
-const IMPACT_RAY_SPRITE_SIZE = 128
-const IMPACT_RAY_GLOW_SPRITE_SIZE = 160
-const IMPACT_FLOAT_SPRITE_SIZE = 48
-const IMPACT_LIGHT_COLOR = '#ffd166'
-const IMPACT_LIGHT_CORE_COLOR = '#fff4bf'
-const IMPACT_LIGHT_EDGE_COLOR = '#ffb703'
-const IMPACT_ORANGE_COLOR = '#ff8f1f'
-const IMPACT_RAY_VARIANTS = [
-  { color: '#fff8dc', outerRx: 16, outerRy: 44, coreRx: 5.2, coreRy: 36, glowRx: 24, glowRy: 54, alpha: 0.88 },
-  { color: '#fff4bf', outerRx: 18, outerRy: 42, coreRx: 4.8, coreRy: 38, glowRx: 28, glowRy: 52, alpha: 0.92 },
-  { color: '#fff0a6', outerRx: 15, outerRy: 48, coreRx: 4.2, coreRy: 41, glowRx: 22, glowRy: 58, alpha: 0.9 },
-  { color: '#ffec8a', outerRx: 20, outerRy: 40, coreRx: 6.2, coreRy: 32, glowRx: 30, glowRy: 50, alpha: 0.82 },
-  { color: '#ffe572', outerRx: 14, outerRy: 46, coreRx: 3.8, coreRy: 39, glowRx: 20, glowRy: 56, alpha: 0.86 },
-  { color: '#ffdf5c', outerRx: 19, outerRy: 45, coreRx: 5.6, coreRy: 37, glowRx: 27, glowRy: 55, alpha: 0.84 },
-  { color: '#ffd94a', outerRx: 17, outerRy: 43, coreRx: 4.5, coreRy: 35, glowRx: 25, glowRy: 53, alpha: 0.9 },
-  { color: '#ffd166', outerRx: 21, outerRy: 39, coreRx: 6.8, coreRy: 31, glowRx: 32, glowRy: 48, alpha: 0.8 },
-  { color: '#ffc857', outerRx: 13, outerRy: 50, coreRx: 3.5, coreRy: 43, glowRx: 21, glowRy: 60, alpha: 0.88 },
-  { color: '#ffc247', outerRx: 18, outerRy: 47, coreRx: 5.1, coreRy: 40, glowRx: 29, glowRy: 57, alpha: 0.82 },
-  { color: '#ffbd38', outerRx: 16, outerRy: 41, coreRx: 4.4, coreRy: 34, glowRx: 23, glowRy: 51, alpha: 0.86 },
-  { color: '#ffb703', outerRx: 22, outerRy: 44, coreRx: 7, coreRy: 36, glowRx: 34, glowRy: 54, alpha: 0.78 },
-  { color: '#ffb11a', outerRx: 15, outerRy: 45, coreRx: 4, coreRy: 38, glowRx: 24, glowRy: 55, alpha: 0.84 },
-  { color: '#ffaa22', outerRx: 19, outerRy: 42, coreRx: 5.8, coreRy: 34, glowRx: 31, glowRy: 52, alpha: 0.8 },
-  { color: '#ffa329', outerRx: 17, outerRy: 49, coreRx: 4.7, coreRy: 42, glowRx: 26, glowRy: 59, alpha: 0.82 },
-  { color: '#ff9c2f', outerRx: 14, outerRy: 43, coreRx: 3.7, coreRy: 36, glowRx: 22, glowRy: 53, alpha: 0.86 },
-  { color: '#ff9635', outerRx: 21, outerRy: 46, coreRx: 6.4, coreRy: 39, glowRx: 33, glowRy: 56, alpha: 0.78 },
-  { color: '#ff8f1f', outerRx: 16, outerRy: 48, coreRx: 4.2, coreRy: 41, glowRx: 25, glowRy: 58, alpha: 0.82 },
-  { color: '#ff881a', outerRx: 18, outerRy: 40, coreRx: 5, coreRy: 33, glowRx: 28, glowRy: 50, alpha: 0.8 },
-  { color: '#ff8216', outerRx: 13, outerRy: 47, coreRx: 3.4, coreRy: 40, glowRx: 21, glowRy: 57, alpha: 0.84 },
-  { color: '#ff7c12', outerRx: 20, outerRy: 44, coreRx: 6, coreRy: 37, glowRx: 30, glowRy: 54, alpha: 0.78 },
-  { color: '#ffb84d', outerRx: 15, outerRy: 39, coreRx: 4.1, coreRy: 32, glowRx: 23, glowRy: 49, alpha: 0.88 },
-  { color: '#ffc15f', outerRx: 22, outerRy: 49, coreRx: 7.2, coreRy: 42, glowRx: 35, glowRy: 59, alpha: 0.78 },
-  { color: '#ffca70', outerRx: 17, outerRy: 46, coreRx: 4.8, coreRy: 39, glowRx: 26, glowRy: 56, alpha: 0.84 },
-  { color: '#ffd37f', outerRx: 19, outerRy: 38, coreRx: 5.4, coreRy: 31, glowRx: 29, glowRy: 48, alpha: 0.86 },
-  { color: '#ffe08f', outerRx: 14, outerRy: 42, coreRx: 3.6, coreRy: 35, glowRx: 22, glowRy: 52, alpha: 0.9 },
-  { color: '#ffeaa3', outerRx: 20, outerRy: 50, coreRx: 6.5, coreRy: 43, glowRx: 31, glowRy: 60, alpha: 0.82 },
-  { color: '#fff1b7', outerRx: 16, outerRy: 45, coreRx: 4.5, coreRy: 38, glowRx: 24, glowRy: 55, alpha: 0.92 },
-  { color: '#ffad33', outerRx: 18, outerRy: 41, coreRx: 5.2, coreRy: 34, glowRx: 27, glowRy: 51, alpha: 0.8 },
-  { color: '#ff991f', outerRx: 15, outerRy: 48, coreRx: 4, coreRy: 41, glowRx: 23, glowRy: 58, alpha: 0.82 },
-] as const
-
-type ImpactParticle = {
-  x: number
-  y: number
-  angle: number
-  startLength: number
-  endLength: number
-  thickness: number
-  life: number
-  maxLife: number
-  colorIndex: number
-  glowWidth: number
-  glowAlpha: number
-}
-
-type FloatingImpactParticle = {
-  x: number
-  y: number
-  vx: number
-  vy: number
-  radius: number
-  life: number
-  maxLife: number
-  colorIndex: number
-}
-
-const particles: ImpactParticle[] = []
-const floatingParticles: FloatingImpactParticle[] = []
-const activeImpacts = new Set<string>()
-const raySprites = IMPACT_RAY_VARIANTS.map(createRaySprite)
-const rayGlowSprites = IMPACT_RAY_VARIANTS.map(createRayGlowSprite)
-const floatSprites = IMPACT_RAY_VARIANTS.map(createFloatSprite)
+const activeImpacts = new Map<string, number>()
+const impactParticles = createImpactParticleRenderer()
 let lastFrameMs = performance.now()
 let lastSessionRef: typeof player.session | null = null
 let lastCurrentUs = Number.NEGATIVE_INFINITY
@@ -196,8 +125,7 @@ function noteKey(note: SessionNote) {
   return `${note.trackId}:${note.noteId}:${note.start}:${note.end}`
 }
 function clearEffects() {
-  particles.length = 0
-  floatingParticles.length = 0
+  impactParticles.clear()
   activeImpacts.clear()
 }
 function syncEffectSession(session: NonNullable<typeof player.session>) {
@@ -249,127 +177,11 @@ function labelColors(background: string) {
     ? { fill: '#111827', stroke: 'rgba(255,255,255,0.78)' }
     : { fill: '#ffffff', stroke: 'rgba(0,0,0,0.72)' }
 }
-function createRaySprite(variant: typeof IMPACT_RAY_VARIANTS[number]) {
-  const canvas = document.createElement('canvas')
-  canvas.width = IMPACT_RAY_SPRITE_SIZE
-  canvas.height = IMPACT_RAY_SPRITE_SIZE
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return canvas
-
-  const center = IMPACT_RAY_SPRITE_SIZE / 2
-  ctx.globalCompositeOperation = 'lighter'
-
-  const outer = ctx.createRadialGradient(center, center, 0, center, center, center * 0.85)
-  outer.addColorStop(0, withAlpha(variant.color, 0.86 * variant.alpha))
-  outer.addColorStop(0.36, withAlpha(IMPACT_LIGHT_COLOR, 0.5 * variant.alpha))
-  outer.addColorStop(1, 'rgba(255,255,255,0)')
-  ctx.fillStyle = outer
-  ctx.beginPath()
-  ctx.ellipse(center, center, variant.outerRx, variant.outerRy, 0, 0, Math.PI * 2)
-  ctx.fill()
-
-  const core = ctx.createRadialGradient(center, center, 0, center, center, center * 0.55)
-  core.addColorStop(0, `rgba(255,255,255,${0.96 * variant.alpha})`)
-  core.addColorStop(0.38, withAlpha(IMPACT_LIGHT_CORE_COLOR, 0.88 * variant.alpha))
-  core.addColorStop(1, 'rgba(255,255,255,0)')
-  ctx.fillStyle = core
-  ctx.beginPath()
-  ctx.ellipse(center, center, variant.coreRx, variant.coreRy, 0, 0, Math.PI * 2)
-  ctx.fill()
-
-  return canvas
-}
-function createRayGlowSprite(variant: typeof IMPACT_RAY_VARIANTS[number]) {
-  const canvas = document.createElement('canvas')
-  canvas.width = IMPACT_RAY_GLOW_SPRITE_SIZE
-  canvas.height = IMPACT_RAY_GLOW_SPRITE_SIZE
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return canvas
-
-  const center = IMPACT_RAY_GLOW_SPRITE_SIZE / 2
-  ctx.globalCompositeOperation = 'lighter'
-  ctx.shadowColor = withAlpha(variant.color, 0.85 * variant.alpha)
-  ctx.shadowBlur = 22
-  ctx.fillStyle = withAlpha(IMPACT_LIGHT_EDGE_COLOR, 0.3 * variant.alpha)
-  ctx.beginPath()
-  ctx.ellipse(center, center, variant.glowRx, variant.glowRy, 0, 0, Math.PI * 2)
-  ctx.fill()
-
-  ctx.shadowColor = withAlpha(variant.color, 0.7 * variant.alpha)
-  ctx.shadowBlur = 14
-  ctx.fillStyle = withAlpha(IMPACT_LIGHT_COLOR, 0.18 * variant.alpha)
-  ctx.beginPath()
-  ctx.ellipse(center, center, variant.glowRx * 0.72, variant.glowRy * 0.8, 0, 0, Math.PI * 2)
-  ctx.fill()
-  return canvas
-}
-function createFloatSprite(variant: typeof IMPACT_RAY_VARIANTS[number]) {
-  const canvas = document.createElement('canvas')
-  canvas.width = IMPACT_FLOAT_SPRITE_SIZE
-  canvas.height = IMPACT_FLOAT_SPRITE_SIZE
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return canvas
-
-  const center = IMPACT_FLOAT_SPRITE_SIZE / 2
-  const glow = ctx.createRadialGradient(center, center, 0, center, center, center)
-  glow.addColorStop(0, `rgba(255,255,255,${0.92 * variant.alpha})`)
-  glow.addColorStop(0.32, withAlpha(variant.color, 0.72 * variant.alpha))
-  glow.addColorStop(0.72, withAlpha(IMPACT_LIGHT_EDGE_COLOR, 0.22 * variant.alpha))
-  glow.addColorStop(1, 'rgba(255,255,255,0)')
-  ctx.globalCompositeOperation = 'lighter'
-  ctx.fillStyle = glow
-  ctx.fillRect(0, 0, IMPACT_FLOAT_SPRITE_SIZE, IMPACT_FLOAT_SPRITE_SIZE)
-  return canvas
-}
 function spawnImpact(note: LaidOutNote<SessionNote>) {
   addActivePlaybackCounter('render', 'impactSpawns')
-  const y = logicalHeight + 4
-  const particleCount = Math.max(7, Math.min(16, Math.round(note.width / 4.5)))
-  const left = note.x + Math.min(2, note.width * 0.08)
-  const usableWidth = Math.max(1, note.width - Math.min(4, note.width * 0.16))
-  const minHeight = Math.max(0, note.width * 0.75)
-  const maxHeight = Math.max(minHeight + 1, note.width * 0.75 * 1.5)
-
-  for (let i = 0; i < particleCount; i += 1) {
-    const ratio = particleCount === 1 ? 0.5 : i / (particleCount - 1)
-    const sideBias = ratio - 0.5
-    const spread = sideBias * 0.72 + (Math.random() - 0.5) * 0.28
-    const angle = -Math.PI / 2 + spread
-    const accent = Math.random() < 0.14
-    particles.push({
-      x: left + usableWidth * ratio + (Math.random() - 0.5) * Math.min(3, note.width * 0.08),
-      y: y - Math.random() * 0.6,
-      angle,
-      startLength: Math.random() * minHeight,
-      endLength: (minHeight + Math.random() * (maxHeight - minHeight)) * (accent ? 1.35 + Math.random() * 0.35 : 1),
-      thickness: (0.6 + Math.random() * 1.15) * (accent ? 1.05 : 1),
-      life: 190 + Math.random() * 160,
-      maxLife: 350,
-      colorIndex: Math.floor(Math.random() * IMPACT_RAY_VARIANTS.length),
-      glowWidth: 1.2 + Math.random() * 1.05,
-      glowAlpha: 0.2 + Math.random() * 0.22,
-    })
-  }
-  if (Math.random() < 0.35) {
-    const floatCount = 1 + Math.floor(Math.random() * 3)
-    for (let i = 0; i < floatCount; i += 1) {
-      floatingParticles.push({
-        x: left + Math.random() * usableWidth,
-        y: y - Math.random() * 8,
-        vx: (Math.random() - 0.5) * 0.035,
-        vy: -0.035 - Math.random() * 0.055,
-        radius: 4 + Math.random() * 7,
-        life: 520 + Math.random() * 420,
-        maxLife: 940,
-        colorIndex: Math.floor(Math.random() * IMPACT_RAY_VARIANTS.length),
-      })
-    }
-  }
-
-  while (particles.length > MAX_PARTICLES) particles.shift()
-  while (floatingParticles.length > MAX_FLOATING_PARTICLES) floatingParticles.shift()
+  impactParticles.spawn(note, logicalHeight)
 }
-function triggerImpacts(notes: LaidOutNote<SessionNote>[], session: NonNullable<typeof player.session>, _nowMs: number) {
+function triggerImpacts(notes: LaidOutNote<SessionNote>[], session: NonNullable<typeof player.session>, nowMs: number) {
   const touchingKeys = new Set<string>()
   const canSpawn = !session.paused && !session.finished
 
@@ -379,47 +191,24 @@ function triggerImpacts(notes: LaidOutNote<SessionNote>[], session: NonNullable<
 
     const key = noteKey(note)
     touchingKeys.add(key)
-    if (!canSpawn || activeImpacts.has(key)) continue
+    if (!canSpawn) continue
 
-    activeImpacts.add(key)
+    const lastSpawnMs = activeImpacts.get(key)
+    if (lastSpawnMs !== undefined && nowMs - lastSpawnMs < IMPACT_REPEAT_THROTTLE_MS) continue
+
+    activeImpacts.set(key, nowMs)
     spawnImpact(note)
   }
 
-  for (const key of activeImpacts) {
+  for (const key of activeImpacts.keys()) {
     if (!touchingKeys.has(key)) activeImpacts.delete(key)
   }
 }
 function updateEffects(dt: number) {
-  for (let i = particles.length - 1; i >= 0; i -= 1) {
-    const particle = particles[i]
-    particle.life -= dt
-    if (particle.life <= 0) particles.splice(i, 1)
-  }
-
-  for (let i = floatingParticles.length - 1; i >= 0; i -= 1) {
-    const particle = floatingParticles[i]
-    particle.life -= dt
-    particle.x += particle.vx * dt
-    particle.y += particle.vy * dt
-    particle.vx *= 0.998
-    particle.vy *= 0.998
-    if (particle.life <= 0) floatingParticles.splice(i, 1)
-  }
+  impactParticles.update(dt)
 }
 function drawHitLine(ctx: CanvasRenderingContext2D, isStopped: boolean) {
-  const y = logicalHeight - HIT_LINE_HEIGHT
-  const gradient = ctx.createLinearGradient(0, y, 0, y + HIT_LINE_HEIGHT)
-  if (isStopped) {
-    gradient.addColorStop(0, '#4a1010')
-    gradient.addColorStop(0.5, '#8b2020')
-    gradient.addColorStop(1, '#4a1010')
-  } else {
-    gradient.addColorStop(0, '#383838')
-    gradient.addColorStop(0.5, '#707070')
-    gradient.addColorStop(1, '#383838')
-  }
-  ctx.fillStyle = gradient
-  ctx.fillRect(0, y, logicalWidth, HIT_LINE_HEIGHT)
+  drawRollHitLine(ctx, logicalWidth, logicalHeight, isStopped)
 }
 function bookmarkVisible(source: MidiBookmarkSource | 'user') {
   if (source === 'user') return settings.showMyBookmarks
@@ -603,42 +392,7 @@ function drawCurrentKey(ctx: CanvasRenderingContext2D, session: NonNullable<type
   ctx.restore()
 }
 function drawImpactParticles(ctx: CanvasRenderingContext2D) {
-  ctx.save()
-  ctx.globalCompositeOperation = 'lighter'
-
-  for (const particle of floatingParticles) {
-    const lifeRatio = Math.max(0, particle.life / particle.maxLife)
-    const ageRatio = 1 - lifeRatio
-    const alpha = Math.sin(Math.min(1, ageRatio) * Math.PI) * 0.72
-    const size = particle.radius * (0.7 + ageRatio * 0.55)
-    const sprite = floatSprites[particle.colorIndex]
-    ctx.globalAlpha = alpha
-    ctx.drawImage(sprite, particle.x - size, particle.y - size, size * 2, size * 2)
-  }
-
-  for (const particle of particles) {
-    const lifeRatio = Math.max(0, particle.life / particle.maxLife)
-    const ageRatio = 1 - lifeRatio
-    const grow = Math.min(1, ageRatio / 0.32)
-    const fade = lifeRatio < 0.42 ? lifeRatio / 0.42 : 1
-    const alpha = Math.max(0, Math.min(1, fade))
-    const sprite = raySprites[particle.colorIndex]
-    const glowSprite = rayGlowSprites[particle.colorIndex]
-    const height = particle.startLength + (particle.endLength - particle.startLength) * grow
-    const coreWidth = particle.thickness * (10 + grow * 8)
-    const glowWidth = coreWidth * particle.glowWidth * (1.05 + grow * 0.35)
-
-    ctx.save()
-    ctx.translate(particle.x, particle.y)
-    ctx.rotate(particle.angle + Math.PI / 2)
-    ctx.globalAlpha = alpha * particle.glowAlpha
-    ctx.drawImage(glowSprite, -glowWidth / 2, -height, glowWidth, height)
-    ctx.globalAlpha = alpha
-    ctx.drawImage(sprite, -coreWidth / 2, -height, coreWidth, height)
-    ctx.restore()
-  }
-
-  ctx.restore()
+  impactParticles.draw(ctx)
 }
 function drawGrid(ctx: CanvasRenderingContext2D, session: NonNullable<typeof player.session>) {
   for (const line of verticalGridLines) {
@@ -794,8 +548,8 @@ function drawFingerBadge(ctx: CanvasRenderingContext2D, note: LaidOutNote<Sessio
   const radius = Math.max(9, Math.min(15, note.width * 0.32))
   const x = note.x + note.width / 2
   const y = belowNote
-    ? note.y + radius + 6
-    : Math.max(note.y - note.height + radius + 4, note.y - radius - 5)
+    ? note.initialY + radius + 6
+    : Math.max(note.y - note.height + radius + 4, note.initialY - radius - 5)
   const size = radius * 2
   ctx.save()
   ctx.fillStyle = fingerBadgeColor(note.finger)
@@ -866,7 +620,7 @@ function drawNoteLabel(ctx: CanvasRenderingContext2D, note: LaidOutNote<SessionN
     strokeStyle: 'rgba(0,0,0,0.82)',
     lineWidth: 3,
   })
-  ctx.drawImage(sprite, note.x + note.width / 2 - sprite.width / 2, note.y - 6 - sprite.height / 2)
+  ctx.drawImage(sprite, note.x + note.width / 2 - sprite.width / 2, note.initialY - 6 - sprite.height / 2)
 }
 
 function publishSpriteCacheStats(profile: PlaybackProfilerContext | null) {
@@ -890,8 +644,10 @@ function draw(dt: number, nowMs: number, frameProfile: PlaybackProfilerContext |
   measurePlaybackSpan(frameProfile, 'frame.clearBackground', () => {
     ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0)
     ctx.clearRect(0, 0, logicalWidth, logicalHeight)
-    ctx.fillStyle = PIANO_ROLL_BACKGROUND
-    ctx.fillRect(0, 0, logicalWidth, logicalHeight)
+    if (!props.transparentBackground) {
+      ctx.fillStyle = PIANO_ROLL_BACKGROUND
+      ctx.fillRect(0, 0, logicalWidth, logicalHeight)
+    }
   })
 
   const session = player.session
@@ -901,7 +657,7 @@ function draw(dt: number, nowMs: number, frameProfile: PlaybackProfilerContext |
     measurePlaybackSpan(frameProfile, 'frame.updateEffects', () => updateEffects(dt))
     measurePlaybackSpan(frameProfile, 'frame.drawHitLine', () => drawHitLine(ctx, true))
     measurePlaybackSpan(frameProfile, 'frame.drawParticles', () => drawImpactParticles(ctx))
-    setPlaybackGauge(frameProfile, 'particlesLive', particles.length + floatingParticles.length)
+    setPlaybackGauge(frameProfile, 'particlesLive', impactParticles.liveCount())
     publishSpriteCacheStats(frameProfile)
     return
   }
@@ -952,8 +708,8 @@ function draw(dt: number, nowMs: number, frameProfile: PlaybackProfilerContext |
 
   setPlaybackGauge(frameProfile, 'visibleNotes', visibleNotes.length)
   setPlaybackGauge(frameProfile, 'hiddenNotes', Math.max(0, notes.length - visibleNotes.length))
-  setPlaybackGauge(frameProfile, 'particlesLive', particles.length + floatingParticles.length)
-  setPlaybackGauge(frameProfile, 'floatingParticlesLive', floatingParticles.length)
+  setPlaybackGauge(frameProfile, 'particlesLive', impactParticles.liveCount())
+  setPlaybackGauge(frameProfile, 'floatingParticlesLive', impactParticles.floatingCount())
   const isStopped = session.paused || session.finished
   measurePlaybackSpan(frameProfile, 'frame.drawHitLine', () => drawHitLine(ctx, isStopped))
   if (settings.showFallingNotes) {
@@ -1260,11 +1016,12 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <canvas ref="canvasRef" class="roll" :class="{ 'roll--seekable': player.canSeek }"></canvas>
+  <canvas ref="canvasRef" class="roll" :class="{ 'roll--seekable': player.canSeek, 'roll--transparent': props.transparentBackground }"></canvas>
 </template>
 
 <style scoped>
 .roll { width: 100%; height: 100%; display: block; background: #303030; touch-action: none; }
+.roll--transparent { background: transparent; }
 .roll--seekable { cursor: grab; }
 .roll--seekable:active { cursor: grabbing; }
 </style>

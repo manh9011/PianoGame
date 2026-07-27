@@ -44,16 +44,29 @@ function handleSelectSong(song: SongMetadata) {
   if (settings.libraryAutoPreviewEnabled) startPreview(song)
 }
 
-function continuePlay() {
+function resolveSelectedSongHash() {
   const song = selectedSong.value
-  if (!song) return
+  if (!song) return null
   const hash = song.playbackHash ?? song.hash
   if (!hash) {
     console.warn('Bài hát chưa có hash, cần import lại:', song.title)
-    return
+    return null
   }
+  return hash
+}
+
+function continuePlay() {
+  const hash = resolveSelectedSongHash()
+  if (!hash) return
   library.stopPreview()
   router.push(`/mode-select/${hash}`)
+}
+
+function openRecord() {
+  const hash = resolveSelectedSongHash()
+  if (!hash) return
+  library.stopPreview()
+  router.push(`/record/${hash}`)
 }
 
 function togglePreview() {
@@ -222,7 +235,7 @@ onBeforeUnmount(() => {
       <button class="secondary header-tab" @click="router.push('/')">{{ t('common.back') }}</button>
 
       <div class="library-playback">
-        <button class="icon-button" :disabled="!selectedSong" :aria-label="t('library.togglePreview')" :aria-pressed="settings.libraryAutoPreviewEnabled" @click="togglePreview">
+        <button class="icon-button" :disabled="!selectedSong" :aria-label="t('library.togglePreview')" :title="t('library.togglePreview')" :aria-pressed="settings.libraryAutoPreviewEnabled" @click="togglePreview">
           <i v-if="library.previewSongId === selectedSong?.id && library.previewRunning" class="fa-solid fa-pause" aria-hidden="true" />
           <i v-else class="fa-solid fa-play" aria-hidden="true" />
         </button>
@@ -262,8 +275,12 @@ onBeforeUnmount(() => {
             </button>
           </div>
         </div>
+        
+        <button class="icon-button" :disabled="!selectedSong" :aria-label="t('record.record')" :title="t('record.record')" @click="openRecord">
+          <i class="fa-solid fa-video" aria-hidden="true" />
+        </button>
 
-        <button class="icon-button" :disabled="!selectedSong" :aria-label="t('library.deleteSong')" @click="deleteSong">
+        <button class="icon-button" :disabled="!selectedSong" :aria-label="t('library.deleteSong')" :title="t('library.deleteSong')" @click="deleteSong">
           <i class="fa-regular fa-trash-can" aria-hidden="true" />
         </button>
       </div>
@@ -362,7 +379,7 @@ onBeforeUnmount(() => {
 
 .library-playback {
   display: grid;
-  grid-template-columns: 2.2rem minmax(0, 25rem) 2.2rem 2.2rem;
+  grid-template-columns: 2.2rem minmax(0, 25rem) 2.2rem 2.2rem 2.2rem;
   align-items: center;
   gap: 0.48rem;
   justify-self: center;
@@ -625,7 +642,7 @@ onBeforeUnmount(() => {
 
 @media (max-width: 900px) {
   .library-playback {
-    grid-template-columns: 2.2rem minmax(0, 1fr) 2.2rem 2.2rem;
+    grid-template-columns: 2.2rem minmax(0, 1fr) 2.2rem 2.2rem 2.2rem;
   }
 
   .library-footer {

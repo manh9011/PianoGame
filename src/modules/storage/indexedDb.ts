@@ -1,5 +1,5 @@
 const DB_NAME = 'piano-game'
-const DB_VERSION = 3
+const DB_VERSION = 4
 
 export interface SongDataRecord {
   id: string
@@ -77,6 +77,10 @@ export async function openDatabase(): Promise<IDBDatabase> {
 
       if (!db.objectStoreNames.contains('app-state')) {
         db.createObjectStore('app-state', { keyPath: 'key' })
+      }
+
+      if (!db.objectStoreNames.contains('render-assets')) {
+        db.createObjectStore('render-assets', { keyPath: 'id' })
       }
     }
   })

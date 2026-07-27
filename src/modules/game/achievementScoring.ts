@@ -36,9 +36,10 @@ export function calculateAchievementBreakdown(score: {
   const holdRatio = perfectHoldPoints > 0 ? Math.min(1, score.rawPoints / perfectHoldPoints) : 0
   const actualSpeedRatio = score.averageSpeed !== undefined ? score.averageSpeed / 100 : 0
   const speedRatio = Math.max(0, Math.min(1, actualSpeedRatio))
+  const consistencyGate = notesRatio ** 2
   const notes = roundAchievementScore(weights.notes * notesRatio)
-  const hold = roundAchievementScore(weights.hold * holdRatio)
-  const speed = roundAchievementScore(weights.speed * speedRatio)
+  const hold = roundAchievementScore(weights.hold * holdRatio * consistencyGate)
+  const speed = roundAchievementScore(weights.speed * speedRatio * consistencyGate)
   const total = Math.min(max, roundAchievementScore(notes + hold + speed))
 
   return {

@@ -8,7 +8,13 @@ import { HAND_COLORS } from '../../modules/game/handAssignment'
 import { TRACK_INVISIBLE_COLOR } from '../../modules/game/trackProperties'
 import { getKeyboardRange, isNoteInRange, type KeyboardRange } from '../../modules/render/keyboardRange'
 import { CanvasSpriteCache, createSpriteCanvas } from '../../modules/render/canvasSpriteCache'
-import type { SessionNote } from '../../modules/game/playSession'
+import { drawKeyboardHitLine, keyboardWhiteKeyTopOffset } from '../../modules/render/hitLineRenderer'
+import type { Hand, SessionNote } from '../../modules/game/playSession'
+
+const props = defineProps<{
+  transparentBackground?: boolean
+  previewActiveFromTimeline?: boolean
+}>()
 
 const keys = createPianoKeys()
 const whiteKeys = keys.filter(k => !k.black)
@@ -18,7 +24,6 @@ const settings = useSettingsStore()
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const pointerNotes = new Map<number, number>()
 const pressedComputerKeys = new Set<string>()
-const HIT_LINE_HEIGHT = 4
 const REPRESS_RELEASE_MS = 85
 const REPRESS_FLASH_MS = 130
 const pressFlashStartedAt = new Map<number, number>()
@@ -81,11 +86,26 @@ function isVisibleTrackId(trackId: number | undefined) {
   return !track || track.color !== TRACK_INVISIBLE_COLOR
 }
 
+function visibleTimelineNotesAt(noteId: number) {
+  const session = player.session
+  if (!props.previewActiveFromTimeline || !session) return []
+  return session.notes.filter(note => {
+    if (note.noteId !== noteId) return false
+    if (note.start > session.currentUs || note.end < session.currentUs) return false
+    return isVisibleTrackId(note.trackId)
+  })
+}
+
+function timelineNoteFor(noteId: number) {
+  return visibleTimelineNotesAt(noteId)[0] ?? null
+}
+
 function active(noteId: number) {
   const session = player.session
   return Boolean(
     (session?.activeNotes.has(noteId) && isVisibleTrackId(session.activeNoteTrackIds.get(noteId))) ||
-    (session?.autoActiveNotes.has(noteId) && isVisibleTrackId(session.autoActiveNoteTrackIds.get(noteId)))
+    (session?.autoActiveNotes.has(noteId) && isVisibleTrackId(session.autoActiveNoteTrackIds.get(noteId))) ||
+    visibleTimelineNotesAt(noteId).length
   )
 }
 
@@ -98,7 +118,7 @@ function notePressCount(noteId: number) {
   const autoPressCount = isVisibleTrackId(session.autoActiveNoteTrackIds.get(noteId))
     ? session.autoActiveNotePressCounts.get(noteId) ?? 0
     : 0
-  return inputPressCount + autoPressCount
+  return inputPressCount + autoPressCount + visibleTimelineNotesAt(noteId).length
 }
 
 function updatePressFlashes(nowMs: number) {
@@ -151,10 +171,11 @@ function pressFlashStrength(noteId: number, nowMs: number) {
 function activeColor(noteId: number) {
   const session = player.session
   if (!session) return HAND_COLORS.unknown
-  const trackId = session.autoActiveNoteTrackIds.get(noteId) ?? session.activeNoteTrackIds.get(noteId)
+  const timelineNote = timelineNoteFor(noteId)
+  const trackId = session.autoActiveNoteTrackIds.get(noteId) ?? session.activeNoteTrackIds.get(noteId) ?? timelineNote?.trackId
   const track = session.tracks.find(t => t.trackId === trackId)
   if (track) return track.color
-  const hand = session.autoActiveNoteHands.get(noteId) ?? session.activeNoteHands.get(noteId) ?? 'unknown'
+  const hand = session.autoActiveNoteHands.get(noteId) ?? session.activeNoteHands.get(noteId) ?? timelineNote?.hand ?? 'unknown'
   return HAND_COLORS[hand]
 }
 
@@ -178,13 +199,14 @@ function notesByPitch() {
 function activeFingerLabel(noteId: number) {
   const session = player.session
   if (!session || !active(noteId)) return null
+  const timelineNote = timelineNoteFor(noteId)
   const playableNoteId = noteId - session.octaveShift * 12
   const byPitch = notesByPitch()
   const candidates = playableNoteId === noteId
     ? byPitch?.get(noteId) ?? []
     : [...(byPitch?.get(noteId) ?? []), ...(byPitch?.get(playableNoteId) ?? [])]
-  const activeTrackId = session.autoActiveNoteTrackIds.get(noteId) ?? session.activeNoteTrackIds.get(noteId)
-  const activeHand = session.autoActiveNoteHands.get(noteId) ?? session.activeNoteHands.get(noteId)
+  const activeTrackId = session.autoActiveNoteTrackIds.get(noteId) ?? session.activeNoteTrackIds.get(noteId) ?? timelineNote?.trackId
+  const activeHand = session.autoActiveNoteHands.get(noteId) ?? session.activeNoteHands.get(noteId) ?? timelineNote?.hand
   let best: { finger: number; score: number } | null = null
 
   for (const note of candidates) {
@@ -269,7 +291,7 @@ function roundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: num
 function drawWhiteKey(ctx: CanvasRenderingContext2D, rect: KeyRect, isActive = active(rect.key.noteId), isDisabled = isKeyDisabled(rect.key.noteId), pressFlash = 0) {
   const { key, x, y, width, height } = rect
   const drawX = x + 0.25
-  const drawY = y - HIT_LINE_HEIGHT - 4
+  const drawY = y - keyboardWhiteKeyTopOffset()
   const drawWidth = Math.max(0, width - 0.5)
   const drawHeight = height - 0.5 - drawY
   const drawActive = isActive && !isDisabled
@@ -664,6 +686,7 @@ function getKeyboardBaseCacheKey() {
     Math.round(logicalHeight),
     Math.round(blackKeyHeight()),
     `${range.lowNote}-${range.highNote}`,
+    props.transparentBackground ? 'transparent' : 'opaque',
     settings.showKeyLabels,
     settings.keyLabelMode === 'finger-hint' ? 'finger-hint-base' : settings.keyLabelMode,
     settings.keyLabelSize,
@@ -700,8 +723,10 @@ function buildKeyboardBaseLayer(cacheKey: string) {
   const ctx = canvas.getContext('2d')
   if (!ctx) return null
 
-  ctx.fillStyle = '#000000'
-  ctx.fillRect(0, 0, logicalWidth, logicalHeight)
+  if (!props.transparentBackground) {
+    ctx.fillStyle = '#000000'
+    ctx.fillRect(0, 0, logicalWidth, logicalHeight)
+  }
   for (const key of whiteKeys) drawWhiteKey(ctx, keyRect(key), false, isKeyDisabled(key.noteId))
   drawBlackKeyLayer(ctx)
   keyboardBaseCanvas = canvas
@@ -729,8 +754,7 @@ function ensureKeyboardBlackLayer() {
 }
 
 function drawHitLine(ctx: CanvasRenderingContext2D) {
-  ctx.fillStyle = '#e01b24'
-  ctx.fillRect(0, 0, logicalWidth, HIT_LINE_HEIGHT)
+  drawKeyboardHitLine(ctx, logicalWidth)
 }
 
 function drawMelodyWaitHighlight(ctx: CanvasRenderingContext2D) {
@@ -833,6 +857,7 @@ function keyboardVisualKey() {
   if (!session) return ''
   return [
     session.keyboardVisualVersion,
+    props.previewActiveFromTimeline ? Math.round(session.currentUs) : '',
     settings.keyLabelMode === 'finger-hint' ? session.fingeringVersion : 0,
     session.keyboardRange ? `${session.keyboardRange.lowNote}:${session.keyboardRange.highNote}` : '',
   ].join('|')
@@ -851,6 +876,8 @@ watch(() => [
   settings.keyLabelMode,
   settings.keyLabelSize,
   settings.keyboardRangeMode,
+  props.transparentBackground,
+  props.previewActiveFromTimeline,
 ], () => {
   invalidateKeyboardBaseLayer()
   requestDraw()
@@ -1025,7 +1052,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="keyboard" @mouseleave="releaseAllPointers">
+  <div class="keyboard" :class="{ 'keyboard--transparent': props.transparentBackground }" @mouseleave="releaseAllPointers">
     <canvas
       ref="canvasRef"
       class="keyboard-canvas"
@@ -1040,5 +1067,6 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .keyboard { position: relative; height: var(--keyboard-height, 150px); user-select: none; touch-action: none; background: #000000; }
+.keyboard--transparent { background: transparent; }
 .keyboard-canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 </style>

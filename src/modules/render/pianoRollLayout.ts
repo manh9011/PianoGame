@@ -6,7 +6,7 @@ const keyByNoteId = new Map(createPianoKeys().map(key => [key.noteId, key]))
 const columnGeometryCache = new Map<string, { x: number; width: number }>()
 let cachedViewportWidth = 0
 
-export type LaidOutNote<T extends TranslatedNote = TranslatedNote> = T & { x: number; y: number; width: number; height: number }
+export type LaidOutNote<T extends TranslatedNote = TranslatedNote> = T & { x: number; y: number; width: number; height: number; initialY: number }
 
 interface NotesLayoutCache {
   maxDurationUs: number
@@ -75,6 +75,7 @@ function layoutNote<T extends TranslatedNote>(note: T, currentUs: number, window
   const visibleStartUs = Math.max(note.start, currentUs)
   const visibleEndUs = Math.min(note.end, currentUs + windowUs)
   const y = viewportHeight - ((visibleStartUs - currentUs) / windowUs) * viewportHeight
+  const initialY = viewportHeight - ((note.start - currentUs) / windowUs) * viewportHeight
   const visibleHeight = ((visibleEndUs - visibleStartUs) / windowUs) * viewportHeight
   return {
     ...note,
@@ -82,6 +83,7 @@ function layoutNote<T extends TranslatedNote>(note: T, currentUs: number, window
     width: column.width,
     y,
     height: Math.max(8, visibleHeight),
+    initialY,
   }
 }
 

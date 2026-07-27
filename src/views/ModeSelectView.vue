@@ -87,8 +87,8 @@ const scoreRows = computed<ModeScoreEntry[]>(() => {
         bVal = b.accuracy
         break
       case 'errors':
-        aVal = a.failed ? 1 : 0
-        bVal = b.failed ? 1 : 0
+        aVal = a.errors ?? (a.failed ? 1 : 0)
+        bVal = b.errors ?? (b.failed ? 1 : 0)
         break
       case 'speed':
         aVal = a.averageSpeed

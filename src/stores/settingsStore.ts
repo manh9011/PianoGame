@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import type { SupportedLocale } from '../i18n'
 import { setI18nLocale } from '../i18n'
-import type { LabelMode, KeyboardRangeMode, UserSettings } from '../types/settings'
+import type { LabelMode, KeyboardRangeMode, RecordVideoOrientation, RecordVideoSize, UserSettings } from '../types/settings'
 import { loadSettings, saveSettings, defaultSettings } from '../modules/settings/userSettings'
 import { clampShowDuration, clampSpeed } from '../modules/game/playSession'
 import { persistQueue } from '../modules/storage/indexedDb'
@@ -57,5 +57,10 @@ export const useSettingsStore = defineStore('settings', {
     setNoteLabelSize(size: number) { this.noteLabelSize = Math.max(-10, Math.min(25, size)); this.persist() },
     setKeyboardRangeMode(mode: KeyboardRangeMode) { this.keyboardRangeMode = mode; this.persist() },
     setLibraryAutoPreviewEnabled(v: boolean) { this.libraryAutoPreviewEnabled = v; this.persist() },
+    setRecordVideoSize(size: RecordVideoSize) { this.recordVideoSize = size; this.persist() },
+    setRecordVideoOrientation(orientation: RecordVideoOrientation) { this.recordVideoOrientation = orientation; this.persist() },
+    setRecordOutputVolume(volume: number) { this.recordOutputVolume = Math.max(0, Math.min(200, Math.round(volume))); this.persist() },
+    setRecordBackgroundAssetId(assetId: string) { this.recordBackgroundAssetId = assetId; this.persist() },
+    setRecordLogoAssetId(assetId: string) { this.recordLogoAssetId = assetId; this.persist() },
   },
 })

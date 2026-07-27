@@ -19,6 +19,9 @@ export type KeyboardRangeMode =
   | 'song-only'
   | 'custom'
 
+export type RecordVideoSize = 'sd' | 'hd' | 'fhd' | '2k' | '4k'
+export type RecordVideoOrientation = 'landscape' | 'portrait'
+
 export interface UserSettings {
   locale: SupportedLocale
   theme: 'dark' | 'light'
@@ -54,6 +57,11 @@ export interface UserSettings {
   songsRememberLastFolder: boolean
   songsSortByRecentlyImported: boolean
   keyboardRangeMode: KeyboardRangeMode
+  recordVideoSize: RecordVideoSize
+  recordVideoOrientation: RecordVideoOrientation
+  recordOutputVolume: number
+  recordBackgroundAssetId: string
+  recordLogoAssetId: string
   shortcutsPlayPauseKey: string
   shortcutsRestartKey: string
   shortcutsMetronomeKey: string

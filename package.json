@@ -13,6 +13,7 @@
         "@tonejs/midi": "^2.0.28",
         "@vercel/analytics": "^2.0.1",
         "@vitejs/plugin-vue": "latest",
+        "mp4-muxer": "^5.2.2",
         "pinia": "latest",
         "soundfont-player": "^0.12.0",
         "typescript": "latest",
@@ -21,7 +22,8 @@
         "vue": "latest",
         "vue-i18n": "^11.4.6",
         "vue-router": "latest",
-        "vue-tsc": "latest"
+        "vue-tsc": "latest",
+        "webm-muxer": "^5.1.4"
     },
     "devDependencies": {
         "@tauri-apps/cli": "^2.11.4"

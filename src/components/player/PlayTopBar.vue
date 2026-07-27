@@ -65,6 +65,18 @@ function togglePlayback() {
   else player.start()
 }
 
+const playButtonTitle = computed(() => {
+  if (player.interactionLocked) return t('play.playLocked')
+  if (props.playbackBlocked) return t('sheetMusic.waitingReady')
+  return t('play.playPause')
+})
+
+const playbackControlsDisabled = computed(() => !!props.playbackBlocked)
+
+const speedControlsDisabled = computed(() => playbackControlsDisabled.value || !player.session?.modeConfig.speedChangeAllowed)
+
+const seekControlsDisabled = computed(() => playbackControlsDisabled.value || !player.canSeek)
+
 function increaseSpeed() {
   if (!player.session?.modeConfig.speedChangeAllowed) return
   const newSpeed = Math.min(400, (player.session?.speed ?? 100) + 10)
@@ -118,17 +130,17 @@ function decreaseSpeed() {
         <button
           class="icon-button"
           data-help-anchor="play-pause"
-          :disabled="playbackBlocked"
-          :title="playbackBlocked ? t('sheetMusic.waitingReady') : t('play.playPause')"
+          :disabled="playbackControlsDisabled"
+          :title="playButtonTitle"
           :aria-label="player.playbackRunning ? t('play.stop') : t('play.play')"
           @click="togglePlayback"
         >
           <i :class="player.playbackRunning ? 'fas fa-stop' : 'fas fa-play'"></i>
         </button>
-        <button class="icon-button" data-help-anchor="previous-bookmark" :disabled="!player.canSeek" :title="t('play.previousBookmark')" :aria-label="t('play.previousBookmark')" @click="seekToPreviousBookmark">
+        <button class="icon-button" data-help-anchor="previous-bookmark" :disabled="seekControlsDisabled" :title="t('play.previousBookmark')" :aria-label="t('play.previousBookmark')" @click="seekToPreviousBookmark">
           <i class="fas fa-step-backward"></i>
         </button>
-        <button class="icon-button" data-help-anchor="next-bookmark" :disabled="!player.canSeek" :title="t('play.nextBookmark')" :aria-label="t('play.nextBookmark')" @click="seekToNextBookmark">
+        <button class="icon-button" data-help-anchor="next-bookmark" :disabled="seekControlsDisabled" :title="t('play.nextBookmark')" :aria-label="t('play.nextBookmark')" @click="seekToNextBookmark">
           <i class="fas fa-step-forward"></i>
         </button>
 
@@ -136,7 +148,7 @@ function decreaseSpeed() {
           <button
             class="tempo-btn"
             data-help-anchor="speed-down"
-            :disabled="!player.session.modeConfig.speedChangeAllowed"
+            :disabled="speedControlsDisabled"
             :title="t('play.speedDown')"
             @click="decreaseSpeed"
             :aria-label="t('play.speedDown')"
@@ -150,7 +162,7 @@ function decreaseSpeed() {
           <button
             class="tempo-btn"
             data-help-anchor="speed-up"
-            :disabled="!player.session.modeConfig.speedChangeAllowed"
+            :disabled="speedControlsDisabled"
             :title="t('play.speedUp')"
             @click="increaseSpeed"
             :aria-label="t('play.speedUp')"

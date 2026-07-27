@@ -1,4 +1,4 @@
-import * as Soundfont from 'soundfont-player'
+import type * as Soundfont from 'soundfont-player'
 import { getInstrumentByProgram } from './gmInstrumentCatalog'
 
 interface PlayingNote { stop: (when?: number) => unknown }
@@ -78,12 +78,15 @@ export class SimpleSynth {
     const cached = this.instruments.get(soundfontId)
     if (cached) return cached
 
-    const loading = this.loading.get(soundfontId) ?? Soundfont.instrument(this.context, soundfontId as Parameters<typeof Soundfont.instrument>[1], {
-      soundfont: 'FluidR3_GM',
-      format: 'mp3',
-      destination: this.master,
-      gain: 1,
-    })
+    const loading = this.loading.get(soundfontId) ?? (async () => {
+      const sf = await import('soundfont-player')
+      return sf.instrument(this.context!, soundfontId as any, {
+        soundfont: 'FluidR3_GM',
+        format: 'mp3',
+        destination: this.master!,
+        gain: 1,
+      })
+    })()
     this.loading.set(soundfontId, loading)
 
     try {

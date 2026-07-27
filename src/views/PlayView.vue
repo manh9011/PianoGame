@@ -83,10 +83,14 @@ const hasBlockingOverlay = computed(() =>
   showKeyboardRangeDialog.value ||
   showLabelsDialog.value ||
   showBookmarksDialog.value ||
+  showLoopControl.value ||
+  showFingerDialog.value ||
+  showFingerPicker.value ||
   showSettingsDialog.value ||
   showHelpOverlay.value ||
   showPerformanceDetail.value
 )
+const playbackBlocked = computed(() => (settings.showSheetMusic && !sheetReady.value) || player.interactionLocked)
 const performanceMode = computed(() => settings.advancedEnableDebugOverlay)
 const showPerformanceOverlay = computed(() => performanceMode.value)
 const showPerformanceDetails = computed(() => performanceMode.value)
@@ -510,14 +514,11 @@ watch(hasBlockingOverlay, open => {
 
   if (open) {
     wasPlayingBeforeDialog.value = !!player.clock?.state.running
-    if (wasPlayingBeforeDialog.value) {
-      player.clock?.pause()
-      session.paused = true
-      player.autoPlayer.allNotesOff(session)
-    }
+    player.setInteractionLocked(true)
     return
   }
 
+  player.setInteractionLocked(false)
   if (wasPlayingBeforeDialog.value && !player.clock?.state.running) {
     player.start()
   }
@@ -553,7 +554,7 @@ watch(() => player.stats, stats => {
       :help-overlay-open="showHelpOverlay"
       :benchmark-mode="performanceMode"
       :performance-auto-play="player.performanceAutoPlay"
-      :playback-blocked="settings.showSheetMusic && !sheetReady"
+      :playback-blocked="playbackBlocked"
       @open-metronome="openMetronome"
       @open-track-config="openTrackConfig"
       @open-keyboard-range="openKeyboardRange"

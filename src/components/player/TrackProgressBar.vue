@@ -6,9 +6,19 @@ import { useSettingsStore } from '../../stores/settingsStore'
 import type { MidiBookmarkSource } from '../../modules/midi/midiTypes'
 
 const { t } = useI18n()
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   loopSetupActive?: boolean
   fingerModeActive?: boolean
+  cropRangeActive?: boolean
+  cropStartUs?: number
+  cropEndUs?: number
+}>(), {
+  cropStartUs: 0,
+  cropEndUs: 0,
+})
+
+const emit = defineEmits<{
+  updateCropRange: [startUs: number, endUs: number, durationUs: number]
 }>()
 
 const player = usePlayerStore()
@@ -69,13 +79,29 @@ const loopRegion = computed(() => {
     width: ((loop.endUs - loop.startUs) / seekSpanUs.value) * 100,
   }
 })
+const cropRegion = computed(() => {
+  if (!props.cropRangeActive || !totalUs.value) return null
+  const startUs = Math.max(0, Math.min(totalUs.value, props.cropStartUs))
+  const endUs = Math.max(startUs, Math.min(totalUs.value, props.cropEndUs || totalUs.value))
+  return {
+    startUs,
+    endUs,
+    left: timeToPercent(startUs),
+    width: ((endUs - startUs) / seekSpanUs.value) * 100,
+  }
+})
+const cropStartLabel = computed(() => formatTime(cropRegion.value?.startUs ?? 0))
+const cropEndLabel = computed(() => formatTime(cropRegion.value?.endUs ?? totalUs.value))
 
 let isDraggingLoop = false
 let isSeekingProgress = false
+let draggingCropHandle: 'start' | 'end' | null = null
+const cropDragging = ref(false)
 let dragStartUs = 0
 let previewStartUs = 0
 let previewEndUs = 0
 let canvasResizeObserver: ResizeObserver | null = null
+const CROP_HANDLE_HIT_PX = 16
 const loopPreview = ref<{ left: number; width: number } | null>(null)
 const shouldDrawPlayedRegions = computed(() => !!player.session && player.playbackManuallyStopped)
 const playedRegions = computed(() => {
@@ -165,7 +191,60 @@ function drawCanvases() {
   drawProgressCanvas()
 }
 
+function cropRangeFromValues(startUs: number, endUs: number) {
+  const total = totalUs.value
+  const start = Math.max(0, Math.min(total, startUs))
+  const end = Math.max(start, Math.min(total, endUs))
+  if (end <= start) return { startUs: 0, endUs: total }
+  return { startUs: start, endUs: end }
+}
+
+function clientXToTimeUs(clientX: number) {
+  const seekBar = seekBarRef.value
+  if (!seekBar) return 0
+  const rect = seekBar.getBoundingClientRect()
+  const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
+  return seekStartUs.value + ratio * seekSpanUs.value
+}
+
+function cropHandleAt(event: MouseEvent) {
+  const seekBar = seekBarRef.value
+  const crop = cropRegion.value
+  if (!seekBar || !crop) return null
+  const rect = seekBar.getBoundingClientRect()
+  const x = event.clientX - rect.left
+  const startX = (crop.left / 100) * rect.width
+  const endX = ((crop.left + crop.width) / 100) * rect.width
+  if (Math.abs(x - startX) <= CROP_HANDLE_HIT_PX) return 'start' as const
+  if (Math.abs(x - endX) <= CROP_HANDLE_HIT_PX) return 'end' as const
+  return null
+}
+
+function applyCropHandle(clientX: number) {
+  if (!draggingCropHandle) return
+  const timeUs = clientXToTimeUs(clientX)
+  const current = cropRegion.value
+  if (!current) return
+  const next = draggingCropHandle === 'start'
+    ? cropRangeFromValues(timeUs, current.endUs)
+    : cropRangeFromValues(current.startUs, timeUs)
+  emit('updateCropRange', next.startUs, next.endUs, totalUs.value)
+}
+
 function handleMouseDown(event: MouseEvent) {
+  if (props.cropRangeActive) {
+    const handle = cropHandleAt(event)
+    if (handle) {
+      player.blockPlaybackOutput()
+      draggingCropHandle = handle
+      cropDragging.value = true
+      applyCropHandle(event.clientX)
+      window.addEventListener('mousemove', handleCropMove)
+      window.addEventListener('mouseup', handleCropEnd)
+      return
+    }
+  }
+
   if (!props.loopSetupActive) {
     if (!player.canSeek) return
     player.blockPlaybackOutput()
@@ -198,6 +277,19 @@ function handleSeekEnd() {
   player.unblockPlaybackOutput()
   window.removeEventListener('mousemove', handleSeekMove)
   window.removeEventListener('mouseup', handleSeekEnd)
+}
+
+function handleCropMove(event: MouseEvent) {
+  applyCropHandle(event.clientX)
+}
+
+function handleCropEnd() {
+  if (!draggingCropHandle) return
+  draggingCropHandle = null
+  cropDragging.value = false
+  player.unblockPlaybackOutput()
+  window.removeEventListener('mousemove', handleCropMove)
+  window.removeEventListener('mouseup', handleCropEnd)
 }
 
 function handleDragMove(event: MouseEvent) {
@@ -240,15 +332,21 @@ watch(
     totalUs.value,
     seekStartUs.value,
     seekSpanUs.value,
+    props.cropRangeActive,
+    props.cropStartUs,
+    props.cropEndUs,
   ],
   () => nextTick(drawCanvases),
   { flush: 'post' },
 )
 
 onBeforeUnmount(() => {
-  if (isDraggingLoop || isSeekingProgress) player.unblockPlaybackOutput(true)
+  if (isDraggingLoop || isSeekingProgress || draggingCropHandle) player.unblockPlaybackOutput(true)
+  cropDragging.value = false
   window.removeEventListener('mousemove', handleSeekMove)
   window.removeEventListener('mouseup', handleSeekEnd)
+  window.removeEventListener('mousemove', handleCropMove)
+  window.removeEventListener('mouseup', handleCropEnd)
   window.removeEventListener('mousemove', handleDragMove)
   window.removeEventListener('mouseup', handleDragEnd)
   canvasResizeObserver?.disconnect()
@@ -342,7 +440,7 @@ function seekFromPointer(event: MouseEvent) {
 </script>
 
 <template>
-  <section v-if="player.session" class="track-progress">
+  <section v-if="player.session" class="track-progress" :class="{ 'track-progress--crop': cropRangeActive, 'track-progress--crop-dragging': cropDragging }">
     <div
       ref="seekBarRef"
       class="seek-bar"
@@ -371,6 +469,31 @@ function seekFromPointer(event: MouseEvent) {
         :style="{ left: `${loopRegion.left}%`, width: `${loopRegion.width}%` }"
       />
       <div
+        v-if="cropRegion"
+        class="crop-mask crop-mask--before"
+        :style="{ width: `${cropRegion.left}%` }"
+      />
+      <div
+        v-if="cropRegion"
+        class="crop-mask crop-mask--after"
+        :style="{ left: `${cropRegion.left + cropRegion.width}%` }"
+      />
+      <div
+        v-if="cropRegion"
+        class="crop-region"
+        :style="{ left: `${cropRegion.left}%`, width: `${cropRegion.width}%` }"
+      />
+      <div
+        v-if="cropRegion"
+        class="crop-handle crop-handle--start"
+        :style="{ left: `${cropRegion.left}%` }"
+      />
+      <div
+        v-if="cropRegion"
+        class="crop-handle crop-handle--end"
+        :style="{ left: `${cropRegion.left + cropRegion.width}%` }"
+      />
+      <div
         v-if="loopPreview"
         class="loop-preview"
         :style="{ left: `${loopPreview.left}%`, width: `${loopPreview.width}%` }"
@@ -396,6 +519,12 @@ function seekFromPointer(event: MouseEvent) {
         <span class="time-left">{{ currentTime }}</span>
         <span class="time-right">{{ totalTime }}</span>
       </div>
+      <div v-if="cropRegion" class="crop-caption">
+        {{ t('record.cropSelection') }}
+        <strong>{{ cropStartLabel }}</strong>
+        –
+        <strong>{{ cropEndLabel }}</strong>
+      </div>
     </div>
   </section>
 </template>
@@ -411,7 +540,7 @@ function seekFromPointer(event: MouseEvent) {
 }
 .seek-bar {
   position: relative;
-  height: 35px;
+  height: 36px;
   overflow: visible;
   border: none;
   border-radius: 0;
@@ -521,6 +650,80 @@ function seekFromPointer(event: MouseEvent) {
 }
 .seek-bar.loop-mode {
   cursor: crosshair;
+}
+.track-progress--crop .seek-bar {
+  height: 36px;
+}
+.crop-mask {
+  position: absolute;
+  z-index: 4;
+  top: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.36);
+  pointer-events: none;
+}
+.crop-mask--before {
+  left: 0;
+}
+.crop-mask--after {
+  right: 0;
+}
+.crop-region {
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  bottom: 0;
+  border-left: 2px solid #fbbf24;
+  border-right: 2px solid #fbbf24;
+  pointer-events: none;
+}
+.crop-handle {
+  position: absolute;
+  z-index: 7;
+  top: 5px;
+  width: 10px;
+  height: calc(100% - 10px);
+  transform: translateX(-50%);
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  border-radius: 999px;
+  background: #e5e7eb;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.32);
+  cursor: ew-resize;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.16s ease;
+}
+.track-progress--crop .seek-bar:hover .crop-handle,
+.track-progress--crop-dragging .crop-handle {
+  opacity: 1;
+}
+.crop-handle::before,
+.crop-handle::after {
+  content: '';
+  position: absolute;
+  top: 7px;
+  bottom: 7px;
+  width: 1px;
+  background: rgba(0, 0, 0, 0.22);
+}
+.crop-handle::before {
+  left: 3px;
+}
+.crop-handle::after {
+  right: 3px;
+}
+.crop-caption {
+  position: absolute;
+  z-index: 8;
+  top: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 11px;
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+  white-space: nowrap;
 }
 .hover-popover {
   position: absolute;

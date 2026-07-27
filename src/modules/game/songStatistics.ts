@@ -90,7 +90,7 @@ export function summarizeStats(score: ScoreState, session: PlaySession, options:
     progressRatio,
     notesHit: score.notesUserActuallyPlayed,
     totalPlayableNotes,
-    errors: Math.max(score.strayNotes, score.missedNotes),
+    errors: score.strayNotes + score.wrongNotes + score.missedNotes,
     timeSpentUs,
   }
 }

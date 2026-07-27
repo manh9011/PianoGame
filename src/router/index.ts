@@ -4,6 +4,7 @@ import LibraryView from '../views/LibraryView.vue'
 import ModeSelectView from '../views/ModeSelectView.vue'
 import TrackSettingsView from '../views/TrackSettingsView.vue'
 import PlayView from '../views/PlayView.vue'
+import RecordView from '../views/RecordView.vue'
 import SettingView from '../views/SettingView.vue'
 
 export default createRouter({
@@ -14,6 +15,7 @@ export default createRouter({
     { path: '/mode-select/:hash?', name: 'mode-select', component: ModeSelectView },
     { path: '/track-settings/:hash?', name: 'track-settings', component: TrackSettingsView },
     { path: '/play/:hash/:modeId', name: 'play', component: PlayView },
+    { path: '/record/:hash', name: 'record', component: RecordView },
     {
       path: '/settings',
       name: 'settings',

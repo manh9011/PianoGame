@@ -11,7 +11,7 @@ import { getKeyboardRange } from '../modules/render/keyboardRange'
 import { getKeySignatureAccidentals } from '../modules/render/pianoLabels'
 import { MidiPlayerClock } from '../modules/midi/midiPlayerClock'
 import { collectChordAtStart, findEarliestPlayableWaitingStart, findHit, findPlayableWaitingNoteDueBy, HIT_WINDOW_US, isPlayableNote, markMisses } from '../modules/game/hitDetection'
-import { awardHoldPoints, createScoreState, recordHit, recordMiss, recordMisses, recordStray, resetSpeedTrackingAnchor, stopHoldsForInput, summarizeScoreWithinRange, trimScoreAfter, updateSpeedTracking, type ScoreState } from '../modules/game/scoring'
+import { awardHoldPoints, createScoreState, recordHit, recordMiss, recordMisses, recordPassiveRealTime, recordStray, resetSpeedTrackingAnchor, stopHoldsForInput, summarizeScoreWithinRange, trimScoreAfter, updateSpeedTracking, type ScoreState } from '../modules/game/scoring'
 import { summarizeStats, type SongPlayStats } from '../modules/game/songStatistics'
 import { assignHands } from '../modules/game/handAssignment'
 import { requestPianoFingering } from '../modules/fingering/fingeringClient'
@@ -317,6 +317,22 @@ function summarizeCompletedStats(session: PlaySession) {
   return { stats, batch }
 }
 
+function flushMelodyWaitTracking(session: PlaySession, nowMs: number) {
+  if (session.mode !== 'noteMemory' || !session.melodyWaitStartedMs) return
+  const realUs = Math.max(0, (nowMs - session.melodyWaitStartedMs) * 1000)
+  if (!realUs) {
+    session.melodyWaitStartedMs = undefined
+    return
+  }
+  for (const score of activeScoresFor(session)) recordPassiveRealTime(score, session.currentUs, realUs)
+  session.melodyWaitStartedMs = undefined
+}
+
+function resumeMelodyWaitTracking(session: PlaySession, nowMs: number) {
+  if (session.mode !== 'noteMemory' || !session.melodyWaitNoteId || session.melodyWaitStartedMs) return
+  session.melodyWaitStartedMs = nowMs
+}
+
 const BOOKMARK_SEEK_EPSILON_US = 10_000
 const FALLBACK_BOOKMARK_US = 1_000_000
 const SEEK_PRE_ROLL_US = 3_000_000
@@ -399,6 +415,7 @@ export const usePlayerStore = defineStore('player', {
     playbackRunning: false,
     playbackOutputBlocked: false,
     playbackOutputBlockCount: 0,
+    interactionLocked: false,
     loopAttemptHistory: [] as LoopAttemptSummary[],
     loopAttemptCounter: 0,
   }),
@@ -455,6 +472,7 @@ export const usePlayerStore = defineStore('player', {
       this.performanceAutoPlayUsed = false
       this.playbackManuallyStopped = false
       this.playbackRunning = false
+      this.interactionLocked = false
       this.unblockPlaybackOutput(true)
       this.resetLoopAttemptHistory()
       this.restoreSavedLoopRegion(song.id)
@@ -506,6 +524,7 @@ export const usePlayerStore = defineStore('player', {
             session.currentUs = activeWaitNote.start
             session.finished = false
             session.paused = true
+            if (!this.interactionLocked) resumeMelodyWaitTracking(session, nowMs)
             for (const score of activeScoresFor(session)) resetSpeedTrackingAnchor(score, activeWaitNote.start, nowMs)
             return
           }
@@ -607,6 +626,7 @@ export const usePlayerStore = defineStore('player', {
       this.performanceAutoPlayUsed = false
       this.playbackManuallyStopped = false
       this.playbackRunning = false
+      this.interactionLocked = false
       this.unblockPlaybackOutput(true)
       this.resetLoopAttemptHistory()
       this.applyLoopBoundsToClock()
@@ -617,7 +637,7 @@ export const usePlayerStore = defineStore('player', {
       await this.inputSynth.start()
     },
     start() {
-      if (!this.session?.setupComplete || this.stats) return
+      if (!this.session?.setupComplete || this.stats || this.interactionLocked) return
       this.stopTrackPreview()
       this.playbackManuallyStopped = false
       this.playbackRunning = true
@@ -626,7 +646,7 @@ export const usePlayerStore = defineStore('player', {
     },
     togglePause() {
       const session = this.session
-      if (!session?.setupComplete || !session.modeConfig.pauseAllowed || this.stats) return
+      if (!session?.setupComplete || !session.modeConfig.pauseAllowed || this.stats || this.interactionLocked) return
       this.clock?.toggle()
       session.paused = !this.clock?.state.running
       this.playbackRunning = !!this.clock?.state.running
@@ -635,7 +655,8 @@ export const usePlayerStore = defineStore('player', {
     },
     stopPlayback() {
       const session = this.session
-      if (!session || this.stats) return
+      if (!session || this.stats || this.interactionLocked) return
+      flushMelodyWaitTracking(session, performance.now())
       this.clock?.pause()
       session.paused = true
       this.playbackManuallyStopped = true
@@ -643,6 +664,21 @@ export const usePlayerStore = defineStore('player', {
       this.currentProgress = this.clock?.state.progress ?? this.currentProgress
       session.currentUs = this.clock?.state.currentUs ?? session.currentUs
       this.autoPlayer.allNotesOff(session)
+    },
+    setInteractionLocked(locked: boolean) {
+      const session = this.session
+      if (!session || this.interactionLocked === locked) return
+      this.interactionLocked = locked
+      if (locked) {
+        flushMelodyWaitTracking(session, performance.now())
+        this.clock?.pause()
+        session.paused = true
+        this.playbackRunning = false
+        this.blockPlaybackOutput()
+        return
+      }
+      this.unblockPlaybackOutput()
+      if (session.melodyWaitNoteId && !session.finished) resumeMelodyWaitTracking(session, performance.now())
     },
     blockPlaybackOutput() {
       this.playbackOutputBlockCount += 1
@@ -1209,7 +1245,7 @@ export const usePlayerStore = defineStore('player', {
     },
     noteInput(noteId: number, on: boolean) {
       const session = this.session
-      if (this.playbackOutputBlocked) return
+      if (this.playbackOutputBlocked || this.interactionLocked) return
       if (!session?.setupComplete || session.finished || this.stats) return
       if (!on) {
         session.activeNotes.delete(noteId)
@@ -1256,6 +1292,7 @@ export const usePlayerStore = defineStore('player', {
           if (session.modeConfig.scoringEnabled) recordHitForSessionNote(session, chordNote, session.currentUs, inputNoteId, nowMs)
         }
         if (session.mode === 'noteMemory' && chordNotes.some(note => note.id === session.melodyWaitNoteId)) {
+          flushMelodyWaitTracking(session, nowMs)
           session.melodyWaitNoteId = undefined
           session.melodyWaitStartedMs = undefined
           markKeyboardVisualChanged(session)

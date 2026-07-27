@@ -48,6 +48,7 @@ const options = computed<RangeOption[]>(() => [
 function selectOption(option: RangeOption) {
   if (option.disabled) return
   settings.setKeyboardRangeMode(option.value)
+  player.refreshKeyboardRange()
 }
 </script>
 

@@ -360,14 +360,32 @@ export function resetSpeedTrackingAnchor(s: ScoreState, currentUs: number, nowMs
   s.speedTracking.lastTickMs = nowMs
 }
 
+export function recordPassiveRealTime(s: ScoreState, currentUs: number, realUs: number) {
+  const safeRealUs = Math.max(0, realUs)
+  if (!safeRealUs) return
+  const atUs = Math.max(0, currentUs)
+  appendSpeedSegment(s.speedTracking.segments, atUs, atUs, safeRealUs)
+  s.speedTracking.playedRealUs += safeRealUs
+}
+
 export function appendSpeedSegment(segments: SpeedSegment[], startUs: number, endUs: number, realUs: number) {
   const start = Math.max(0, Math.min(startUs, endUs))
   const end = Math.max(0, Math.max(startUs, endUs))
-  if (end <= start || realUs <= 0) return
+  if (end < start || realUs <= 0) return
 
   const mergeGapUs = 10_000
   const last = segments[segments.length - 1]
-  if (last && start >= last.startUs && start <= last.endUs + mergeGapUs) {
+  const isPassiveSegment = end === start
+  if (isPassiveSegment) {
+    if (last && last.startUs === last.endUs && Math.abs(last.startUs - start) <= mergeGapUs) {
+      last.realUs += realUs
+      return
+    }
+    segments.push({ startUs: start, endUs: end, realUs })
+    return
+  }
+
+  if (last && last.endUs > last.startUs && start >= last.startUs && start <= last.endUs + mergeGapUs) {
     last.endUs = Math.max(last.endUs, end)
     last.realUs += realUs
     return
