@@ -459,7 +459,7 @@ onMounted(async () => {
   sheetReady.value = !settings.showSheetMusic
   startWhenSheetIsReady()
   midiAccess = await requestMidiAccess()
-  bindInput(midiAccess, settings.midiInputId, (note, _velocity, on) => player.noteInput(note, on))
+  bindInput(midiAccess, settings.midiInputId, (note, velocity, on) => player.noteInput(note, on, { velocity, source: 'midi' }))
 
   document.addEventListener('fullscreenchange', updateFullscreenState)
   window.addEventListener('resize', updateFullscreenState)

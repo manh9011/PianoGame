@@ -7,6 +7,7 @@ import '@fortawesome/fontawesome-free/css/all.min.css'
 import { useLibraryStore } from './stores/libraryStore'
 import { useSettingsStore } from './stores/settingsStore'
 import { useProfileStore } from './stores/profileStore'
+import { useFreePlayStore } from './stores/freePlayStore'
 import { i18n } from './i18n'
 import { useToastStore } from './stores/toastStore'
 
@@ -22,11 +23,12 @@ async function initApp() {
   const libraryStore = useLibraryStore()
   const settingsStore = useSettingsStore()
   const profileStore = useProfileStore()
+  const freePlayStore = useFreePlayStore()
 
   toastStore.showLoading(t('common.loadingData'))
 
   let completed = 0
-  const total = 3
+  const total = 4
 
   await Promise.all([
     libraryStore.hydrate().then(() => {
@@ -38,6 +40,10 @@ async function initApp() {
       toastStore.updateProgress((completed / total) * 100)
     }),
     profileStore.hydrate().then(() => {
+      completed++
+      toastStore.updateProgress((completed / total) * 100)
+    }),
+    freePlayStore.hydrate().then(() => {
       completed++
       toastStore.updateProgress((completed / total) * 100)
     })

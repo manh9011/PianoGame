@@ -5,6 +5,7 @@ import ModeSelectView from '../views/ModeSelectView.vue'
 import TrackSettingsView from '../views/TrackSettingsView.vue'
 import PlayView from '../views/PlayView.vue'
 import RecordView from '../views/RecordView.vue'
+import FreePlayView from '../views/FreePlayView.vue'
 import SettingView from '../views/SettingView.vue'
 
 export default createRouter({
@@ -16,6 +17,7 @@ export default createRouter({
     { path: '/track-settings/:hash?', name: 'track-settings', component: TrackSettingsView },
     { path: '/play/:hash/:modeId', name: 'play', component: PlayView },
     { path: '/record/:hash', name: 'record', component: RecordView },
+    { path: '/free-play', name: 'free-play', component: FreePlayView },
     {
       path: '/settings',
       name: 'settings',

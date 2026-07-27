@@ -1,0 +1,412 @@
+<script setup lang="ts">
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useConfirmDialog } from '../composables/useConfirmDialog'
+import { parseFreePlayTimeSignature, useFreePlayStore } from '../stores/freePlayStore'
+import { usePlayerStore } from '../stores/playerStore'
+import { useSettingsStore } from '../stores/settingsStore'
+import { useToastStore } from '../stores/toastStore'
+import { bindInput, requestMidiAccess } from '../modules/midi/webMidi'
+import { WHITE_KEY_COUNT } from '../modules/render/pianoGeometry'
+import { createFreePlayMidi } from '../modules/midi/freePlayMidiExport'
+import FreePlayTopBar from '../components/player/FreePlayTopBar.vue'
+import FreePlayPianoRoll from '../components/player/FreePlayPianoRoll.vue'
+import PianoKeyboard from '../components/player/PianoKeyboard.vue'
+import FreePlaySettingsDialog from '../components/player/dialogs/FreePlaySettingsDialog.vue'
+import FreePlayMetronomeDialog from '../components/player/dialogs/FreePlayMetronomeDialog.vue'
+import KeyboardRangeDialog from '../components/player/dialogs/KeyboardRangeDialog.vue'
+import LabelsDialog from '../components/player/dialogs/LabelsDialog.vue'
+
+const WHITE_KEY_ASPECT_RATIO = 150 / 23.5
+const BLACK_KEY_HEIGHT_RATIO = 95 / 150
+
+const { t } = useI18n()
+const { confirm } = useConfirmDialog()
+const freePlay = useFreePlayStore()
+const player = usePlayerStore()
+const settings = useSettingsStore()
+const toast = useToastStore()
+
+let midiAccess: Awaited<ReturnType<typeof requestMidiAccess>> = null
+let unsubscribeNoteInput: (() => void) | undefined
+let resizeObserver: ResizeObserver | null = null
+let timerId: number | null = null
+
+const freePlayLayoutRef = ref<HTMLElement>()
+const keyboardHeight = ref(150)
+const blackKeyHeight = ref(95)
+const isFullscreen = ref(false)
+const showSettingsDialog = ref(false)
+const showMetronomeDialog = ref(false)
+const showKeyboardRangeDialog = ref(false)
+const showLabelsDialog = ref(false)
+const settingsPopupStyle = ref({ top: '0px', left: '0px' })
+const settingsArrowStyle = ref<{ top: string; left?: string; right?: string }>({ top: '0px', right: '-7px' })
+const settingsArrowPlacement = ref<'left' | 'right'>('right')
+const metronomePopupStyle = ref({ top: '0px', left: '0px' })
+const metronomeArrowStyle = ref<{ top?: string; left?: string; right?: string }>({ top: '0px', right: '-7px' })
+const metronomeArrowPlacement = ref<'left' | 'right' | 'top'>('right')
+const keyboardRangePopupStyle = ref({ top: '0px', left: '0px' })
+const keyboardRangeArrowStyle = ref<{ top: string; left?: string; right?: string }>({ top: '0px', right: '-7px' })
+const keyboardRangeArrowPlacement = ref<'left' | 'right'>('right')
+const labelsPopupStyle = ref({ top: '0px', left: '0px' })
+const labelsArrowStyle = ref<{ top: string; left?: string; right?: string }>({ top: '0px', right: '-7px' })
+const labelsArrowPlacement = ref<'left' | 'right'>('right')
+
+function calculatePopupPosition(element: HTMLElement, popupWidth: number, popupHeight: number) {
+  const rect = element.getBoundingClientRect()
+  const margin = 10
+  const gap = 8
+
+  let left = rect.left - popupWidth - gap
+  let top = rect.top
+  let arrowOnRight = true
+
+  if (left < margin) {
+    left = rect.right + gap
+    arrowOnRight = false
+  }
+
+  if (left + popupWidth > window.innerWidth - margin) {
+    left = window.innerWidth - popupWidth - margin
+  }
+
+  if (top < margin) top = margin
+  if (top + popupHeight > window.innerHeight - margin) {
+    top = Math.max(margin, window.innerHeight - popupHeight - margin)
+  }
+
+  const arrowTop = rect.top + rect.height / 2 - top
+  return {
+    popupStyle: { top: `${top}px`, left: `${left}px` },
+    arrowStyle: arrowOnRight ? { top: `${arrowTop}px`, right: '-7px' } : { top: `${arrowTop}px`, left: '-7px' },
+    arrowPlacement: arrowOnRight ? 'right' as const : 'left' as const,
+  }
+}
+
+function calculateBottomPopupPosition(element: HTMLElement, popupWidth: number, popupHeight: number) {
+  const rect = element.getBoundingClientRect()
+  const margin = 10
+  const gap = 8
+
+  let left = rect.left + rect.width / 2 - popupWidth / 2
+  let top = rect.bottom + gap
+
+  if (left < margin) left = margin
+  if (left + popupWidth > window.innerWidth - margin) {
+    left = window.innerWidth - popupWidth - margin
+  }
+  if (top + popupHeight > window.innerHeight - margin) {
+    top = Math.max(margin, window.innerHeight - popupHeight - margin)
+  }
+
+  const arrowLeft = rect.left + rect.width / 2 - left
+  return {
+    popupStyle: { top: `${top}px`, left: `${left}px` },
+    arrowStyle: { top: '-7px', left: `${arrowLeft}px` },
+    arrowPlacement: 'top' as const,
+  }
+}
+
+function closeDialogs() {
+  showSettingsDialog.value = false
+  showMetronomeDialog.value = false
+  showKeyboardRangeDialog.value = false
+  showLabelsDialog.value = false
+}
+
+function openSettings(event: MouseEvent) {
+  if (showSettingsDialog.value) {
+    showSettingsDialog.value = false
+    return
+  }
+  closeDialogs()
+  const element = event.currentTarget as HTMLElement
+  const { popupStyle, arrowStyle, arrowPlacement } = calculatePopupPosition(element, 500, 390)
+  settingsPopupStyle.value = popupStyle
+  settingsArrowStyle.value = arrowStyle
+  settingsArrowPlacement.value = arrowPlacement
+  showSettingsDialog.value = true
+}
+
+function openMetronome(event: MouseEvent) {
+  if (showMetronomeDialog.value) {
+    showMetronomeDialog.value = false
+    return
+  }
+  closeDialogs()
+  const element = event.currentTarget as HTMLElement
+  const { popupStyle, arrowStyle, arrowPlacement } = calculateBottomPopupPosition(element, 420, 520)
+  metronomePopupStyle.value = popupStyle
+  metronomeArrowStyle.value = arrowStyle
+  metronomeArrowPlacement.value = arrowPlacement
+  showMetronomeDialog.value = true
+}
+
+function openKeyboardRange(event: MouseEvent) {
+  if (showKeyboardRangeDialog.value) {
+    showKeyboardRangeDialog.value = false
+    return
+  }
+  closeDialogs()
+  const element = event.currentTarget as HTMLElement
+  const { popupStyle, arrowStyle, arrowPlacement } = calculatePopupPosition(element, 360, 400)
+  keyboardRangePopupStyle.value = popupStyle
+  keyboardRangeArrowStyle.value = arrowStyle
+  keyboardRangeArrowPlacement.value = arrowPlacement
+  showKeyboardRangeDialog.value = true
+}
+
+function openLabels(event: MouseEvent) {
+  if (showLabelsDialog.value) {
+    showLabelsDialog.value = false
+    return
+  }
+  closeDialogs()
+  const element = event.currentTarget as HTMLElement
+  const { popupStyle, arrowStyle, arrowPlacement } = calculatePopupPosition(element, 430, 520)
+  labelsPopupStyle.value = popupStyle
+  labelsArrowStyle.value = arrowStyle
+  labelsArrowPlacement.value = arrowPlacement
+  showLabelsDialog.value = true
+}
+
+function updateKeyboardHeight() {
+  if (!freePlayLayoutRef.value) return
+  const containerWidth = freePlayLayoutRef.value.offsetWidth
+  if (!containerWidth) return
+  const whiteKeyWidth = containerWidth / WHITE_KEY_COUNT
+  keyboardHeight.value = whiteKeyWidth * WHITE_KEY_ASPECT_RATIO
+  blackKeyHeight.value = keyboardHeight.value * BLACK_KEY_HEIGHT_RATIO
+}
+
+function startRecording() {
+  closeDialogs()
+  freePlay.startRecording()
+  player.metronome.restart()
+}
+
+function stopRecording() {
+  freePlay.stopRecording()
+  player.metronome.restart()
+  if (!freePlay.hasRecording) toast.showError(t('freePlay.emptyRecording'))
+}
+
+function triggerDownload(blob: Blob, fileName: string) {
+  const link = document.createElement('a')
+  const url = URL.createObjectURL(blob)
+  link.href = url
+  link.download = fileName
+  link.click()
+  URL.revokeObjectURL(url)
+}
+
+function exportMidi() {
+  if (!freePlay.hasRecording) return
+  try {
+    const data = createFreePlayMidi(freePlay.notes, freePlay.bpm)
+    const bytes = new Uint8Array(data.length)
+    bytes.set(data)
+    triggerDownload(new Blob([bytes.buffer as ArrayBuffer], { type: 'audio/midi' }), t('freePlay.midiFileName'))
+    toast.showSuccess(t('freePlay.exportSuccess'))
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    toast.showError(t('freePlay.exportFailed', { message }))
+  }
+}
+
+async function deleteRecording() {
+  if (!freePlay.hasRecording) return
+  if (settings.advancedConfirmBeforeDestructiveAction) {
+    const confirmed = await confirm({
+      title: t('freePlay.deleteRecordingConfirmTitle'),
+      message: t('freePlay.deleteRecordingConfirmMessage'),
+      confirmLabel: t('common.delete'),
+      cancelLabel: t('common.cancel'),
+      tone: 'danger',
+    })
+    if (!confirmed) return
+  }
+  freePlay.clearRecording()
+}
+
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(err => {
+      console.error(`Lỗi khi bật fullscreen: ${err.message}`)
+    })
+  } else {
+    document.exitFullscreen()
+  }
+}
+
+function isBrowserFullscreen() {
+  return Math.abs(window.innerWidth - screen.width) <= 1 && Math.abs(window.innerHeight - screen.height) <= 1
+}
+
+function updateFullscreenState() {
+  isFullscreen.value = !!document.fullscreenElement || isBrowserFullscreen()
+}
+
+function handleFullscreenShortcut(event: KeyboardEvent) {
+  if (event.key === 'F11') setTimeout(updateFullscreenState, 100)
+}
+
+function tickFreePlayClock() {
+  freePlay.tickClock()
+  if (freePlay.status !== 'recording') return
+  const durationUs = freePlay.recordingDurationUs
+  const signature = parseFreePlayTimeSignature(freePlay.timeSignature)
+  if (!signature.enabled) return
+  const quarterBeatUs = 60_000_000 / freePlay.bpm
+  const beatUs = quarterBeatUs * (4 / signature.denominator)
+  const beats = Array.from({ length: Math.ceil(durationUs / beatUs) + 4 }, (_, index) => ({
+    timeUs: Math.round(index * beatUs),
+    firstBeat: index % signature.numerator === 0,
+  }))
+  player.metronome.tick(beats, durationUs, {
+    volume: freePlay.metronomeVolume,
+    doubleSpeed: freePlay.metronomeDoubleSpeed,
+    emphasizeFirstBeat: freePlay.metronomeEmphasizeFirstBeat,
+  })
+}
+
+function startTimer() {
+  if (timerId !== null) return
+  timerId = window.setInterval(tickFreePlayClock, 50)
+}
+
+function stopTimer() {
+  if (timerId === null) return
+  window.clearInterval(timerId)
+  timerId = null
+}
+
+onMounted(async () => {
+  player.loadFreePlaySession(settings.defaultSpeed, settings.showDuration, settings.octaveShift)
+  await player.prepareAudio(settings.midiOutputId)
+  unsubscribeNoteInput = player.subscribeNoteInput(event => freePlay.handleNoteInput(event))
+  midiAccess = await requestMidiAccess()
+  bindInput(midiAccess, settings.midiInputId, (note, velocity, on) => player.noteInput(note, on, { velocity, source: 'midi' }))
+
+  document.addEventListener('fullscreenchange', updateFullscreenState)
+  window.addEventListener('resize', updateFullscreenState)
+  window.addEventListener('keyup', handleFullscreenShortcut)
+  updateFullscreenState()
+
+  await nextTick()
+  updateKeyboardHeight()
+  if (freePlayLayoutRef.value) {
+    resizeObserver = new ResizeObserver(updateKeyboardHeight)
+    resizeObserver.observe(freePlayLayoutRef.value)
+  }
+})
+
+onBeforeUnmount(() => {
+  if (freePlay.status === 'recording') freePlay.stopRecording()
+  bindInput(midiAccess, '', () => {})
+  unsubscribeNoteInput?.()
+  stopTimer()
+  closeDialogs()
+  player.inputSynth.allNotesOff()
+  document.removeEventListener('fullscreenchange', updateFullscreenState)
+  window.removeEventListener('resize', updateFullscreenState)
+  window.removeEventListener('keyup', handleFullscreenShortcut)
+  if (resizeObserver) resizeObserver.disconnect()
+})
+
+watch(() => settings.keyboardRangeMode, () => {
+  player.refreshKeyboardRange()
+})
+
+watch(() => freePlay.status, status => {
+  if (status === 'recording') startTimer()
+  else stopTimer()
+}, { immediate: true })
+</script>
+
+<template>
+  <main
+    v-if="player.session"
+    ref="freePlayLayoutRef"
+    class="free-play-layout"
+    :style="{ '--keyboard-height': `${keyboardHeight}px`, '--black-key-height': `${blackKeyHeight}px` }"
+  >
+    <FreePlayTopBar
+      :is-fullscreen="isFullscreen"
+      :settings-open="showSettingsDialog"
+      :metronome-open="showMetronomeDialog"
+      :keyboard-range-open="showKeyboardRangeDialog"
+      :labels-open="showLabelsDialog"
+      @start-recording="startRecording"
+      @stop-recording="stopRecording"
+      @export-midi="exportMidi"
+      @delete-recording="deleteRecording"
+      @open-settings="openSettings"
+      @open-metronome="openMetronome"
+      @open-keyboard-range="openKeyboardRange"
+      @open-labels="openLabels"
+      @toggle-fullscreen="toggleFullscreen"
+    />
+    <section class="free-play-stage">
+      <FreePlayPianoRoll />
+    </section>
+    <section class="keyboard-shell">
+      <PianoKeyboard />
+    </section>
+
+    <FreePlaySettingsDialog
+      :show="showSettingsDialog"
+      :popup-style="settingsPopupStyle"
+      :arrow-style="settingsArrowStyle"
+      :arrow-placement="settingsArrowPlacement"
+      @close="showSettingsDialog = false"
+    />
+
+    <FreePlayMetronomeDialog
+      :show="showMetronomeDialog"
+      :popup-style="metronomePopupStyle"
+      :arrow-style="metronomeArrowStyle"
+      :arrow-placement="metronomeArrowPlacement"
+      @close="showMetronomeDialog = false"
+    />
+
+    <KeyboardRangeDialog
+      :show="showKeyboardRangeDialog"
+      :popup-style="keyboardRangePopupStyle"
+      :arrow-style="keyboardRangeArrowStyle"
+      :arrow-placement="keyboardRangeArrowPlacement"
+      @close="showKeyboardRangeDialog = false"
+    />
+
+    <LabelsDialog
+      :show="showLabelsDialog"
+      :popup-style="labelsPopupStyle"
+      :arrow-style="labelsArrowStyle"
+      :arrow-placement="labelsArrowPlacement"
+      @close="showLabelsDialog = false"
+    />
+  </main>
+</template>
+
+<style scoped>
+.free-play-layout {
+  height: 100dvh;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) var(--keyboard-height);
+  background: #2b2d31;
+  overflow: hidden;
+}
+
+.free-play-stage {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.keyboard-shell {
+  position: relative;
+  height: var(--keyboard-height);
+  min-height: 0;
+}
+</style>

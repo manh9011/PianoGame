@@ -3,8 +3,8 @@ interface Props {
   show: boolean
   width?: string
   popupStyle?: { top: string; left: string }
-  arrowStyle?: { top: string; left?: string; right?: string }
-  arrowPlacement?: 'left' | 'right'
+  arrowStyle?: { top?: string; left?: string; right?: string }
+  arrowPlacement?: 'left' | 'right' | 'top'
   closeOnClickOutside?: boolean
 }
 
@@ -95,6 +95,12 @@ function handleClickOutside(event: MouseEvent) {
 
 .popover-arrow.left {
   /* Mũi tên ở bên trái popup, chỉ sang trái về button */
+  border-right: none;
+  border-bottom: none;
+}
+
+.popover-arrow.top {
+  /* Mũi tên ở phía trên popup, chỉ lên button */
   border-right: none;
   border-bottom: none;
 }

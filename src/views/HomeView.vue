@@ -79,7 +79,7 @@ function closeProfileManager() {
         <button class="menu-button primary" @click="router.push('/library')">
           {{ t('home.playSong') }}
         </button>
-        <button class="menu-button primary" @click="router.push('/library')" disabled>
+        <button class="menu-button primary" @click="router.push('/free-play')">
           {{ t('home.freePlay') }}
         </button>
         <button class="menu-button secondary" @click="router.push('/settings')">

@@ -348,6 +348,29 @@ export interface LoopAttemptSummary {
   completedAt: number
 }
 
+export type NoteInputSource = 'midi' | 'pointer' | 'computer' | 'auto'
+
+export interface NoteInputOptions {
+  velocity?: number
+  source?: NoteInputSource
+}
+
+export interface NoteInputEvent {
+  noteId: number
+  on: boolean
+  velocity: number
+  source: NoteInputSource
+  atMs: number
+}
+
+type NoteInputListener = (event: NoteInputEvent) => void
+
+const noteInputListeners = new Set<NoteInputListener>()
+
+function emitNoteInput(event: NoteInputEvent) {
+  for (const listener of noteInputListeners) listener(event)
+}
+
 export function isLoopRegionConfigured(loop?: LoopState | null) {
   if (!loop) return false
   return (loop.startUs > 0 || loop.endUs > 0) && loop.endUs > loop.startUs
@@ -436,6 +459,38 @@ export const usePlayerStore = defineStore('player', {
       if (!session) return
       const settings = useSettingsStore()
       session.keyboardRange = getKeyboardRange(settings.keyboardRangeMode, session.notes)
+    },
+    subscribeNoteInput(listener: NoteInputListener) {
+      noteInputListeners.add(listener)
+      return () => noteInputListeners.delete(listener)
+    },
+    loadFreePlaySession(speed = 100, showDuration = 3.25, octaveShift = 0) {
+      this.clock?.stop()
+      this.stopTrackPreview()
+      this.autoPlayer.allNotesOff(this.session)
+      this.metronome.restart()
+      this.song = null
+      this.session = createPlaySession([], createDefaultTrackProperties([{ trackId: 0, role: 'right', instrumentProgram: 0 }]), {
+        mode: 'listen',
+        handSelection: 'both',
+        speed,
+        showDuration,
+        octaveShift,
+        durationUs: 0,
+      })
+      this.session.setupComplete = true
+      this.session.currentUs = 0
+      this.refreshKeyboardRange()
+      this.stats = null
+      this.completedStatsBatch = []
+      this.currentProgress = 0
+      this.performanceAutoPlay = false
+      this.performanceAutoPlayUsed = false
+      this.playbackManuallyStopped = false
+      this.playbackRunning = false
+      this.interactionLocked = false
+      this.unblockPlaybackOutput(true)
+      this.resetLoopAttemptHistory()
     },
     async loadSong(song: SongMetadata, speed = 100, showDuration = 3.25, octaveShift = 0) {
       const data = song.data ?? song.midiData ?? await loadSongMidiData(song.id)
@@ -737,13 +792,13 @@ export const usePlayerStore = defineStore('player', {
       if (note.state !== 'waiting') return
       const inputNoteId = note.noteId + session.octaveShift * 12
       if (session.activeNotes.has(inputNoteId)) return
-      this.noteInput(inputNoteId, true)
+      this.noteInput(inputNoteId, true, { source: 'auto' })
       const speedFactor = Math.max(0.01, session.speed / 100)
       const holdSongUs = Math.max(80_000, note.end - Math.max(currentUs, note.start))
       const releaseDelayMs = Math.max(80, Math.min(15_000, holdSongUs / 1000 / speedFactor))
       window.setTimeout(() => {
         if (this.session !== session) return
-        this.noteInput(inputNoteId, false)
+        this.noteInput(inputNoteId, false, { source: 'auto' })
       }, releaseDelayMs)
     },
     seekToProgress(ratio: number) {
@@ -1243,10 +1298,13 @@ export const usePlayerStore = defineStore('player', {
       }
       await this.startTrackPreview(trackId, outputId)
     },
-    noteInput(noteId: number, on: boolean) {
+    noteInput(noteId: number, on: boolean, options: NoteInputOptions = {}) {
       const session = this.session
       if (this.playbackOutputBlocked || this.interactionLocked) return
       if (!session?.setupComplete || session.finished || this.stats) return
+      const velocity = Math.max(0, Math.min(127, Math.round(options.velocity ?? 80)))
+      const source = options.source ?? 'midi'
+      const atMs = performance.now()
       if (!on) {
         session.activeNotes.delete(noteId)
         session.activeNoteHands.delete(noteId)
@@ -1254,6 +1312,7 @@ export const usePlayerStore = defineStore('player', {
         markKeyboardVisualChanged(session)
         for (const score of activeScoresFor(session)) stopHoldsForInput(score, noteId)
         this.inputSynth.noteOff(noteId)
+        emitNoteInput({ noteId, on, velocity, source, atMs })
         return
       }
 
@@ -1265,9 +1324,12 @@ export const usePlayerStore = defineStore('player', {
       if (hit) {
         session.activeNoteHands.set(noteId, hit.hand)
         session.activeNoteTrackIds.set(noteId, hit.trackId)
+      } else if (session.mode === 'listen' && session.tracks.length) {
+        session.activeNoteTrackIds.set(noteId, session.tracks[0].trackId)
       }
       markKeyboardVisualChanged(session)
-      void this.inputSynth.noteOn(String(noteId), noteId, 80, getTrackSoundfont(session, hit?.trackId))
+      void this.inputSynth.noteOn(String(noteId), noteId, velocity, getTrackSoundfont(session, hit?.trackId))
+      emitNoteInput({ noteId, on, velocity, source, atMs })
       if (session.mode === 'listen') return
 
       if (hit) {

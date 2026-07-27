@@ -911,8 +911,8 @@ function hitTest(event: PointerEvent) {
   return null
 }
 
-function releaseNote(noteId: number) {
-  player.noteInput(noteId, false)
+function releaseNote(noteId: number, source: 'pointer' | 'computer' = 'pointer') {
+  player.noteInput(noteId, false, { source })
   player.session?.activeNotes.delete(noteId)
   player.session?.activeNoteHands.delete(noteId)
 }
@@ -932,7 +932,7 @@ function releaseComputerKey(key: string) {
   if (!pressedComputerKeys.has(key)) return
   const noteId = getVirtualPianoNoteIdFromKey(key)
   pressedComputerKeys.delete(key)
-  if (noteId !== null) releaseNote(noteId)
+  if (noteId !== null) releaseNote(noteId, 'computer')
 }
 
 function releaseAllComputerKeys() {
@@ -967,7 +967,7 @@ function onComputerKeyDown(event: KeyboardEvent) {
   if (noteId === null || pressedComputerKeys.has(key)) return
   event.preventDefault()
   pressedComputerKeys.add(key)
-  player.noteInput(noteId, true)
+  player.noteInput(noteId, true, { source: 'computer' })
 }
 
 function onComputerKeyUp(event: KeyboardEvent) {
@@ -983,7 +983,7 @@ function onPointerDown(event: PointerEvent) {
   const noteId = hitTest(event)
   if (!canvas || noteId === null) return
   canvas.setPointerCapture(event.pointerId)
-  player.noteInput(noteId, true)
+  player.noteInput(noteId, true, { source: 'pointer' })
   pointerNotes.set(event.pointerId, noteId)
 }
 
@@ -998,7 +998,7 @@ function onPointerMove(event: PointerEvent) {
     pointerNotes.delete(event.pointerId)
     return
   }
-  player.noteInput(nextNoteId, true)
+  player.noteInput(nextNoteId, true, { source: 'pointer' })
   pointerNotes.set(event.pointerId, nextNoteId)
 }
 
