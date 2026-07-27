@@ -135,6 +135,34 @@ function normalizeColor(value: string | undefined, index: number) {
   return value || TRACK_SETTINGS_PALETTE[index % TRACK_SETTINGS_PALETTE.length] || FREE_PLAY_DEFAULT_TRACK_COLOR
 }
 
+const MIN_FREE_PLAY_NOTE_DURATION_US = 10_000
+
+function clampMidiValue(value: number | undefined, fallback: number) {
+  return Math.max(0, Math.min(127, Math.round(value ?? fallback)))
+}
+
+function normalizeRecordedNote(note: Partial<FreePlayRecordedNote>, trackId: number, fallbackId: string): FreePlayRecordedNote {
+  const startUs = Math.max(0, Math.round(note.startUs ?? 0))
+  const endUs = Math.max(startUs + MIN_FREE_PLAY_NOTE_DURATION_US, Math.round(note.endUs ?? startUs + MIN_FREE_PLAY_NOTE_DURATION_US))
+  return {
+    id: note.id || fallbackId,
+    trackId,
+    noteId: clampMidiValue(note.noteId, 60),
+    startUs,
+    endUs,
+    velocity: clampMidiValue(note.velocity, 80),
+    source: note.source ?? 'midi',
+  }
+}
+
+function sortRecordedNotes(notes: FreePlayRecordedNote[]) {
+  return notes.sort((left, right) => left.startUs - right.startUs || left.noteId - right.noteId || left.endUs - right.endUs)
+}
+
+function normalizeTrackNotes(notes: Partial<FreePlayRecordedNote>[], trackId: number) {
+  return sortRecordedNotes(notes.map((note, noteIndex) => normalizeRecordedNote(note, trackId, `free:${trackId}:${noteIndex + 1}`)))
+}
+
 function normalizeTrack(value: Partial<FreePlayTrack> | null | undefined, index: number): FreePlayTrack {
   const id = Number.isInteger(value?.id) && value!.id! > 0 ? value!.id! : index + 1
   const notes = Array.isArray(value?.notes) ? value!.notes! : []
@@ -143,15 +171,7 @@ function normalizeTrack(value: Partial<FreePlayTrack> | null | undefined, index:
     instrumentProgram: normalizeProgram(value?.instrumentProgram),
     color: normalizeColor(value?.color, index),
     loop: !!value?.loop,
-    notes: notes.map((note, noteIndex) => ({
-      id: note.id || `free:${id}:${noteIndex + 1}`,
-      trackId: id,
-      noteId: Math.max(0, Math.min(127, Math.round(note.noteId ?? 60))),
-      startUs: Math.max(0, Math.round(note.startUs ?? 0)),
-      endUs: Math.max(10_000, Math.round(note.endUs ?? 10_000)),
-      velocity: Math.max(0, Math.min(127, Math.round(note.velocity ?? 80))),
-      source: note.source ?? 'midi',
-    })).map(note => ({ ...note, endUs: Math.max(note.startUs + 10_000, note.endUs) })),
+    notes: normalizeTrackNotes(notes, id),
   }
 }
 
@@ -331,6 +351,31 @@ export const useFreePlayStore = defineStore('freePlay', {
       this.recordStopMs = 0
       this.recordingTrackId = null
       this.activeNotesByPitch.clear()
+      this.touchTracks()
+      this.persist()
+    },
+    replaceTrackEditorNotes(nextTracks: Pick<FreePlayTrack, 'id' | 'notes'>[]) {
+      const notesByTrackId = new Map(nextTracks.map(track => [track.id, track.notes]))
+      const usedIds = new Set<string>()
+
+      for (const track of this.tracks) {
+        const nextNotes = notesByTrackId.get(track.id)
+        if (!nextNotes) continue
+        const normalizedNotes = normalizeTrackNotes(nextNotes, track.id).map(note => {
+          const existingNote = this.tracks.some(sourceTrack => sourceTrack.notes.some(sourceNote => sourceNote.id === note.id))
+          const shouldAllocateId = !existingNote || usedIds.has(note.id)
+          const id = shouldAllocateId ? `free:${this.nextNoteId++}` : note.id
+          usedIds.add(id)
+          return { ...note, id }
+        })
+        track.notes = normalizedNotes
+      }
+
+      this.recordStartMs = 0
+      this.recordStopMs = 0
+      this.recordingTrackId = null
+      this.activeNotesByPitch.clear()
+      this.status = this.hasRecording ? 'recorded' : 'idle'
       this.touchTracks()
       this.persist()
     },

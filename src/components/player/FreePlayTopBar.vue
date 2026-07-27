@@ -20,6 +20,7 @@ const emit = defineEmits<{
   startRecording: []
   stopRecording: []
   exportMidi: []
+  openTrackEditor: []
   deleteRecording: []
   openSettings: [event: MouseEvent]
   openMetronome: [event: MouseEvent]
@@ -57,6 +58,15 @@ function toggleRecording() {
         <div v-if="freePlay.hasRecording" class="record-actions" :aria-label="t('freePlay.recordingActions')">
           <button class="icon-button export-button" :title="t('freePlay.exportMidi')" :aria-label="t('freePlay.exportMidi')" @click="emit('exportMidi')">
             <i class="fas fa-arrow-up-from-bracket"></i>
+          </button>
+          <button
+            class="icon-button edit-button"
+            :disabled="freePlay.status === 'recording'"
+            :title="t('freePlay.openTrackEditor')"
+            :aria-label="t('freePlay.openTrackEditor')"
+            @click="emit('openTrackEditor')"
+          >
+            <i class="fas fa-pen-to-square"></i>
           </button>
           <button class="icon-button delete-button" :title="t('freePlay.deleteRecording')" :aria-label="t('freePlay.deleteRecording')" @click="emit('deleteRecording')">
             <i class="fas fa-trash-alt"></i>
@@ -244,6 +254,16 @@ function toggleRecording() {
 .export-button {
   color: #bfdbfe;
   background: rgba(14, 116, 144, 0.7);
+}
+
+.edit-button {
+  color: #fde68a;
+  background: rgba(120, 53, 15, 0.62);
+}
+
+.icon-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
 .delete-button {

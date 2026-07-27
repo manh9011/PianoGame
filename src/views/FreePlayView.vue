@@ -18,6 +18,7 @@ import FreePlaySettingsDialog from '../components/player/dialogs/FreePlaySetting
 import FreePlayMetronomeDialog from '../components/player/dialogs/FreePlayMetronomeDialog.vue'
 import KeyboardRangeDialog from '../components/player/dialogs/KeyboardRangeDialog.vue'
 import LabelsDialog from '../components/player/dialogs/LabelsDialog.vue'
+import FreePlayTrackEditorDialog from '../components/player/dialogs/FreePlayTrackEditorDialog.vue'
 
 const WHITE_KEY_ASPECT_RATIO = 150 / 23.5
 const BLACK_KEY_HEIGHT_RATIO = 95 / 150
@@ -43,6 +44,7 @@ const showSettingsDialog = ref(false)
 const showMetronomeDialog = ref(false)
 const showKeyboardRangeDialog = ref(false)
 const showLabelsDialog = ref(false)
+const showTrackEditorDialog = ref(false)
 const settingsPopupStyle = ref({ top: '0px', left: '0px' })
 const settingsArrowStyle = ref<{ top: string; left?: string; right?: string }>({ top: '0px', right: '-7px' })
 const settingsArrowPlacement = ref<'left' | 'right'>('right')
@@ -116,6 +118,14 @@ function calculateBottomPopupPosition(element: HTMLElement, popupWidth: number, 
 }
 
 function closeDialogs() {
+  showSettingsDialog.value = false
+  showMetronomeDialog.value = false
+  showKeyboardRangeDialog.value = false
+  showLabelsDialog.value = false
+  showTrackEditorDialog.value = false
+}
+
+function closePopovers() {
   showSettingsDialog.value = false
   showMetronomeDialog.value = false
   showKeyboardRangeDialog.value = false
@@ -266,6 +276,17 @@ function exportMidi() {
   }
 }
 
+function openTrackEditor() {
+  if (!freePlay.hasRecording) return
+  if (freePlay.status === 'recording') {
+    toast.showError(t('freePlay.trackEditorCannotOpenWhileRecording'))
+    return
+  }
+  closePopovers()
+  stopBackingPlayback()
+  showTrackEditorDialog.value = true
+}
+
 async function deleteRecording() {
   if (!freePlay.hasRecording) return
   if (settings.advancedConfirmBeforeDestructiveAction) {
@@ -406,6 +427,7 @@ watch(() => freePlay.status, status => {
       @start-recording="startRecording"
       @stop-recording="stopRecording"
       @export-midi="exportMidi"
+      @open-track-editor="openTrackEditor"
       @delete-recording="deleteRecording"
       @open-settings="openSettings"
       @open-metronome="openMetronome"
@@ -451,6 +473,11 @@ watch(() => freePlay.status, status => {
       :arrow-style="labelsArrowStyle"
       :arrow-placement="labelsArrowPlacement"
       @close="showLabelsDialog = false"
+    />
+
+    <FreePlayTrackEditorDialog
+      :show="showTrackEditorDialog"
+      @close="showTrackEditorDialog = false"
     />
   </main>
 </template>
