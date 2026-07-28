@@ -300,6 +300,12 @@ export const useLibraryStore = defineStore('library', {
       this.previewSession = session
       this.previewSongId = song.id
       this.previewDurationUs = duration
+
+      // FIX: Tránh dùng chung một AutoNotePlayer instance dễ bị lỗi gc / treo qua nhiều tab chuyển đổi.
+      // Luôn tạo mới player như bên playerStore.ts.
+      this.previewPlayer = new AutoNotePlayer()
+      await this.previewPlayer.configure(outputId)
+
       this.previewClock = new MidiPlayerClock(duration, () => speed, state => {
         if (!isCurrentRequest()) return
         const previewSession = this.previewSession
