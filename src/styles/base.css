@@ -17,33 +17,7 @@
   --control-text: #1f2430;
 }
 * { box-sizing: border-box; }
-html, body, #app {
-  width: 100%;
-  height: 100%;
-}
 body { margin: 0; min-width: 320px; min-height: 100dvh; background: var(--bg, #15181d); }
-
-:root.ios-safe-area-app,
-:root.ios-safe-area-app body { min-width: 0; overflow: hidden; background: #000; }
-:root.ios-safe-area-app #app {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 1920px;
-  height: 1080px;
-  min-width: 0;
-  overflow: hidden;
-  transform: translate(var(--ios-app-offset-x, 0), var(--ios-app-offset-y, 0)) scale(var(--ios-app-scale, 1));
-  transform-origin: top left;
-}
-:root.ios-safe-area-app .page {
-  min-height: 1080px;
-}
-:root.ios-safe-area-app .play-layout {
-  height: 1080px;
-  --keyboard-height: 150px;
-}
-
 button, input, select { font: inherit; }
 button { border: 0; border-radius: 10px; padding: 0.65rem 0.9rem; background: #3465a4; color: #fff; cursor: pointer; }
 button.secondary { background: #2e3436; }
