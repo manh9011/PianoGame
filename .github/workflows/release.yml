@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'Git tag cần release, ví dụ v0.1.0 hoặc v0.1.0-rc.1'
+        description: 'Git tag to release, e.g., v0.1.0 or v0.1.0-rc.1'
         required: true
         type: string
 
@@ -160,7 +160,7 @@ jobs:
         with:
           tagName: ${{ env.RELEASE_TAG }}
           releaseName: PianoGame ${{ env.RELEASE_TAG }}
-          releaseBody: 'Tải file cài đặt phù hợp với hệ điều hành của bạn trong phần Assets.'
+          releaseBody: 'Download the installation file compatible with your operating system from the Assets section.'
           releaseDraft: false
           prerelease: ${{ contains(env.RELEASE_TAG, '-') }}
           args: ${{ matrix.args }}
@@ -208,6 +208,11 @@ jobs:
           else:
               text = text.replace('<application', '<application\n        android:roundIcon="@mipmap/ic_launcher_round"', 1)
 
+          if re.search(r'android:theme="[^"]+"', text):
+              text = re.sub(r'android:theme="[^"]+"', 'android:theme="@style/Theme.PianoGame"', text, count=1)
+          else:
+              text = text.replace('<application', '<application\n        android:theme="@style/Theme.PianoGame"', 1)
+
           if re.search(r'android:screenOrientation="[^"]+"', text):
               text = re.sub(r'android:screenOrientation="[^"]+"', 'android:screenOrientation="landscape"', text, count=1)
           else:
@@ -216,74 +221,21 @@ jobs:
           manifest.write_text(text, encoding='utf-8')
           PY
 
-          MAIN_ACTIVITY_PATH="$main_activity_path" python <<'PY'
-          import os
-          import re
-          from pathlib import Path
-          from textwrap import dedent
-
-          main_activity = Path(os.environ['MAIN_ACTIVITY_PATH'])
-          text = main_activity.read_text(encoding='utf-8')
-
-          imports = [
-              'import android.graphics.Color',
-              'import android.os.Build',
-              'import android.os.Bundle',
-              'import android.view.View',
-              'import android.view.WindowInsets',
-              'import android.view.WindowInsetsController',
-          ]
-          existing_imports = '\n'.join(line for line in text.splitlines() if line.startswith('import '))
-          missing_imports = [line for line in imports if line not in existing_imports]
-          if missing_imports:
-              package_match = re.search(r'^package .+$', text, flags=re.MULTILINE)
-              insert_at = package_match.end() if package_match else 0
-              text = text[:insert_at] + '\n\n' + '\n'.join(missing_imports) + text[insert_at:]
-
-          class_match = re.search(r'class\s+MainActivity\s*:\s*([^\n{]+)(?:\{\s*\})?', text)
-          if not class_match:
-              raise SystemExit('Cannot find MainActivity class declaration to patch immersive mode')
-
-          super_expr = class_match.group(1).strip()
-          class_body = dedent(f'''
-          class MainActivity : {super_expr} {{
-              override fun onCreate(savedInstanceState: Bundle?) {{
-                  super.onCreate(savedInstanceState)
-                  enableImmersiveMode()
-              }}
-
-              override fun onWindowFocusChanged(hasFocus: Boolean) {{
-                  super.onWindowFocusChanged(hasFocus)
-                  if (hasFocus) enableImmersiveMode()
-              }}
-
-              private fun enableImmersiveMode() {{
-                  window.statusBarColor = Color.TRANSPARENT
-                  window.navigationBarColor = Color.TRANSPARENT
-
-                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {{
-                      window.setDecorFitsSystemWindows(false)
-                      window.insetsController?.let {{ controller ->
-                          controller.hide(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
-                          controller.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-                      }}
-                  }} else {{
-                      @Suppress("DEPRECATION")
-                      window.decorView.systemUiVisibility = (
-                          View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                              or View.SYSTEM_UI_FLAG_FULLSCREEN
-                              or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                              or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                              or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                              or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                      )
-                  }}
-              }}
-          }}
-          ''').strip()
-          text = text[:class_match.start()] + class_body + '\n' + text[class_match.end():]
-          main_activity.write_text(text, encoding='utf-8')
-          PY
+          mkdir -p "$res_dir/values"
+          cat > "$res_dir/values/pianogame_theme.xml" <<'EOF'
+          <resources>
+              <style name="Theme.PianoGame" parent="android:style/Theme.Material.NoActionBar">
+                  <item name="android:windowNoTitle">true</item>
+                  <item name="android:windowActionBar">false</item>
+                  <item name="android:windowFullscreen">true</item>
+                  <item name="android:navigationBarColor">#000000</item>
+                  <item name="android:statusBarColor">#000000</item>
+                  <item name="android:windowLightNavigationBar">false</item>
+                  <item name="android:windowLightStatusBar">false</item>
+                  <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+              </style>
+          </resources>
+          EOF
 
       - name: Build Android APK
         if: matrix.kind == 'android'
@@ -372,7 +324,7 @@ jobs:
           if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
             gh release create "$RELEASE_TAG" \
               --title "PianoGame ${RELEASE_TAG}" \
-              --notes 'Tải file cài đặt phù hợp với hệ điều hành của bạn trong phần Assets.' \
+              --notes 'Download the installation file compatible with your operating system from the Assets section.' \
               ${{ contains(env.RELEASE_TAG, '-') && '--prerelease' || '' }}
           fi
           gh release upload "$RELEASE_TAG" release-assets/*.apk --clobber
