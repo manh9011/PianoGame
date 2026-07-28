@@ -115,7 +115,7 @@ jobs:
         with:
           tagName: ${{ env.RELEASE_TAG }}
           releaseName: PianoGame ${{ env.RELEASE_TAG }}
-          releaseBody: 'Tải file cài đặt phù hợp với hệ điều hành của bạn trong phần Assets. APK Android là bản release unsigned để ký ở bước sau.'
+          releaseBody: 'Download the installation file compatible with your operating system from the Assets section.'
           releaseDraft: false
           prerelease: ${{ contains(env.RELEASE_TAG, '-') }}
           args: ${{ matrix.args }}
@@ -123,7 +123,6 @@ jobs:
   android_release:
     name: Build Android APK
     runs-on: ubuntu-latest
-    needs: release
     env:
       ANDROID_PLATFORM: android-35
       ANDROID_BUILD_TOOLS: 35.0.0
@@ -164,7 +163,7 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: aarch64-linux-android
+          targets: aarch64-linux-android,x86_64-linux-android
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
@@ -212,9 +211,32 @@ jobs:
       - name: Build Android APK
         run: npm run tauri:android:build
 
-      - name: Prepare Android release asset
+      - name: Sign Android release APKs
         shell: bash
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
+          set -euo pipefail
+
+          required_vars=(
+            ANDROID_KEYSTORE_BASE64
+            ANDROID_KEYSTORE_PASSWORD
+            ANDROID_KEY_ALIAS
+            ANDROID_KEY_PASSWORD
+          )
+          for var_name in "${required_vars[@]}"; do
+            if [ -z "${!var_name}" ]; then
+              echo "Missing GitHub secret: ${var_name}" >&2
+              exit 1
+            fi
+          done
+
+          keystore_path="${RUNNER_TEMP}/pianogame-release.jks"
+          printf '%s' "${ANDROID_KEYSTORE_BASE64}" | base64 --decode > "${keystore_path}"
+
           shopt -s globstar nullglob
           release_apks=()
           for apk in src-tauri/gen/android/app/build/outputs/apk/**/*.apk; do
@@ -229,17 +251,47 @@ jobs:
           fi
 
           mkdir -p release-assets
-          cp "${release_apks[0]}" "release-assets/PianoGame-${RELEASE_TAG}-android-arm64-release-unsigned.apk"
+          index=1
+          for apk in "${release_apks[@]}"; do
+            abi="apk-${index}"
+            if [[ "$apk" == *aarch64* || "$apk" == *arm64* ]]; then
+              abi="arm64-v8a"
+            elif [[ "$apk" == *x86_64* ]]; then
+              abi="x86_64"
+            fi
+
+            aligned_apk="${RUNNER_TEMP}/PianoGame-${RELEASE_TAG}-android-${abi}-release-aligned.apk"
+            signed_apk="release-assets/PianoGame-${RELEASE_TAG}-android-${abi}-release-signed.apk"
+
+            "${ANDROID_HOME}/build-tools/${ANDROID_BUILD_TOOLS}/zipalign" -p -f 4 "$apk" "$aligned_apk"
+            "${ANDROID_HOME}/build-tools/${ANDROID_BUILD_TOOLS}/apksigner" sign \
+              --ks "$keystore_path" \
+              --ks-key-alias "$ANDROID_KEY_ALIAS" \
+              --ks-pass "pass:${ANDROID_KEYSTORE_PASSWORD}" \
+              --key-pass "pass:${ANDROID_KEY_PASSWORD}" \
+              --out "$signed_apk" \
+              "$aligned_apk"
+            "${ANDROID_HOME}/build-tools/${ANDROID_BUILD_TOOLS}/apksigner" verify --verbose "$signed_apk"
+            index=$((index + 1))
+          done
+
           ls -la release-assets
 
       - name: Upload Android APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: PianoGame-${{ env.RELEASE_TAG }}-android-arm64-release-unsigned
+          name: PianoGame-${{ env.RELEASE_TAG }}-android-release-signed
           path: release-assets/*.apk
           if-no-files-found: error
 
       - name: Upload Android APK to GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "$RELEASE_TAG" release-assets/*.apk --clobber
+        run: |
+          if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" \
+              --title "PianoGame ${RELEASE_TAG}" \
+              --notes 'Tải file cài đặt phù hợp với hệ điều hành của bạn trong phần Assets.' \
+              ${{ contains(env.RELEASE_TAG, '-') && '--prerelease' || '' }}
+          fi
+          gh release upload "$RELEASE_TAG" release-assets/*.apk --clobber

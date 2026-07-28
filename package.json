@@ -8,7 +8,7 @@
         "tauri:dev": "tauri dev",
         "tauri:build": "tauri build",
         "tauri:android:init": "tauri android init --ci --skip-targets-install",
-        "tauri:android:build": "tauri android build --apk --target aarch64 --split-per-abi --ci"
+        "tauri:android:build": "tauri android build --apk --target aarch64 x86_64 --split-per-abi --ci"
     },
     "dependencies": {
         "@fortawesome/fontawesome-free": "^7.3.0",
