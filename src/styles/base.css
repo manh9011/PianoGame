@@ -20,8 +20,18 @@
 html, body, #app { width: 100%; height: 100%; }
 body { margin: 0; min-width: 320px; min-height: 100dvh; background: var(--bg, #15181d); }
 :root.android-tauri-app,
-:root.android-tauri-app body,
-:root.android-tauri-app #app { min-width: 0; overflow: hidden; }
+:root.android-tauri-app body { min-width: 0; overflow: hidden; }
+:root.android-tauri-app #app {
+  position: fixed;
+  left: var(--android-app-offset-x, 0);
+  top: var(--android-app-offset-y, 0);
+  width: 1920px;
+  height: 1080px;
+  min-width: 0;
+  overflow: hidden;
+  transform: scale(var(--android-app-scale, 1));
+  transform-origin: top left;
+}
 button, input, select { font: inherit; }
 button { border: 0; border-radius: 10px; padding: 0.65rem 0.9rem; background: #3465a4; color: #fff; cursor: pointer; }
 button.secondary { background: #2e3436; }
