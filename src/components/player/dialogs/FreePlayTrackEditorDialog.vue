@@ -895,6 +895,7 @@ onBeforeUnmount(() => {
               @update:tracks="updateDraftTracks"
               @update:selected-note-ids="selectedNoteIds = $event"
               @preview-note="auditionNote"
+              @seek="seekEditorPlayback"
               @dirty="markDirty"
             />
           </section>

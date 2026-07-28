@@ -72,6 +72,7 @@ const emit = defineEmits<{
   'update:tracks': [tracks: FreePlayTrack[]]
   'update:selectedNoteIds': [ids: string[]]
   'preview-note': [note: FreePlayRecordedNote]
+  seek: [timeUs: number]
   dirty: []
 }>()
 
@@ -434,6 +435,15 @@ function handleVelocityPointerUp(event: PointerEvent) {
   velocityDragNoteId.value = null
 }
 
+function handleRulerDoubleClick(event: MouseEvent) {
+  const target = event.currentTarget as HTMLElement
+  const rect = target.getBoundingClientRect()
+  const x = Math.max(0, event.clientX - rect.left)
+  const timeUs = xToTime(x, props.bpm, props.pixelsPerQuarter)
+  const snappedTimeUs = snapTimeUs(timeUs, props.bpm, props.snapSubdivision, props.snapEnabled)
+  emit('seek', snappedTimeUs)
+}
+
 function scrollPlayheadIntoView() {
   if (!props.followPlayhead || !viewportRef.value) return
   const viewport = viewportRef.value
@@ -461,7 +471,7 @@ watch(() => props.playheadUs, () => {
       <div class="editor-canvas" :style="{ width: `${64 + gridWidth}px` }">
         <div class="ruler-row">
           <div class="ruler-corner"></div>
-          <div class="measure-ruler" :style="{ width: `${gridWidth}px` }">
+          <div class="measure-ruler" :style="{ width: `${gridWidth}px` }" @dblclick="handleRulerDoubleClick">
             <div class="playhead playhead--ruler" :style="{ left: `${playheadX}px` }">
               <span class="playhead-triangle"></span>
             </div>
@@ -655,6 +665,7 @@ watch(() => props.playheadUs, () => {
   flex: 0 0 auto;
   border-bottom: 1px solid rgba(255, 255, 255, 0.16);
   background: linear-gradient(to bottom, #41454c, #2f3339);
+  cursor: text;
 }
 
 .ruler-tick {
