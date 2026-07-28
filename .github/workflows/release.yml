@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'Git tag cần release, ví dụ v0.1.0 hoặc v0.1.0-rc.1'
+        description: 'The Git tag you need to release is v0.1.0 or v0.1.0-rc.1'
         required: true
         type: string
 
@@ -208,6 +208,98 @@ jobs:
         if: ${{ hashFiles('src-tauri/gen/android/**') == '' }}
         run: npm run tauri:android:init
 
+      - name: Patch Android landscape, fullscreen and icons
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          manifest_path="src-tauri/gen/android/app/src/main/AndroidManifest.xml"
+          main_activity_path="$(find src-tauri/gen/android/app/src/main -name 'MainActivity.kt' -print -quit)"
+          res_dir="src-tauri/gen/android/app/src/main/res"
+
+          if [ ! -f "$manifest_path" ]; then
+            echo "AndroidManifest.xml not found at $manifest_path" >&2
+            exit 1
+          fi
+          if [ -z "$main_activity_path" ] || [ ! -f "$main_activity_path" ]; then
+            echo "MainActivity.kt not found under src-tauri/gen/android/app/src/main" >&2
+            exit 1
+          fi
+
+          mkdir -p "$res_dir"
+          cp -R src-tauri/icons/android/. "$res_dir/"
+
+          python <<'PY'
+          from pathlib import Path
+          manifest = Path('src-tauri/gen/android/app/src/main/AndroidManifest.xml')
+          text = manifest.read_text(encoding='utf-8')
+          if 'android:icon=' not in text:
+              text = text.replace('<application', '<application\n        android:icon="@mipmap/ic_launcher"', 1)
+          if 'android:roundIcon=' not in text:
+              text = text.replace('<application', '<application\n        android:roundIcon="@mipmap/ic_launcher_round"', 1)
+          if 'android:screenOrientation=' not in text:
+              text = text.replace('<activity', '<activity\n            android:screenOrientation="landscape"', 1)
+          manifest.write_text(text, encoding='utf-8')
+          PY
+
+          MAIN_ACTIVITY_PATH="$main_activity_path" python <<'PY'
+          import os
+          from pathlib import Path
+          from textwrap import dedent
+
+          main_activity = Path(os.environ['MAIN_ACTIVITY_PATH'])
+          package_line = next(
+              (line for line in main_activity.read_text(encoding='utf-8').splitlines() if line.startswith('package ')),
+              'package com.pianogame.desktop',
+          )
+          main_activity.write_text(dedent(f'''\
+          {package_line}
+
+          import android.graphics.Color
+          import android.os.Build
+          import android.os.Bundle
+          import android.view.View
+          import android.view.WindowInsets
+          import android.view.WindowInsetsController
+          import app.tauri.TauriActivity
+
+          class MainActivity : TauriActivity() {{
+              override fun onCreate(savedInstanceState: Bundle?) {{
+                  super.onCreate(savedInstanceState)
+                  enableImmersiveMode()
+              }}
+
+              override fun onWindowFocusChanged(hasFocus: Boolean) {{
+                  super.onWindowFocusChanged(hasFocus)
+                  if (hasFocus) enableImmersiveMode()
+              }}
+
+              private fun enableImmersiveMode() {{
+                  window.statusBarColor = Color.TRANSPARENT
+                  window.navigationBarColor = Color.TRANSPARENT
+
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {{
+                      window.setDecorFitsSystemWindows(false)
+                      window.insetsController?.let {{ controller ->
+                          controller.hide(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
+                          controller.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                      }}
+                  }} else {{
+                      @Suppress("DEPRECATION")
+                      window.decorView.systemUiVisibility = (
+                          View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                              or View.SYSTEM_UI_FLAG_FULLSCREEN
+                              or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                              or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                              or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                              or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                      )
+                  }}
+              }}
+          }}
+          '''), encoding='utf-8')
+          PY
+
       - name: Build Android APK
         run: npm run tauri:android:build
 
@@ -291,7 +383,7 @@ jobs:
           if ! gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
             gh release create "$RELEASE_TAG" \
               --title "PianoGame ${RELEASE_TAG}" \
-              --notes 'Tải file cài đặt phù hợp với hệ điều hành của bạn trong phần Assets.' \
+              --notes 'Download the installation file compatible with your operating system from the Assets section.' \
               ${{ contains(env.RELEASE_TAG, '-') && '--prerelease' || '' }}
           fi
           gh release upload "$RELEASE_TAG" release-assets/*.apk --clobber

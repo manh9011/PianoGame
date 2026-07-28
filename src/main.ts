@@ -12,6 +12,38 @@ import { i18n } from './i18n'
 import { useToastStore } from './stores/toastStore'
 
 const t = i18n.global.t as (key: string, named?: Record<string, unknown>) => string
+const ANDROID_DESIGN_WIDTH = 1920
+const ANDROID_DESIGN_HEIGHT = 1080
+
+function isTauriAndroidApp() {
+  const tauriWindow = window as Window & { __TAURI__?: unknown; __TAURI_INTERNALS__?: unknown }
+  const isAndroid = /Android/i.test(navigator.userAgent)
+  const isTauri = Boolean(tauriWindow.__TAURI__ || tauriWindow.__TAURI_INTERNALS__) || location.protocol === 'tauri:' || location.hostname === 'tauri.localhost'
+  return isAndroid && isTauri
+}
+
+function configureAndroidViewport() {
+  if (!isTauriAndroidApp()) return
+
+  document.documentElement.classList.add('android-tauri-app')
+  const viewport = document.querySelector<HTMLMetaElement>('meta[name="viewport"]')
+  if (!viewport) return
+
+  const syncViewport = () => {
+    const screenWidth = window.screen.width || 0
+    const screenHeight = window.screen.height || 0
+    const landscapeWidth = Math.max(screenWidth, screenHeight, window.innerWidth || 0)
+    const landscapeHeight = Math.min(screenWidth || window.innerHeight || 0, screenHeight || window.innerHeight || 0)
+    const scale = Math.min(1, Math.max(0.1, Math.min(landscapeWidth / ANDROID_DESIGN_WIDTH, landscapeHeight / ANDROID_DESIGN_HEIGHT)))
+    viewport.content = `width=${ANDROID_DESIGN_WIDTH}, initial-scale=${scale}, minimum-scale=${scale}, maximum-scale=${scale}, user-scalable=no, viewport-fit=cover`
+  }
+
+  syncViewport()
+  window.addEventListener('resize', syncViewport)
+  window.addEventListener('orientationchange', syncViewport)
+}
+
+configureAndroidViewport()
 
 async function initApp() {
   const app = createApp(App)

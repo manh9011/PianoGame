@@ -93,13 +93,21 @@ const subdivisionLines = computed(() => {
   return lines
 })
 
-const octaveLabels = computed(() => {
-  const labels: { noteId: number; label: string; y: number }[] = []
-  for (let noteId = 0; noteId <= 127; noteId += 12) {
-    labels.push({ noteId, label: `C${Math.floor(noteId / 12) - 1}`, y: pitchToY(noteId, props.rowHeight) })
+const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+const BLACK_PITCH_CLASSES = new Set([1, 3, 6, 8, 10])
+
+const pianoKeys = computed(() => Array.from({ length: 128 }, (_, index) => {
+  const noteId = 127 - index
+  const pitchClass = noteId % 12
+  const noteName = NOTE_NAMES[pitchClass]
+  return {
+    noteId,
+    noteName,
+    label: `${noteName}${Math.floor(noteId / 12) - 1}`,
+    black: BLACK_PITCH_CLASSES.has(pitchClass),
+    octave: pitchClass === 0,
   }
-  return labels
-})
+}))
 
 const drawableNotes = computed<DrawableNote[]>(() => props.tracks.flatMap((track, trackIndex) => track.notes.map(note => {
   const left = timeToX(note.startUs, props.bpm, props.pixelsPerQuarter)
@@ -333,26 +341,28 @@ function handlePointerUp(event: PointerEvent) {
 
 <template>
   <div class="track-editor-grid-shell">
-    <div class="pitch-ruler" :style="{ height: `${gridHeight}px` }">
-      <div
-        v-for="label in octaveLabels"
-        :key="label.noteId"
-        class="pitch-label"
-        :style="{ top: `${label.y}px`, height: `${rowHeight}px` }"
-      >
-        {{ label.label }}
-      </div>
-    </div>
     <div class="grid-viewport">
-      <div
-        ref="gridRef"
-        class="note-grid"
-        :style="{ width: `${gridWidth}px`, height: `${gridHeight}px`, '--row-height': `${rowHeight}px` }"
-        @pointerdown="handleGridPointerDown"
-        @pointermove="handlePointerMove"
-        @pointerup="handlePointerUp"
-        @pointercancel="handlePointerUp"
-      >
+      <div class="editor-canvas" :style="{ width: `${64 + gridWidth}px`, height: `${gridHeight}px` }">
+        <div class="piano-ruler" :style="{ height: `${gridHeight}px` }">
+          <div
+            v-for="key in pianoKeys"
+            :key="key.noteId"
+            class="piano-key"
+            :class="{ 'piano-key--black': key.black, 'piano-key--octave': key.octave }"
+            :style="{ top: `${pitchToY(key.noteId, rowHeight)}px`, height: `${rowHeight}px` }"
+          >
+            <span class="piano-key-label">{{ key.octave ? key.label : key.noteName }}</span>
+          </div>
+        </div>
+        <div
+          ref="gridRef"
+          class="note-grid"
+          :style="{ left: '64px', width: `${gridWidth}px`, height: `${gridHeight}px`, '--row-height': `${rowHeight}px` }"
+          @pointerdown="handleGridPointerDown"
+          @pointermove="handlePointerMove"
+          @pointerup="handlePointerUp"
+          @pointercancel="handlePointerUp"
+        >
         <div
           v-for="line in subdivisionLines"
           :key="line.id"
@@ -379,16 +389,17 @@ function handlePointerUp(event: PointerEvent) {
           <span class="note-body"></span>
           <span class="note-handle note-handle--right" @pointerdown="handleResizePointerDown($event, note, 'right')"></span>
         </button>
-        <div
-          v-if="interaction.marquee"
-          class="selection-rect"
-          :style="{
-            left: `${interaction.marquee.left}px`,
-            top: `${interaction.marquee.top}px`,
-            width: `${interaction.marquee.width}px`,
-            height: `${interaction.marquee.height}px`,
-          }"
-        ></div>
+          <div
+            v-if="interaction.marquee"
+            class="selection-rect"
+            :style="{
+              left: `${interaction.marquee.left}px`,
+              top: `${interaction.marquee.top}px`,
+              width: `${interaction.marquee.width}px`,
+              height: `${interaction.marquee.height}px`,
+            }"
+          ></div>
+        </div>
       </div>
     </div>
   </div>
@@ -397,43 +408,93 @@ function handlePointerUp(event: PointerEvent) {
 <style scoped>
 .track-editor-grid-shell {
   min-height: 0;
-  display: grid;
-  grid-template-columns: 64px minmax(0, 1fr);
+  display: block;
   background: #202226;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 10px;
   overflow: hidden;
 }
 
-.pitch-ruler {
-  position: relative;
-  width: 64px;
-  background: #292c31;
-  border-right: 1px solid rgba(255, 255, 255, 0.12);
+.grid-viewport {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  scrollbar-color: #6b7280 #1f2329;
+  scrollbar-width: thin;
 }
 
-.pitch-label {
+.grid-viewport::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+.grid-viewport::-webkit-scrollbar-track {
+  background: #1f2329;
+}
+
+.grid-viewport::-webkit-scrollbar-thumb {
+  border: 3px solid #1f2329;
+  border-radius: 999px;
+  background: #6b7280;
+}
+
+.editor-canvas {
+  position: relative;
+  min-width: 100%;
+}
+
+.piano-ruler {
+  position: sticky;
+  left: 0;
+  z-index: 20;
+  width: 64px;
+  background: #292c31;
+  border-right: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 4px 0 10px rgba(0, 0, 0, 0.22);
+}
+
+.piano-key {
   position: absolute;
   left: 0;
   right: 0;
   display: flex;
   align-items: center;
-  justify-content: center;
-  color: rgba(255, 255, 255, 0.72);
-  font-size: 0.72rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  justify-content: flex-end;
+  padding-right: 0.35rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.28);
+  background: linear-gradient(to bottom, #f4f4f1, #d9d9d4);
+  color: #33373d;
+  font-size: 0.66rem;
+  font-weight: 700;
   pointer-events: none;
 }
 
-.grid-viewport {
-  min-width: 0;
-  min-height: 0;
-  overflow: auto;
+.piano-key--black {
+  left: 0;
+  right: 16px;
+  z-index: 1;
+  border-radius: 0 0 4px 0;
+  background: linear-gradient(to bottom, #1a1b1e, #050505);
+  color: rgba(255, 255, 255, 0.86);
+  box-shadow: inset -2px 0 0 rgba(255, 255, 255, 0.08), 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+
+.piano-key--octave:not(.piano-key--black) {
+  color: #1d4ed8;
+}
+
+.piano-key-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .note-grid {
-  position: relative;
-  min-width: 100%;
+  position: absolute;
+  top: 0;
+  min-width: calc(100% - 64px);
   background-color: #24272c;
   background-image:
     repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 0, rgba(255, 255, 255, 0.035) 1px, transparent 1px, transparent var(--row-height)),
