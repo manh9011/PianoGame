@@ -3,3 +3,5 @@
 /.cocoindex_code
 /dist
 /node_modules
+/src-tauri/gen
+/src-tauri/target
