@@ -169,27 +169,24 @@ jobs:
         if: matrix.kind == 'android' && hashFiles('src-tauri/gen/android/**') == ''
         run: npm run tauri:android:init
 
-      - name: Patch Android landscape, fullscreen and icons
+      - name: Patch Android manifest and icons
         if: matrix.kind == 'android'
         shell: bash
         run: |
           set -euo pipefail
 
           manifest_path="src-tauri/gen/android/app/src/main/AndroidManifest.xml"
-          main_activity_path="$(find src-tauri/gen/android/app/src/main -name 'MainActivity.kt' -print -quit)"
           res_dir="src-tauri/gen/android/app/src/main/res"
 
           if [ ! -f "$manifest_path" ]; then
             echo "AndroidManifest.xml not found at $manifest_path" >&2
             exit 1
           fi
-          if [ -z "$main_activity_path" ] || [ ! -f "$main_activity_path" ]; then
-            echo "MainActivity.kt not found under src-tauri/gen/android/app/src/main" >&2
-            exit 1
-          fi
 
           mkdir -p "$res_dir"
           cp -R src-tauri/icons/android/. "$res_dir/"
+          echo "Generated MainActivity files before build:"
+          find src-tauri/gen/android/app/src/main -name 'MainActivity.kt' -print -exec sed -n '1,120p' {} \;
 
           python <<'PY'
           from pathlib import Path
