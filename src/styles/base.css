@@ -27,6 +27,30 @@ body {
   min-height: 100dvh;
   background: var(--bg, #15181d);
 }
+
+
+:root.android-tauri-app,
+:root.android-tauri-app body { min-width: 0; overflow: hidden; background: #000; }
+:root.android-tauri-app #app {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1920px;
+  height: 1080px;
+  min-width: 0;
+  overflow: hidden;
+  transform: translate(var(--android-app-offset-x, 0), var(--android-app-offset-y, 0)) scale(var(--android-app-scale, 1));
+  transform-origin: top left;
+}
+:root.android-tauri-app .page {
+  min-height: 1080px;
+}
+:root.android-tauri-app .play-layout {
+  height: 1080px;
+  --keyboard-height: 150px;
+}
+
+
 button, input, select { font: inherit; }
 button { border: 0; border-radius: 10px; padding: 0.65rem 0.9rem; background: #3465a4; color: #fff; cursor: pointer; }
 button.secondary { background: #2e3436; }
