@@ -16,7 +16,7 @@
   --control-border: #c9d1dc;
   --control-text: #1f2430;
 }
-* { box-sizing: border-box; }
+* { box-sizing: border-box; touch-action: manipulation; }
 body { margin: 0; min-width: 320px; min-height: 100dvh; background: var(--bg, #15181d); }
 button, input, select { font: inherit; }
 button { border: 0; border-radius: 10px; padding: 0.65rem 0.9rem; background: #3465a4; color: #fff; cursor: pointer; }
