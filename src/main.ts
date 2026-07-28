@@ -14,7 +14,7 @@ import { useToastStore } from './stores/toastStore'
 const t = i18n.global.t as (key: string, named?: Record<string, unknown>) => string
 const ANDROID_DESIGN_WIDTH = 1920
 const ANDROID_DESIGN_HEIGHT = 1080
-const ANDROID_SAFE_EDGE_PX = 24
+const ANDROID_SAFE_RIGHT_PX = 96
 
 function isTauriAndroidApp() {
   return /Android/i.test(navigator.userAgent)
@@ -32,12 +32,15 @@ function configureAndroidViewport() {
   const syncViewport = () => {
     const width = window.visualViewport?.width || window.innerWidth || document.documentElement.clientWidth || ANDROID_DESIGN_WIDTH
     const height = window.visualViewport?.height || window.innerHeight || document.documentElement.clientHeight || ANDROID_DESIGN_HEIGHT
-    const scale = Math.max(0.1, width / ANDROID_DESIGN_WIDTH)
+    const safeWidth = Math.max(320, width - ANDROID_SAFE_RIGHT_PX)
+    const scale = Math.max(safeWidth / ANDROID_DESIGN_WIDTH, height / ANDROID_DESIGN_HEIGHT)
+    const scaledWidth = ANDROID_DESIGN_WIDTH * scale
     const scaledHeight = ANDROID_DESIGN_HEIGHT * scale
-    const offsetY = Math.max(0, (height - scaledHeight) / 2)
+    const offsetX = Math.min(0, safeWidth - scaledWidth)
+    const offsetY = Math.min(0, height - scaledHeight)
 
     document.documentElement.style.setProperty('--android-app-scale', String(scale))
-    document.documentElement.style.setProperty('--android-app-offset-x', `${ANDROID_SAFE_EDGE_PX}px`)
+    document.documentElement.style.setProperty('--android-app-offset-x', `${offsetX}px`)
     document.documentElement.style.setProperty('--android-app-offset-y', `${offsetY}px`)
   }
 
