@@ -185,6 +185,12 @@ jobs:
 
           mkdir -p "$res_dir"
           cp -R src-tauri/icons/android/. "$res_dir/"
+<<<<<<< HEAD
+=======
+          echo "Generated MainActivity files before build:"
+          find src-tauri/gen/android/app/src/main -name 'MainActivity.kt' -print -exec sed -n '1,120p' {} \;
+
+>>>>>>> 8d4c27fcd59ba70ea4160c74a5456ed21c84e76c
           python <<'PY'
           from pathlib import Path
           import re
@@ -202,6 +208,13 @@ jobs:
           else:
               text = text.replace('<application', '<application\n        android:roundIcon="@mipmap/ic_launcher_round"', 1)
 
+<<<<<<< HEAD
+=======
+          if re.search(r'android:theme="[^"]+"', text):
+              text = re.sub(r'android:theme="[^"]+"', 'android:theme="@style/Theme.PianoGame"', text, count=1)
+          else:
+              text = text.replace('<application', '<application\n        android:theme="@style/Theme.PianoGame"', 1)
+>>>>>>> 8d4c27fcd59ba70ea4160c74a5456ed21c84e76c
 
           if re.search(r'android:screenOrientation="[^"]+"', text):
               text = re.sub(r'android:screenOrientation="[^"]+"', 'android:screenOrientation="landscape"', text, count=1)
@@ -211,6 +224,24 @@ jobs:
           manifest.write_text(text, encoding='utf-8')
           PY
 
+<<<<<<< HEAD
+=======
+          mkdir -p "$res_dir/values"
+          cat > "$res_dir/values/pianogame_theme.xml" <<'EOF'
+          <resources>
+              <style name="Theme.PianoGame" parent="android:style/Theme.Material.NoActionBar">
+                  <item name="android:windowNoTitle">true</item>
+                  <item name="android:windowActionBar">false</item>
+                  <item name="android:windowFullscreen">true</item>
+                  <item name="android:navigationBarColor">#000000</item>
+                  <item name="android:statusBarColor">#000000</item>
+                  <item name="android:windowLightNavigationBar">false</item>
+                  <item name="android:windowLightStatusBar">false</item>
+                  <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+              </style>
+          </resources>
+          EOF
+>>>>>>> 8d4c27fcd59ba70ea4160c74a5456ed21c84e76c
 
       - name: Build Android APK
         if: matrix.kind == 'android'
