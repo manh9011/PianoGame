@@ -1156,6 +1156,8 @@ onBeforeUnmount(() => {
 
 .volume-slider {
   width: 96px;
+  height: 28px;
+  margin: 0;
   accent-color: #fbbf24;
 }
 

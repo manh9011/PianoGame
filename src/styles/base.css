@@ -25,7 +25,7 @@ body { margin: 0; min-width: 320px; min-height: 100dvh; background: var(--bg, #1
   position: fixed;
   left: var(--android-app-offset-x, 0);
   top: var(--android-app-offset-y, 0);
-  width: 1920px;
+  width: calc(1920px - var(--android-app-offset-x, 0px));
   height: 1080px;
   min-width: 0;
   overflow: hidden;
