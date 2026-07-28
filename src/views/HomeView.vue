@@ -85,7 +85,7 @@ function closeProfileManager() {
         <button class="menu-button secondary" @click="router.push('/settings')">
           {{ t('common.settings') }}
         </button>
-        <button class="menu-button secondary" @click="app.exitApp">
+        <button v-if="app.isTauriApp" class="menu-button secondary" @click="app.exitApp">
           {{ t('home.exit') }}
         </button>
       </div>
