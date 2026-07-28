@@ -25,7 +25,9 @@ function instrument(track: FreePlayTrack) {
 }
 
 function trackName(track: FreePlayTrack, index: number) {
-  return t('freePlay.trackNumber', { number: index + 1, instrument: instrument(track).name })
+  const customName = track.name.trim()
+  if (customName) return customName
+  return t('freePlay.trackNumber', { number: index + 1 })
 }
 
 function calculatePopupPosition(element: HTMLElement, width: number, height: number) {
@@ -183,10 +185,10 @@ function toggleLoop(track: FreePlayTrack, event: MouseEvent) {
     </div>
 
     <button
+      v-if="freePlay.canAddTrack"
       class="add-track-button"
-      :disabled="!freePlay.canAddTrack"
-      :title="freePlay.canAddTrack ? t('freePlay.addTrack') : t('freePlay.addTrackLimitReached', { count: MAX_FREE_PLAY_TRACKS })"
-      :aria-label="freePlay.canAddTrack ? t('freePlay.addTrack') : t('freePlay.addTrackLimitReached', { count: MAX_FREE_PLAY_TRACKS })"
+      :title="t('freePlay.addTrack')"
+      :aria-label="t('freePlay.addTrack')"
       @click="freePlay.addTrack()"
     >
       <i class="fas fa-plus"></i>

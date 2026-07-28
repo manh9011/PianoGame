@@ -55,8 +55,8 @@ function toggleRecording() {
     <div class="top-main-row">
       <div class="left-controls">
         <button class="top-button secondary" :title="t('freePlay.backToHome')" @click="back">{{ t('common.back') }}</button>
-        <div v-if="freePlay.hasRecording" class="record-actions" :aria-label="t('freePlay.recordingActions')">
-          <button class="icon-button export-button" :title="t('freePlay.exportMidi')" :aria-label="t('freePlay.exportMidi')" @click="emit('exportMidi')">
+        <div class="record-actions" :aria-label="t('freePlay.recordingActions')">
+          <button v-if="freePlay.hasRecording" class="icon-button export-button" :title="t('freePlay.exportMidi')" :aria-label="t('freePlay.exportMidi')" @click="emit('exportMidi')">
             <i class="fas fa-arrow-up-from-bracket"></i>
           </button>
           <button
@@ -68,7 +68,7 @@ function toggleRecording() {
           >
             <i class="fas fa-pen-to-square"></i>
           </button>
-          <button class="icon-button delete-button" :title="t('freePlay.deleteRecording')" :aria-label="t('freePlay.deleteRecording')" @click="emit('deleteRecording')">
+          <button v-if="freePlay.hasRecording" class="icon-button delete-button" :title="t('freePlay.deleteRecording')" :aria-label="t('freePlay.deleteRecording')" @click="emit('deleteRecording')">
             <i class="fas fa-trash-alt"></i>
           </button>
         </div>

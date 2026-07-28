@@ -56,7 +56,7 @@ function handleOverlayClick(event: MouseEvent) {
 .dialog-overlay {
   position: fixed;
   inset: 0;
-  z-index: 1200;
+  z-index: 3000;
   display: grid;
   place-items: center;
   background: rgba(0, 0, 0, 0.75);

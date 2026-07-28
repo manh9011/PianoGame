@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { DEFAULT_INSTRUMENT_PROGRAM } from '../modules/audio/gmInstrumentCatalog'
-import { TRACK_SETTINGS_PALETTE } from '../modules/game/trackProperties'
+import { TRACK_INVISIBLE_COLOR, TRACK_SETTINGS_PALETTE } from '../modules/game/trackProperties'
 import { get, persistQueue, put } from '../modules/storage/indexedDb'
 import type { NoteInputEvent, NoteInputSource } from './playerStore'
 
@@ -40,6 +40,7 @@ export interface FreePlayRecordedNote {
 
 export interface FreePlayTrack {
   id: number
+  name: string
   instrumentProgram: number
   color: string
   loop: boolean
@@ -73,7 +74,7 @@ interface ActiveCapture {
 }
 
 export const MAX_FREE_PLAY_TRACKS = 6
-export const FREE_PLAY_DEFAULT_TRACK_COLOR = '#4e9a06'
+export const FREE_PLAY_DEFAULT_TRACK_COLOR = TRACK_SETTINGS_PALETTE[0] ?? '#729fcf'
 
 export const FREE_PLAY_KEY_SIGNATURES = FREE_PLAY_KEY_SIGNATURE_DEFINITIONS.map(signature => ({
   ...signature,
@@ -94,6 +95,7 @@ const FREE_PLAY_KEY_SIGNATURE_SET = new Set<FreePlayKeySignature>(FREE_PLAY_KEY_
 function createDefaultTrack(id = 1): FreePlayTrack {
   return {
     id,
+    name: '',
     instrumentProgram: DEFAULT_INSTRUMENT_PROGRAM,
     color: FREE_PLAY_DEFAULT_TRACK_COLOR,
     loop: false,
@@ -135,6 +137,35 @@ function normalizeColor(value: string | undefined, index: number) {
   return value || TRACK_SETTINGS_PALETTE[index % TRACK_SETTINGS_PALETTE.length] || FREE_PLAY_DEFAULT_TRACK_COLOR
 }
 
+function colorKey(color: string) {
+  return color.trim().toLowerCase()
+}
+
+export function resolveFreePlayUniqueTrackColor(
+  requestedColor: string | undefined,
+  tracks: Pick<FreePlayTrack, 'id' | 'color'>[],
+  trackId?: number,
+  fallbackIndex = 0,
+) {
+  const requested = requestedColor || TRACK_SETTINGS_PALETTE[fallbackIndex % TRACK_SETTINGS_PALETTE.length] || FREE_PLAY_DEFAULT_TRACK_COLOR
+  if (requested === TRACK_INVISIBLE_COLOR) return requested
+
+  const usedColors = new Set(
+    tracks
+      .filter(track => track.id !== trackId && track.color !== TRACK_INVISIBLE_COLOR)
+      .map(track => colorKey(track.color)),
+  )
+  if (!usedColors.has(colorKey(requested))) return requested
+
+  const requestedPaletteIndex = TRACK_SETTINGS_PALETTE.findIndex(color => colorKey(color) === colorKey(requested))
+  const startIndex = requestedPaletteIndex >= 0 ? requestedPaletteIndex + 1 : fallbackIndex
+  for (let offset = 0; offset < TRACK_SETTINGS_PALETTE.length; offset += 1) {
+    const candidate = TRACK_SETTINGS_PALETTE[(startIndex + offset) % TRACK_SETTINGS_PALETTE.length]
+    if (candidate && !usedColors.has(colorKey(candidate))) return candidate
+  }
+  return requested
+}
+
 const MIN_FREE_PLAY_NOTE_DURATION_US = 10_000
 
 function clampMidiValue(value: number | undefined, fallback: number) {
@@ -168,6 +199,7 @@ function normalizeTrack(value: Partial<FreePlayTrack> | null | undefined, index:
   const notes = Array.isArray(value?.notes) ? value!.notes! : []
   return {
     id,
+    name: typeof value?.name === 'string' ? value.name.slice(0, 80) : '',
     instrumentProgram: normalizeProgram(value?.instrumentProgram),
     color: normalizeColor(value?.color, index),
     loop: !!value?.loop,
@@ -307,7 +339,12 @@ export const useFreePlayStore = defineStore('freePlay', {
     addTrack() {
       if (!this.canAddTrack) return
       const track = createDefaultTrack(this.nextTrackId++)
-      track.color = TRACK_SETTINGS_PALETTE[this.tracks.length % TRACK_SETTINGS_PALETTE.length] ?? FREE_PLAY_DEFAULT_TRACK_COLOR
+      track.color = resolveFreePlayUniqueTrackColor(
+        TRACK_SETTINGS_PALETTE[this.tracks.length % TRACK_SETTINGS_PALETTE.length],
+        this.tracks,
+        track.id,
+        this.tracks.length,
+      )
       this.tracks.push(track)
       this.selectedTrackId = track.id
       this.touchTracks()
@@ -354,22 +391,33 @@ export const useFreePlayStore = defineStore('freePlay', {
       this.touchTracks()
       this.persist()
     },
-    replaceTrackEditorNotes(nextTracks: Pick<FreePlayTrack, 'id' | 'notes'>[]) {
-      const notesByTrackId = new Map(nextTracks.map(track => [track.id, track.notes]))
+    commitTrackEditorDraft(nextTracks: FreePlayTrack[], selectedTrackId?: number | null) {
+      const normalizedTracks = normalizeTracks(nextTracks)
+      const existingNoteIds = new Set(this.tracks.flatMap(track => track.notes.map(note => note.id)))
       const usedIds = new Set<string>()
 
-      for (const track of this.tracks) {
-        const nextNotes = notesByTrackId.get(track.id)
-        if (!nextNotes) continue
-        const normalizedNotes = normalizeTrackNotes(nextNotes, track.id).map(note => {
-          const existingNote = this.tracks.some(sourceTrack => sourceTrack.notes.some(sourceNote => sourceNote.id === note.id))
-          const shouldAllocateId = !existingNote || usedIds.has(note.id)
-          const id = shouldAllocateId ? `free:${this.nextNoteId++}` : note.id
-          usedIds.add(id)
-          return { ...note, id }
-        })
-        track.notes = normalizedNotes
-      }
+      const committedTracks: FreePlayTrack[] = []
+      this.tracks = normalizedTracks.map((track, trackIndex) => {
+        const normalizedTrack: FreePlayTrack = {
+          ...track,
+          color: resolveFreePlayUniqueTrackColor(normalizeColor(track.color, trackIndex), committedTracks, track.id, trackIndex),
+          instrumentProgram: normalizeProgram(track.instrumentProgram),
+          notes: normalizeTrackNotes(track.notes, track.id).map(note => {
+            const shouldAllocateId = !existingNoteIds.has(note.id) || usedIds.has(note.id)
+            const id = shouldAllocateId ? `free:${this.nextNoteId++}` : note.id
+            usedIds.add(id)
+            return { ...note, id }
+          }),
+        }
+        committedTracks.push(normalizedTrack)
+        return normalizedTrack
+      })
+
+      const trackIds = new Set(this.tracks.map(track => track.id))
+      const maxTrackId = Math.max(0, ...this.tracks.map(track => track.id))
+      this.nextTrackId = Math.max(this.nextTrackId, maxTrackId + 1)
+      if (selectedTrackId && trackIds.has(selectedTrackId)) this.selectedTrackId = selectedTrackId
+      else if (!trackIds.has(this.selectedTrackId)) this.selectedTrackId = this.tracks[0]?.id ?? 1
 
       this.recordStartMs = 0
       this.recordStopMs = 0
@@ -378,6 +426,10 @@ export const useFreePlayStore = defineStore('freePlay', {
       this.status = this.hasRecording ? 'recorded' : 'idle'
       this.touchTracks()
       this.persist()
+    },
+    replaceTrackEditorNotes(nextTracks: Pick<FreePlayTrack, 'id' | 'notes'>[]) {
+      const notesByTrackId = new Map(nextTracks.map(track => [track.id, track.notes]))
+      this.commitTrackEditorDraft(this.tracks.map(track => ({ ...track, notes: notesByTrackId.get(track.id) ?? track.notes })), this.selectedTrackId)
     },
     toggleTrackLoop(trackId: number) {
       const track = this.tracks.find(track => track.id === trackId)
@@ -396,7 +448,14 @@ export const useFreePlayStore = defineStore('freePlay', {
     setTrackColor(trackId: number, color: string) {
       const track = this.tracks.find(track => track.id === trackId)
       if (!track) return
-      track.color = color || FREE_PLAY_DEFAULT_TRACK_COLOR
+      track.color = resolveFreePlayUniqueTrackColor(color || FREE_PLAY_DEFAULT_TRACK_COLOR, this.tracks, trackId, this.tracks.indexOf(track))
+      this.touchTracks()
+      this.persist()
+    },
+    setTrackName(trackId: number, name: string) {
+      const track = this.tracks.find(track => track.id === trackId)
+      if (!track) return
+      track.name = name.slice(0, 80)
       this.touchTracks()
       this.persist()
     },

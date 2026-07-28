@@ -277,7 +277,6 @@ function exportMidi() {
 }
 
 function openTrackEditor() {
-  if (!freePlay.hasRecording) return
   if (freePlay.status === 'recording') {
     toast.showError(t('freePlay.trackEditorCannotOpenWhileRecording'))
     return

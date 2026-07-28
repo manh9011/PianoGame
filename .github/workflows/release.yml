@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'The Git tag you need to release is v0.1.0 or v0.1.0-rc.1'
+        description: 'Git tag to release, e.g., v0.1.0 or v0.1.0-rc.1'
         required: true
         type: string
 
@@ -31,14 +31,26 @@ jobs:
       matrix:
         include:
           - name: Windows
+            kind: desktop
             platform: windows-latest
             args: --bundles nsis
           - name: macOS
+            kind: desktop
             platform: macos-latest
             args: --bundles dmg
           - name: Linux
+            kind: desktop
             platform: ubuntu-latest
             args: --bundles appimage,deb,rpm
+          - name: Android APK
+            kind: android
+            platform: ubuntu-latest
+            args: ''
+
+    env:
+      ANDROID_PLATFORM: android-35
+      ANDROID_BUILD_TOOLS: 35.0.0
+      ANDROID_NDK_VERSION: 27.2.12479018
 
     steps:
       - name: Checkout repository
@@ -50,8 +62,40 @@ jobs:
           node-version: 24
           cache: npm
 
+      - name: Setup Java
+        if: matrix.kind == 'android'
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Android SDK
+        if: matrix.kind == 'android'
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        if: matrix.kind == 'android'
+        shell: bash
+        run: |
+          sdkmanager \
+            "platform-tools" \
+            "platforms;${ANDROID_PLATFORM}" \
+            "build-tools;${ANDROID_BUILD_TOOLS}" \
+            "ndk;${ANDROID_NDK_VERSION}"
+          yes | sdkmanager --licenses || true
+          echo "ANDROID_NDK_HOME=${ANDROID_HOME}/ndk/${ANDROID_NDK_VERSION}" >> "$GITHUB_ENV"
+          echo "ANDROID_NDK_ROOT=${ANDROID_HOME}/ndk/${ANDROID_NDK_VERSION}" >> "$GITHUB_ENV"
+          echo "NDK_HOME=${ANDROID_HOME}/ndk/${ANDROID_NDK_VERSION}" >> "$GITHUB_ENV"
+
       - name: Setup Rust
+        if: matrix.kind == 'desktop'
         uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Rust for Android
+        if: matrix.kind == 'android'
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,x86_64-linux-android
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
@@ -59,7 +103,7 @@ jobs:
           workspaces: src-tauri -> target
 
       - name: Install Linux dependencies
-        if: matrix.platform == 'ubuntu-latest'
+        if: matrix.name == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -108,7 +152,8 @@ jobs:
           console.log(`Release version ${expectedVersion} matches ${tag}.`);
           NODE
 
-      - name: Build and upload release assets
+      - name: Build and upload desktop release assets
+        if: matrix.kind == 'desktop'
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -120,190 +165,59 @@ jobs:
           prerelease: ${{ contains(env.RELEASE_TAG, '-') }}
           args: ${{ matrix.args }}
 
-  android_release:
-    name: Build Android APK
-    runs-on: ubuntu-latest
-    env:
-      ANDROID_PLATFORM: android-35
-      ANDROID_BUILD_TOOLS: 35.0.0
-      ANDROID_NDK_VERSION: 27.2.12479018
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v5
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v5
-        with:
-          node-version: 24
-          cache: npm
-
-      - name: Setup Java
-        uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: 17
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install Android SDK packages
-        shell: bash
-        run: |
-          sdkmanager \
-            "platform-tools" \
-            "platforms;${ANDROID_PLATFORM}" \
-            "build-tools;${ANDROID_BUILD_TOOLS}" \
-            "ndk;${ANDROID_NDK_VERSION}"
-          yes | sdkmanager --licenses || true
-          echo "ANDROID_NDK_HOME=${ANDROID_HOME}/ndk/${ANDROID_NDK_VERSION}" >> "$GITHUB_ENV"
-          echo "ANDROID_NDK_ROOT=${ANDROID_HOME}/ndk/${ANDROID_NDK_VERSION}" >> "$GITHUB_ENV"
-          echo "NDK_HOME=${ANDROID_HOME}/ndk/${ANDROID_NDK_VERSION}" >> "$GITHUB_ENV"
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: aarch64-linux-android,x86_64-linux-android
-
-      - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: src-tauri -> target
-
-      - name: Install frontend dependencies
-        run: npm ci
-
-      - name: Validate release version
-        shell: bash
-        run: |
-          node <<'NODE'
-          const fs = require('fs');
-
-          const tag = process.env.RELEASE_TAG || '';
-          if (!/^v\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/.test(tag)) {
-            throw new Error(`Release tag "${tag}" must match vX.Y.Z or vX.Y.Z-prerelease.`);
-          }
-
-          const expectedVersion = tag.replace(/^v/, '');
-          const tauriConfig = JSON.parse(fs.readFileSync('src-tauri/tauri.conf.json', 'utf8'));
-          const cargoToml = fs.readFileSync('src-tauri/Cargo.toml', 'utf8');
-          const cargoVersion = cargoToml.match(/^version\s*=\s*"([^"]+)"/m)?.[1];
-
-          const mismatches = [];
-          if (tauriConfig.version !== expectedVersion) {
-            mismatches.push(`src-tauri/tauri.conf.json version is ${tauriConfig.version}, expected ${expectedVersion}`);
-          }
-          if (cargoVersion !== expectedVersion) {
-            mismatches.push(`src-tauri/Cargo.toml version is ${cargoVersion ?? 'missing'}, expected ${expectedVersion}`);
-          }
-
-          if (mismatches.length > 0) {
-            throw new Error(`Release version mismatch:\n${mismatches.join('\n')}`);
-          }
-
-          console.log(`Release version ${expectedVersion} matches ${tag}.`);
-          NODE
-
       - name: Initialize Android project if needed
-        if: ${{ hashFiles('src-tauri/gen/android/**') == '' }}
+        if: matrix.kind == 'android' && hashFiles('src-tauri/gen/android/**') == ''
         run: npm run tauri:android:init
 
-      - name: Patch Android landscape, fullscreen and icons
+      - name: Patch Android manifest and icons
+        if: matrix.kind == 'android'
         shell: bash
         run: |
           set -euo pipefail
 
           manifest_path="src-tauri/gen/android/app/src/main/AndroidManifest.xml"
-          main_activity_path="$(find src-tauri/gen/android/app/src/main -name 'MainActivity.kt' -print -quit)"
           res_dir="src-tauri/gen/android/app/src/main/res"
 
           if [ ! -f "$manifest_path" ]; then
             echo "AndroidManifest.xml not found at $manifest_path" >&2
             exit 1
           fi
-          if [ -z "$main_activity_path" ] || [ ! -f "$main_activity_path" ]; then
-            echo "MainActivity.kt not found under src-tauri/gen/android/app/src/main" >&2
-            exit 1
-          fi
 
           mkdir -p "$res_dir"
           cp -R src-tauri/icons/android/. "$res_dir/"
-
           python <<'PY'
           from pathlib import Path
+          import re
+
           manifest = Path('src-tauri/gen/android/app/src/main/AndroidManifest.xml')
           text = manifest.read_text(encoding='utf-8')
-          if 'android:icon=' not in text:
+
+          if re.search(r'android:icon="[^"]+"', text):
+              text = re.sub(r'android:icon="[^"]+"', 'android:icon="@mipmap/ic_launcher"', text, count=1)
+          else:
               text = text.replace('<application', '<application\n        android:icon="@mipmap/ic_launcher"', 1)
-          if 'android:roundIcon=' not in text:
+
+          if re.search(r'android:roundIcon="[^"]+"', text):
+              text = re.sub(r'android:roundIcon="[^"]+"', 'android:roundIcon="@mipmap/ic_launcher_round"', text, count=1)
+          else:
               text = text.replace('<application', '<application\n        android:roundIcon="@mipmap/ic_launcher_round"', 1)
-          if 'android:screenOrientation=' not in text:
+
+
+          if re.search(r'android:screenOrientation="[^"]+"', text):
+              text = re.sub(r'android:screenOrientation="[^"]+"', 'android:screenOrientation="landscape"', text, count=1)
+          else:
               text = text.replace('<activity', '<activity\n            android:screenOrientation="landscape"', 1)
+
           manifest.write_text(text, encoding='utf-8')
           PY
 
-          MAIN_ACTIVITY_PATH="$main_activity_path" python <<'PY'
-          import os
-          from pathlib import Path
-          from textwrap import dedent
-
-          main_activity = Path(os.environ['MAIN_ACTIVITY_PATH'])
-          package_line = next(
-              (line for line in main_activity.read_text(encoding='utf-8').splitlines() if line.startswith('package ')),
-              'package com.pianogame.desktop',
-          )
-          main_activity.write_text(dedent(f'''\
-          {package_line}
-
-          import android.graphics.Color
-          import android.os.Build
-          import android.os.Bundle
-          import android.view.View
-          import android.view.WindowInsets
-          import android.view.WindowInsetsController
-          import app.tauri.TauriActivity
-
-          class MainActivity : TauriActivity() {{
-              override fun onCreate(savedInstanceState: Bundle?) {{
-                  super.onCreate(savedInstanceState)
-                  enableImmersiveMode()
-              }}
-
-              override fun onWindowFocusChanged(hasFocus: Boolean) {{
-                  super.onWindowFocusChanged(hasFocus)
-                  if (hasFocus) enableImmersiveMode()
-              }}
-
-              private fun enableImmersiveMode() {{
-                  window.statusBarColor = Color.TRANSPARENT
-                  window.navigationBarColor = Color.TRANSPARENT
-
-                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {{
-                      window.setDecorFitsSystemWindows(false)
-                      window.insetsController?.let {{ controller ->
-                          controller.hide(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
-                          controller.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-                      }}
-                  }} else {{
-                      @Suppress("DEPRECATION")
-                      window.decorView.systemUiVisibility = (
-                          View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                              or View.SYSTEM_UI_FLAG_FULLSCREEN
-                              or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                              or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                              or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                              or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                      )
-                  }}
-              }}
-          }}
-          '''), encoding='utf-8')
-          PY
 
       - name: Build Android APK
+        if: matrix.kind == 'android'
         run: npm run tauri:android:build
 
       - name: Sign Android release APKs
+        if: matrix.kind == 'android'
         shell: bash
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -370,6 +284,7 @@ jobs:
           ls -la release-assets
 
       - name: Upload Android APK artifact
+        if: matrix.kind == 'android'
         uses: actions/upload-artifact@v4
         with:
           name: PianoGame-${{ env.RELEASE_TAG }}-android-release-signed
@@ -377,6 +292,7 @@ jobs:
           if-no-files-found: error
 
       - name: Upload Android APK to GitHub Release
+        if: matrix.kind == 'android'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

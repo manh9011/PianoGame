@@ -17,9 +17,11 @@
   --control-text: #1f2430;
 }
 * { box-sizing: border-box; }
-html, body, #app { width: 100%; height: 100%; overflow: hidden; }
+html, body, #app { width: 100%; height: 100%; }
 body { margin: 0; min-width: 320px; min-height: 100dvh; background: var(--bg, #15181d); }
-:root.android-tauri-app body { min-width: 0; }
+:root.android-tauri-app,
+:root.android-tauri-app body,
+:root.android-tauri-app #app { min-width: 0; overflow: hidden; }
 button, input, select { font: inherit; }
 button { border: 0; border-radius: 10px; padding: 0.65rem 0.9rem; background: #3465a4; color: #fff; cursor: pointer; }
 button.secondary { background: #2e3436; }

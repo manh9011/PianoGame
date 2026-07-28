@@ -11,7 +11,7 @@ export function createFreePlayMidi(tracks: FreePlayTrack[], bpm = 120) {
     const instrument = getInstrumentByProgram(sourceTrack.instrumentProgram)
     const track = midi.addTrack()
     track.instrument.number = sourceTrack.instrumentProgram
-    track.instrument.name = instrument.name
+    track.instrument.name = sourceTrack.name?.trim() || instrument.name
 
     for (const note of [...sourceTrack.notes].sort((a, b) => a.startUs - b.startUs)) {
       const durationUs = Math.max(10_000, note.endUs - note.startUs)

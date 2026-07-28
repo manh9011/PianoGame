@@ -13,12 +13,13 @@ export class SimpleSynth {
   private cancelled = new Set<string>()
   private active = new Map<string, PlayingNote>()
   private fallbackActive = new Map<string, FallbackVoice>()
+  private masterVolume = 0.72
 
   async start() {
     if (!this.context) {
       this.context = new AudioContext()
       this.master = this.context.createGain()
-      this.master.gain.value = 0.72
+      this.master.gain.value = this.masterVolume
       this.master.connect(this.context.destination)
     }
     if (this.context.state === 'suspended') await this.context.resume()
@@ -71,6 +72,12 @@ export class SimpleSynth {
   allNotesOff() {
     for (const voiceId of [...this.active.keys()]) this.noteOff(voiceId)
     for (const voiceId of [...this.fallbackActive.keys()]) this.fallbackNoteOff(voiceId)
+  }
+
+  setMasterVolume(volume: number) {
+    this.masterVolume = Math.max(0, Math.min(1.5, volume))
+    if (!this.context || !this.master) return
+    this.master.gain.setTargetAtTime(this.masterVolume, this.context.currentTime, 0.01)
   }
 
   private async loadInstrument(soundfontId: string) {

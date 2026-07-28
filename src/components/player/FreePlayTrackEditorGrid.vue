@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import type { FreePlayRecordedNote, FreePlayTimeSignature, FreePlayTrack } from '../../stores/freePlayStore'
 import type { FreePlayEditorSubdivision } from '../../modules/freePlay/editor/freePlayTrackEditorSnap'
 import { quarterNoteUs, snapTimeUs, subdivisionUs } from '../../modules/freePlay/editor/freePlayTrackEditorSnap'
 import { clampPitch, editorBeatUs, editorMeasureUs, FREE_PLAY_EDITOR_MIN_NOTE_DURATION_US, pitchToY, timeToX, xToTime, yToPitch } from '../../modules/freePlay/editor/freePlayTrackEditorGeometry'
+import { canPlaceTrackEditorNotes, cloneTrackEditorTracks, mutateTrackEditorNotes } from '../../modules/freePlay/editor/freePlayTrackEditorMutations'
 
-export type FreePlayTrackEditorMode = 'select' | 'draw' | 'marquee'
+export type FreePlayTrackEditorMode = 'select' | 'draw' | 'marquee' | 'erase'
 
 type InteractionKind = 'idle' | 'dragging-note' | 'resizing-left' | 'resizing-right' | 'drawing-note' | 'marquee-selecting'
 
@@ -36,6 +37,16 @@ interface InteractionState {
 interface DrawableNote extends FreePlayRecordedNote {
   color: string
   trackIndex: number
+  muted: boolean
+  style: Record<string, string>
+}
+
+interface VelocityBar {
+  id: string
+  noteId: string
+  color: string
+  muted: boolean
+  selected: boolean
   style: Record<string, string>
 }
 
@@ -47,37 +58,51 @@ const props = defineProps<{
   snapEnabled: boolean
   snapSubdivision: FreePlayEditorSubdivision
   selectedNoteIds: string[]
+  activeTrackId: number | null
+  mutedTrackIds?: number[]
+  hiddenTrackIds?: number[]
+  velocityLabel: string
   pixelsPerQuarter: number
   rowHeight: number
+  playheadUs: number
+  followPlayhead: boolean
 }>()
 
 const emit = defineEmits<{
   'update:tracks': [tracks: FreePlayTrack[]]
   'update:selectedNoteIds': [ids: string[]]
+  'preview-note': [note: FreePlayRecordedNote]
   dirty: []
 }>()
 
+const viewportRef = ref<HTMLElement | null>(null)
 const gridRef = ref<HTMLElement | null>(null)
+const velocityLaneRef = ref<HTMLElement | null>(null)
 const interaction = ref<InteractionState>({ kind: 'idle', pointerId: -1, origin: { x: 0, y: 0, timeUs: 0, noteId: 60 }, snapshots: [] })
+const velocityDragNoteId = ref<string | null>(null)
 let draftNoteCounter = 1
 
 const selectedSet = computed(() => new Set(props.selectedNoteIds))
+const mutedSet = computed(() => new Set(props.mutedTrackIds ?? []))
+const hiddenSet = computed(() => new Set(props.hiddenTrackIds ?? []))
 const snapUnitUs = computed(() => subdivisionUs(props.bpm, props.snapSubdivision))
 const defaultNoteDurationUs = computed(() => props.snapEnabled ? snapUnitUs.value : quarterNoteUs(props.bpm) / 4)
 const maxEndUs = computed(() => Math.max(0, ...props.tracks.flatMap(track => track.notes.map(note => note.endUs))))
 const timelineDurationUs = computed(() => Math.max(quarterNoteUs(props.bpm) * 16, maxEndUs.value + quarterNoteUs(props.bpm) * 4))
 const gridWidth = computed(() => Math.ceil(timeToX(timelineDurationUs.value, props.bpm, props.pixelsPerQuarter)))
 const gridHeight = computed(() => 128 * props.rowHeight)
+const playheadX = computed(() => Math.min(gridWidth.value, timeToX(props.playheadUs, props.bpm, props.pixelsPerQuarter)))
 const beatUs = computed(() => editorBeatUs(props.bpm, props.timeSignature))
 const measureUs = computed(() => editorMeasureUs(props.bpm, props.timeSignature))
 
 const beatLines = computed(() => {
-  const lines: { id: string; x: number; measure: boolean }[] = []
+  const lines: { id: string; x: number; measure: boolean; label?: string }[] = []
   const beat = Math.max(1, beatUs.value)
   const measure = Math.max(1, measureUs.value)
   for (let timeUs = 0; timeUs <= timelineDurationUs.value; timeUs += beat) {
     const measureLine = Math.abs(timeUs / measure - Math.round(timeUs / measure)) < 0.001
-    lines.push({ id: `beat:${timeUs}`, x: timeToX(timeUs, props.bpm, props.pixelsPerQuarter), measure: measureLine })
+    const measureNumber = Math.floor(timeUs / measure) + 1
+    lines.push({ id: `beat:${timeUs}`, x: timeToX(timeUs, props.bpm, props.pixelsPerQuarter), measure: measureLine, label: measureLine ? String(measureNumber) : undefined })
   }
   return lines
 })
@@ -109,25 +134,48 @@ const pianoKeys = computed(() => Array.from({ length: 128 }, (_, index) => {
   }
 }))
 
-const drawableNotes = computed<DrawableNote[]>(() => props.tracks.flatMap((track, trackIndex) => track.notes.map(note => {
+const drawableNotes = computed<DrawableNote[]>(() => props.tracks
+  .filter(track => !hiddenSet.value.has(track.id))
+  .flatMap((track, trackIndex) => track.notes.map(note => {
+    const left = timeToX(note.startUs, props.bpm, props.pixelsPerQuarter)
+    const right = timeToX(note.endUs, props.bpm, props.pixelsPerQuarter)
+    const muted = mutedSet.value.has(track.id)
+    return {
+      ...note,
+      color: track.color,
+      trackIndex,
+      muted,
+      style: {
+        left: `${left}px`,
+        top: `${pitchToY(note.noteId, props.rowHeight)}px`,
+        width: `${Math.max(8, right - left)}px`,
+        height: `${Math.max(10, props.rowHeight - 2)}px`,
+        backgroundColor: track.color,
+        opacity: muted ? '0.32' : '1',
+      },
+    }
+  })))
+
+const velocityBars = computed<VelocityBar[]>(() => drawableNotes.value.map(note => {
   const left = timeToX(note.startUs, props.bpm, props.pixelsPerQuarter)
-  const right = timeToX(note.endUs, props.bpm, props.pixelsPerQuarter)
+  const height = Math.max(3, Math.round((note.velocity / 127) * 88))
   return {
-    ...note,
-    color: track.color,
-    trackIndex,
+    id: `velocity:${note.id}`,
+    noteId: note.id,
+    color: note.color,
+    muted: note.muted,
+    selected: selectedSet.value.has(note.id),
     style: {
       left: `${left}px`,
-      top: `${pitchToY(note.noteId, props.rowHeight)}px`,
-      width: `${Math.max(8, right - left)}px`,
-      height: `${Math.max(10, props.rowHeight - 2)}px`,
-      backgroundColor: track.color,
+      height: `${height}px`,
+      backgroundColor: note.color,
+      opacity: note.muted ? '0.28' : '0.88',
     },
   }
-})))
+}))
 
 function cloneTracks() {
-  return props.tracks.map(track => ({ ...track, notes: track.notes.map(note => ({ ...note })) }))
+  return cloneTrackEditorTracks(props.tracks)
 }
 
 function emitTracks(tracks: FreePlayTrack[]) {
@@ -151,6 +199,12 @@ function getPoint(event: PointerEvent): EditorPoint {
   }
 }
 
+function velocityFromEvent(event: PointerEvent) {
+  const rect = velocityLaneRef.value?.getBoundingClientRect()
+  const y = Math.max(0, Math.min(rect?.height ?? 1, event.clientY - (rect?.top ?? 0)))
+  return Math.max(1, Math.min(127, Math.round((1 - y / Math.max(1, rect?.height ?? 1)) * 127)))
+}
+
 function noteById(id: string) {
   for (const track of props.tracks) {
     const note = track.notes.find(note => note.id === id)
@@ -167,22 +221,24 @@ function snapshotsFor(ids: string[]) {
 }
 
 function updateNotes(snapshots: DragSnapshot[], updater: (snapshot: DragSnapshot) => Partial<FreePlayRecordedNote>) {
-  const tracks = cloneTracks()
-  for (const snapshot of snapshots) {
-    const track = tracks.find(track => track.id === snapshot.trackId)
-    const note = track?.notes.find(note => note.id === snapshot.id)
-    if (!note) continue
-    Object.assign(note, updater(snapshot))
-  }
+  const nextTracks = mutateTrackEditorNotes(props.tracks, snapshots.map(snapshot => snapshot.id), note => {
+    const snapshot = snapshots.find(item => item.id === note.id)
+    return snapshot ? updater(snapshot) : undefined
+  })
+  if (!nextTracks) return
+  emitTracks(nextTracks)
+}
+
+function deleteNoteIds(ids: string[]) {
+  if (!ids.length) return
+  const removingIds = new Set(ids)
+  const tracks = cloneTracks().map(track => ({ ...track, notes: track.notes.filter(note => !removingIds.has(note.id)) }))
   emitTracks(tracks)
+  setSelected(props.selectedNoteIds.filter(id => !removingIds.has(id)))
 }
 
 function deleteSelected() {
-  if (!props.selectedNoteIds.length) return
-  const ids = selectedSet.value
-  const tracks = cloneTracks().map(track => ({ ...track, notes: track.notes.filter(note => !ids.has(note.id)) }))
-  emitTracks(tracks)
-  setSelected([])
+  deleteNoteIds(props.selectedNoteIds)
 }
 
 defineExpose({ deleteSelected })
@@ -194,21 +250,24 @@ function handleGridPointerDown(event: PointerEvent) {
 
   if (props.mode === 'draw') {
     const startUs = snapTimeUs(point.timeUs, props.bpm, props.snapSubdivision, props.snapEnabled)
+    const targetTrackId = props.activeTrackId ?? props.tracks[0]?.id ?? 1
     const note: FreePlayRecordedNote = {
       id: `draft:${draftNoteCounter++}`,
-      trackId: props.tracks[0]?.id ?? 1,
+      trackId: targetTrackId,
       noteId: point.noteId,
       startUs,
       endUs: startUs + Math.max(FREE_PLAY_EDITOR_MIN_NOTE_DURATION_US, defaultNoteDurationUs.value),
       velocity: 80,
       source: 'pointer',
     }
+    if (!canPlaceTrackEditorNotes(props.tracks, [note])) return
     const tracks = cloneTracks()
-    const targetTrack = tracks[0]
-    if (targetTrack) targetTrack.notes.push(note)
+    const targetTrack = tracks.find(track => track.id === targetTrackId) ?? tracks[0]
+    const savedNote = { ...note, trackId: targetTrack?.id ?? note.trackId }
+    if (targetTrack) targetTrack.notes.push(savedNote)
     emitTracks(tracks)
-    setSelected([note.id])
-    interaction.value = { kind: 'drawing-note', pointerId: event.pointerId, origin: point, anchorNoteId: note.id, snapshots: [{ id: note.id, trackId: note.trackId, startUs, endUs: note.endUs, noteId: point.noteId }] }
+    setSelected([savedNote.id])
+    interaction.value = { kind: 'drawing-note', pointerId: event.pointerId, origin: point, anchorNoteId: savedNote.id, snapshots: [{ id: savedNote.id, trackId: savedNote.trackId, startUs, endUs: savedNote.endUs, noteId: point.noteId }] }
     return
   }
 
@@ -221,9 +280,18 @@ function handleGridPointerDown(event: PointerEvent) {
 }
 
 function handleNotePointerDown(event: PointerEvent, note: DrawableNote) {
-  if (event.button !== 0 || props.mode === 'draw' || props.mode === 'marquee') return
+  if (event.button !== 0) return
   event.stopPropagation()
   const point = getPoint(event)
+
+  if (props.mode !== 'erase') emit('preview-note', note)
+
+  if (props.mode === 'erase') {
+    deleteNoteIds([note.id])
+    interaction.value = { kind: 'idle', pointerId: -1, origin: point, snapshots: [] }
+    return
+  }
+
   gridRef.value?.setPointerCapture(event.pointerId)
 
   if (event.ctrlKey || event.metaKey) {
@@ -241,8 +309,9 @@ function handleNotePointerDown(event: PointerEvent, note: DrawableNote) {
 }
 
 function handleResizePointerDown(event: PointerEvent, note: DrawableNote, side: 'left' | 'right') {
-  if (event.button !== 0 || props.mode !== 'select') return
+  if (event.button !== 0) return
   event.stopPropagation()
+  emit('preview-note', note)
   const point = getPoint(event)
   gridRef.value?.setPointerCapture(event.pointerId)
   setSelected([note.id])
@@ -337,68 +406,162 @@ function handlePointerUp(event: PointerEvent) {
   gridRef.value?.releasePointerCapture(event.pointerId)
   interaction.value = { kind: 'idle', pointerId: -1, origin: { x: 0, y: 0, timeUs: 0, noteId: 60 }, snapshots: [] }
 }
+
+function setVelocityForSelection(noteId: string, velocity: number) {
+  const selectedIds = selectedSet.value.has(noteId) ? props.selectedNoteIds : [noteId]
+  const tracks = mutateTrackEditorNotes(props.tracks, selectedIds, () => ({ velocity }))
+  if (!tracks) return
+  setSelected(selectedIds)
+  emitTracks(tracks)
+}
+
+function handleVelocityPointerDown(event: PointerEvent, noteId: string) {
+  if (event.button !== 0) return
+  event.stopPropagation()
+  velocityLaneRef.value?.setPointerCapture(event.pointerId)
+  velocityDragNoteId.value = noteId
+  setVelocityForSelection(noteId, velocityFromEvent(event))
+}
+
+function handleVelocityPointerMove(event: PointerEvent) {
+  if (event.buttons !== 1 || !velocityDragNoteId.value) return
+  setVelocityForSelection(velocityDragNoteId.value, velocityFromEvent(event))
+}
+
+function handleVelocityPointerUp(event: PointerEvent) {
+  if (!velocityDragNoteId.value) return
+  velocityLaneRef.value?.releasePointerCapture(event.pointerId)
+  velocityDragNoteId.value = null
+}
+
+function scrollPlayheadIntoView() {
+  if (!props.followPlayhead || !viewportRef.value) return
+  const viewport = viewportRef.value
+  const pianoWidth = 64
+  const viewportLeft = Math.max(0, viewport.scrollLeft - pianoWidth)
+  const viewportRight = viewportLeft + Math.max(0, viewport.clientWidth - pianoWidth)
+  const x = playheadX.value
+  const margin = Math.max(80, Math.min(180, viewport.clientWidth * 0.18))
+
+  if (x < viewportLeft + margin) {
+    viewport.scrollLeft = Math.max(0, x + pianoWidth - margin)
+  } else if (x > viewportRight - margin) {
+    viewport.scrollLeft = Math.max(0, x + pianoWidth - viewport.clientWidth + margin)
+  }
+}
+
+watch(() => props.playheadUs, () => {
+  void nextTick(scrollPlayheadIntoView)
+})
 </script>
 
 <template>
   <div class="track-editor-grid-shell">
-    <div class="grid-viewport">
-      <div class="editor-canvas" :style="{ width: `${64 + gridWidth}px`, height: `${gridHeight}px` }">
-        <div class="piano-ruler" :style="{ height: `${gridHeight}px` }">
-          <div
-            v-for="key in pianoKeys"
-            :key="key.noteId"
-            class="piano-key"
-            :class="{ 'piano-key--black': key.black, 'piano-key--octave': key.octave }"
-            :style="{ top: `${pitchToY(key.noteId, rowHeight)}px`, height: `${rowHeight}px` }"
-          >
-            <span class="piano-key-label">{{ key.octave ? key.label : key.noteName }}</span>
+    <div ref="viewportRef" class="grid-viewport">
+      <div class="editor-canvas" :style="{ width: `${64 + gridWidth}px` }">
+        <div class="ruler-row">
+          <div class="ruler-corner"></div>
+          <div class="measure-ruler" :style="{ width: `${gridWidth}px` }">
+            <div class="playhead playhead--ruler" :style="{ left: `${playheadX}px` }">
+              <span class="playhead-triangle"></span>
+            </div>
+            <div
+              v-for="line in beatLines"
+              :key="`ruler:${line.id}`"
+              class="ruler-tick"
+              :class="{ 'ruler-tick--measure': line.measure }"
+              :style="{ left: `${line.x}px` }"
+            >
+              <span v-if="line.label" class="ruler-label">{{ line.label }}</span>
+            </div>
           </div>
         </div>
-        <div
-          ref="gridRef"
-          class="note-grid"
-          :style="{ left: '64px', width: `${gridWidth}px`, height: `${gridHeight}px`, '--row-height': `${rowHeight}px` }"
-          @pointerdown="handleGridPointerDown"
-          @pointermove="handlePointerMove"
-          @pointerup="handlePointerUp"
-          @pointercancel="handlePointerUp"
-        >
-        <div
-          v-for="line in subdivisionLines"
-          :key="line.id"
-          class="grid-line grid-line--subdivision"
-          :style="{ left: `${line.x}px` }"
-        ></div>
-        <div
-          v-for="line in beatLines"
-          :key="line.id"
-          class="grid-line"
-          :class="{ 'grid-line--measure': line.measure }"
-          :style="{ left: `${line.x}px` }"
-        ></div>
-        <button
-          v-for="note in drawableNotes"
-          :key="note.id"
-          class="editor-note"
-          :class="{ selected: selectedSet.has(note.id) }"
-          :style="note.style"
-          type="button"
-          @pointerdown="handleNotePointerDown($event, note)"
-        >
-          <span class="note-handle note-handle--left" @pointerdown="handleResizePointerDown($event, note, 'left')"></span>
-          <span class="note-body"></span>
-          <span class="note-handle note-handle--right" @pointerdown="handleResizePointerDown($event, note, 'right')"></span>
-        </button>
+
+        <div class="note-row" :style="{ height: `${gridHeight}px` }">
+          <div class="piano-ruler" :style="{ height: `${gridHeight}px` }">
+            <div
+              v-for="key in pianoKeys"
+              :key="key.noteId"
+              class="piano-key"
+              :class="{ 'piano-key--black': key.black, 'piano-key--octave': key.octave }"
+              :style="{ top: `${pitchToY(key.noteId, rowHeight)}px`, height: `${rowHeight}px` }"
+            >
+              <span class="piano-key-label">{{ key.octave ? key.label : key.noteName }}</span>
+            </div>
+          </div>
           <div
-            v-if="interaction.marquee"
-            class="selection-rect"
-            :style="{
-              left: `${interaction.marquee.left}px`,
-              top: `${interaction.marquee.top}px`,
-              width: `${interaction.marquee.width}px`,
-              height: `${interaction.marquee.height}px`,
-            }"
-          ></div>
+            ref="gridRef"
+            class="note-grid"
+            :style="{ width: `${gridWidth}px`, height: `${gridHeight}px`, '--row-height': `${rowHeight}px` }"
+            @pointerdown="handleGridPointerDown"
+            @pointermove="handlePointerMove"
+            @pointerup="handlePointerUp"
+            @pointercancel="handlePointerUp"
+          >
+            <div
+              v-for="line in subdivisionLines"
+              :key="line.id"
+              class="grid-line grid-line--subdivision"
+              :style="{ left: `${line.x}px` }"
+            ></div>
+            <div
+              v-for="line in beatLines"
+              :key="line.id"
+              class="grid-line"
+              :class="{ 'grid-line--measure': line.measure }"
+              :style="{ left: `${line.x}px` }"
+            ></div>
+            <div class="playhead playhead--grid" :style="{ left: `${playheadX}px` }"></div>
+            <button
+              v-for="note in drawableNotes"
+              :key="note.id"
+              class="editor-note"
+              :class="{ selected: selectedSet.has(note.id) }"
+              :style="note.style"
+              type="button"
+              @pointerdown="handleNotePointerDown($event, note)"
+            >
+              <span class="note-handle note-handle--left" @pointerdown="handleResizePointerDown($event, note, 'left')"></span>
+              <span class="note-body"></span>
+              <span class="note-handle note-handle--right" @pointerdown="handleResizePointerDown($event, note, 'right')"></span>
+            </button>
+            <div
+              v-if="interaction.marquee"
+              class="selection-rect"
+              :style="{
+                left: `${interaction.marquee.left}px`,
+                top: `${interaction.marquee.top}px`,
+                width: `${interaction.marquee.width}px`,
+                height: `${interaction.marquee.height}px`,
+              }"
+            ></div>
+          </div>
+        </div>
+
+        <div class="velocity-row">
+          <div class="velocity-corner">{{ velocityLabel }}</div>
+          <div
+            ref="velocityLaneRef"
+            class="velocity-lane"
+            :style="{ width: `${gridWidth}px` }"
+            @pointermove="handleVelocityPointerMove"
+            @pointerup="handleVelocityPointerUp"
+            @pointercancel="handleVelocityPointerUp"
+          >
+            <div class="playhead playhead--velocity" :style="{ left: `${playheadX}px` }"></div>
+            <div class="velocity-guide velocity-guide--top">127</div>
+            <div class="velocity-guide velocity-guide--mid">64</div>
+            <button
+              v-for="bar in velocityBars"
+              :key="bar.id"
+              class="velocity-bar"
+              :class="{ selected: bar.selected, muted: bar.muted }"
+              :style="bar.style"
+              type="button"
+              :data-note-id="bar.noteId"
+              @pointerdown="handleVelocityPointerDown($event, bar.noteId)"
+            ></button>
+          </div>
         </div>
       </div>
     </div>
@@ -445,11 +608,118 @@ function handlePointerUp(event: PointerEvent) {
   min-width: 100%;
 }
 
+.ruler-row,
+.velocity-row,
+.note-row {
+  display: flex;
+  align-items: stretch;
+}
+
+.ruler-row {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+.velocity-row {
+  position: sticky;
+  bottom: 0;
+  z-index: 40;
+}
+
+.ruler-corner,
+.velocity-corner {
+  position: sticky;
+  left: 0;
+  z-index: 42;
+  width: 64px;
+  height: 34px;
+  flex: 0 0 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-right: 1px solid rgba(255, 255, 255, 0.16);
+  background: #292c31;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.ruler-corner::after {
+  content: '';
+}
+
+.measure-ruler {
+  position: relative;
+  height: 34px;
+  flex: 0 0 auto;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+  background: linear-gradient(to bottom, #41454c, #2f3339);
+}
+
+.ruler-tick {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.ruler-tick--measure {
+  width: 2px;
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.ruler-label {
+  position: absolute;
+  top: 8px;
+  left: 6px;
+  min-width: 76px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.74rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  z-index: 30;
+  background: rgba(96, 165, 250, 0.95);
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.28);
+  pointer-events: none;
+}
+
+.playhead--ruler {
+  z-index: 35;
+}
+
+.playhead--grid,
+.playhead--velocity {
+  top: 0;
+  bottom: 0;
+}
+
+.playhead-triangle {
+  position: absolute;
+  top: 0;
+  left: -6px;
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 10px solid #93c5fd;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.55));
+}
+
 .piano-ruler {
   position: sticky;
   left: 0;
   z-index: 20;
   width: 64px;
+  flex: 0 0 64px;
   background: #292c31;
   border-right: 1px solid rgba(255, 255, 255, 0.16);
   box-shadow: 4px 0 10px rgba(0, 0, 0, 0.22);
@@ -463,22 +733,27 @@ function handlePointerUp(event: PointerEvent) {
   align-items: center;
   justify-content: flex-end;
   padding-right: 0.35rem;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.28);
-  background: linear-gradient(to bottom, #f4f4f1, #d9d9d4);
+  border: 1px solid #9ca3af;
+  border-left: 0;
+  border-top: 0;
+  background: linear-gradient(to bottom, #fbfbf8, #d7d8d2);
   color: #33373d;
   font-size: 0.66rem;
   font-weight: 700;
   pointer-events: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
 }
 
 .piano-key--black {
   left: 0;
-  right: 16px;
+  right: 20px;
   z-index: 1;
-  border-radius: 0 0 4px 0;
-  background: linear-gradient(to bottom, #1a1b1e, #050505);
-  color: rgba(255, 255, 255, 0.86);
-  box-shadow: inset -2px 0 0 rgba(255, 255, 255, 0.08), 0 1px 2px rgba(0, 0, 0, 0.45);
+  border: 1px solid #060606;
+  border-left: 0;
+  border-radius: 0 0 5px 0;
+  background: linear-gradient(to bottom, #2f3137, #050505 72%, #111);
+  color: rgba(255, 255, 255, 0.9);
+  box-shadow: inset -4px 0 0 rgba(255, 255, 255, 0.07), 0 2px 4px rgba(0, 0, 0, 0.55);
 }
 
 .piano-key--octave:not(.piano-key--black) {
@@ -492,8 +767,8 @@ function handlePointerUp(event: PointerEvent) {
 }
 
 .note-grid {
-  position: absolute;
-  top: 0;
+  position: relative;
+  flex: 0 0 auto;
   min-width: calc(100% - 64px);
   background-color: #24272c;
   background-image:
@@ -566,5 +841,64 @@ function handlePointerUp(event: PointerEvent) {
   background: rgba(96, 165, 250, 0.18);
   pointer-events: none;
   z-index: 10;
+}
+
+.velocity-corner {
+  height: 112px;
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+  background: #252930;
+  text-transform: uppercase;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+
+.velocity-lane {
+  position: relative;
+  flex: 0 0 auto;
+  height: 112px;
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+  background:
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.08), transparent 1px),
+    repeating-linear-gradient(to right, rgba(255, 255, 255, 0.04) 0, rgba(255, 255, 255, 0.04) 1px, transparent 1px, transparent 80px),
+    #1f2329;
+  touch-action: none;
+}
+
+.velocity-guide {
+  position: absolute;
+  left: 6px;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.68rem;
+  pointer-events: none;
+}
+
+.velocity-guide--top {
+  top: 5px;
+}
+
+.velocity-guide--mid {
+  top: 52px;
+}
+
+.velocity-bar {
+  position: absolute;
+  bottom: 8px;
+  width: 8px;
+  min-height: 3px;
+  padding: 0;
+  border: 1px solid rgba(0, 0, 0, 0.45);
+  border-radius: 3px 3px 0 0;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.32);
+  cursor: ns-resize;
+}
+
+.velocity-bar.selected {
+  outline: 2px solid #ffffff;
+  outline-offset: 1px;
+  z-index: 3;
+}
+
+.velocity-bar.muted {
+  filter: grayscale(0.85);
 }
 </style>

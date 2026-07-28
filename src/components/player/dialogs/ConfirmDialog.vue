@@ -8,7 +8,6 @@ const { t } = useI18n()
 const confirmStore = useConfirmStore()
 const cancelButtonRef = ref<HTMLButtonElement>()
 
-const title = computed(() => confirmStore.title)
 const cancelLabel = computed(() => confirmStore.cancelLabel || t('common.cancel'))
 const confirmLabel = computed(() => confirmStore.confirmLabel || t('common.continue'))
 const confirmButtonClass = computed(() => [
@@ -29,10 +28,10 @@ watch(
 <template>
   <BaseDialog
     :show="confirmStore.visible"
-    :title="title"
+    title=""
     width="800px"
     :show-close-button="false"
-    :aria-labelledby="title ? 'confirm-dialog-title' : ''"
+    aria-labelledby=""
     aria-describedby="confirm-dialog-message"
     @close="confirmStore.cancel()"
   >
