@@ -39,6 +39,10 @@ const portraitContentStyle = computed(() => {
   const ch = cw * 3 / 4
   return { width: `${cw}px`, height: `${ch}px` }
 })
+const stageContentStyle = computed(() => {
+  if (!isPortrait.value || !frameWidth.value) return {}
+  return { width: `${frameWidth.value}px` }
+})
 const blurBackgroundStyle = computed(() => ({
   backgroundImage: backgroundUrl.value ? `url(${backgroundUrl.value})` : undefined,
 }))
@@ -97,7 +101,8 @@ function updatePreviewLayout() {
     frameWidth.value = availableHeight * aspectRatio
   }
 
-  const whiteKeyWidth = frameWidth.value / WHITE_KEY_COUNT
+  const contentWidth = isPortrait.value ? frameWidth.value : frameWidth.value
+  const whiteKeyWidth = contentWidth / WHITE_KEY_COUNT
   keyboardHeight.value = whiteKeyWidth * WHITE_KEY_ASPECT_RATIO
   blackKeyHeight.value = keyboardHeight.value * BLACK_KEY_HEIGHT_RATIO
 }
@@ -137,7 +142,7 @@ onBeforeUnmount(() => {
     <div v-if="isPortrait" class="record-stage-frame record-stage-frame--portrait" :style="frameStyle">
       <div class="record-portrait-blur-background" :style="blurBackgroundStyle"></div>
       <div class="record-portrait-content" :style="portraitContentStyle">
-        <div class="record-stage-content">
+        <div class="record-stage-content" :style="stageContentStyle">
           <div class="record-background" :style="backgroundStyle"></div>
           <section class="record-roll-area">
             <PianoRoll transparent-background />

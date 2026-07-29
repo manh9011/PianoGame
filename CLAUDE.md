@@ -342,14 +342,35 @@ freePlayStore ←── orchestrate ──→ freePlayMidiImport, editor
 5. **Pure modules**: `src/modules/` không import Vue, chỉ TS thuần — dễ test và reuse
 6. **Web Workers**: fingering, sheet music, video encoding — 3 workers riêng
 
-# Hướng dẫn dự án
+## Environment
 
-- Tôi sử dụng Windows nên khi đề xuất chạy lệnh cmd hãy dùng tập lệnh của Windows.
-- Dự án sử dụng i18n cho toàn bộ text hiển thị trên giao diện. Khi xây dựng chức năng mới hoặc chỉnh sửa UI, không được hard-code text trực tiếp trong component/template/script; phải thêm key vào các file locale trong `src/i18n/locales/` cho đầy đủ mọi ngôn ngữ đang hỗ trợ và dùng `t(...)`/cơ chế i18n tương ứng để hiển thị.
-- Khi thêm text vào các file locale trong `src/i18n/locales/` phải đảm bảo text được dịch chính xác sang ngôn ngữ đó rồi mới thêm, không chỉ làm qua loa kiểu copy text Tiếng Anh sang.
-- Không cần phải restore file tsconfig.tsbuildinfo sau khi build.
-- Không phải tạo nhánh riêng để làm việc trừ khi tôi bảo.
-- Sử dụng mô hình haiku hoặc sonet để thực hiện tác vụ kiểm tra câu lệnh bash có an toàn hay không để tránh rate limit.
-- Khi có thay đổi về kiến trúc dự án (thêm xóa file trong mục src và src-tauri) phải cập nhật lại file này.
-- Dự án sử dụng unicode thận trọng trong việc ghi file tránh để hiển thị ký tự unicode.
-- Sử dụng model haiku cho tác vụ cần vision.
+- Tôi sử dụng Windows. Khi cung cấp câu lệnh terminal, ưu tiên Command Prompt hoặc PowerShell; không sử dụng Bash trừ khi tôi yêu cầu.
+- Không cần restore file `tsconfig.tsbuildinfo` sau khi build.
+- Không tạo nhánh Git mới hoặc thay đổi workflow Git trừ khi tôi yêu cầu.
+
+## Coding Guidelines
+
+- Trước khi chỉnh sửa, hãy đọc và hiểu luồng xử lý hiện tại; ưu tiên mở rộng hoặc sửa trên kiến trúc sẵn có thay vì viết lại.
+- Không thực hiện refactor lớn nếu tôi không yêu cầu.
+- Không đổi tên biến, format code hoặc thay đổi style chỉ vì mục đích làm đẹp.
+- Không thêm dependency mới nếu có thể giải quyết bằng thư viện hiện có.
+- Chỉ tạo file mới khi thực sự cần thiết.
+- Sau khi hoàn thành, kiểm tra và loại bỏ import, code hoặc file không còn được sử dụng.
+- Không thêm comment giải thích các đoạn code hiển nhiên; chỉ comment khi logic phức tạp hoặc khó hiểu.
+
+## UI & Localization
+
+- Toàn bộ text hiển thị trên giao diện phải sử dụng hệ thống i18n.
+- Không được hard-code text trong component, template hoặc script.
+- Khi thêm text mới, phải bổ sung key vào tất cả các file locale trong `src/i18n/locales/`.
+- Mọi bản dịch phải chính xác và tự nhiên theo từng ngôn ngữ; không được sao chép nguyên văn tiếng Anh sang các locale khác.
+
+## Project Maintenance
+
+- Nếu có thay đổi lớn về kiến trúc dự án (thêm, xóa hoặc thay đổi cấu trúc thư mục chính trong `src` hoặc `src-tauri`) khiến tài liệu này không còn đúng, hãy đề xuất cập nhật `CLAUDE.md`.
+- Khi ghi file văn bản, giữ nguyên mã hóa UTF-8; không tự động escape Unicode thành dạng `\uXXXX` trừ khi định dạng file yêu cầu.
+
+## Safety
+
+- Trước khi thực thi hoặc đề xuất các lệnh có khả năng thay đổi hệ thống, ghi đè hoặc xóa dữ liệu, hãy kiểm tra tính an toàn và giải thích rõ tác động.
+- Nếu yêu cầu không rõ ràng hoặc có nhiều hướng triển khai hợp lý, hãy hỏi lại trước khi thực hiện thay vì tự suy đoán.
