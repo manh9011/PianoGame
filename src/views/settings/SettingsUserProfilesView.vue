@@ -3,6 +3,9 @@ import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import SettingsRow from '../../components/settings/ui/SettingsRow.vue'
 import SettingsSection from '../../components/settings/ui/SettingsSection.vue'
+import BaseButton from '../../components/ui/BaseButton.vue'
+import BaseInput from '../../components/ui/BaseInput.vue'
+import BaseSelect from '../../components/ui/BaseSelect.vue'
 import { useProfileStore } from '../../stores/profileStore'
 
 const { t } = useI18n()
@@ -29,22 +32,22 @@ function createProfile() {
 
     <SettingsSection :title="t('settings.userProfiles')">
       <SettingsRow :title="t('settings.activeProfile')" :description="t('settings.activeProfileDescription')">
-        <select class="settings-control" :value="profiles.activeProfile.id" @change="profiles.selectProfile(($event.target as HTMLSelectElement).value)">
+        <BaseSelect class="settings-control" :model-value="profiles.activeProfile.id" @update:model-value="profiles.selectProfile($event as string)">
           <option v-for="profile in profiles.profiles" :key="profile.id" :value="profile.id">{{ profile.name }}</option>
-        </select>
+        </BaseSelect>
       </SettingsRow>
       <SettingsRow :title="t('settings.newProfile')" :description="t('settings.newProfileDescription')">
         <div class="profile-actions">
-          <input v-model="name" class="settings-control" :placeholder="t('profile.newProfileName')" @keyup.enter="createProfile" />
-          <button class="settings-button primary" type="button" @click="createProfile">{{ t('common.save') }}</button>
+          <BaseInput v-model="name" class="settings-control" :placeholder="t('profile.newProfileName')" @keyup.enter="createProfile" />
+          <BaseButton variant="primary" class="settings-button" type="button" @click="createProfile">{{ t('common.save') }}</BaseButton>
         </div>
       </SettingsRow>
     </SettingsSection>
 
     <SettingsSection :title="t('settings.profileList')">
       <SettingsRow v-for="profile in profiles.profiles" :key="profile.id" :title="profile.name" :description="profile.id === profiles.activeProfile.id ? t('settings.activeProfileStatus') : t('settings.localProfileStatus')">
-        <button class="settings-button" type="button" :disabled="profile.id === profiles.activeProfile.id" @click="profiles.selectProfile(profile.id)">{{ t('settings.useProfile') }}</button>
-        <button class="settings-button danger" type="button" :disabled="profiles.profiles.length <= 1" @click="profiles.deleteProfile(profile.id)">{{ t('common.delete') }}</button>
+        <BaseButton class="settings-button" type="button" :disabled="profile.id === profiles.activeProfile.id" @click="profiles.selectProfile(profile.id)">{{ t('settings.useProfile') }}</BaseButton>
+        <BaseButton variant="danger" class="settings-button" type="button" :disabled="profiles.profiles.length <= 1" @click="profiles.deleteProfile(profile.id)">{{ t('common.delete') }}</BaseButton>
       </SettingsRow>
     </SettingsSection>
   </div>

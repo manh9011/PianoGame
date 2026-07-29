@@ -58,6 +58,6 @@ function formatDuration(us?: number) {
 <style scoped>
 .score-board { display: grid; gap: 0.75rem; }
 .board-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; }
-.board-column { display: grid; align-content: start; gap: 0.45rem; border: 1px solid #333a44; border-radius: 12px; padding: 0.75rem; }
+.board-column { display: grid; align-content: start; gap: 0.45rem; border: 1px solid var(--color-border-default); border-radius: 12px; padding: 0.75rem; }
 .board-row { display: grid; grid-template-columns: 1fr auto auto auto auto auto; gap: 0.4rem; font-size: 0.9rem; }
 </style>

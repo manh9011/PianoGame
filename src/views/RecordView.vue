@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
@@ -95,7 +95,7 @@ function calculatePopupPosition(element: HTMLElement, popupWidth: number, popupH
     top = Math.max(margin, window.innerHeight - popupHeight - margin)
   }
 
-  const arrowTop = rect.top + rect.height / 2 - top
+  const arrowTop = Math.max(12, Math.min(popupHeight - 24, rect.top + rect.height / 2 - top - 7))
   return {
     popupStyle: { top: `${top}px`, left: `${left}px` },
     arrowStyle: arrowOnRight ? { top: `${arrowTop}px`, right: '-7px' } : { top: `${arrowTop}px`, left: '-7px' },

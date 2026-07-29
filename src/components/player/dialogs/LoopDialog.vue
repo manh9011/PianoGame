@@ -1,7 +1,10 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import BasePopover from './BasePopover.vue'
+import BasePopover from '../../ui/BasePopover.vue'
+import BaseToggle from '../../ui/BaseToggle.vue'
+import BaseSlider from '../../ui/BaseSlider.vue'
+import BaseButton from '../../ui/BaseButton.vue'
 
 interface Props {
   show: boolean
@@ -34,51 +37,34 @@ const restartLoopAfterErrors = ref(false)
         <p class="instruction-text">
           {{ t('dialogs.loopInstruction') }}
         </p>
-        <button class="clear-button">{{ t('common.clear') }}</button>
+        <BaseButton variant="danger" size="sm">{{ t('common.clear') }}</BaseButton>
       </div>
 
-      <div class="slider-section">
-        <span class="slider-label">{{ t('dialogs.delayBetweenLoops') }}</span>
-        <input
-          v-model.number="delayBetweenLoops"
-          type="range"
-          min="0"
-          max="100"
-          step="5"
-          class="delay-slider"
-        />
-      </div>
+      <BaseSlider v-model="delayBetweenLoops" :min="0" :max="100" :step="5" :label="t('dialogs.delayBetweenLoops')" />
 
       <div class="toggle-section">
         <span class="toggle-label">{{ t('dialogs.restartLoopAfterErrors') }}</span>
-        <button
-          class="toggle-switch"
-          :class="{ active: restartLoopAfterErrors }"
-          @click="restartLoopAfterErrors = !restartLoopAfterErrors"
-        >
-          <span class="toggle-track"></span>
-          <span class="toggle-thumb"></span>
-        </button>
+        <BaseToggle v-model="restartLoopAfterErrors" />
         <span class="disabled-label">{{ restartLoopAfterErrors ? t('dialogs.enabled') : t('dialogs.disabled') }}</span>
       </div>
 
       <div class="loop-controls">
         <div class="control-section">
-          <button class="nav-button"><i class="fas fa-step-backward"></i></button>
+          <BaseButton variant="icon"><i class="fas fa-step-backward"></i></BaseButton>
           <span class="section-label">{{ t('dialogs.loopStart') }}</span>
-          <button class="nav-button"><i class="fas fa-step-forward"></i></button>
+          <BaseButton variant="icon"><i class="fas fa-step-forward"></i></BaseButton>
         </div>
 
         <div class="control-section">
-          <button class="nav-button"><i class="fas fa-step-backward"></i></button>
+          <BaseButton variant="icon"><i class="fas fa-step-backward"></i></BaseButton>
           <span class="section-label">{{ t('dialogs.entireLoop') }}</span>
-          <button class="nav-button"><i class="fas fa-step-forward"></i></button>
+          <BaseButton variant="icon"><i class="fas fa-step-forward"></i></BaseButton>
         </div>
 
         <div class="control-section">
-          <button class="nav-button"><i class="fas fa-step-backward"></i></button>
+          <BaseButton variant="icon"><i class="fas fa-step-backward"></i></BaseButton>
           <span class="section-label">{{ t('dialogs.loopEnd') }}</span>
-          <button class="nav-button"><i class="fas fa-step-forward"></i></button>
+          <BaseButton variant="icon"><i class="fas fa-step-forward"></i></BaseButton>
         </div>
       </div>
     </div>
@@ -107,65 +93,6 @@ const restartLoopAfterErrors = ref(false)
   line-height: 1.4;
 }
 
-.clear-button {
-  padding: 0.4rem 0.8rem;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
-  background: var(--color-bg-subtle);
-  color: var(--color-text-primary);
-  font-size: 0.85rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.clear-button:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.3);
-}
-
-.slider-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.slider-label {
-  color: var(--color-text-primary);
-  font-size: 0.9rem;
-  font-weight: 500;
-}
-
-.delay-slider {
-  width: 100%;
-  height: 6px;
-  border-radius: 3px;
-  background: #5a5c61;
-  outline: none;
-  -webkit-appearance: none;
-  appearance: none;
-}
-
-.delay-slider::-webkit-slider-thumb {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: #e3e4e8;
-  cursor: pointer;
-  -webkit-appearance: none;
-  appearance: none;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.delay-slider::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
-  border: none;
-  border-radius: 50%;
-  background: #e3e4e8;
-  cursor: pointer;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
 
 .toggle-section {
   display: flex;
@@ -178,47 +105,6 @@ const restartLoopAfterErrors = ref(false)
   color: var(--color-text-primary);
   font-size: 0.9rem;
   font-weight: 500;
-}
-
-.toggle-switch {
-  position: relative;
-  width: 50px;
-  height: 28px;
-  padding: 0;
-  border: none;
-  border-radius: 14px;
-  background: transparent;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: all 0.3s ease;
-}
-
-.toggle-track {
-  position: absolute;
-  inset: 0;
-  border-radius: 14px;
-  background: #5a5c61;
-  transition: background 0.3s ease;
-}
-
-.toggle-switch.active .toggle-track {
-  background: #4ade80;
-}
-
-.toggle-thumb {
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: #ffffff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  transition: transform 0.3s ease;
-}
-
-.toggle-switch.active .toggle-thumb {
-  transform: translateX(22px);
 }
 
 .disabled-label {
@@ -243,32 +129,6 @@ const restartLoopAfterErrors = ref(false)
   background: var(--color-bg-subtle);
   border: 1px solid var(--color-border-default);
 }
-
-.nav-button {
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
-  background: var(--color-bg-subtle);
-  color: var(--color-text-primary);
-  font-size: 0.9rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.nav-button:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.3);
-}
-
-.nav-button:active {
-  transform: scale(0.95);
-}
-
 .section-label {
   flex: 1;
   text-align: center;

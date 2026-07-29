@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { onBeforeUnmount, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
@@ -6,6 +6,8 @@ import { usePlayerStore } from '../stores/playerStore'
 import { useLibraryStore } from '../stores/libraryStore'
 import { useSettingsStore } from '../stores/settingsStore'
 import TrackConfigPanel from '../components/player/track-config/TrackConfigPanel.vue'
+import BaseToolbar from '../components/ui/BaseToolbar.vue'
+import BaseButton from '../components/ui/BaseButton.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -89,13 +91,15 @@ onBeforeUnmount(() => {
 
 <template>
   <section class="track-settings-wrap">
-    <header class="track-header">
-      <div class="header-left">
-        <button class="header-btn" @click="back">{{ t('common.back') }}</button>
-        <button class="header-btn">{{ t('play.help') }}</button>
-      </div>
-      <h1 class="track-title">{{ t('trackSettings.title') }}</h1>
-    </header>
+    <BaseToolbar variant="header" class="track-header">
+      <template #left>
+        <BaseButton variant="secondary" @click="back">{{ t('common.back') }}</BaseButton>
+        <BaseButton variant="secondary">{{ t('play.help') }}</BaseButton>
+      </template>
+      <template #center>
+        <h1 class="track-title">{{ t('trackSettings.title') }}</h1>
+      </template>
+    </BaseToolbar>
 
     <main class="tracks-container">
       <div class="track-panel-shell">
@@ -103,14 +107,20 @@ onBeforeUnmount(() => {
       </div>
     </main>
 
-    <footer class="track-footer">
-      <button class="footer-btn" @click="reset">
-        <i class="fas fa-bolt"></i>
-        {{ t('trackSettings.reset') }}
-      </button>
-      <span class="footer-text">{{ t('trackSettings.copySettingsByDragging') }}</span>
-      <button class="footer-btn auto-color" @click="autoColor">{{ t('trackSettings.autoColor') }}</button>
-    </footer>
+    <BaseToolbar variant="footer" class="track-footer">
+      <template #left>
+        <BaseButton variant="secondary" @click="reset">
+          <i class="fas fa-bolt"></i>
+          {{ t('trackSettings.reset') }}
+        </BaseButton>
+      </template>
+      <template #center>
+        <span class="footer-text">{{ t('trackSettings.copySettingsByDragging') }}</span>
+      </template>
+      <template #right>
+        <BaseButton variant="secondary" class="auto-color" @click="autoColor">{{ t('trackSettings.autoColor') }}</BaseButton>
+      </template>
+    </BaseToolbar>
   </section>
 </template>
 
@@ -123,42 +133,10 @@ onBeforeUnmount(() => {
   color: var(--color-text-primary);
 }
 
-.track-header {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 64px;
-  padding: 0;
-  background: var(--color-bg-header);
-  border-bottom: 1px solid var(--color-border-subtle);
-}
-
-.header-left {
-  position: absolute;
-  inset-inline-start: 0.5rem;
-  display: flex;
-  gap: 0.5rem;
-}
-
-.header-btn {
-  padding: 0.45rem 0.9rem;
-  border: 1px solid var(--color-border-default);
-  border-radius: 6px;
-  background: linear-gradient(#444, #303030);
-  color: var(--color-text-primary);
-  font-size: 1rem;
-  cursor: pointer;
-}
-
-.header-btn:hover {
-  background: linear-gradient(#505050, #383838);
-}
-
 .track-title {
   margin: 0;
-  font-size: 1.55rem;
-  font-weight: 500;
+  font-size: 1.35rem;
+  font-weight: 600;
   color: var(--color-text-primary);
 }
 
@@ -177,30 +155,6 @@ onBeforeUnmount(() => {
   max-width: 900px;
 }
 
-.track-footer {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.85rem 1rem;
-  border-top: 1px solid var(--color-border-subtle);
-  background: var(--color-bg-header);
-}
-
-.footer-btn {
-  min-height: 2.4rem;
-  padding: 0 1rem;
-  border: 1px solid var(--color-border-default);
-  border-radius: 8px;
-  background: linear-gradient(#444, #303030);
-  color: var(--color-text-primary);
-  cursor: pointer;
-}
-
-.footer-btn:hover {
-  background: linear-gradient(#505050, #383838);
-}
-
 .footer-text {
   color: var(--color-text-muted);
   text-align: center;
@@ -211,10 +165,6 @@ onBeforeUnmount(() => {
 }
 
 @media (max-width: 760px) {
-  .track-footer {
-    grid-template-columns: 1fr;
-  }
-
   .footer-text {
     text-align: left;
   }

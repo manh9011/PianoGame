@@ -16,6 +16,9 @@ import { useConfirmDialog } from '../composables/useConfirmDialog'
 import { useSettingsStore } from '../stores/settingsStore'
 import { useToastStore } from '../stores/toastStore'
 import type { SongMetadata } from '../types/song'
+import BaseToolbar from '../components/ui/BaseToolbar.vue'
+import BaseButton from '../components/ui/BaseButton.vue'
+import BaseInput from '../components/ui/BaseInput.vue'
 
 const router = useRouter()
 const { t } = useI18n()
@@ -254,110 +257,125 @@ onBeforeUnmount(() => {
 
 <template>
   <main class="library-page">
-    <header class="library-header">
-      <button class="secondary header-tab" @click="router.push('/')">{{ t('common.back') }}</button>
+    <BaseToolbar variant="header" class="library-header">
+      <template #left>
+        <BaseButton variant="secondary" class="header-tab" @click="router.push('/')">{{ t('common.back') }}</BaseButton>
+      </template>
 
-      <div class="library-playback">
-        <button class="icon-button" :disabled="!selectedSong" :aria-label="t('library.togglePreview')" :title="t('library.togglePreview')" :aria-pressed="settings.libraryAutoPreviewEnabled" @click="togglePreview">
-          <i v-if="library.previewSongId === selectedSong?.id && library.previewRunning" class="fa-solid fa-pause" aria-hidden="true" />
-          <i v-else class="fa-solid fa-play" aria-hidden="true" />
-        </button>
+      <template #center>
+        <div class="library-playback">
+          <BaseButton variant="icon" :disabled="!selectedSong" :aria-label="t('library.togglePreview')" :title="t('library.togglePreview')" :aria-pressed="settings.libraryAutoPreviewEnabled" @click="togglePreview">
+            <i v-if="library.previewSongId === selectedSong?.id && library.previewRunning" class="fa-solid fa-pause" aria-hidden="true" />
+            <i v-else class="fa-solid fa-play" aria-hidden="true" />
+          </BaseButton>
 
-        <div class="preview-center">
-          <div class="preview-song">{{ selectedSong?.title ?? t('common.noSongSelected') }}</div>
-          <div class="preview-track" @click="seekPreviewFromPointer">
-            <div class="preview-fill" :style="{ width: `${Math.round(library.previewProgress * 100)}%` }" />
+          <div class="preview-center">
+            <div class="preview-song">{{ selectedSong?.title ?? t('common.noSongSelected') }}</div>
+            <div class="preview-track" @click="seekPreviewFromPointer">
+              <div class="preview-fill" :style="{ width: `${Math.round(library.previewProgress * 100)}%` }" />
+            </div>
           </div>
-        </div>
 
-        <div class="download-menu" @click.stop>
-          <button
-            class="icon-button"
-            :disabled="!selectedSong || !!musicXmlDownloadingSongId"
-            :aria-label="t('library.downloadSong')"
-            :aria-expanded="downloadMenuOpen"
-            aria-haspopup="menu"
-            @click="toggleDownloadMenu"
+          <div class="download-menu" @click.stop>
+            <BaseButton
+              variant="icon"
+              :disabled="!selectedSong || !!musicXmlDownloadingSongId"
+              :aria-label="t('library.downloadSong')"
+              :aria-expanded="downloadMenuOpen"
+              aria-haspopup="menu"
+              @click="toggleDownloadMenu"
+            >
+              <i v-if="musicXmlDownloadingSongId" class="fa-solid fa-spinner fa-spin" aria-hidden="true" />
+              <i v-else class="fa-solid fa-download" aria-hidden="true" />
+            </BaseButton>
+
+            <div v-if="downloadMenuOpen" class="download-options" role="menu">
+              <button type="button" role="menuitem" @click="downloadSong">
+                <span>{{ t('library.downloadMidi') }}</span>
+                <span class="download-extension">.mid</span>
+              </button>
+              <button type="button" role="menuitem" :disabled="!!musicXmlDownloadingSongId" @click="downloadMusicXml">
+                <span>{{ t('library.downloadMusicXml') }}</span>
+                <span class="download-extension">.musicxml</span>
+              </button>
+              <button type="button" role="menuitem" :disabled="!!musicXmlDownloadingSongId" @click="downloadCompressedMusicXml">
+                <span>{{ t('library.downloadMxl') }}</span>
+                <span class="download-extension">.mxl</span>
+              </button>
+            </div>
+          </div>
+          
+          <BaseButton variant="icon" :disabled="!selectedSong" :aria-label="t('record.record')" :title="t('record.record')" @click="openRecord">
+            <i class="fa-solid fa-video" aria-hidden="true" />
+          </BaseButton>
+
+          <BaseButton variant="icon" :disabled="!selectedSong" :aria-label="t('library.editInFreePlay')" :title="t('library.editInFreePlay')" @click="editInFreePlay">
+            <i class="fa-solid fa-pen-to-square" aria-hidden="true" />
+          </BaseButton>
+
+          <BaseButton variant="icon" :disabled="!selectedSong" :aria-label="t('library.deleteSong')" :title="t('library.deleteSong')" @click="deleteSong">
+            <i class="fa-regular fa-trash-can" aria-hidden="true" />
+          </BaseButton>
+        </div>
+      </template>
+
+      <template #right>
+        <div class="header-actions">
+          <BaseButton variant="primary" class="continue-button" :disabled="!selectedSong" @click="continuePlay">{{ t('common.continue') }}</BaseButton>
+        </div>
+      </template>
+    </BaseToolbar>
+
+    <BaseToolbar class="library-tools">
+      <template #left>
+        <FolderSelector />
+      </template>
+      <template #right>
+        <div class="search-field">
+          <BaseInput
+            :model-value="library.searchQuery"
+            :placeholder="t('common.search')"
+            @update:model-value="library.setSearch($event as string)"
+          />
+          <BaseButton
+            v-if="library.searchQuery"
+            variant="icon"
+            class="search-clear-button"
+            :aria-label="t('common.clear')"
+            @click="library.setSearch('')"
           >
-            <i v-if="musicXmlDownloadingSongId" class="fa-solid fa-spinner fa-spin" aria-hidden="true" />
-            <i v-else class="fa-solid fa-download" aria-hidden="true" />
-          </button>
-
-          <div v-if="downloadMenuOpen" class="download-options" role="menu">
-            <button type="button" role="menuitem" @click="downloadSong">
-              <span>{{ t('library.downloadMidi') }}</span>
-              <span class="download-extension">.mid</span>
-            </button>
-            <button type="button" role="menuitem" :disabled="!!musicXmlDownloadingSongId" @click="downloadMusicXml">
-              <span>{{ t('library.downloadMusicXml') }}</span>
-              <span class="download-extension">.musicxml</span>
-            </button>
-            <button type="button" role="menuitem" :disabled="!!musicXmlDownloadingSongId" @click="downloadCompressedMusicXml">
-              <span>{{ t('library.downloadMxl') }}</span>
-              <span class="download-extension">.mxl</span>
-            </button>
-          </div>
+            <i class="fa-solid fa-xmark" aria-hidden="true" />
+          </BaseButton>
         </div>
-        
-        <button class="icon-button" :disabled="!selectedSong" :aria-label="t('record.record')" :title="t('record.record')" @click="openRecord">
-          <i class="fa-solid fa-video" aria-hidden="true" />
-        </button>
-
-        <button class="icon-button" :disabled="!selectedSong" :aria-label="t('library.editInFreePlay')" :title="t('library.editInFreePlay')" @click="editInFreePlay">
-          <i class="fa-solid fa-pen-to-square" aria-hidden="true" />
-        </button>
-
-        <button class="icon-button" :disabled="!selectedSong" :aria-label="t('library.deleteSong')" :title="t('library.deleteSong')" @click="deleteSong">
-          <i class="fa-regular fa-trash-can" aria-hidden="true" />
-        </button>
-      </div>
-
-      <div class="header-actions">
-        <button class="action-button continue-button" :disabled="!selectedSong" @click="continuePlay">{{ t('common.continue') }}</button>
-      </div>
-    </header>
-
-    <section class="library-tools">
-      <FolderSelector />
-      <div class="search-field">
-        <input
-          :value="library.searchQuery"
-          :placeholder="t('common.search')"
-          @input="library.setSearch(($event.target as HTMLInputElement).value)"
-        />
-        <button
-          v-if="library.searchQuery"
-          type="button"
-          class="search-clear-button"
-          :aria-label="t('common.clear')"
-          @click="library.setSearch('')"
-        >
-          <i class="fa-solid fa-xmark" aria-hidden="true" />
-        </button>
-      </div>
-    </section>
+      </template>
+    </BaseToolbar>
 
     <section class="library-main">
       <SongList :songs="library.sortedSongs" :selected-id="selectedSong?.id" @select="handleSelectSong" @play="continuePlay" />
     </section>
 
-    <footer class="library-footer">
-      <div class="footer-action">
-        <MidiImportButton />
-      </div>
-      <div class="footer-sort">
-        <SongSortBar />
-      </div>
-      <div class="footer-count muted">{{ t('common.songs', { count: visibleSongCount }) }}</div>
-    </footer>
+    <BaseToolbar variant="footer" class="library-footer">
+      <template #left>
+        <div class="footer-action">
+          <MidiImportButton />
+        </div>
+      </template>
+      <template #center>
+        <div class="footer-sort">
+          <SongSortBar />
+        </div>
+      </template>
+      <template #right>
+        <div class="footer-count muted">{{ t('common.songs', { count: visibleSongCount }) }}</div>
+      </template>
+    </BaseToolbar>
   </main>
 </template>
 
 <style scoped>
 .library-page {
-  display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
-  gap: 0.22rem;
+  display: flex;
+  flex-direction: column;
   height: 100dvh;
   padding: 0;
   overflow: hidden;
@@ -368,58 +386,12 @@ onBeforeUnmount(() => {
   color: var(--color-text-muted);
 }
 
-.library-header {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 0.6rem;
-  min-height: 3.05rem;
-  padding: 0.1rem 0.38rem;
-  background: var(--color-bg-header);
-}
-
-.header-tab,
-.action-button,
-.icon-button {
-  border: 1px solid var(--color-border-default);
-  border-radius: 0.32rem;
-  background: var(--color-bg-card-hover);
-  color: var(--color-text-primary);
-}
-
-.header-tab,
-.action-button {
-  min-height: 1.95rem;
-  padding: 0.28rem 0.78rem;
-  white-space: nowrap;
-}
-
-
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.22rem;
-}
-
 .library-playback {
   display: grid;
   grid-template-columns: 2.2rem minmax(0, 25rem) 2.2rem 2.2rem 2.2rem 2.2rem;
   align-items: center;
   gap: 0.48rem;
   justify-self: center;
-}
-
-.icon-button {
-  display: grid;
-  place-items: center;
-  width: 2.2rem;
-  height: 2.2rem;
-  padding: 0;
-}
-
-.icon-button i {
-  font-size: 0.92rem;
 }
 
 .download-menu {
@@ -484,13 +456,14 @@ onBeforeUnmount(() => {
   white-space: nowrap;
   font-size: 0.92rem;
   font-weight: 500;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .preview-track {
   position: relative;
-  height: 0.72rem;
+  height: 0.45rem;
   border-radius: 999px;
-  background: var(--color-text-primary);
+  background: rgba(255, 255, 255, 0.3);
   overflow: visible;
   cursor: pointer;
 }
@@ -500,7 +473,7 @@ onBeforeUnmount(() => {
   height: 100%;
   min-width: 0.8rem;
   border-radius: 999px;
-  background: var(--color-text-secondary);
+  background: rgba(255, 255, 255, 0.9);
 }
 
 .preview-fill::after {
@@ -508,27 +481,47 @@ onBeforeUnmount(() => {
   position: absolute;
   top: 50%;
   right: 0;
-  width: 0.92rem;
-  height: 0.92rem;
-  border: 2px solid var(--color-bg-elevated-2);
+  width: 0.78rem;
+  height: 0.78rem;
   border-radius: 50%;
-  background: var(--color-text-primary);
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
   transform: translate(50%, -50%);
 }
 
-.library-tools {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 12.45rem;
-  align-items: center;
-  gap: 0.32rem;
-  padding: 5px;
-  border: 0;
-  background: var(--color-bg-primary);
-  transition: grid-template-columns 0.24s ease;
+.library-header :deep(.base-btn) {
+  height: 36px;
 }
 
-.library-tools:has(.search-field:focus-within) {
-  grid-template-columns: minmax(0, 1fr) 20.5rem;
+.header-tab,
+.continue-button {
+  height: 36px;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.library-tools {
+  display: flex !important;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.4rem 0.75rem;
+}
+
+.library-tools :deep(.base-toolbar-left) {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.library-tools :deep(.base-toolbar-center) {
+  display: none;
+}
+
+.library-tools :deep(.base-toolbar-right) {
+  flex: 0 0 18rem;
+  display: flex;
+  align-items: center;
 }
 
 .search-field {
@@ -536,75 +529,60 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   min-width: 0;
-}
-
-.library-tools input,
-.detail-modal select {
   width: 100%;
-  min-height: 2.42rem;
-  padding: 0.32rem 0.82rem;
-  border: 1px solid var(--color-border-input);
-  border-radius: 0.7rem;
-  background: var(--color-bg-input);
-  color: var(--color-text-primary);
 }
 
-.search-field input {
-  padding-right: 2.35rem;
-  transition:
-    border-color 0.2s ease,
-    background 0.2s ease,
-    box-shadow 0.2s ease,
-    transform 0.2s ease;
+.search-field :deep(.base-input) {
+  width: 100%;
 }
 
-.search-field input:focus {
-  border-color: var(--color-border-strong);
-  outline: none;
-  background: var(--color-bg-input-focus);
-  box-shadow: 0 0.35rem 1rem rgba(0, 0, 0, 0.18);
-  transform: translateY(-1px);
+.search-field :deep(.base-input-field) {
+  width: 100% !important;
+  height: 36px !important;
+  padding: 0 2rem 0 0.75rem !important;
+  font-size: 0.9rem !important;
+  border-radius: 6px !important;
+  background: var(--color-bg-input) !important;
+  color: var(--color-text-primary) !important;
+  border: 1px solid var(--color-border-input) !important;
+  transition: all 0.2s ease !important;
 }
 
-.library-tools input::placeholder {
-  color: var(--color-text-muted);
+.search-field :deep(.base-input-field:focus) {
+  background: var(--color-bg-input-focus) !important;
+  border-color: var(--color-accent-blue) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent-blue) 30%, transparent) !important;
 }
 
 .search-clear-button {
   position: absolute;
-  right: 0.42rem;
-  display: grid;
-  place-items: center;
-  width: 1.65rem;
-  height: 1.65rem;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: var(--color-bg-subtle);
-  color: var(--color-text-secondary);
-  cursor: pointer;
+  right: 0.3rem;
+  z-index: 2;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 1.2rem !important;
+  height: 1.2rem !important;
+  min-width: unset !important;
+  min-height: unset !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  background: var(--color-text-muted) !important;
+  color: var(--color-bg-elevated) !important;
+  font-size: 0.6rem !important;
+  opacity: 0.7;
+  transition: opacity 0.15s ease !important;
 }
 
 .search-clear-button:hover {
-  background: var(--color-bg-subtle);
-  color: var(--color-text-primary);
+  opacity: 1;
 }
 
 .library-main {
+  flex: 1;
   min-height: 0;
   overflow: auto;
   background: var(--color-bg-secondary);
-}
-
-.library-footer {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: end;
-  gap: 0.55rem;
-  padding: 5px;
-  background: var(--color-bg-secondary);
-  border-top: 1px solid var(--color-border-default);
-  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.18);
 }
 
 .footer-sort {
@@ -672,10 +650,6 @@ onBeforeUnmount(() => {
     grid-template-columns: 2.2rem minmax(0, 1fr) 2.2rem 2.2rem 2.2rem;
   }
 
-  .library-footer {
-    grid-template-columns: 1fr;
-  }
-
   .footer-count {
     text-align: left;
   }
@@ -686,20 +660,6 @@ onBeforeUnmount(() => {
     height: auto;
     min-height: 100dvh;
     overflow: visible;
-  }
-
-  .library-header,
-  .library-tools {
-    grid-template-columns: 1fr;
-  }
-
-  .header-actions {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .action-button {
-    width: 100%;
   }
 
   .detail-header,

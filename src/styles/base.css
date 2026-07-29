@@ -12,8 +12,8 @@
   --color-bg-header: #333333;
   --color-bg-card: #3d3d3d;
   --color-bg-card-hover: #454545;
-  --color-bg-input: #3f3f3f;
-  --color-bg-input-focus: #464646;
+  --color-bg-input: #222224;
+  --color-bg-input-focus: #141416;
   --color-bg-tooltip: rgba(40, 40, 40, 0.98);
   --color-bg-overlay: rgba(0, 0, 0, 0.4);
   --color-bg-subtle: rgba(0, 0, 0, 0.2);
@@ -58,74 +58,113 @@
   --color-info: #6366f1;
   --color-theme-toggle: #69c769;
 
-  /* === LEGACY CONTROL VARS (giữ tương thích) === */
-  --control-bg: #20252c;
-  --control-border: #555b65;
-  --control-text: #f4f4f4;
+  /* === TOGGLE === */
+  --color-toggle-bg: var(--color-bg-input);
+  --color-toggle-active: var(--color-theme-toggle);
+  --color-toggle-thumb: linear-gradient(#ffffff, #d8d8d8);
+  --color-toggle-border: var(--color-border-default);
+  --color-toggle-border-active: var(--color-border-strong);
+
+  /* === SLIDER === */
+  --color-slider-track: var(--color-bg-tertiary);
+  --color-slider-thumb: var(--color-text-primary);
+
+  /* === INPUT === */
+  --color-input-bg: var(--color-bg-input);
+  --color-input-border: var(--color-border-input);
+  --color-input-focus-border: var(--color-border-strong);
+  --color-input-focus-bg: var(--color-bg-input-focus);
+
+  /* === CHECKBOX / RADIO === */
+  --color-check-bg: var(--color-bg-input);
+  --color-check-active: var(--color-theme-toggle);
+  --color-check-border: var(--color-border-default);
+
+  /* === TAB === */
+  --color-tab-bg: var(--color-bg-secondary);
+  --color-tab-active-bg: var(--color-bg-elevated);
+  --color-tab-border: var(--color-border-default);
+
+  /* === TOOLBAR === */
+  --color-toolbar-bg: var(--color-bg-header);
+
+  /* === CARD === */
+  --color-card-bg: var(--color-bg-card);
+  --color-card-border: var(--color-border-default);
+  --color-card-radius: 16px;
+
+  /* === ROW SELECTION === */
+  --color-row-hover: rgba(255, 255, 255, 0.06);
+  --color-row-selected: #6F6F6F;
+  --color-row-selected-hover: #7d7d7d;
+  --color-row-selected-text: #ffffff;
+
 }
 
 :root[data-theme='light'] {
   color-scheme: light;
 
   /* === SURFACE / BACKGROUND === */
-  --color-bg-primary: #f6f7fb;
-  --color-bg-secondary: #eeeeee;
-  --color-bg-tertiary: #e2e4e9;
+  --color-bg-primary: #f4f4f4;
+  --color-bg-secondary: #ececec;
+  --color-bg-tertiary: #e0e2e6;
   --color-bg-elevated: #ffffff;
   --color-bg-elevated-2: #f0f0f0;
-  --color-bg-header: #107EB5;
+  --color-bg-header: #4a8ed4;
   --color-bg-card: #ffffff;
-  --color-bg-card-hover: #f0f2f5;
+  --color-bg-card-hover: #e8eef5;
   --color-bg-input: #ffffff;
   --color-bg-input-focus: #ffffff;
   --color-bg-tooltip: rgba(245, 245, 245, 0.98);
-  --color-bg-overlay: rgba(0, 0, 0, 0.4);
-  --color-bg-subtle: rgba(0, 0, 0, 0.04);
-  --color-bg-page: #f6f7fb;
+  --color-bg-overlay: rgba(0, 0, 0, 0.35);
+  --color-bg-subtle: rgba(0, 0, 0, 0.03);
+  --color-bg-page: #f4f4f4;
 
   /* === TEXT === */
-  --color-text-primary: #1f2430;
+  --color-text-primary: #2c2c2c;
   --color-text-secondary: #6b7280;
-  --color-text-muted: rgba(0, 0, 0, 0.45);
+  --color-text-muted: rgba(0, 0, 0, 0.4);
   --color-text-inverse: #f4f4f4;
 
   /* === BUTTON === */
   --color-btn-primary-bg: #4a9e4a;
   --color-btn-primary-hover: #5ab05a;
   --color-btn-primary-text: #ffffff;
-  --color-btn-secondary-bg: #d0d0d0;
-  --color-btn-secondary-hover: #c0c0c0;
-  --color-btn-secondary-text: #1f1f1f;
+  --color-btn-secondary-bg: #d8d8d8;
+  --color-btn-secondary-hover: #c8c8c8;
+  --color-btn-secondary-text: #2c2c2c;
   --color-btn-danger-bg: #d56a6a;
   --color-btn-danger-hover: #c55a5a;
   --color-btn-danger-text: #ffffff;
 
   /* === BORDER === */
-  --color-border-default: rgba(0, 0, 0, 0.12);
-  --color-border-subtle: rgba(0, 0, 0, 0.06);
-  --color-border-strong: rgba(0, 0, 0, 0.18);
-  --color-border-input: rgba(0, 0, 0, 0.14);
+  --color-border-default: rgba(0, 0, 0, 0.1);
+  --color-border-subtle: rgba(0, 0, 0, 0.05);
+  --color-border-strong: rgba(0, 0, 0, 0.16);
+  --color-border-input: rgba(0, 0, 0, 0.18);
 
   /* === SHADOW === */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.07);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.12);
-  --shadow-xl: 0 18px 40px rgba(0, 0, 0, 0.15);
+  --shadow-xl: 0 18px 40px rgba(0, 0, 0, 0.14);
 
   /* === SPECIAL / ACCENT === */
   --color-accent-amber: #d97706;
   --color-accent-green: #16a34a;
   --color-accent-red: #dc2626;
-  --color-accent-blue: #2563eb;
+  --color-accent-blue: #4a8ed4;
   --color-success: #16a34a;
   --color-error: #dc2626;
   --color-info: #4f46e5;
   --color-theme-toggle: #4a9e4a;
 
-  /* === LEGACY CONTROL VARS === */
-  --control-bg: #ffffff;
-  --control-border: #c9d1dc;
-  --control-text: #1f2430;
+  /* === ROW SELECTION === */
+  --color-row-hover: #e8eef5;
+  --color-row-selected: #9dc8ef;
+  --color-row-selected-hover: #8bbce8;
+  --color-row-selected-text: #1a2a3a;
+
 }
 
 /* Reset & Base */
@@ -136,43 +175,6 @@ body {
   min-height: 100dvh;
   background: var(--color-bg-page, #15181d);
   color: var(--color-text-primary, #f4f4f4);
-}
-
-button, input, select { font: inherit; }
-
-/* Buttons */
-button {
-  border: 0;
-  border-radius: 10px;
-  padding: 0.65rem 0.9rem;
-  background: var(--color-accent-blue, #3465a4);
-  color: #fff;
-  cursor: pointer;
-}
-button.secondary {
-  background: var(--color-btn-secondary-bg, #2e3436);
-  color: var(--color-btn-secondary-text, #fff);
-}
-button.danger {
-  background: var(--color-btn-danger-bg, #a40000);
-  color: var(--color-btn-danger-text, #fff);
-}
-button:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-/* Input & Select */
-input, select {
-  border: 1px solid var(--control-border, #555b65);
-  border-radius: 8px;
-  padding: 0.55rem;
-  background-color: var(--control-bg, #20252c);
-  color: var(--control-text, currentColor);
-}
-select option {
-  background-color: var(--control-bg, #20252c);
-  color: var(--control-text, currentColor);
 }
 
 a { color: inherit; }

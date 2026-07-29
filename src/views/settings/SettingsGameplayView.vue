@@ -1,8 +1,11 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import SettingsRow from '../../components/settings/ui/SettingsRow.vue'
 import SettingsSection from '../../components/settings/ui/SettingsSection.vue'
 import SettingsToggle from '../../components/settings/ui/SettingsToggle.vue'
+import BaseInput from '../../components/ui/BaseInput.vue'
+import BaseSelect from '../../components/ui/BaseSelect.vue'
+import BaseSlider from '../../components/ui/BaseSlider.vue'
 import type { KeyboardRangeMode } from '../../types/settings'
 import { useSettingsStore } from '../../stores/settingsStore'
 
@@ -31,20 +34,20 @@ const keyboardRangeOptions: Array<{ value: KeyboardRangeMode; labelKey: string }
 
     <SettingsSection :title="t('settings.playControls')">
       <SettingsRow :title="t('settings.defaultSpeed')" :description="t('settings.defaultSpeedDescription')">
-        <input class="settings-control compact" type="number" min="0" max="400" step="10" :value="settings.defaultSpeed" @change="settings.setSpeed(Number(($event.target as HTMLInputElement).value))" />
+        <BaseInput class="settings-control compact" type="number" min="0" max="400" step="10" :model-value="settings.defaultSpeed" @update:model-value="settings.setSpeed(Number($event))" />
         <span class="unit">%</span>
       </SettingsRow>
       <SettingsRow :title="t('settings.showDuration')" :description="t('settings.showDurationDescription')">
-        <input class="settings-control compact" type="number" min="0.25" max="10" step="0.25" :value="settings.showDuration" @change="settings.setShowDuration(Number(($event.target as HTMLInputElement).value))" />
+        <BaseInput class="settings-control compact" type="number" min="0.25" max="10" step="0.25" :model-value="settings.showDuration" @update:model-value="settings.setShowDuration(Number($event))" />
         <span class="unit">s</span>
       </SettingsRow>
       <SettingsRow :title="t('settings.inputOctaveShift')" :description="t('settings.inputOctaveShiftDescription')">
-        <input class="settings-control compact" type="number" min="-4" max="4" step="1" :value="settings.octaveShift" @change="settings.patchSettings({ octaveShift: Number(($event.target as HTMLInputElement).value) })" />
+        <BaseInput class="settings-control compact" type="number" min="-4" max="4" step="1" :model-value="settings.octaveShift" @update:model-value="settings.patchSettings({ octaveShift: Number($event) })" />
       </SettingsRow>
       <SettingsRow :title="t('settings.keyboardRange')" :description="t('settings.keyboardRangeDescription')">
-        <select class="settings-control" :value="settings.keyboardRangeMode" @change="settings.setKeyboardRangeMode(($event.target as HTMLSelectElement).value as KeyboardRangeMode)">
+        <BaseSelect class="settings-control" :model-value="settings.keyboardRangeMode" @update:model-value="settings.setKeyboardRangeMode($event as KeyboardRangeMode)">
           <option v-for="option in keyboardRangeOptions" :key="option.value" :value="option.value">{{ t(option.labelKey) }}</option>
-        </select>
+        </BaseSelect>
       </SettingsRow>
     </SettingsSection>
 
@@ -62,8 +65,7 @@ const keyboardRangeOptions: Array<{ value: KeyboardRangeMode; labelKey: string }
 
     <SettingsSection :title="t('settings.metronome')">
       <SettingsRow :title="t('settings.volume')" :description="t('settings.volumeDescription')">
-        <input class="settings-control compact" type="range" min="0" max="100" step="5" :value="settings.metronomeVolume" @input="settings.setMetronomeVolume(Number(($event.target as HTMLInputElement).value))" />
-        <span class="unit">{{ settings.metronomeVolume }}%</span>
+        <BaseSlider class="compact" :min="0" :max="100" :step="5" :model-value="settings.metronomeVolume" @update:model-value="settings.setMetronomeVolume($event)" style="flex: 1" />
       </SettingsRow>
       <SettingsRow :title="t('settings.doubleSpeed')" :description="t('settings.doubleSpeedDescription')">
         <SettingsToggle :model-value="settings.metronomeDoubleSpeed" @change="settings.setMetronomeDoubleSpeed($event)" />

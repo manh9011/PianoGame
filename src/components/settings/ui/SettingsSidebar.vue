@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 import { settingsNavigation } from '../../../modules/settings/settingsNavigation'
@@ -23,22 +23,22 @@ const { t } = useI18n()
 
 <style scoped>
 .settings-sidebar {
-  width: 10.15rem;
-  min-width: 10.15rem;
+  width: 12rem;
+  min-width: 12rem;
   border-inline-end: 1px solid var(--color-border-subtle);
   background: var(--color-bg-secondary);
 }
 
 .settings-sidebar-item {
   display: grid;
-  grid-template-columns: 1.2rem minmax(0, 1fr) auto;
+  grid-template-columns: 1.3rem minmax(0, 1fr) auto;
   align-items: center;
-  gap: 0.42rem;
-  min-height: 2.1rem;
-  padding: 0.5rem 0.38rem;
+  gap: 0.55rem;
+  min-height: 2.8rem;
+  padding: 0.7rem 0.75rem;
   border-bottom: 1px solid var(--color-border-subtle);
   color: var(--color-text-secondary);
-  font-size: 0.8rem;
+  font-size: 0.88rem;
   text-decoration: none;
 }
 

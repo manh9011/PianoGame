@@ -1,9 +1,10 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import SettingsRow from '../../components/settings/ui/SettingsRow.vue'
 import SettingsSection from '../../components/settings/ui/SettingsSection.vue'
 import SettingsToggle from '../../components/settings/ui/SettingsToggle.vue'
+import BaseSelect from '../../components/ui/BaseSelect.vue'
 import { bindInput, isWebMidiSupported, listInputs, listOutputs, requestMidiAccess, type MidiDeviceInfo } from '../../modules/midi/webMidi'
 import { useSettingsStore } from '../../stores/settingsStore'
 
@@ -47,10 +48,10 @@ function selectOutput(id: string) {
         <span class="device-count">{{ t('settings.keys18') }}</span>
       </SettingsRow>
       <SettingsRow :title="t('settings.midiInput')" :description="t('settings.midiInputDescription')">
-        <select class="settings-control" :disabled="!supported" :value="settings.midiInputId" @change="selectInput(($event.target as HTMLSelectElement).value)">
+        <BaseSelect class="settings-control" :disabled="!supported" :model-value="settings.midiInputId" @update:model-value="selectInput($event as string)">
           <option value="">{{ t('settings.noneSelected') }}</option>
           <option v-for="device in inputs" :key="device.id" :value="device.id">{{ device.name }}</option>
-        </select>
+        </BaseSelect>
       </SettingsRow>
       <SettingsRow :title="t('settings.autoConnectLastInput')" :description="t('settings.autoConnectLastInputDescription')">
         <SettingsToggle :model-value="settings.musicDevicesAutoConnectInput" @change="settings.patchSettings({ musicDevicesAutoConnectInput: $event })" />
@@ -62,10 +63,10 @@ function selectOutput(id: string) {
         <SettingsToggle :model-value="settings.musicDevicesPreferBuiltInSynth" @change="settings.patchSettings({ musicDevicesPreferBuiltInSynth: $event })" />
       </SettingsRow>
       <SettingsRow :title="t('settings.midiOutput')" :description="t('settings.midiOutputDescription')">
-        <select class="settings-control" :disabled="!supported" :value="settings.midiOutputId" @change="selectOutput(($event.target as HTMLSelectElement).value)">
+        <BaseSelect class="settings-control" :disabled="!supported" :model-value="settings.midiOutputId" @update:model-value="selectOutput($event as string)">
           <option value="">{{ t('settings.builtInMidiSynthesizer') }}</option>
           <option v-for="device in outputs" :key="device.id" :value="device.id">{{ device.name }}</option>
-        </select>
+        </BaseSelect>
       </SettingsRow>
       <SettingsRow :title="t('settings.autoConnectLastOutput')" :description="t('settings.autoConnectLastOutputDescription')">
         <SettingsToggle :model-value="settings.musicDevicesAutoConnectOutput" @change="settings.patchSettings({ musicDevicesAutoConnectOutput: $event })" />

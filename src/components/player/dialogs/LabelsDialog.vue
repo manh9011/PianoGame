@@ -1,9 +1,13 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { LabelMode } from '../../../types/settings'
 import { useSettingsStore } from '../../../stores/settingsStore'
-import BasePopover from './BasePopover.vue'
+import BasePopover from '../../ui/BasePopover.vue'
+import BaseToggle from '../../ui/BaseToggle.vue'
+import BaseSlider from '../../ui/BaseSlider.vue'
+import BaseTabs from '../../ui/BaseTabs.vue'
+import BaseOptionsList, { type BaseOptionItem } from '../../ui/BaseOptionsList.vue'
 
 interface Props {
   show: boolean
@@ -18,22 +22,27 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-const activeTab = ref<'key' | 'note'>('key')
+const activeTab = ref('key')
 const settings = useSettingsStore()
+
+const tabOptions = computed(() => [
+  { id: 'key', label: t('labelsDialog.keyLabels') },
+  { id: 'note', label: t('labelsDialog.noteLabels') }
+])
 
 type LabelOptionValue = LabelMode | 'none'
 
-const keyLabelOptions: { value: LabelOptionValue; labelKey: string }[] = [
-  { value: 'none', labelKey: 'labelsDialog.noLabels' },
-  { value: 'octaves', labelKey: 'labelsDialog.options.octaves' },
-  { value: 'finger-hint', labelKey: 'labelsDialog.options.fingerHint' },
-  { value: 'virtual-piano', labelKey: 'labelsDialog.options.virtualPiano' },
-  { value: 'english', labelKey: 'labelsDialog.options.english' },
-  { value: 'fixed-do', labelKey: 'labelsDialog.options.fixedDo' },
-  { value: 'movable-do', labelKey: 'labelsDialog.options.movableDo' },
-  { value: 'scale-number', labelKey: 'labelsDialog.options.scaleNumber' },
-  { value: 'simple', labelKey: 'labelsDialog.options.simple' },
-]
+const keyLabelOptions = computed<BaseOptionItem<LabelOptionValue>[]>(() => [
+  { value: 'none', label: t('labelsDialog.noLabels') },
+  { value: 'octaves', label: t('labelsDialog.options.octaves') },
+  { value: 'finger-hint', label: t('labelsDialog.options.fingerHint') },
+  { value: 'virtual-piano', label: t('labelsDialog.options.virtualPiano') },
+  { value: 'english', label: t('labelsDialog.options.english') },
+  { value: 'fixed-do', label: t('labelsDialog.options.fixedDo') },
+  { value: 'movable-do', label: t('labelsDialog.options.movableDo') },
+  { value: 'scale-number', label: t('labelsDialog.options.scaleNumber') },
+  { value: 'simple', label: t('labelsDialog.options.simple') },
+])
 
 const noteLabelOptions = keyLabelOptions
 
@@ -70,108 +79,41 @@ function selectNoteLabel(value: LabelOptionValue) {
     @close="emit('close')"
   >
     <div class="labels-dialog">
-      <div class="tabs">
-        <button
-          class="tab"
-          :class="{ active: activeTab === 'key' }"
-          @click="activeTab = 'key'"
-        >
-          {{ t('labelsDialog.keyLabels') }}
-        </button>
-        <button
-          class="tab"
-          :class="{ active: activeTab === 'note' }"
-          @click="activeTab = 'note'"
-        >
-          {{ t('labelsDialog.noteLabels') }}
-        </button>
-      </div>
+      <BaseTabs :tabs="tabOptions" v-model="activeTab" />
 
       <div v-if="activeTab === 'key'" class="tab-content">
-        <div class="options-list">
-          <button
-            v-for="option in keyLabelOptions"
-            :key="option.value"
-            class="option-item"
-            :class="{ selected: selectedKeyLabel === option.value }"
-            @click="selectKeyLabel(option.value)"
-          >
-            <span class="option-label">{{ t(option.labelKey) }}</span>
-            <span v-if="selectedKeyLabel === option.value" class="checkmark">✓</span>
-          </button>
-        </div>
+        <BaseOptionsList
+          :options="keyLabelOptions"
+          :model-value="selectedKeyLabel"
+          @update:model-value="selectKeyLabel"
+        />
 
         <div class="slider-row">
-          <div class="slider-header">
-            <span class="slider-label">{{ t('labelsDialog.labelSize') }}</span>
-            <span class="slider-value">{{ settings.keyLabelSize > 0 ? '+' : '' }}{{ settings.keyLabelSize }}</span>
-          </div>
-          <input
-            :value="settings.keyLabelSize"
-            @input="settings.setKeyLabelSize(Number(($event.target as HTMLInputElement).value))"
-            type="range"
-            min="-10"
-            max="25"
-            step="1"
-            class="size-slider"
-          />
+          <BaseSlider :model-value="settings.keyLabelSize" @update:model-value="(v: number) => settings.setKeyLabelSize(v)" :min="-10" :max="25" :step="1" :label="t('labelsDialog.labelSize')" show-value :format-value="(v: number) => v > 0 ? '+' + v : String(v)" />
         </div>
       </div>
 
       <div v-else class="tab-content">
-        <div class="options-list">
-          <button
-            v-for="option in noteLabelOptions"
-            :key="option.value"
-            class="option-item"
-            :class="{ selected: selectedNoteLabel === option.value }"
-            @click="selectNoteLabel(option.value)"
-          >
-            <span class="option-label">{{ t(option.labelKey) }}</span>
-            <span v-if="selectedNoteLabel === option.value" class="checkmark">✓</span>
-          </button>
-        </div>
+        <BaseOptionsList
+          :options="noteLabelOptions"
+          :model-value="selectedNoteLabel"
+          @update:model-value="selectNoteLabel"
+        />
 
         <div class="toggles-grid">
           <div class="toggle-row compact">
             <span class="toggle-label">{{ t('labelsDialog.showFingerHints') }}</span>
-            <button
-              class="toggle-switch"
-              :class="{ active: settings.showFingerHints }"
-              @click="settings.setShowFingerHints(!settings.showFingerHints)"
-            >
-              <span class="toggle-track"></span>
-              <span class="toggle-thumb"></span>
-            </button>
+            <BaseToggle :model-value="settings.showFingerHints" @update:model-value="(v) => settings.setShowFingerHints(v)" />
           </div>
 
           <div class="toggle-row compact">
             <span class="toggle-label">{{ t('settings.coloredFingerHints') }}</span>
-            <button
-              class="toggle-switch"
-              :class="{ active: settings.showColoredFingerHints }"
-              @click="settings.setShowColoredFingerHints(!settings.showColoredFingerHints)"
-            >
-              <span class="toggle-track"></span>
-              <span class="toggle-thumb"></span>
-            </button>
+            <BaseToggle :model-value="settings.showColoredFingerHints" @update:model-value="(v) => settings.setShowColoredFingerHints(v)" />
           </div>
         </div>
 
         <div class="slider-row">
-          <div class="slider-header">
-            <span class="slider-label">{{ t('labelsDialog.labelSize') }}</span>
-            <span class="slider-value">{{ settings.noteLabelSize > 0 ? '+' : '' }}{{ settings.noteLabelSize }}</span>
-          </div>
-          <input
-            :value="settings.noteLabelSize"
-            @input="settings.setNoteLabelSize(Number(($event.target as HTMLInputElement).value))"
-            type="range"
-            min="-10"
-            max="25"
-            step="1"
-            class="size-slider"
-          />
+          <BaseSlider :model-value="settings.noteLabelSize" @update:model-value="(v: number) => settings.setNoteLabelSize(v)" :min="-10" :max="25" :step="1" :label="t('labelsDialog.labelSize')" show-value :format-value="(v: number) => v > 0 ? '+' + v : String(v)" />
         </div>
       </div>
     </div>
@@ -180,33 +122,12 @@ function selectNoteLabel(value: LabelOptionValue) {
 
 <style scoped>
 .labels-dialog { display: flex; flex-direction: column; gap: 0.42rem; }
-.tabs { display: flex; gap: 0; border-radius: 8px; overflow: hidden; background: var(--color-bg-subtle); border: 1px solid var(--color-border-default); }
-.tab { flex: 1; padding: 0.58rem 0.9rem; border: none; background: transparent; color: var(--color-text-secondary); font-size: 0.95rem; font-weight: 500; cursor: pointer; transition: all 0.2s ease; border-radius: 0; }
-.tab.active { background: rgba(74, 222, 128, 0.15); color: var(--color-text-primary); }
 .tab-content { display: flex; flex-direction: column; gap: 0.42rem; }
-.options-list { display: flex; flex-direction: column; gap: 0; border-radius: 8px; overflow: hidden; border: 1px solid var(--color-border-default); }
-.option-item { display: flex; align-items: center; justify-content: space-between; padding: 0.42rem 0.5rem; border: none; border-bottom: 1px solid rgba(255, 255, 255, 0.08); background: var(--color-bg-subtle); color: var(--color-text-primary); font-size: 0.92rem; text-align: start; cursor: pointer; transition: all 0.2s ease; border-radius: 0; }
-.option-item:last-child { border-bottom: none; }
-.option-item:hover { background: var(--color-bg-subtle); }
-.option-item.selected { background: rgba(74, 222, 128, 0.15); }
-.option-label { flex: 1; }
-.checkmark { color: #4ade80; font-size: 1.05rem; font-weight: bold; }
 .toggles-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.42rem; }
 .toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.6rem 0.75rem; border-radius: 8px; background: var(--color-bg-subtle); border: 1px solid var(--color-border-default); }
 .toggle-row.compact { min-width: 0; }
 .toggle-label { color: var(--color-text-primary); font-size: 0.88rem; font-weight: 500; line-height: 1.25; }
-.toggle-switch { position: relative; width: 50px; height: 28px; padding: 0; border: none; border-radius: 14px; background: transparent; cursor: pointer; flex-shrink: 0; transition: all 0.3s ease; }
-.toggle-track { position: absolute; inset: 0; border-radius: 14px; background: #5a5c61; transition: background 0.3s ease; }
-.toggle-switch.active .toggle-track { background: #4ade80; }
-.toggle-thumb { position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #ffffff; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); transition: transform 0.3s ease; }
-.toggle-switch.active .toggle-thumb { transform: translateX(22px); }
 .slider-row { display: flex; flex-direction: column; gap: 0.55rem; padding: 0.6rem 0.75rem; border-radius: 8px; background: var(--color-bg-subtle); border: 1px solid var(--color-border-default); }
-.slider-header { display: flex; align-items: center; justify-content: space-between; }
-.slider-label { color: var(--color-text-primary); font-size: 0.9rem; font-weight: 500; }
-.slider-value { color: var(--color-text-secondary); font-size: 0.86rem; }
-.size-slider { width: 100%; height: 6px; border-radius: 3px; background: #5a5c61; outline: none; -webkit-appearance: none; appearance: none; }
-.size-slider::-webkit-slider-thumb { width: 18px; height: 18px; border-radius: 50%; background: #e3e4e8; cursor: pointer; -webkit-appearance: none; appearance: none; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); }
-.size-slider::-moz-range-thumb { width: 18px; height: 18px; border: none; border-radius: 50%; background: #e3e4e8; cursor: pointer; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); }
 @media (max-width: 520px) {
   .toggles-grid { grid-template-columns: 1fr; }
 }

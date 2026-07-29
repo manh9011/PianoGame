@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import BasePopover from './BasePopover.vue'
+import BasePopover from '../../ui/BasePopover.vue'
 import TrackConfigPanel from '../track-config/TrackConfigPanel.vue'
 
 interface Props {

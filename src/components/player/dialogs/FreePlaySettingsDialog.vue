@@ -1,7 +1,9 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import BasePopover from './BasePopover.vue'
+import BasePopover from '../../ui/BasePopover.vue'
+import BaseToggle from '../../ui/BaseToggle.vue'
+import BaseSlider from '../../ui/BaseSlider.vue'
 import { FREE_PLAY_KEY_SIGNATURES, useFreePlayStore } from '../../../stores/freePlayStore'
 
 interface Props {
@@ -41,39 +43,21 @@ const currentKeyName = computed(() => (
     : selectedKeySignatureNames.value[1] ?? selectedKeySignatureNames.value[0]
 ))
 
-function toggleSetting(key: FreePlaySettingsRowKey) {
-  if (key === 'showColorInstrument') freePlay.setShowColorInstrument(!freePlay.showColorInstrument)
-  else if (key === 'showRecordedTracks') freePlay.setShowRecordedTracks(!freePlay.showRecordedTracks)
-  else freePlay.setShowChordName(!freePlay.showChordName)
-}
-
-function toggleKeySignatureMode() {
-  freePlay.setKeySignatureMode(isMajorKeySignature.value ? 'minor' : 'major')
+function toggleSetting(key: FreePlaySettingsRowKey, value: boolean) {
+  if (key === 'showColorInstrument') freePlay.setShowColorInstrument(value)
+  else if (key === 'showRecordedTracks') freePlay.setShowRecordedTracks(value)
+  else freePlay.setShowChordName(value)
 }
 </script>
 
 <template>
-  <BasePopover
-    :show="show"
-    :popup-style="popupStyle"
-    :arrow-style="arrowStyle"
-    :arrow-placement="arrowPlacement"
-    width="500px"
-    @close="emit('close')"
-  >
+  <BasePopover :show="show" :popup-style="popupStyle" :arrow-style="arrowStyle" :arrow-placement="arrowPlacement"
+    width="500px" @close="emit('close')">
     <div class="free-play-settings">
       <section class="settings-group">
         <div v-for="row in rows" :key="row.key" class="setting-row">
           <span class="setting-label">{{ row.label }}</span>
-          <button
-            class="toggle-switch"
-            :class="{ active: freePlay[row.key] }"
-            :aria-pressed="freePlay[row.key]"
-            @click="toggleSetting(row.key)"
-          >
-            <span class="toggle-track"></span>
-            <span class="toggle-thumb"></span>
-          </button>
+          <BaseToggle :model-value="freePlay[row.key]" @update:model-value="(v) => toggleSetting(row.key, v)" />
         </div>
       </section>
 
@@ -81,33 +65,14 @@ function toggleKeySignatureMode() {
         <div class="setting-row key-signature-row">
           <span class="setting-label">{{ t('freePlay.keySignature') }}</span>
           <div class="key-signature-preview">
-            <img
-              class="key-signature-image"
-              :src="selectedKeySignature.src"
-              :alt="currentKeyName"
-            />
+            <img class="key-signature-image" :src="selectedKeySignature.src" :alt="currentKeyName" />
           </div>
-          <input
-            v-model.number="keySignatureIndex"
-            class="key-slider"
-            type="range"
-            min="0"
-            :max="FREE_PLAY_KEY_SIGNATURES.length - 1"
-            step="1"
-            :aria-label="t('freePlay.keySignature')"
-          />
+          <BaseSlider v-model="keySignatureIndex" :min="0" :max="FREE_PLAY_KEY_SIGNATURES.length - 1" :step="1" />
         </div>
         <div class="setting-row">
           <span class="setting-label">{{ t('freePlay.major') }}</span>
-          <button
-            class="toggle-switch"
-            :class="{ active: isMajorKeySignature }"
-            :aria-pressed="isMajorKeySignature"
-            @click="toggleKeySignatureMode"
-          >
-            <span class="toggle-track"></span>
-            <span class="toggle-thumb"></span>
-          </button>
+          <BaseToggle :model-value="isMajorKeySignature"
+            @update:model-value="(v) => freePlay.setKeySignatureMode(v ? 'major' : 'minor')" />
         </div>
         <div class="current-key">{{ currentKeyName }}</div>
       </section>
@@ -182,39 +147,6 @@ function toggleKeySignatureMode() {
   filter: invert(1);
 }
 
-.key-slider {
-  flex: 1;
-  min-width: 0;
-  height: 6px;
-  border-radius: 999px;
-  background: #9a9a9a;
-  outline: none;
-  accent-color: #ffffff;
-  -webkit-appearance: none;
-  appearance: none;
-}
-
-.key-slider::-webkit-slider-thumb {
-  width: 20px;
-  height: 20px;
-  border: 2px solid rgba(0, 0, 0, 0.2);
-  border-radius: 50%;
-  background: #ffffff;
-  cursor: pointer;
-  -webkit-appearance: none;
-  appearance: none;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
-}
-
-.key-slider::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  border: 2px solid rgba(0, 0, 0, 0.2);
-  border-radius: 50%;
-  background: #ffffff;
-  cursor: pointer;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
-}
 
 .current-key {
   color: var(--color-text-primary);
@@ -222,45 +154,4 @@ function toggleKeySignatureMode() {
   text-align: center;
   padding: 0.6rem 0.7rem 0.7rem;
 }
-
-.toggle-switch {
-  position: relative;
-  width: 50px;
-  height: 28px;
-  padding: 0;
-  border: none;
-  border-radius: 14px;
-  background: transparent;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.toggle-track {
-  position: absolute;
-  inset: 0;
-  border-radius: 14px;
-  background: #5a5c61;
-  transition: background 0.3s ease;
-}
-
-.toggle-switch.active .toggle-track {
-  background: #4ade80;
-}
-
-.toggle-thumb {
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: #ffffff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  transition: transform 0.3s ease;
-}
-
-.toggle-switch.active .toggle-thumb {
-  transform: translateX(22px);
-}
 </style>
-

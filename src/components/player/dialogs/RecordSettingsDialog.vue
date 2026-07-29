@@ -1,7 +1,9 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import BasePopover from './BasePopover.vue'
+import BasePopover from '../../ui/BasePopover.vue'
+import BaseToggle from '../../ui/BaseToggle.vue'
+import BaseSlider from '../../ui/BaseSlider.vue'
 import { useSettingsStore } from '../../../stores/settingsStore'
 
 interface Props {
@@ -37,33 +39,16 @@ const outputVolume = computed({
     <div class="record-settings-dialog">
       <div class="setting-item">
         <span class="setting-label">{{ t('settings.fallingNotes') }}</span>
-        <button class="toggle-switch" :class="{ active: settings.showFallingNotes }" @click="settings.showFallingNotes = !settings.showFallingNotes; settings.persist()">
-          <span class="toggle-track"></span>
-          <span class="toggle-thumb"></span>
-        </button>
+        <BaseToggle :model-value="settings.showFallingNotes" @update:model-value="(v) => { settings.showFallingNotes = v; settings.persist() }" />
       </div>
 
       <div class="setting-item">
         <span class="setting-label">{{ t('settings.fallingMeasureLines') }}</span>
-        <button class="toggle-switch" :class="{ active: settings.showGrid }" @click="settings.showGrid = !settings.showGrid; settings.persist()">
-          <span class="toggle-track"></span>
-          <span class="toggle-thumb"></span>
-        </button>
+        <BaseToggle :model-value="settings.showGrid" @update:model-value="(v) => { settings.showGrid = v; settings.persist() }" />
       </div>
 
       <div class="setting-block">
-        <div class="setting-label-row">
-          <span class="setting-label">{{ t('record.outputVolume') }}</span>
-          <span class="setting-value">{{ outputVolume }}%</span>
-        </div>
-        <input
-          v-model.number="outputVolume"
-          class="slider"
-          type="range"
-          min="0"
-          max="200"
-          step="1"
-        />
+        <BaseSlider v-model="outputVolume" :min="0" :max="200" :step="1" :label="t('record.outputVolume')" show-value />
       </div>
     </div>
   </BasePopover>
@@ -93,61 +78,10 @@ const outputVolume = computed({
   justify-content: space-between;
 }
 
-.setting-label-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-}
-
-.setting-label,
-.setting-value {
+.setting-label {
   color: var(--color-text-primary);
 }
 
-.slider {
-  width: 100%;
-}
 
-.toggle-switch {
-  position: relative;
-  width: 50px;
-  height: 28px;
-  padding: 0;
-  border: none;
-  border-radius: 14px;
-  background: transparent;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: all 0.3s ease;
-}
-
-.toggle-track {
-  position: absolute;
-  inset: 0;
-  border-radius: 14px;
-  background: #5a5c61;
-  transition: background 0.3s ease;
-}
-
-.toggle-switch.active .toggle-track {
-  background: #4ade80;
-}
-
-.toggle-thumb {
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: #ffffff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  transition: transform 0.3s ease;
-}
-
-.toggle-switch.active .toggle-thumb {
-  transform: translateX(22px);
-}
 </style>
 

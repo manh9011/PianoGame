@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 interface Props {
   show: boolean
   title?: string
@@ -137,4 +137,3 @@ function handleOverlayClick(event: MouseEvent) {
   opacity: 0;
 }
 </style>
-

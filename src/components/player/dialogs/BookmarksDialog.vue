@@ -1,8 +1,11 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, ref, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePlayerStore } from '../../../stores/playerStore'
 import { useSettingsStore } from '../../../stores/settingsStore'
+import BaseToggle from '../../ui/BaseToggle.vue'
+import BaseButton from '../../ui/BaseButton.vue'
+import BaseInput from '../../ui/BaseInput.vue'
 
 interface Props {
   show: boolean
@@ -75,53 +78,25 @@ function clearAllUserBookmarks() {
               <div class="bookmark-item my">
                 <i class="fa fa-bookmark"></i>
                 <span class="bookmark-label">{{ t('dialogs.myBookmarks') }}</span>
-                <button
-                  class="toggle-switch"
-                  :class="{ active: settings.showMyBookmarks }"
-                  @click="settings.setShowMyBookmarks(!settings.showMyBookmarks)"
-                >
-                  <span class="toggle-track"></span>
-                  <span class="toggle-thumb"></span>
-                </button>
+                <BaseToggle :model-value="settings.showMyBookmarks" @update:model-value="(v) => settings.setShowMyBookmarks(v)" />
               </div>
 
               <div class="bookmark-item metadata">
                 <i class="fa fa-bookmark"></i>
                 <span class="bookmark-label">{{ t('dialogs.metadataBookmarks') }}</span>
-                <button
-                  class="toggle-switch"
-                  :class="{ active: settings.showMetadataBookmarks }"
-                  @click="settings.setShowMetadataBookmarks(!settings.showMetadataBookmarks)"
-                >
-                  <span class="toggle-track"></span>
-                  <span class="toggle-thumb"></span>
-                </button>
+                <BaseToggle :model-value="settings.showMetadataBookmarks" @update:model-value="(v) => settings.setShowMetadataBookmarks(v)" />
               </div>
 
               <div class="bookmark-item key-signature">
                 <i class="fa fa-bookmark"></i>
                 <span class="bookmark-label">{{ t('dialogs.keySignatures') }}</span>
-                <button
-                  class="toggle-switch"
-                  :class="{ active: settings.showKeySignatureBookmarks }"
-                  @click="settings.setShowKeySignatureBookmarks(!settings.showKeySignatureBookmarks)"
-                >
-                  <span class="toggle-track"></span>
-                  <span class="toggle-thumb"></span>
-                </button>
+                <BaseToggle :model-value="settings.showKeySignatureBookmarks" @update:model-value="(v) => settings.setShowKeySignatureBookmarks(v)" />
               </div>
 
               <div class="bookmark-item midi-marker">
                 <i class="fa fa-bookmark"></i>
                 <span class="bookmark-label">{{ t('dialogs.midiMarkers') }}</span>
-                <button
-                  class="toggle-switch"
-                  :class="{ active: settings.showMidiMarkers }"
-                  @click="settings.setShowMidiMarkers(!settings.showMidiMarkers)"
-                >
-                  <span class="toggle-track"></span>
-                  <span class="toggle-thumb"></span>
-                </button>
+                <BaseToggle :model-value="settings.showMidiMarkers" @update:model-value="(v) => settings.setShowMidiMarkers(v)" />
               </div>
             </div>
 
@@ -142,12 +117,12 @@ function clearAllUserBookmarks() {
                   :key="bookmark.id"
                   class="user-bookmark-item"
                 >
-                  <button class="bookmark-go-btn" @click="goToBookmark(bookmark.id)" :title="t('dialogs.goToBookmark')">
+                  <BaseButton variant="icon" @click="goToBookmark(bookmark.id)" :title="t('dialogs.goToBookmark')">
                     <i class="fas fa-play"></i>
-                  </button>
+                  </BaseButton>
                   <div class="bookmark-info" @dblclick="startEdit(bookmark.id, bookmark.label)">
                     <template v-if="editingId === bookmark.id">
-                      <input
+                      <BaseInput
                         v-model="editingLabel"
                         class="bookmark-edit-input"
                         @keyup.enter="saveEdit"
@@ -160,15 +135,15 @@ function clearAllUserBookmarks() {
                       <span class="bookmark-time">{{ formatTime(bookmark.timeUs) }}</span>
                     </template>
                   </div>
-                  <button class="bookmark-delete-btn" @click="removeBookmark(bookmark.id)" :title="t('dialogs.deleteBookmark')">
+                  <BaseButton variant="icon" @click="removeBookmark(bookmark.id)" :title="t('dialogs.deleteBookmark')">
                     <i class="fas fa-times"></i>
-                  </button>
+                  </BaseButton>
                 </div>
               </div>
-              <button class="clear-bookmarks-btn" @click="clearAllUserBookmarks">
+              <BaseButton variant="danger" class="clear-bookmarks-btn" @click="clearAllUserBookmarks">
                 <i class="fas fa-trash"></i>
                 {{ t('dialogs.clearUserBookmarks') }}
-              </button>
+              </BaseButton>
             </div>
           </div>
         </div>
@@ -251,46 +226,6 @@ function clearAllUserBookmarks() {
   font-weight: 500;
 }
 
-.toggle-switch {
-  position: relative;
-  width: 50px;
-  height: 28px;
-  padding: 0;
-  border: none;
-  border-radius: 14px;
-  background: transparent;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: all 0.3s ease;
-}
-
-.toggle-track {
-  position: absolute;
-  inset: 0;
-  border-radius: 14px;
-  background: #5a5c61;
-  transition: background 0.3s ease;
-}
-
-.toggle-switch.active .toggle-track {
-  background: #4ade80;
-}
-
-.toggle-thumb {
-  position: absolute;
-  top: 3px;
-  inset-inline-start: 3px;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: #ffffff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  transition: transform 0.3s ease;
-}
-
-.toggle-switch.active .toggle-thumb {
-  transform: translateX(22px);
-}
 
 .user-bookmarks-section {
   margin-top: 0.5rem;
@@ -346,27 +281,6 @@ function clearAllUserBookmarks() {
   border-color: rgba(255, 187, 50, 0.25);
 }
 
-.bookmark-go-btn {
-  width: 26px;
-  height: 26px;
-  padding: 0;
-  border: none;
-  border-radius: 50%;
-  background: rgba(255, 187, 50, 0.2);
-  color: #FFBB32;
-  font-size: 0.7rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  flex-shrink: 0;
-}
-
-.bookmark-go-btn:hover {
-  background: #FFBB32;
-  color: #1a1a1a;
-}
 
 .bookmark-info {
   flex: 1;
@@ -401,49 +315,9 @@ function clearAllUserBookmarks() {
   outline: none;
 }
 
-.bookmark-delete-btn {
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  border: none;
-  border-radius: 4px;
-  background: transparent;
-  color: #6b7280;
-  font-size: 0.8rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  flex-shrink: 0;
-}
-
-.bookmark-delete-btn:hover {
-  background: rgba(239, 68, 68, 0.2);
-  color: #ef4444;
-}
-
 .clear-bookmarks-btn {
   width: 100%;
   margin-top: 0.5rem;
-  padding: 0.6rem 1rem;
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  border-radius: 6px;
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
-  font-size: 0.85rem;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.clear-bookmarks-btn:hover {
-  background: rgba(239, 68, 68, 0.2);
-  border-color: rgba(239, 68, 68, 0.5);
 }
 
 .info-text {

@@ -1,8 +1,9 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { usePlayerStore } from '../../stores/playerStore'
+import BaseButton from '../ui/BaseButton.vue'
 import { getTempoPointAtMicroseconds, microsecondsPerQuarterToBpm } from '../../modules/midi/midiTempo'
 
 const DEBUG = import.meta.env.DEV
@@ -94,96 +95,67 @@ function decreaseSpeed() {
   <header v-if="player.session" class="play-top-bar">
     <div class="top-main-row">
       <div class="left-controls">
-        <button class="top-button secondary" :title="t('play.backToModes')" @click="back">{{ t('common.back') }}</button>
-        <button
-          class="top-button secondary help-toggle"
-          :class="{ 'help-toggle--active': helpOverlayOpen }"
-          :aria-pressed="helpOverlayOpen"
-          :title="t('play.helpToggle')"
-          @click="emit('toggleHelp')"
-        >
+        <BaseButton variant="secondary" :title="t('play.backToModes')" @click="back">{{ t('common.back') }}</BaseButton>
+        <BaseButton variant="secondary" :active="helpOverlayOpen" :title="t('play.helpToggle')" @click="emit('toggleHelp')">
           {{ t('play.help') }}
-        </button>
-        <button
+        </BaseButton>
+        <BaseButton
           v-if="DEBUG"
-          class="top-button secondary benchmark-toggle"
-          :class="{ 'benchmark-toggle--active': benchmarkMode }"
-          :aria-pressed="benchmarkMode"
+          variant="secondary"
+          :active="benchmarkMode"
           :title="t('play.benchmarkToggle')"
           @click="emit('toggleBenchmark')"
         >
           {{ t('play.benchmark') }}
-        </button>
-        <button
+        </BaseButton>
+        <BaseButton
           v-if="DEBUG"
-          class="top-button secondary benchmark-toggle"
-          :class="{ 'benchmark-toggle--active': performanceAutoPlay }"
-          :aria-pressed="performanceAutoPlay"
+          variant="secondary"
+          :active="performanceAutoPlay"
           :title="t('perf.autoPlayTest')"
           @click="emit('togglePerformanceAutoPlay')"
         >
           {{ t('perf.autoPlayTest') }}
-        </button>
+        </BaseButton>
       </div>
 
       <div class="center-controls">
-        <button
-          class="icon-button"
-          data-help-anchor="play-pause"
-          :disabled="playbackControlsDisabled"
-          :title="playButtonTitle"
-          :aria-label="player.playbackRunning ? t('play.stop') : t('play.play')"
-          @click="togglePlayback"
-        >
+        <BaseButton variant="icon" data-help-anchor="play-pause" :disabled="playbackControlsDisabled" :title="playButtonTitle" :aria-label="player.playbackRunning ? t('play.stop') : t('play.play')" @click="togglePlayback">
           <i :class="player.playbackRunning ? 'fas fa-stop' : 'fas fa-play'"></i>
-        </button>
-        <button class="icon-button" data-help-anchor="previous-bookmark" :disabled="seekControlsDisabled" :title="t('play.previousBookmark')" :aria-label="t('play.previousBookmark')" @click="seekToPreviousBookmark">
+        </BaseButton>
+        <BaseButton variant="icon" data-help-anchor="previous-bookmark" :disabled="seekControlsDisabled" :title="t('play.previousBookmark')" :aria-label="t('play.previousBookmark')" @click="seekToPreviousBookmark">
           <i class="fas fa-step-backward"></i>
-        </button>
-        <button class="icon-button" data-help-anchor="next-bookmark" :disabled="seekControlsDisabled" :title="t('play.nextBookmark')" :aria-label="t('play.nextBookmark')" @click="seekToNextBookmark">
+        </BaseButton>
+        <BaseButton variant="icon" data-help-anchor="next-bookmark" :disabled="seekControlsDisabled" :title="t('play.nextBookmark')" :aria-label="t('play.nextBookmark')" @click="seekToNextBookmark">
           <i class="fas fa-step-forward"></i>
-        </button>
+        </BaseButton>
 
         <div class="tempo-control">
-          <button
-            class="tempo-btn"
-            data-help-anchor="speed-down"
-            :disabled="speedControlsDisabled"
-            :title="t('play.speedDown')"
-            @click="decreaseSpeed"
-            :aria-label="t('play.speedDown')"
-          >
+          <BaseButton variant="icon" data-help-anchor="speed-down" :disabled="speedControlsDisabled" :title="t('play.speedDown')" :aria-label="t('play.speedDown')" @click="decreaseSpeed">
             <i class="fas fa-minus"></i>
-          </button>
+          </BaseButton>
           <div class="tempo-display">
             <div class="tempo-percent">{{ currentSpeed }}%</div>
             <div class="tempo-bpm">{{ t('play.bpmLabel', { value: currentBPM }) }}</div>
           </div>
-          <button
-            class="tempo-btn"
-            data-help-anchor="speed-up"
-            :disabled="speedControlsDisabled"
-            :title="t('play.speedUp')"
-            @click="increaseSpeed"
-            :aria-label="t('play.speedUp')"
-          >
+          <BaseButton variant="icon" data-help-anchor="speed-up" :disabled="speedControlsDisabled" :title="t('play.speedUp')" :aria-label="t('play.speedUp')" @click="increaseSpeed">
             <i class="fas fa-plus"></i>
-          </button>
+          </BaseButton>
         </div>
       </div>
 
       <div class="right-controls">
-        <button class="icon-button" data-help-anchor="settings" :title="t('common.settings')" :aria-label="t('common.settings')" @click="(e) => emit('openSettings', e)"><i class="fas fa-cog"></i></button>
-        <button class="icon-button" data-help-anchor="metronome" :title="t('play.metronome')" :aria-label="t('play.metronome')" @click="(e) => emit('openMetronome', e)"><i class="fas fa-drum"></i></button>
-        <button class="icon-button" data-help-anchor="track-config" :title="t('play.trackConfig')" :aria-label="t('play.trackConfig')" @click="(e) => emit('openTrackConfig', e)"><i class="fas fa-sliders-h"></i></button>
-        <button class="icon-button" data-help-anchor="keyboard-range" :title="t('play.keyboardRange')" :aria-label="t('play.keyboardRange')" @click="(e) => emit('openKeyboardRange', e)"><i class="fas fa-keyboard"></i></button>
-        <button class="icon-button" data-help-anchor="finger-hints" :class="{ 'finger-active': fingerDialogOpen }" :title="t('play.fingerHints')" :aria-label="t('play.fingerHints')" @click="(e) => emit('openFinger', e)"><i class="fas fa-hand"></i></button>
-        <button class="icon-button" data-help-anchor="bookmarks" :class="{ 'bookmark-active': bookmarksDialogOpen }" :title="t('play.bookmarks')" :aria-label="t('play.bookmarks')" @click="emit('openBookmarks')"><i class="fas fa-bookmark"></i></button>
-        <button class="icon-button" data-help-anchor="note-labels" :title="t('play.noteLabels')" :aria-label="t('play.noteLabels')" @click="(e) => emit('openLabels', e)"><i class="fas fa-tags"></i></button>
-        <button class="icon-button" data-help-anchor="looping" :class="{ 'loop-active': loopActive || loopDialogOpen }" :title="t('play.loop')" :aria-label="t('play.loop')" @click="(e) => emit('openLoop', e)"><i class="fas fa-repeat"></i></button>
-        <button class="icon-button" data-help-anchor="fullscreen" :title="isFullscreen ? t('play.exitFullscreen') : t('play.fullscreen')" :aria-label="isFullscreen ? t('play.exitFullscreen') : t('play.fullscreen')" @click="emit('toggleFullscreen')">
+        <BaseButton variant="icon" data-help-anchor="settings" :title="t('common.settings')" :aria-label="t('common.settings')" @click="(e) => emit('openSettings', e)"><i class="fas fa-cog"></i></BaseButton>
+        <BaseButton variant="icon" data-help-anchor="metronome" :title="t('play.metronome')" :aria-label="t('play.metronome')" @click="(e) => emit('openMetronome', e)"><i class="fas fa-drum"></i></BaseButton>
+        <BaseButton variant="icon" data-help-anchor="track-config" :title="t('play.trackConfig')" :aria-label="t('play.trackConfig')" @click="(e) => emit('openTrackConfig', e)"><i class="fas fa-sliders-h"></i></BaseButton>
+        <BaseButton variant="icon" data-help-anchor="keyboard-range" :title="t('play.keyboardRange')" :aria-label="t('play.keyboardRange')" @click="(e) => emit('openKeyboardRange', e)"><i class="fas fa-keyboard"></i></BaseButton>
+        <BaseButton variant="icon" data-help-anchor="finger-hints" :active="fingerDialogOpen" :title="t('play.fingerHints')" :aria-label="t('play.fingerHints')" @click="(e) => emit('openFinger', e)"><i class="fas fa-hand"></i></BaseButton>
+        <BaseButton variant="icon" data-help-anchor="bookmarks" :active="bookmarksDialogOpen" :title="t('play.bookmarks')" :aria-label="t('play.bookmarks')" @click="emit('openBookmarks')"><i class="fas fa-bookmark"></i></BaseButton>
+        <BaseButton variant="icon" data-help-anchor="note-labels" :title="t('play.noteLabels')" :aria-label="t('play.noteLabels')" @click="(e) => emit('openLabels', e)"><i class="fas fa-tags"></i></BaseButton>
+        <BaseButton variant="icon" data-help-anchor="looping" :active="loopActive || loopDialogOpen" :title="t('play.loop')" :aria-label="t('play.loop')" @click="(e) => emit('openLoop', e)"><i class="fas fa-repeat"></i></BaseButton>
+        <BaseButton variant="icon" data-help-anchor="fullscreen" :title="isFullscreen ? t('play.exitFullscreen') : t('play.fullscreen')" :aria-label="isFullscreen ? t('play.exitFullscreen') : t('play.fullscreen')" @click="emit('toggleFullscreen')">
           <i :class="isFullscreen ? 'fas fa-compress' : 'fas fa-expand'"></i>
-        </button>
+        </BaseButton>
       </div>
     </div>
   </header>
@@ -219,123 +191,14 @@ function decreaseSpeed() {
   justify-content: center;
 }
 
-.top-button {
-  padding: 0.4rem 0.75rem;
-  border-radius: 6px;
-  border: 1px solid var(--color-border-strong);
-  background: var(--color-bg-secondary);
-  color: var(--color-text-primary);
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.top-button:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.top-button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.top-button.benchmark-toggle--active,
-.top-button.help-toggle--active {
-  color: var(--color-accent-amber);
-  background: rgba(251, 191, 36, 0.15);
-  border-color: rgba(251, 191, 36, 0.4);
-}
-
-.top-button.benchmark-toggle--active:hover:not(:disabled),
-.top-button.help-toggle--active:hover:not(:disabled) {
-  background: rgba(251, 191, 36, 0.25);
-  border-color: rgba(251, 191, 36, 0.5);
-}
-
-.icon-button {
-  width: 36px;
-  height: 36px;
-  padding: 0;
-  border-radius: 6px;
-  border: 1px solid var(--color-border-default);
-  background: var(--color-bg-secondary);
-  color: var(--color-text-primary);
-  font-size: 1.1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.icon-button:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.25);
-}
-
-.icon-button:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.icon-button.bookmark-active {
-  color: #FFBB32;
-  background: rgba(255, 187, 50, 0.15);
-  border-color: rgba(255, 187, 50, 0.4);
-}
-
-.icon-button.bookmark-active:hover {
-  background: rgba(255, 187, 50, 0.25);
-  border-color: rgba(255, 187, 50, 0.5);
-}
-
-.icon-button.loop-active,
-.icon-button.finger-active {
-  color: var(--color-accent-amber);
-  background: rgba(251, 191, 36, 0.15);
-  border-color: rgba(251, 191, 36, 0.4);
-}
-
-.icon-button.loop-active:hover,
-.icon-button.finger-active:hover {
-  background: rgba(251, 191, 36, 0.25);
-  border-color: rgba(251, 191, 36, 0.5);
-}
-
 .tempo-control {
   display: flex;
   align-items: center;
   gap: 0.4rem;
 }
 
-.tempo-btn {
-  width: 36px;
+.left-controls .base-btn {
   height: 36px;
-  padding: 0;
-  border: 1px solid var(--color-border-strong);
-  border-radius: 6px;
-  background: var(--color-bg-secondary);
-  color: var(--color-text-primary);
-  font-size: 0.9rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.tempo-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.3);
-}
-
-.tempo-btn:active:not(:disabled) {
-  background: rgba(0, 0, 0, 0.3);
-}
-
-.tempo-btn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
 }
 
 .tempo-display {
@@ -344,6 +207,7 @@ function decreaseSpeed() {
   align-items: center;
   justify-content: center;
   min-width: 4.5rem;
+  height: 36px;
   padding: 0 0.6rem;
   border-radius: 4px;
   background: var(--color-bg-subtle);

@@ -144,7 +144,7 @@ function calculatePopupPosition(element: HTMLElement, popupWidth: number, popupH
     top = Math.max(margin, window.innerHeight - popupHeight - margin)
   }
 
-  const arrowTop = rect.top + rect.height / 2 - top
+  const arrowTop = Math.max(12, Math.min(popupHeight - 24, rect.top + rect.height / 2 - top - 7))
 
   return {
     popupStyle: { top: `${top}px`, left: `${left}px` },
@@ -225,7 +225,7 @@ function openLabels(event: MouseEvent) {
   }
   closeAllDialogs()
   const element = event.currentTarget as HTMLElement
-  const { popupStyle, arrowStyle, arrowPlacement } = calculatePopupPosition(element, 360, 500)
+  const { popupStyle, arrowStyle, arrowPlacement } = calculatePopupPosition(element, 430, 520)
   labelsPopupStyle.value = popupStyle
   labelsArrowStyle.value = arrowStyle
   labelsArrowPlacement.value = arrowPlacement

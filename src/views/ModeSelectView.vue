@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
@@ -16,6 +16,8 @@ import { formatDateTime } from '../i18n/formatters'
 import AchievementCelebration from '../components/player/AchievementCelebration.vue'
 import ModeScoreTimeline from '../components/player/ModeScoreTimeline.vue'
 import type { AchievementCelebration as AchievementCelebrationState } from '../stores/profileStore'
+
+import BaseButton from '../components/ui/BaseButton.vue'
 
 const DEBUG = import.meta.env.DEV
 const route = useRoute()
@@ -296,14 +298,14 @@ function goToTrackSettings() {
     />
     <header class="setup-header">
       <div class="header-actions">
-        <button class="header-button secondary" @click="router.push('/library')">{{ t('modeSelect.songs') }}</button>
-        <button v-if="DEBUG" class="header-button secondary" @click="testAchievementCelebration">{{ t('modeSelect.testCelebration') }}</button>
+        <BaseButton variant="secondary" class="header-btn" @click="router.push('/library')">{{ t('modeSelect.songs') }}</BaseButton>
+        <BaseButton v-if="DEBUG" variant="secondary" class="header-btn" @click="testAchievementCelebration">{{ t('modeSelect.testCelebration') }}</BaseButton>
       </div>
       <div class="song-heading">
         <span class="top-score" :style="achievementColorStyle(selectedAchievementScore, maxPoints(handSelection))">{{ selectedBestGameplay }}</span>
         <span class="song-title">{{ player.song?.title }}</span>
       </div>
-      <button class="header-button secondary" @click="startPlay">{{ t('modeSelect.continue') }}</button>
+      <BaseButton variant="primary" class="header-btn" @click="startPlay">{{ t('modeSelect.continue') }}</BaseButton>
     </header>
 
     <section class="setup-modes">
@@ -509,8 +511,8 @@ function goToTrackSettings() {
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 0.75rem;
-  min-height: 45px;
-  padding: 0.35rem 0.5rem;
+  min-height: 48px;
+  padding: 0.35rem 0.75rem;
   background: var(--color-bg-header);
 }
 
@@ -520,12 +522,13 @@ function goToTrackSettings() {
   gap: 0.45rem;
 }
 
+.setup-header :deep(.base-btn),
 .header-button {
-  padding: 0.38rem 0.85rem;
-  border: 1px solid var(--color-border-strong);
-  border-radius: 6px;
-  background: var(--color-bg-secondary);
-  white-space: nowrap;
+  height: 36px;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .song-heading {
@@ -712,23 +715,37 @@ function goToTrackSettings() {
 }
 
 .detail-tabs {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   align-content: start;
-  border-inline-end: 1px solid var(--color-border-strong);
+  background: #343436;
+  border-inline-end: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .detail-tab {
-  min-height: 45px;
-  padding: 0 0.5rem;
+  min-height: 44px;
+  padding: 0.75rem 1rem;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 0;
-  border-bottom: 1px solid var(--color-border-subtle);
   background: transparent;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.92rem;
+  font-weight: 400;
   text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.detail-tab:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
 }
 
 .detail-tab.active {
-  background: #999999;
-  color: var(--color-text-primary);
+  background: #8e8e93;
+  color: #ffffff;
+  font-weight: 500;
 }
 
 .detail-panel {

@@ -1,7 +1,7 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, onBeforeUnmount, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import BasePopover from './BasePopover.vue'
+import BasePopover from '../../ui/BasePopover.vue'
 import { useSettingsStore } from '../../../stores/settingsStore'
 import { loadRenderAsset, removeRenderAsset, saveRenderAsset } from '../../../modules/storage/renderAssetStore'
 import type { RecordVideoOrientation, RecordVideoSize } from '../../../types/settings'

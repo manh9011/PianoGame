@@ -1,8 +1,8 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useConfirmStore } from '../../../stores/confirmStore'
-import BaseDialog from './BaseDialog.vue'
+import BaseDialog from '../../ui/BaseDialog.vue'
 
 const { t } = useI18n()
 const confirmStore = useConfirmStore()

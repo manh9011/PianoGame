@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 interface Props {
   show: boolean
   width?: string
@@ -88,19 +88,16 @@ function handleClickOutside(event: MouseEvent) {
 }
 
 .popover-arrow.right {
-  /* Mũi tên ở bên phải popup, chỉ sang phải về button */
   border-left: none;
   border-bottom: none;
 }
 
 .popover-arrow.left {
-  /* Mũi tên ở bên trái popup, chỉ sang trái về button */
   border-right: none;
   border-bottom: none;
 }
 
 .popover-arrow.top {
-  /* Mũi tên ở phía trên popup, chỉ lên button */
   border-right: none;
   border-bottom: none;
 }
@@ -126,4 +123,3 @@ function handleClickOutside(event: MouseEvent) {
   opacity: 0;
 }
 </style>
-

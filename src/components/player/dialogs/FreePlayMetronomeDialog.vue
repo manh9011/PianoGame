@@ -1,7 +1,9 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import BasePopover from './BasePopover.vue'
+import BasePopover from '../../ui/BasePopover.vue'
+import BaseToggle from '../../ui/BaseToggle.vue'
+import BaseSlider from '../../ui/BaseSlider.vue'
 import { FREE_PLAY_TIME_SIGNATURES, useFreePlayStore, type FreePlayTimeSignature } from '../../../stores/freePlayStore'
 
 interface Props {
@@ -38,60 +40,32 @@ function fractionParts(signature: FreePlayTimeSignature) {
   return { top, bottom }
 }
 
-function volumeLabel() {
-  return volume.value === 0 ? t('dialogs.off') : `${volume.value}%`
-}
+
 </script>
 
 <template>
-  <BasePopover
-    :show="show"
-    :popup-style="popupStyle"
-    :arrow-style="arrowStyle"
-    :arrow-placement="arrowPlacement"
-    width="420px"
-    @close="emit('close')"
-  >
+  <BasePopover :show="show" :popup-style="popupStyle" :arrow-style="arrowStyle" :arrow-placement="arrowPlacement"
+    width="420px" @close="emit('close')">
     <div class="free-play-metronome">
       <section class="metronome-controls">
-        <div class="setting-row volume-row">
-          <label class="setting-label">{{ t('dialogs.metronomeVolume') }}</label>
-          <span class="volume-value">{{ volumeLabel() }}</span>
-        </div>
-        <input
-          v-model.number="volume"
-          type="range"
-          min="0"
-          max="100"
-          step="5"
-          class="volume-slider"
-        />
+        <BaseSlider v-model="volume" :min="0" :max="100" :step="5" :label="t('dialogs.metronomeVolume')" show-value
+          :format-value="(v: number) => v === 0 ? t('dialogs.off') : v + '%'" />
 
         <div class="setting-row">
           <span class="setting-label">{{ t('settings.doubleSpeed') }}</span>
-          <button class="toggle-switch" :class="{ active: doubleSpeed }" @click="doubleSpeed = !doubleSpeed">
-            <span class="toggle-track"></span>
-            <span class="toggle-thumb"></span>
-          </button>
+          <BaseToggle v-model="doubleSpeed" />
         </div>
 
         <div class="setting-row">
           <span class="setting-label">{{ t('settings.emphasizeFirstBeat') }}</span>
-          <button class="toggle-switch" :class="{ active: emphasizeFirstBeat }" @click="emphasizeFirstBeat = !emphasizeFirstBeat">
-            <span class="toggle-track"></span>
-            <span class="toggle-thumb"></span>
-          </button>
+          <BaseToggle v-model="emphasizeFirstBeat" />
         </div>
       </section>
 
       <section class="signature-grid" :aria-label="t('play.metronome')">
-        <button
-          v-for="signature in FREE_PLAY_TIME_SIGNATURES"
-          :key="signature"
-          class="signature-option"
+        <button v-for="signature in FREE_PLAY_TIME_SIGNATURES" :key="signature" class="signature-option"
           :class="{ selected: freePlay.timeSignature === signature, disabledOption: signature === 'disabled' }"
-          @click="freePlay.setTimeSignature(signature)"
-        >
+          @click="freePlay.setTimeSignature(signature)">
           <span v-if="signature === 'disabled'" class="disabled-label">{{ t('dialogs.disabled') }}</span>
           <span v-else class="fraction-label" aria-hidden="true">
             <span class="fraction-top">{{ fractionParts(signature)?.top }}</span>
@@ -134,82 +108,7 @@ function volumeLabel() {
   font-weight: 500;
 }
 
-.volume-value {
-  color: var(--color-text-secondary);
-  font-size: 0.9rem;
-  font-variant-numeric: tabular-nums;
-}
 
-.volume-slider {
-  width: 100%;
-  height: 6px;
-  border-radius: 3px;
-  background: #5a5c61;
-  outline: none;
-  -webkit-appearance: none;
-  appearance: none;
-}
-
-.volume-slider::-webkit-slider-thumb {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: #e3e4e8;
-  cursor: pointer;
-  -webkit-appearance: none;
-  appearance: none;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.volume-slider::-moz-range-thumb {
-  width: 18px;
-  height: 18px;
-  border: none;
-  border-radius: 50%;
-  background: #e3e4e8;
-  cursor: pointer;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.toggle-switch {
-  position: relative;
-  width: 50px;
-  height: 28px;
-  padding: 0;
-  border: none;
-  border-radius: 14px;
-  background: transparent;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.toggle-track {
-  position: absolute;
-  inset: 0;
-  border-radius: 14px;
-  background: #5a5c61;
-  transition: background 0.3s ease;
-}
-
-.toggle-switch.active .toggle-track {
-  background: #4ade80;
-}
-
-.toggle-thumb {
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: #ffffff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  transition: transform 0.3s ease;
-}
-
-.toggle-switch.active .toggle-thumb {
-  transform: translateX(22px);
-}
 
 .signature-grid {
   display: grid;
@@ -281,4 +180,3 @@ function volumeLabel() {
   border: 0;
 }
 </style>
-

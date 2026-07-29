@@ -8,6 +8,7 @@ import { useProfileStore } from '../stores/profileStore'
 import { useSettingsStore } from '../stores/settingsStore'
 import LanguageDropup from '../components/home/LanguageDropup.vue'
 import ProfileManager from '../components/home/ProfileManager.vue'
+import BaseButton from '../components/ui/BaseButton.vue'
 import { formatRelativeTime } from '../i18n/formatters'
 
 const router = useRouter()
@@ -56,9 +57,9 @@ function closeProfileManager() {
         <h1 class="app-name">{{ t('app.name') }}</h1>
       </div>
       <div class="header-right">
-        <button class="username-button" :aria-label="t('home.profileMenu')" @click="toggleProfileManager">
+        <BaseButton variant="secondary" class="username-button" :aria-label="t('home.profileMenu')" @click="toggleProfileManager">
           {{ profile.activeProfile.name }} ▾
-        </button>
+        </BaseButton>
 
         <!-- Profile Manager Dropdown -->
         <Teleport to="body">
@@ -76,18 +77,18 @@ function closeProfileManager() {
     <main class="home-main">
       <!-- Left Panel - Menu Buttons -->
       <div class="left-panel">
-        <button class="menu-button primary" @click="router.push('/library')">
+        <BaseButton variant="primary" class="menu-button" @click="router.push('/library')">
           {{ t('home.playSong') }}
-        </button>
-        <button class="menu-button primary" @click="router.push('/free-play')">
+        </BaseButton>
+        <BaseButton variant="primary" class="menu-button" @click="router.push('/free-play')">
           {{ t('home.freePlay') }}
-        </button>
-        <button class="menu-button secondary" @click="router.push('/settings')">
+        </BaseButton>
+        <BaseButton variant="secondary" class="menu-button" @click="router.push('/settings')">
           {{ t('common.settings') }}
-        </button>
-        <button v-if="app.isTauriApp" class="menu-button secondary" @click="app.exitApp">
+        </BaseButton>
+        <BaseButton v-if="app.isTauriApp" variant="secondary" class="menu-button" @click="app.exitApp">
           {{ t('home.exit') }}
-        </button>
+        </BaseButton>
       </div>
 
       <!-- Right Panel - Recently Played -->
@@ -170,22 +171,6 @@ function closeProfileManager() {
   color: var(--color-text-secondary);
 }
 
-.username-button {
-  padding: 8px 16px;
-  border: 1px solid var(--color-border-strong);
-  border-radius: 4px;
-  background: var(--color-bg-subtle);
-  color: var(--color-text-primary);
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.username-button:hover {
-  background: var(--color-bg-card-hover);
-  border-color: var(--color-border-default);
-}
 
 .profile-dropdown-overlay {
   position: fixed;
@@ -221,52 +206,6 @@ function closeProfileManager() {
   font-size: 1.1rem;
 }
 
-.profile-dropdown :deep(.row) {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.profile-dropdown :deep(select),
-.profile-dropdown :deep(input) {
-  flex: 1;
-  min-width: 150px;
-  padding: 8px 12px;
-  border: 1px solid var(--color-border-strong);
-  border-radius: 4px;
-  background: var(--color-bg-primary);
-  color: var(--color-text-primary);
-  font-size: 0.9rem;
-}
-
-.profile-dropdown :deep(button) {
-  padding: 8px 16px;
-  border: 0;
-  border-radius: 4px;
-  background: var(--color-btn-primary-bg);
-  color: var(--color-btn-primary-text);
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.profile-dropdown :deep(button:hover) {
-  background: var(--color-btn-primary-hover);
-}
-
-.profile-dropdown :deep(button.danger) {
-  background: var(--color-btn-danger-bg);
-}
-
-.profile-dropdown :deep(button.danger:hover:not(:disabled)) {
-  background: var(--color-btn-danger-hover);
-}
-
-.profile-dropdown :deep(button:disabled) {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
 /* Main Content */
 .home-main {
   display: grid;
@@ -286,37 +225,9 @@ function closeProfileManager() {
 }
 
 .menu-button {
+  width: 100%;
   padding: 18px 24px;
-  border: 0;
-  border-radius: 4px;
   font-size: 1.1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-align: center;
-}
-
-.menu-button.primary {
-  background: var(--color-btn-primary-bg);
-  color: var(--color-btn-primary-text);
-}
-
-.menu-button.primary:hover:not(:disabled) {
-  background: var(--color-btn-primary-hover);
-}
-
-.menu-button.secondary {
-  background: var(--color-btn-secondary-bg);
-  color: var(--color-btn-secondary-text);
-}
-
-.menu-button.secondary:hover:not(:disabled) {
-  background: var(--color-btn-secondary-hover);
-}
-
-.menu-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
 }
 
 /* Right Panel */

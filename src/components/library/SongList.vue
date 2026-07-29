@@ -9,6 +9,8 @@ import { useToastStore } from '../../stores/toastStore'
 import { formatDate, formatDateTime } from '../../i18n/formatters'
 import { achievementColorStyle } from '../../modules/game/achievementColors'
 import { achievementFromHistory } from '../../modules/game/achievementScoring'
+import BaseButton from '../ui/BaseButton.vue'
+import BaseInput from '../ui/BaseInput.vue'
 
 defineProps<{ songs: SongMetadata[]; selectedId?: string | null }>()
 const emit = defineEmits<{
@@ -126,7 +128,16 @@ function isRenaming(song: SongMetadata) {
 }
 
 function setTitleInputRef(element: unknown) {
-  titleInputRef.value = element instanceof HTMLInputElement ? element : null
+  if (!element) {
+    titleInputRef.value = null
+    return
+  }
+  if (element instanceof HTMLInputElement) {
+    titleInputRef.value = element
+  } else if (element && typeof element === 'object' && '$el' in element) {
+    const el = (element as { $el: HTMLElement }).$el
+    titleInputRef.value = el ? el.querySelector('input') : null
+  }
 }
 
 function focusTitleInput() {
@@ -335,55 +346,54 @@ function clearDifficulty() {
       <span class="song-score" :style="songScoreStyle(song.id)">{{ formatScore(achievementScore(song.id)) }}</span>
       <span class="song-title-cell">
         <template v-if="isRenaming(song)">
-          <input
-            :ref="setTitleInputRef"
-            v-model="editingTitle"
-            class="song-title-input"
-            type="text"
-            :aria-label="t('library.renameSong')"
-            @click.stop
-            @dblclick.stop
-            @keydown.stop
-            @keyup.enter="saveRename"
-            @keyup.escape="cancelRename"
-          />
-          <button
-            type="button"
+          <span class="song-title-input">
+            <BaseInput
+              :ref="setTitleInputRef"
+              v-model="editingTitle"
+              @keydown.enter.stop="saveRename"
+              @keydown.escape.stop="cancelRename"
+              @click.stop
+              @dblclick.stop
+              @blur="cancelRename"
+            />
+          </span>
+          <BaseButton
+            variant="text"
+            size="sm"
             class="rename-button rename-confirm-button"
-            :aria-label="t('common.save')"
-            :title="t('common.save')"
             :disabled="!editingTitle.trim()"
+            :title="t('common.save')"
             @mousedown.prevent
             @click.stop="saveRename"
             @dblclick.stop
           >
             <i class="fa-solid fa-check" aria-hidden="true" />
-          </button>
-          <button
-            type="button"
+          </BaseButton>
+          <BaseButton
+            variant="text"
+            size="sm"
             class="rename-button rename-cancel-button"
-            :aria-label="t('common.cancel')"
             :title="t('common.cancel')"
             @mousedown.prevent
             @click.stop="cancelRename"
             @dblclick.stop
           >
             <i class="fa-solid fa-xmark" aria-hidden="true" />
-          </button>
+          </BaseButton>
         </template>
         <template v-else>
           <span class="song-title-text">{{ song.title }}</span>
-          <button
-            type="button"
+          <BaseButton
+            variant="text"
+            size="sm"
             class="rename-button"
-            :aria-label="t('library.renameSong')"
             :title="t('library.renameSong')"
             @mousedown.prevent
             @click="startRename($event, song)"
             @dblclick.stop
           >
             <i class="fa-solid fa-pencil" aria-hidden="true" />
-          </button>
+          </BaseButton>
         </template>
       </span>
       <span class="song-imported-at muted">{{ formatImportedAt(song.importedAt) }}</span>
@@ -428,9 +438,8 @@ function clearDifficulty() {
       <div class="detail-popup" :style="detailPopupStyle" @click.stop>
         <div class="detail-arrow" :class="`arrow-${detailArrowPlacement}`" :style="detailArrowStyle" />
         <div class="detail-content">
-          <h4 class="detail-dialog-title">{{ t('library.detail') }}</h4>
+          <h4 class="detail-dialog-title">{{ detailSong.title }}</h4>
           <div class="detail-info">
-            <h3 class="detail-title">{{ detailSong.title }}</h3>
             <div class="detail-row">
               <span class="detail-label">{{ t('library.duration') }}:</span>
               <span class="detail-value">{{ formatDuration(detailSong.duration) }}</span>
@@ -567,12 +576,16 @@ function clearDifficulty() {
 }
 
 .song-row:hover {
-  background: var(--color-bg-subtle);
+  background: var(--color-row-hover);
 }
 
 .song-row.selected {
-  background: var(--color-bg-elevated);
-  color: var(--color-text-primary);
+  background: var(--color-row-selected) !important;
+  color: var(--color-row-selected-text) !important;
+}
+
+.song-row.selected:hover {
+  background: var(--color-row-selected-hover) !important;
 }
 
 .song-score {
@@ -602,9 +615,11 @@ function clearDifficulty() {
 }
 
 .song-title-cell {
+  min-width: 0;
+  width: 100%;
   display: flex;
   align-items: center;
-  gap: 0.28rem;
+  gap: 0.35rem;
   font-size: 0.95rem;
 }
 
@@ -616,68 +631,75 @@ function clearDifficulty() {
 }
 
 .song-title-input {
-  flex: 1 1 auto;
+  flex: 1 1 0%;
   min-width: 0;
-  height: 1.8rem;
-  padding: 0.18rem 0.42rem;
-  border: 1px solid var(--color-border-strong);
-  border-radius: 0.22rem;
-  background: var(--color-bg-input);
-  color: var(--color-text-primary);
-  font: inherit;
+  display: flex;
 }
 
-.song-title-input:focus {
-  outline: 1px solid var(--color-border-strong);
-  outline-offset: 1px;
+.song-title-input :deep(.base-input) {
+  flex: 1 1 0%;
+  min-width: 0;
+}
+
+.song-title-input :deep(.base-input-field) {
+  width: 100%;
+  height: 32px;
+  padding: 0 0.6rem;
+  font-size: 0.92rem;
+  font-weight: 500;
+  border-radius: 4px;
+  background: var(--color-bg-input);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-strong);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+  box-sizing: border-box;
+}
+
+.song-title-input :deep(.base-input-field:focus) {
+  background: var(--color-bg-input-focus);
+  border-color: var(--color-accent-blue);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent-blue) 30%, transparent), inset 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .rename-button {
   flex: 0 0 auto;
   display: grid;
   place-items: center;
-  width: 1.45rem;
-  height: 1.45rem;
+  width: 28px;
+  height: 28px;
   padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: var(--color-bg-primary);
+  border-radius: 4px;
   color: var(--color-text-secondary);
-  font-size: 0.72rem;
-  cursor: pointer;
+  font-size: 0.85rem;
   transition: all 0.15s ease;
 }
 
 .rename-button:hover:not(:disabled) {
-  background: var(--color-bg-card-hover);
   color: var(--color-text-primary);
   transform: scale(1.08);
 }
 
-.rename-button:disabled {
-  opacity: 0.36;
-  cursor: not-allowed;
-}
-
 .rename-confirm-button {
-  color: rgba(134, 239, 172, 0.88);
+  color: #4ade80 !important;
 }
 
 .rename-cancel-button {
-  color: rgba(252, 165, 165, 0.88);
+  color: #f87171 !important;
 }
 
 .song-row.selected .rename-button {
-  background: var(--color-bg-card-hover);
-  color: var(--color-text-primary);
+  color: var(--color-row-selected-text);
+  opacity: 0.8;
 }
 
 .song-row.selected .rename-confirm-button {
-  color: #86efac;
+  color: #4ade80 !important;
+  opacity: 1;
 }
 
 .song-row.selected .rename-cancel-button {
-  color: #fca5a5;
+  color: #f87171 !important;
+  opacity: 1;
 }
 
 .song-imported-at,
@@ -695,7 +717,8 @@ function clearDifficulty() {
 .song-row.selected .song-imported-at,
 .song-row.selected .song-last-played,
 .song-row.selected .song-duration {
-  color: var(--color-text-secondary);
+  color: var(--color-row-selected-text);
+  opacity: 0.7;
 }
 
 .song-play-count {
@@ -732,12 +755,14 @@ function clearDifficulty() {
 }
 
 .song-row.selected .song-rating {
-  color: var(--color-text-muted);
+  color: var(--color-row-selected-text);
+  opacity: 0.6;
 }
 
 .song-row.selected .song-rating.has-rating {
-  color: #fcd34d;
-  text-shadow: 0 0 3px rgba(252, 211, 77, 0.4);
+  color: #fbbf24;
+  opacity: 1;
+  text-shadow: 0 0 3px rgba(251, 191, 36, 0.4);
 }
 
 .song-difficulty {
@@ -886,25 +911,14 @@ function clearDifficulty() {
 
 .detail-dialog-title {
   margin: 0 0 5px 0;
-  padding: 0 0 3px 0;
+  padding: 0 4px 3px;
   color: var(--color-text-primary);
   font-size: 0.85rem;
   font-weight: 600;
   text-align: center;
-  border-bottom: 1px solid var(--color-border-subtle);
-}
-
-.detail-title {
-  margin: 0 0 8px 0;
-  padding-bottom: 8px;
-  color: var(--color-text-primary);
-  font-size: 0.95rem;
-  font-weight: 600;
-  text-overflow: ellipsis;
   overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
-  text-align: center;
-  border-bottom: 1px solid var(--color-border-default);
 }
 
 .detail-info {

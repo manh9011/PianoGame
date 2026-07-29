@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useConfirmDialog } from '../../../composables/useConfirmDialog'
@@ -12,6 +12,10 @@ import { usePlayerStore } from '../../../stores/playerStore'
 import FreePlayTrackEditorGrid, { type FreePlayTrackEditorMode } from '../FreePlayTrackEditorGrid.vue'
 import ColorPickerDialog from './ColorPickerDialog.vue'
 import TrackInstrumentDialog from './TrackInstrumentDialog.vue'
+import BaseButton from '../../ui/BaseButton.vue'
+import BaseInput from '../../ui/BaseInput.vue'
+import BaseSelect from '../../ui/BaseSelect.vue'
+import BaseSlider from '../../ui/BaseSlider.vue'
 
 const props = defineProps<{
   show: boolean
@@ -766,12 +770,12 @@ onBeforeUnmount(() => {
           <span class="editor-brand-icon" :title="t('freePlay.trackEditorTitle')" :aria-label="t('freePlay.trackEditorTitle')">🎹</span>
 
           <div class="primary-actions">
-            <button class="action-button primary action-button--icon" :title="t('common.save')" :aria-label="t('common.save')" @click="save">
+            <BaseButton variant="primary" :title="t('common.save')" :aria-label="t('common.save')" @click="save">
               <i class="fas fa-save"></i>
-            </button>
-            <button class="action-button secondary action-button--icon" :title="t('common.cancel')" :aria-label="t('common.cancel')" @click="requestClose">
+            </BaseButton>
+            <BaseButton variant="secondary" :title="t('common.cancel')" :aria-label="t('common.cancel')" @click="requestClose">
               <i class="fas fa-ban"></i>
-            </button>
+            </BaseButton>
           </div>
 
           <div class="editor-toolbar" :aria-label="t('freePlay.trackEditorToolbar')">
@@ -836,9 +840,7 @@ onBeforeUnmount(() => {
               </button>
               <label class="select-label">
                 <span>{{ t('freePlay.trackEditorSubdivision') }}</span>
-                <select v-model="snapSubdivision" class="subdivision-select">
-                  <option v-for="option in FREE_PLAY_EDITOR_SUBDIVISIONS" :key="option" :value="option">{{ option }}</option>
-                </select>
+                <BaseSelect v-model="snapSubdivision" class="subdivision-select" :options="FREE_PLAY_EDITOR_SUBDIVISIONS.map(o => ({ value: o, label: o }))" />
               </label>
             </div>
 
@@ -1002,29 +1004,27 @@ onBeforeUnmount(() => {
                 <div class="selection-summary">{{ selectedCount === 1 ? t('freePlay.trackEditorSelectedCount', { count: selectedCount }) : t('freePlay.trackEditorMultiSelection', { count: selectedCount }) }}</div>
                 <label class="inspector-field">
                   <span>{{ t('freePlay.trackEditorTrack') }}</span>
-                  <select :value="primarySelectedNote?.trackId ?? activeTrack?.id" @change="setSelectedTrack(Number(($event.target as HTMLSelectElement).value))">
-                    <option v-for="(track, index) in draftTracks" :key="track.id" :value="track.id">{{ displayTrackName(track, index) }}</option>
-                  </select>
+                  <BaseSelect :model-value="String(primarySelectedNote?.trackId ?? activeTrack?.id)" :options="draftTracks.map((t, i) => ({ value: String(t.id), label: displayTrackName(t, i) }))" @change="setSelectedTrack(Number($event))" />
                 </label>
                 <label class="inspector-field">
                   <span>{{ t('freePlay.trackEditorPitch') }}</span>
-                  <input type="number" min="0" max="127" :value="primarySelectedNote?.noteId ?? ''" @change="transposeSelectedToPitch(($event.target as HTMLInputElement).value)" />
+                  <BaseInput type="number" min="0" max="127" :model-value="primarySelectedNote?.noteId ?? ''" @change="transposeSelectedToPitch($event)" />
                 </label>
                 <label class="inspector-field">
                   <span>{{ t('freePlay.trackEditorStart') }}</span>
-                  <input type="number" min="0" step="1" :value="primarySelectedNote ? Math.round(primarySelectedNote.startUs / 1000) : ''" @change="selectedCount === 1 ? updatePrimarySelectedNote(note => { note.startUs = Number(($event.target as HTMLInputElement).value) * 1000 }) : shiftSelectedStart(($event.target as HTMLInputElement).value)" />
+                  <BaseInput type="number" min="0" step="1" :model-value="primarySelectedNote ? Math.round(primarySelectedNote.startUs / 1000) : ''" @change="selectedCount === 1 ? updatePrimarySelectedNote(note => { note.startUs = Number($event) * 1000 }) : shiftSelectedStart($event)" />
                 </label>
                 <label class="inspector-field">
                   <span>{{ t('freePlay.trackEditorEnd') }}</span>
-                  <input type="number" min="0" step="1" :value="primarySelectedNote ? Math.round(primarySelectedNote.endUs / 1000) : ''" @change="selectedCount === 1 ? updatePrimarySelectedNote(note => { note.endUs = Number(($event.target as HTMLInputElement).value) * 1000 }) : shiftSelectedEnd(($event.target as HTMLInputElement).value)" />
+                  <BaseInput type="number" min="0" step="1" :model-value="primarySelectedNote ? Math.round(primarySelectedNote.endUs / 1000) : ''" @change="selectedCount === 1 ? updatePrimarySelectedNote(note => { note.endUs = Number($event) * 1000 }) : shiftSelectedEnd($event)" />
                 </label>
                 <label class="inspector-field">
                   <span>{{ t('freePlay.trackEditorDuration') }}</span>
-                  <input type="number" min="10" step="1" :value="primarySelectedNote ? Math.round((primarySelectedNote.endUs - primarySelectedNote.startUs) / 1000) : ''" @change="setSelectedDuration(($event.target as HTMLInputElement).value)" />
+                  <BaseInput type="number" min="10" step="1" :model-value="primarySelectedNote ? Math.round((primarySelectedNote.endUs - primarySelectedNote.startUs) / 1000) : ''" @change="setSelectedDuration($event)" />
                 </label>
                 <label class="inspector-field">
                   <span>{{ t('freePlay.trackEditorVelocity') }}</span>
-                  <input type="number" min="1" max="127" :placeholder="t('freePlay.trackEditorMixedValue')" :value="selectionVelocityValue" @change="setSelectedVelocity(($event.target as HTMLInputElement).value)" />
+                  <BaseInput type="number" min="1" max="127" :placeholder="t('freePlay.trackEditorMixedValue')" :model-value="selectionVelocityValue" @change="setSelectedVelocity($event)" />
                 </label>
               </div>
             </section>
@@ -1124,10 +1124,14 @@ onBeforeUnmount(() => {
 
 .tool-group {
   gap: 0.22rem;
-  padding: 0.18rem;
+  padding: 0.12rem 0.18rem;
+  height: 34px;
+  box-sizing: border-box;
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
 }
 
 .tool-button {
@@ -1185,9 +1189,37 @@ onBeforeUnmount(() => {
 
 .volume-slider {
   width: 96px;
-  height: 28px;
+  height: 10px;
   margin: 0;
-  accent-color: #fbbf24;
+  border-radius: 999px;
+  background: #5a5a5a;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.volume-slider::-webkit-slider-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1.5px solid #222222;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  margin-top: -4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.volume-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid #222222;
+  border-radius: 50%;
+  background: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
 }
 
 .select-label {
@@ -1196,19 +1228,31 @@ onBeforeUnmount(() => {
   font-size: 0.8rem;
 }
 
+:deep(.subdivision-select),
 .subdivision-select {
   max-width: 82px;
-  height: 28px;
+  height: 30px !important;
+  min-height: 30px !important;
   padding: 0 1.65rem 0 0.45rem;
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 4px;
   background: #1f2329;
   color: var(--color-text-primary);
+  font-size: 0.82rem;
 }
 
 .primary-actions,
 .dialog-actions {
   gap: 0.3rem;
+  display: flex;
+  align-items: center;
+}
+
+.primary-actions :deep(.base-btn) {
+  height: 30px;
+  min-height: 30px;
+  padding: 0 0.6rem;
+  font-size: 0.85rem;
 }
 
 .dialog-actions {

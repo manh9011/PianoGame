@@ -1,9 +1,11 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePlayerStore } from '../../../stores/playerStore'
 import { handSizeInfo } from '../../../modules/fingering/pianoFingering'
 import { HAND_SIZE_PRESETS, type HandSizePreset } from '../../../modules/fingering/fingeringTypes'
+import BaseButton from '../../ui/BaseButton.vue'
+import BaseSelect from '../../ui/BaseSelect.vue'
 
 interface Props {
   show: boolean
@@ -24,6 +26,11 @@ function sizeDescription(size: HandSizePreset) {
   const info = handSizeInfo(size)
   return t(`fingerDialog.handSizes.${size}`, { span: info.relaxedThumbPinkySpanCm.toFixed(1) })
 }
+
+const handSizeOptions = computed(() => HAND_SIZE_PRESETS.map(size => ({
+  value: size,
+  label: `${size} — ${sizeDescription(size)}`
+})))
 </script>
 
 <template>
@@ -31,10 +38,10 @@ function sizeDescription(size: HandSizePreset) {
     <section v-if="show" class="finger-dialog" @click.stop>
       <div class="top-section control-box">
         <p class="hint">{{ t('fingerDialog.pickNoteHint') }}</p>
-        <button class="clear-all-button" :disabled="player.fingeringGenerating" @click="emit('clearAllFingers')">
+        <BaseButton variant="danger" :disabled="player.fingeringGenerating" @click="emit('clearAllFingers')">
           <i class="fas fa-trash"></i>
           {{ t('fingerDialog.clearAllFingers') }}
-        </button>
+        </BaseButton>
       </div>
 
       <div class="assist-section control-box">
@@ -43,23 +50,20 @@ function sizeDescription(size: HandSizePreset) {
             <span class="hand-size-icon" aria-hidden="true">
               <i class="fas fa-hand"></i>
             </span>
-            <select
+            <BaseSelect
               id="finger-hand-size"
               class="hand-size-select"
               :aria-label="t('fingerDialog.handSize')"
-              :value="handSize"
-              @change="emit('selectHandSize', ($event.target as HTMLSelectElement).value as HandSizePreset)"
-            >
-            <option v-for="size in HAND_SIZE_PRESETS" :key="size" :value="size">
-              {{ size }} — {{ sizeDescription(size) }}
-            </option>
-            </select>
+              :model-value="handSize"
+              :options="handSizeOptions"
+              @change="emit('selectHandSize', $event as HandSizePreset)"
+            />
           </div>
         </div>
-        <button class="auto-button" :disabled="player.fingeringGenerating" @click="emit('autoAssign')">
+        <BaseButton variant="primary" :disabled="player.fingeringGenerating" @click="emit('autoAssign')">
           <i class="fas fa-wand-magic-sparkles"></i>
           {{ t('fingerDialog.autoAssign') }}
-        </button>
+        </BaseButton>
       </div>
     </section>
   </Transition>
@@ -94,12 +98,6 @@ function sizeDescription(size: HandSizePreset) {
 .hand-size-icon { display: inline-flex; align-items: center; gap: 0.28rem; color: var(--color-text-primary); font-size: 0.95rem; text-shadow: 0 1px 2px rgba(0,0,0,0.9); }
 .hand-size-select { width: 100%; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); background: rgba(104,108,116,0.92); color: #ffffff; padding: 0.42rem 0.55rem; font-size: 0.82rem; box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 3px 8px rgba(0,0,0,0.36); }
 .hint { margin: 0; color: #ffffff; font-size: 0.9rem; font-weight: 600; line-height: 1.3; white-space: nowrap; text-shadow: 0 1px 2px rgba(0,0,0,0.9); }
-.auto-button, .clear-all-button { border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; color: #ffffff; padding: 0.48rem 0.75rem; font-weight: 700; cursor: pointer; white-space: nowrap; text-shadow: 0 1px 2px rgba(0,0,0,0.9); box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 3px 8px rgba(0,0,0,0.42); }
-.auto-button { display: flex; align-items: center; justify-content: center; gap: 0.42rem; background: rgba(180, 110, 34, 0.94); border-color: rgba(251, 191, 36, 0.42); }
-.clear-all-button { display: flex; align-items: center; justify-content: center; gap: 0.42rem; background: rgba(112, 55, 55, 0.94); border-color: rgba(255,255,255,0.22); }
-.auto-button:hover:not(:disabled) { background: rgba(214, 134, 38, 0.98); border-color: rgba(251, 191, 36, 0.64); }
-.clear-all-button:hover:not(:disabled) { background: rgba(136, 64, 64, 0.96); border-color: rgba(255,255,255,0.45); }
-.auto-button:disabled, .clear-all-button:disabled { opacity: 0.55; cursor: wait; }
 .finger-panel-enter-active, .finger-panel-leave-active { transition: opacity 0.16s ease, transform 0.16s ease; }
 .finger-panel-enter-from, .finger-panel-leave-to { opacity: 0; transform: translateY(8px); }
 @media (max-width: 760px) {

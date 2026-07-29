@@ -1,7 +1,9 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import BasePopover from './BasePopover.vue'
+import BasePopover from '../../ui/BasePopover.vue'
+import BaseToggle from '../../ui/BaseToggle.vue'
+import BaseSlider from '../../ui/BaseSlider.vue'
 import { useSettingsStore } from '../../../stores/settingsStore'
 
 interface Props {
@@ -32,9 +34,6 @@ const emphasizeFirstBeat = computed({
   set: value => settings.setMetronomeEmphasizeFirstBeat(value),
 })
 
-function getVolumeLabel() {
-  return volume.value === 0 ? t('dialogs.off') : `${volume.value}%`
-}
 </script>
 
 <template>
@@ -48,43 +47,18 @@ function getVolumeLabel() {
   >
     <div class="metronome-settings">
       <div class="setting-group">
-        <div class="setting-row">
-          <label class="setting-label">{{ t('dialogs.metronomeVolume') }}</label>
-          <span class="volume-value">{{ getVolumeLabel() }}</span>
-        </div>
-        <input
-          v-model.number="volume"
-          type="range"
-          min="0"
-          max="100"
-          step="5"
-          class="volume-slider"
-        />
+        <BaseSlider v-model="volume" :min="0" :max="100" :step="5" :label="t('dialogs.metronomeVolume')" show-value :format-value="v => v === 0 ? t('dialogs.off') : v + '%'" />
       </div>
 
       <div class="setting-group">
         <div class="setting-row">
           <span class="setting-label">{{ t('settings.doubleSpeed') }}</span>
-          <button
-            class="toggle-switch"
-            :class="{ active: doubleSpeed }"
-            @click="doubleSpeed = !doubleSpeed"
-          >
-            <span class="toggle-track"></span>
-            <span class="toggle-thumb"></span>
-          </button>
+          <BaseToggle v-model="doubleSpeed" />
         </div>
 
         <div class="setting-row">
           <span class="setting-label">{{ t('settings.emphasizeFirstBeat') }}</span>
-          <button
-            class="toggle-switch"
-            :class="{ active: emphasizeFirstBeat }"
-            @click="emphasizeFirstBeat = !emphasizeFirstBeat"
-          >
-            <span class="toggle-track"></span>
-            <span class="toggle-thumb"></span>
-          </button>
+          <BaseToggle v-model="emphasizeFirstBeat" />
         </div>
       </div>
     </div>
@@ -119,83 +93,6 @@ function getVolumeLabel() {
   color: var(--color-text-primary);
   font-size: 1rem;
   font-weight: 500;
-}
-
-.volume-value {
-  color: var(--color-text-secondary);
-  font-size: 0.95rem;
-}
-
-.volume-slider {
-  width: 100%;
-  height: 6px;
-  border-radius: 3px;
-  background: #5a5c61;
-  outline: none;
-  -webkit-appearance: none;
-  appearance: none;
-}
-
-.volume-slider::-webkit-slider-thumb {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: #e3e4e8;
-  cursor: pointer;
-  -webkit-appearance: none;
-  appearance: none;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.volume-slider::-moz-range-thumb {
-  width: 18px;
-  height: 18px;
-  border: none;
-  border-radius: 50%;
-  background: #e3e4e8;
-  cursor: pointer;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.toggle-switch {
-  position: relative;
-  width: 50px;
-  height: 28px;
-  padding: 0;
-  border: none;
-  border-radius: 14px;
-  background: transparent;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: all 0.3s ease;
-}
-
-.toggle-track {
-  position: absolute;
-  inset: 0;
-  border-radius: 14px;
-  background: #5a5c61;
-  transition: background 0.3s ease;
-}
-
-.toggle-switch.active .toggle-track {
-  background: #4ade80;
-}
-
-.toggle-thumb {
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: #ffffff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  transition: transform 0.3s ease;
-}
-
-.toggle-switch.active .toggle-thumb {
-  transform: translateX(22px);
 }
 </style>
 
