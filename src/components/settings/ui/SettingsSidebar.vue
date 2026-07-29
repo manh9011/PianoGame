@@ -48,8 +48,13 @@ const { t } = useI18n()
 }
 
 .settings-sidebar-item.router-link-active {
-  background: var(--color-bg-elevated);
-  color: var(--color-text-primary);
+  background: var(--color-row-selected);
+  color: var(--color-row-selected-text, #ffffff);
+  font-weight: 600;
+}
+
+.settings-sidebar-item.router-link-active:hover {
+  background: var(--color-row-selected-hover, #7d7d7d);
 }
 
 .settings-sidebar-item span {

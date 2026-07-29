@@ -11,6 +11,19 @@ import { achievementColorStyle } from '../../modules/game/achievementColors'
 import { achievementFromHistory } from '../../modules/game/achievementScoring'
 import BaseButton from '../ui/BaseButton.vue'
 import BaseInput from '../ui/BaseInput.vue'
+import BaseTable, { type TableColumn } from '../ui/BaseTable.vue'
+
+const columns: TableColumn[] = [
+  { key: 'score', width: '3.68rem', align: 'center' },
+  { key: 'title', width: 'auto' },
+  { key: 'importedAt', width: '10.0rem' },
+  { key: 'lastPlayed', width: '10.0rem' },
+  { key: 'duration', width: '6.0rem', align: 'center' },
+  { key: 'playCount', width: '6.6rem', align: 'center' },
+  { key: 'rating', width: '6.4rem', align: 'right' },
+  { key: 'difficulty', width: '7.2rem', align: 'right' },
+  { key: 'details', width: '3.32rem', align: 'center' },
+]
 
 defineProps<{ songs: SongMetadata[]; selectedId?: string | null }>()
 const emit = defineEmits<{
@@ -332,103 +345,128 @@ function clearDifficulty() {
 
 <template>
   <div v-if="songs.length" class="song-list">
-    <div
-      v-for="song in songs"
-      :key="song.id"
-      class="song-row"
-      :class="{ selected: song.id === selectedId, renaming: isRenaming(song) }"
-      role="button"
-      tabindex="0"
-      @click="handleRowClick(song)"
-      @dblclick="handleRowDoubleClick(song)"
-      @keydown="handleRowKeydown($event, song)"
+    <BaseTable
+      :data="songs"
+      :columns="columns"
+      row-key="id"
+      :selected-key="selectedId"
+      hide-header
+      @row-click="handleRowClick"
+      @row-dblclick="handleRowDoubleClick"
+      @row-keydown="handleRowKeydown"
     >
-      <span class="song-score" :style="songScoreStyle(song.id)">{{ formatScore(achievementScore(song.id)) }}</span>
-      <span class="song-title-cell">
-        <template v-if="isRenaming(song)">
-          <span class="song-title-input">
-            <BaseInput
-              :ref="setTitleInputRef"
-              v-model="editingTitle"
-              @keydown.enter.stop="saveRename"
-              @keydown.escape.stop="cancelRename"
-              @click.stop
+      <template #cell-score="{ item: song }">
+        <span class="song-score" :style="songScoreStyle(song.id)">{{ formatScore(achievementScore(song.id)) }}</span>
+      </template>
+
+      <template #cell-title="{ item: song }">
+        <span class="song-title-cell">
+          <template v-if="isRenaming(song)">
+            <span class="song-title-input">
+              <BaseInput
+                :ref="setTitleInputRef"
+                v-model="editingTitle"
+                @keydown.enter.stop="saveRename"
+                @keydown.escape.stop="cancelRename"
+                @click.stop
+                @dblclick.stop
+                @blur="cancelRename"
+              />
+            </span>
+            <BaseButton
+              variant="text"
+              size="sm"
+              class="rename-button rename-confirm-button"
+              :disabled="!editingTitle.trim()"
+              :title="t('common.save')"
+              @mousedown.prevent
+              @click.stop="saveRename"
               @dblclick.stop
-              @blur="cancelRename"
-            />
-          </span>
-          <BaseButton
-            variant="text"
-            size="sm"
-            class="rename-button rename-confirm-button"
-            :disabled="!editingTitle.trim()"
-            :title="t('common.save')"
-            @mousedown.prevent
-            @click.stop="saveRename"
-            @dblclick.stop
-          >
-            <i class="fa-solid fa-check" aria-hidden="true" />
-          </BaseButton>
-          <BaseButton
-            variant="text"
-            size="sm"
-            class="rename-button rename-cancel-button"
-            :title="t('common.cancel')"
-            @mousedown.prevent
-            @click.stop="cancelRename"
-            @dblclick.stop
-          >
-            <i class="fa-solid fa-xmark" aria-hidden="true" />
-          </BaseButton>
-        </template>
-        <template v-else>
-          <span class="song-title-text">{{ song.title }}</span>
-          <BaseButton
-            variant="text"
-            size="sm"
-            class="rename-button"
-            :title="t('library.renameSong')"
-            @mousedown.prevent
-            @click="startRename($event, song)"
-            @dblclick.stop
-          >
-            <i class="fa-solid fa-pencil" aria-hidden="true" />
-          </BaseButton>
-        </template>
-      </span>
-      <span class="song-imported-at muted">{{ formatImportedAt(song.importedAt) }}</span>
-      <span class="song-last-played muted">{{ formatLastPlayed(song.lastPlayed) }}</span>
-      <span class="song-duration muted">{{ formatDuration(song.duration) }}</span>
-      <span class="song-play-count">{{ song.playCount }}</span>
-      <div
-        class="song-rating"
-        :class="{ 'has-rating': song.rating }"
-        :aria-label="t('library.ratingValue', { value: song.rating ?? 0 })"
-        @click="showRatingDialog($event, song)"
-      >
-        {{ stars(song.rating) }}
-      </div>
-      <div
-        class="song-difficulty"
-        :aria-label="t('library.difficultyValue', { value: song.difficulty ?? 0 })"
-        @click="showDifficultyDialog($event, song)"
-      >
-        <span
-          v-for="value in 10"
-          :key="value"
-          class="difficulty-bar"
-          :class="{ filled: value <= (song.difficulty ?? 0) }"
-          :data-level="value"
-        />
-      </div>
-      <div
-        class="detail-button"
-        @click="showDetail($event, song)"
-        :aria-label="t('library.showDetails')"
-      >
-        <i class="fa fa-info"></i>
-      </div>
-    </div>
+            >
+              <i class="fa-solid fa-check" aria-hidden="true" />
+            </BaseButton>
+            <BaseButton
+              variant="text"
+              size="sm"
+              class="rename-button rename-cancel-button"
+              :title="t('common.cancel')"
+              @mousedown.prevent
+              @click.stop="cancelRename"
+              @dblclick.stop
+            >
+              <i class="fa-solid fa-xmark" aria-hidden="true" />
+            </BaseButton>
+          </template>
+          <template v-else>
+            <span class="song-title-text">{{ song.title }}</span>
+            <BaseButton
+              variant="text"
+              size="sm"
+              class="rename-button"
+              :title="t('library.renameSong')"
+              @mousedown.prevent
+              @click="startRename($event, song)"
+              @dblclick.stop
+            >
+              <i class="fa-solid fa-pencil" aria-hidden="true" />
+            </BaseButton>
+          </template>
+        </span>
+      </template>
+
+      <template #cell-importedAt="{ item: song }">
+        <span class="song-imported-at muted">{{ formatImportedAt(song.importedAt) }}</span>
+      </template>
+
+      <template #cell-lastPlayed="{ item: song }">
+        <span class="song-last-played muted">{{ formatLastPlayed(song.lastPlayed) }}</span>
+      </template>
+
+      <template #cell-duration="{ item: song }">
+        <span class="song-duration muted">{{ formatDuration(song.duration) }}</span>
+      </template>
+
+      <template #cell-playCount="{ item: song }">
+        <span class="song-play-count">{{ song.playCount }}</span>
+      </template>
+
+      <template #cell-rating="{ item: song }">
+        <div
+          class="song-rating"
+          :class="{ 'has-rating': song.rating }"
+          :aria-label="t('library.ratingValue', { value: song.rating ?? 0 })"
+          @click="showRatingDialog($event, song)"
+        >
+          {{ stars(song.rating) }}
+        </div>
+      </template>
+
+      <template #cell-difficulty="{ item: song }">
+        <div
+          class="song-difficulty"
+          :aria-label="t('library.difficultyValue', { value: song.difficulty ?? 0 })"
+          @click="showDifficultyDialog($event, song)"
+        >
+          <span
+            v-for="value in 10"
+            :key="value"
+            class="difficulty-bar"
+            :class="{ filled: value <= (song.difficulty ?? 0) }"
+            :data-level="value"
+          />
+        </div>
+      </template>
+
+      <template #cell-details="{ item: song }">
+        <div
+          class="detail-button"
+          @click="showDetail($event, song)"
+          :aria-label="t('library.showDetails')"
+        >
+          <i class="fa fa-info"></i>
+        </div>
+      </template>
+    </BaseTable>
   </div>
   <p v-else class="muted empty-list">{{ t('library.importToStart') }}</p>
 
@@ -547,45 +585,31 @@ function clearDifficulty() {
 
 <style scoped>
 .song-list {
-  display: grid;
-  gap: 0;
+  display: flex;
+  flex-direction: column;
   min-height: 0;
   padding: 0;
   background: var(--color-bg-secondary);
 }
 
-.song-row {
-  display: grid;
-  grid-template-columns: 2.7rem minmax(0, 1fr) 9.2rem 9.2rem 5.2rem 5.8rem 5.6rem 6.4rem 2.5rem;
-  align-items: center;
-  gap: 0.8rem;
-  width: 100%;
-  min-height: 2.52rem;
-  padding: 0.08rem 0.82rem 0.08rem 0.18rem;
-  border: 0;
-  border-top: 1px solid var(--color-border-default);
-  border-radius: 0;
-  background: transparent;
-  color: var(--color-text-primary);
-  text-align: left;
-  cursor: pointer;
+:deep(.base-table) {
+  table-layout: fixed;
 }
 
-.song-row:last-child {
-  border-bottom: 1px solid var(--color-border-default);
+:deep(.base-table-row) {
+  height: 2.52rem;
 }
 
-.song-row:hover {
-  background: var(--color-row-hover);
+:deep(.base-table td) {
+  padding: 0.08rem 0.8rem 0.08rem 0;
 }
 
-.song-row.selected {
-  background: var(--color-row-selected) !important;
-  color: var(--color-row-selected-text) !important;
+:deep(.base-table td:first-child) {
+  padding-left: 0.18rem;
 }
 
-.song-row.selected:hover {
-  background: var(--color-row-selected-hover) !important;
+:deep(.base-table td:last-child) {
+  padding-right: 0.82rem;
 }
 
 .song-score {
@@ -687,17 +711,17 @@ function clearDifficulty() {
   color: #f87171 !important;
 }
 
-.song-row.selected .rename-button {
+:deep(.base-table-row.is-selected) .rename-button {
   color: var(--color-row-selected-text);
   opacity: 0.8;
 }
 
-.song-row.selected .rename-confirm-button {
+:deep(.base-table-row.is-selected) .rename-confirm-button {
   color: #4ade80 !important;
   opacity: 1;
 }
 
-.song-row.selected .rename-cancel-button {
+:deep(.base-table-row.is-selected) .rename-cancel-button {
   color: #f87171 !important;
   opacity: 1;
 }
@@ -714,9 +738,9 @@ function clearDifficulty() {
   font-variant-numeric: tabular-nums;
 }
 
-.song-row.selected .song-imported-at,
-.song-row.selected .song-last-played,
-.song-row.selected .song-duration {
+:deep(.base-table-row.is-selected) .song-imported-at,
+:deep(.base-table-row.is-selected) .song-last-played,
+:deep(.base-table-row.is-selected) .song-duration {
   color: var(--color-row-selected-text);
   opacity: 0.7;
 }
@@ -754,12 +778,12 @@ function clearDifficulty() {
   text-shadow: 0 0 3px rgba(252, 211, 77, 0.4);
 }
 
-.song-row.selected .song-rating {
+:deep(.base-table-row.is-selected) .song-rating {
   color: var(--color-row-selected-text);
   opacity: 0.6;
 }
 
-.song-row.selected .song-rating.has-rating {
+:deep(.base-table-row.is-selected) .song-rating.has-rating {
   color: #fbbf24;
   opacity: 1;
   text-shadow: 0 0 3px rgba(251, 191, 36, 0.4);
@@ -784,11 +808,11 @@ function clearDifficulty() {
   transform: scale(1.05);
 }
 
-.song-row.selected .song-difficulty {
+:deep(.base-table-row.is-selected) .song-difficulty {
   opacity: 0.74;
 }
 
-.song-row.selected .song-difficulty:hover {
+:deep(.base-table-row.is-selected) .song-difficulty:hover {
   opacity: 0.9;
 }
 

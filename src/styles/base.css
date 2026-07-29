@@ -82,7 +82,7 @@
 
   /* === TAB === */
   --color-tab-bg: var(--color-bg-secondary);
-  --color-tab-active-bg: var(--color-bg-elevated);
+  --color-tab-active-bg: var(--color-row-selected);
   --color-tab-border: var(--color-border-default);
 
   /* === TOOLBAR === */

@@ -18,6 +18,7 @@ import ModeScoreTimeline from '../components/player/ModeScoreTimeline.vue'
 import type { AchievementCelebration as AchievementCelebrationState } from '../stores/profileStore'
 
 import BaseButton from '../components/ui/BaseButton.vue'
+import BaseTable, { type TableColumn } from '../components/ui/BaseTable.vue'
 
 const DEBUG = import.meta.env.DEV
 const route = useRoute()
@@ -31,7 +32,7 @@ const mode = ref<PlayMode>('noteMemory')
 const handSelection = ref<HandSelection>('right')
 const speed = ref(settings.defaultSpeed)
 const detailTab = ref<'instructions' | 'breakdown' | 'chart' | 'points'>('points')
-const sortColumn = ref<'name' | 'points' | 'accuracy' | 'errors' | 'speed' | 'date'>('points')
+const sortColumn = ref<'name' | 'points' | 'accuracy' | 'errors' | 'speed' | 'time' | 'date'>('points')
 const sortDirection = ref<'asc' | 'desc'>('desc')
 const achievementCelebration = ref<AchievementCelebrationState | null>(null)
 const animatedAchievementScores = ref<Record<string, number>>({})
@@ -96,6 +97,10 @@ const scoreRows = computed<ModeScoreEntry[]>(() => {
         aVal = a.averageSpeed
         bVal = b.averageSpeed
         break
+      case 'time':
+        aVal = a.timeSpentUs ?? 0
+        bVal = b.timeSpentUs ?? 0
+        break
       case 'date':
         aVal = a.playedAt
         bVal = b.playedAt
@@ -109,6 +114,29 @@ const scoreRows = computed<ModeScoreEntry[]>(() => {
     }
   })
 })
+
+const pointsColumns: TableColumn[] = [
+  { key: 'name', label: t('modeSelect.table.name'), sortable: true },
+  { key: 'points', label: t('modeSelect.table.points'), sortable: true },
+  { key: 'accuracy', label: t('modeSelect.table.notesHit'), sortable: true },
+  { key: 'errors', label: t('modeSelect.table.errors'), sortable: true },
+  { key: 'speed', label: t('modeSelect.table.actualSpeed'), sortable: true },
+  { key: 'time', label: t('modeSelect.table.timeSpent'), sortable: true },
+  { key: 'date', label: t('modeSelect.table.dateEarned'), sortable: true },
+]
+
+function toggleSort(column: typeof sortColumn.value) {
+  if (sortColumn.value === column) {
+    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
+  } else {
+    sortColumn.value = column
+    sortDirection.value = ['date', 'points', 'time'].includes(column) ? 'desc' : 'asc'
+  }
+}
+
+function handleSortDescChange(desc: boolean) {
+  sortDirection.value = desc ? 'desc' : 'asc'
+}
 
 watch(mode, value => {
   const fixed = PLAY_MODE_CONFIGS[value].fixedSpeed
@@ -256,14 +284,7 @@ async function testAchievementCelebration() {
   animateAchievementScore(celebration)
 }
 
-function toggleSort(column: typeof sortColumn.value) {
-  if (sortColumn.value === column) {
-    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc'
-  } else {
-    sortColumn.value = column
-    sortDirection.value = ['date', 'points'].includes(column) ? 'desc' : 'asc'
-  }
-}
+
 
 async function startPlay() {
   const song = player.song
@@ -453,43 +474,41 @@ function goToTrackSettings() {
         </template>
 
         <template v-else>
-          <table class="points-table">
-            <thead>
-              <tr>
-                <th @click="toggleSort('name')">
-                  <span class="sort-arrow" :class="{ active: sortColumn === 'name', desc: sortColumn === 'name' && sortDirection === 'desc' }">▲</span>{{ t('modeSelect.table.name') }}
-                </th>
-                <th @click="toggleSort('points')">
-                  <span class="sort-arrow" :class="{ active: sortColumn === 'points', desc: sortColumn === 'points' && sortDirection === 'desc' }">▲</span>{{ t('modeSelect.table.points') }}
-                </th>
-                <th @click="toggleSort('accuracy')">
-                  <span class="sort-arrow" :class="{ active: sortColumn === 'accuracy', desc: sortColumn === 'accuracy' && sortDirection === 'desc' }">▲</span>{{ t('modeSelect.table.notesHit') }}
-                </th>
-                <th @click="toggleSort('errors')">
-                  <span class="sort-arrow" :class="{ active: sortColumn === 'errors', desc: sortColumn === 'errors' && sortDirection === 'desc' }">▲</span>{{ t('modeSelect.table.errors') }}
-                </th>
-                <th @click="toggleSort('speed')">
-                  <span class="sort-arrow" :class="{ active: sortColumn === 'speed', desc: sortColumn === 'speed' && sortDirection === 'desc' }">▲</span>{{ t('modeSelect.table.actualSpeed') }}
-                </th>
-                <th>{{ t('modeSelect.table.timeSpent') }}</th>
-                <th @click="toggleSort('date')">
-                  <span class="sort-arrow" :class="{ active: sortColumn === 'date', desc: sortColumn === 'date' && sortDirection === 'desc' }">▲</span>{{ t('modeSelect.table.dateEarned') }}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="entry in scoreRows" :key="`${entry.mode}-${entry.handSelection}-${entry.playedAt}`">
-                <td>{{ t(handLabelKeys[entry.handSelection]) }} • {{ t(modeTitleKeys[entry.mode]) }}</td>
-                <td>{{ entry.gameplayPoints ?? entry.score }}</td>
-                <td>{{ entry.notesHit ?? '-' }}</td>
-                <td>{{ entry.errors ?? (entry.failed ? 1 : 0) }}</td>
-                <td>{{ entry.averageSpeed }}%</td>
-                <td>{{ formatDuration(entry.timeSpentUs) }}</td>
-                <td>{{ date(entry.playedAt) }}</td>
-              </tr>
-            </tbody>
-          </table>
-          <p v-if="!scoreRows.length" class="empty-table muted">{{ t('modeSelect.table.empty') }}</p>
+          <BaseTable
+            :columns="pointsColumns"
+            :data="scoreRows"
+            :sort-by="sortColumn"
+            :sort-desc="sortDirection === 'desc'"
+            @update:sort-by="toggleSort($event as any)"
+            @update:sort-desc="handleSortDescChange"
+            :hoverable="false"
+            class="points-table-override"
+          >
+            <template #cell-name="{ item }">
+              {{ t(handLabelKeys[item.handSelection as HandSelection]) }} • {{ t(modeTitleKeys[item.mode as PlayMode]) }}
+            </template>
+            <template #cell-points="{ item }">
+              {{ item.gameplayPoints ?? item.score }}
+            </template>
+            <template #cell-accuracy="{ item }">
+              {{ item.notesHit ?? '-' }}
+            </template>
+            <template #cell-errors="{ item }">
+              {{ item.errors ?? (item.failed ? 1 : 0) }}
+            </template>
+            <template #cell-speed="{ item }">
+              {{ item.averageSpeed }}%
+            </template>
+            <template #cell-time="{ item }">
+              {{ formatDuration(item.timeSpentUs) }}
+            </template>
+            <template #cell-date="{ item }">
+              {{ date(item.playedAt) }}
+            </template>
+            <template #empty>
+              <p class="empty-table muted">{{ t('modeSelect.table.empty') }}</p>
+            </template>
+          </BaseTable>
         </template>
       </section>
     </section>
@@ -766,37 +785,16 @@ function goToTrackSettings() {
   margin-top: 0;
 }
 
-.points-table {
+.points-table-override {
   width: 100%;
-  border-collapse: collapse;
+}
+
+:deep(.base-table) {
   font-size: 0.85rem;
 }
 
-.points-table th,
-.points-table td {
-  padding: 0.55rem;
-  text-align: left;
-  white-space: nowrap;
-}
-
-.points-table thead {
-  position: sticky;
-  top: 0;
-  z-index: 100;
+:deep(.base-table th) {
   background: var(--color-bg-elevated);
-}
-
-.points-table th {
-  color: var(--color-text-primary);
-  font-weight: 500;
-  background: var(--color-bg-elevated);
-  box-shadow: 0 1px 0 var(--color-border-subtle);
-  cursor: pointer;
-  user-select: none;
-}
-
-.points-table tbody tr {
-  border-top: 1px solid var(--color-border-subtle);
 }
 
 .sort-arrow {
