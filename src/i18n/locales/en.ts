@@ -689,6 +689,7 @@ export const en = {
     exportFailed: 'Could not export render: {message}',
     exportUnsupported: 'This browser/runtime does not support the APIs needed for video export yet.',
     cropSelection: 'Crop range',
+    resetCrop: 'Reset crop',
     backgroundImage: 'Piano roll background',
     logoImage: 'Logo image',
     chooseImage: 'Choose image',

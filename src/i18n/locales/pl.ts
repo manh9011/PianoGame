@@ -697,6 +697,7 @@ export const pl = {
     exportFailed: 'Nie udało się wyeksportować renderu: {message}',
     exportUnsupported: 'Ta przeglądarka/środowisko nie obsługuje jeszcze API potrzebnych do eksportu wideo.',
     cropSelection: 'Zakres przycięcia',
+    resetCrop: 'Resetuj przycięcie',
     backgroundImage: 'Tło piano roll',
     logoImage: 'Obraz logo',
     chooseImage: 'Wybierz obraz',

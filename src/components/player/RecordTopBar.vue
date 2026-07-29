@@ -3,7 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { usePlayerStore } from '../../stores/playerStore'
-import type { RecordExportPreset } from '../../stores/recordStore'
+import { useRecordStore, type RecordExportPreset } from '../../stores/recordStore'
 import { getTempoPointAtMicroseconds, microsecondsPerQuarterToBpm } from '../../modules/midi/midiTempo'
 import BaseToolbar from '../ui/BaseToolbar.vue'
 import BaseButton from '../ui/BaseButton.vue'
@@ -11,6 +11,7 @@ import BaseButton from '../ui/BaseButton.vue'
 const router = useRouter()
 const { t } = useI18n()
 const player = usePlayerStore()
+const record = useRecordStore()
 
 const props = defineProps<{
   settingsOpen?: boolean
@@ -43,6 +44,19 @@ const baseBPM = computed(() => {
   return microsecondsPerQuarterToBpm(tempoPoint.microsecondsPerQuarter)
 })
 const currentBPM = computed(() => Math.round(baseBPM.value * (currentSpeed.value / 100)))
+
+const isCropped = computed(() => {
+  const totalUs = player.session?.loopState.durationUs ?? player.clock?.seekableDurationUs ?? 0
+  if (!totalUs) return false
+  return record.cropStartUs > 0 || (record.cropEndUs > 0 && record.cropEndUs < totalUs)
+})
+
+function resetCrop() {
+  const totalUs = player.session?.loopState.durationUs ?? player.clock?.seekableDurationUs ?? 0
+  if (totalUs) {
+    record.resetCrop(totalUs)
+  }
+}
 
 function back() {
   player.clock?.stop()
@@ -121,6 +135,16 @@ onBeforeUnmount(() => {
           <button type="button" role="menuitem" @click="emit('runRenderPreset', 'webm-10s')">{{ t('record.presets.webm10s') }}</button>
         </div>
       </div>
+
+      <BaseButton
+        variant="icon"
+        :title="t('record.resetCrop')"
+        :aria-label="t('record.resetCrop')"
+        :disabled="!isCropped"
+        @click="resetCrop"
+      >
+        <i class="fas fa-undo"></i>
+      </BaseButton>
     </template>
 
     <template #right>

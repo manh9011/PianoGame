@@ -109,6 +109,72 @@ export function getKeySignatureAccidentals(key?: string, scale?: string): KeySig
   return signatures[cleanKey] ?? 0
 }
 
+export const ACCIDENTAL_TO_KEY_SIGNATURE_ID: Record<KeySignatureAccidentals, string> = {
+  [-7]: 'flat7',
+  [-6]: 'flat6',
+  [-5]: 'flat5',
+  [-4]: 'flat4',
+  [-3]: 'flat3',
+  [-2]: 'flat2',
+  [-1]: 'flat1',
+  [0]: 'natural',
+  [1]: 'sharp1',
+  [2]: 'sharp2',
+  [3]: 'sharp3',
+  [4]: 'sharp4',
+  [5]: 'sharp5',
+  [6]: 'sharp6',
+  [7]: 'sharp7',
+}
+
+export function parseKeySignatureLabel(label?: string): { key: string; scale: string } {
+  if (!label) return { key: 'C', scale: 'major' }
+  const parts = label.trim().split(/\s+/)
+  if (parts.length >= 2) {
+    const scaleStr = parts[1].toLowerCase()
+    const scale = scaleStr.includes('minor') ? 'minor' : 'major'
+    return { key: parts[0], scale }
+  }
+  return { key: label.trim() || 'C', scale: 'major' }
+}
+
+export function formatKeySignature(
+  key?: string,
+  scale?: string,
+  t?: (key: string) => string,
+  rawLabel?: string
+): string {
+  let finalKey = key
+  let finalScale = scale
+  if (!finalKey && !finalScale && rawLabel) {
+    const parsed = parseKeySignatureLabel(rawLabel)
+    finalKey = parsed.key
+    finalScale = parsed.scale
+  }
+  if (!finalKey) finalKey = 'C'
+  if (!finalScale) finalScale = 'major'
+
+  const accidentals = getKeySignatureAccidentals(finalKey, finalScale)
+  const keyId = ACCIDENTAL_TO_KEY_SIGNATURE_ID[accidentals] ?? 'natural'
+  const isMinor = finalScale.toLowerCase() === 'minor'
+
+  if (t) {
+    const translationKey = `freePlay.keySignatureNames.${keyId}`
+    const translation = t(translationKey)
+    if (translation && translation !== translationKey) {
+      const parts = translation.split('/').map(p => p.trim())
+      if (isMinor) {
+        return parts[1] ?? parts[0]
+      }
+      return parts[0]
+    }
+  }
+
+  const cleanKey = finalKey || 'C'
+  const titleScale = isMinor ? 'Minor' : 'Major'
+  return `${cleanKey} ${titleScale}`
+}
+
 export function getEnglishNoteName(noteId: number, keySignatureAccidentals = 0) {
   const pitchClass = notePitchClass(noteId)
   const signature = Math.max(-7, Math.min(7, Math.round(keySignatureAccidentals))) as KeySignatureAccidentals

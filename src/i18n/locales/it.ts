@@ -697,6 +697,7 @@ export const it = {
     exportFailed: 'Impossibile esportare il rendering: {message}',
     exportUnsupported: 'Questo browser/runtime non supporta ancora le API necessarie per esportare video.',
     cropSelection: 'Intervallo di ritaglio',
+    resetCrop: 'Ripristina ritaglio',
     backgroundImage: 'Sfondo del piano roll',
     logoImage: 'Immagine del logo',
     chooseImage: 'Scegli immagine',

@@ -14,7 +14,7 @@ export type FailureReason = 'wrongNote' | 'missedNote' | 'strayNote'
 export interface SessionNote extends TranslatedNote { hand: Hand; finger?: number | null; fingerSource?: 'manual' | 'auto'; fingerCost?: number }
 export interface SessionBookmark { id: string; timeUs: number; source: MidiBookmarkSource | 'user'; label: string; color: string }
 export interface UserBookmark { id: string; timeUs: number; label: string }
-export interface SessionKeySignature { id: string; timeUs: number; label: string; accidentals: number }
+export interface SessionKeySignature { id: string; timeUs: number; label: string; accidentals: number; key?: string; scale?: string }
 export interface LoopState {
   enabled: boolean
   startUs: number

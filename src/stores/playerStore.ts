@@ -411,6 +411,8 @@ function createSessionKeySignatures(midi: ReturnType<typeof parseMidi>, tempoMap
     id: `key:${signature.pulse}:${index}`,
     timeUs: pulseToMicroseconds(signature.pulse, midi.header.ticksPerQuarter, tempoMap),
     label: signature.label,
+    key: signature.key,
+    scale: signature.scale,
     accidentals: getKeySignatureAccidentals(signature.key, signature.scale),
   }))
 }

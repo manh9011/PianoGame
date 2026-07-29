@@ -697,6 +697,7 @@ export const ko = {
     exportFailed: '렌더를 내보낼 수 없습니다: {message}',
     exportUnsupported: '이 브라우저/런타임은 아직 비디오 내보내기에 필요한 API를 지원하지 않습니다.',
     cropSelection: '자르기 범위',
+    resetCrop: '자르기 재설정',
     backgroundImage: '피아노 롤 배경',
     logoImage: '로고 이미지',
     chooseImage: '이미지 선택',

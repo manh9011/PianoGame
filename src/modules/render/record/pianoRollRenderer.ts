@@ -1,14 +1,13 @@
 import { HAND_COLORS, HAND_HIT_COLORS } from '../../game/handAssignment'
 import { FLAT_GRAY, MISSED_NOTE_COLOR, TRACK_INVISIBLE_COLOR } from '../../game/trackProperties'
 import { createPianoKeys, WHITE_KEY_COUNT } from '../pianoGeometry'
-import { getNoteLabel, notePitchClass } from '../pianoLabels'
+import { formatKeySignature, getNoteLabel, notePitchClass } from '../pianoLabels'
 import { drawRollHitLine, ROLL_HIT_LINE_HEIGHT as HIT_LINE_HEIGHT } from '../hitLineRenderer'
 import { drawImpactParticlesStatelessWithSprites } from '../impactParticlesRenderer'
 import { layoutNotes, type LaidOutNote } from '../pianoRollLayout'
 import type { RecordRenderableNote, RecordRenderImages, RecordRenderScene, RecordRenderVisualOptions } from './recordRenderModel'
 
 const PIANO_ROLL_BACKGROUND = '#303030'
-const DEFAULT_KEY_SIGNATURE_LABEL = 'C Major'
 const NOTE_BODY_PAD_X = 8
 const NOTE_BODY_PAD_Y = 10
 const pianoKeys = createPianoKeys()
@@ -96,12 +95,16 @@ function noteColor(note: Pick<RecordRenderableNote, 'trackId' | 'hand'> & { stat
 }
 
 function currentKeySignatureLabel(currentUs: number, scene: RecordRenderScene) {
-  let current = ''
+  let currentKey: string | undefined
+  let currentScale: string | undefined
+  let currentLabel: string | undefined
   for (const signature of scene.keySignatures) {
     if (signature.timeUs > currentUs) break
-    current = signature.label
+    currentKey = signature.key
+    currentScale = signature.scale
+    currentLabel = signature.label
   }
-  return current || DEFAULT_KEY_SIGNATURE_LABEL
+  return formatKeySignature(currentKey, currentScale, undefined, currentLabel)
 }
 
 function drawGrid(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, width: number, height: number, currentUs: number, scene: RecordRenderScene) {

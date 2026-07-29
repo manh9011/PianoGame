@@ -697,6 +697,7 @@ export const tr = {
     exportFailed: 'İşleme dışa aktarılamadı: {message}',
     exportUnsupported: 'Bu tarayıcı/çalışma ortamı video dışa aktarımı için gereken API’leri henüz desteklemiyor.',
     cropSelection: 'Kırpma aralığı',
+    resetCrop: 'Kırpmayı sıfırla',
     backgroundImage: 'Piano roll arka planı',
     logoImage: 'Logo görseli',
     chooseImage: 'Görsel seç',

@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { usePlayerStore } from '../../stores/playerStore'
 import { useSettingsStore } from '../../stores/settingsStore'
 import { layoutNotes } from '../../modules/render/pianoRollLayout'
 import type { LaidOutNote } from '../../modules/render/pianoRollLayout'
 import { createPianoKeys, WHITE_KEY_COUNT } from '../../modules/render/pianoGeometry'
-import { getNoteLabel, notePitchClass } from '../../modules/render/pianoLabels'
+import { formatKeySignature, getNoteLabel, notePitchClass } from '../../modules/render/pianoLabels'
 import { FLAT_GRAY, MISSED_NOTE_COLOR, TRACK_INVISIBLE_COLOR } from '../../modules/game/trackProperties'
 import { HAND_COLORS, HAND_HIT_COLORS } from '../../modules/game/handAssignment'
 import { CanvasSpriteCache, createSpriteCanvas } from '../../modules/render/canvasSpriteCache'
@@ -33,6 +34,7 @@ const PIANO_ROLL_BACKGROUND = '#303030'
 
 const player = usePlayerStore()
 const settings = useSettingsStore()
+const { t } = useI18n()
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 let resizeObserver: ResizeObserver | null = null
 let rafId: number | null = null
@@ -57,7 +59,6 @@ type LoopDragEdge = 'start' | 'end' | null
 let draggingLoopEdge: LoopDragEdge = null
 
 const BOOKMARK_LABEL_MIN_GAP = 18
-const DEFAULT_KEY_SIGNATURE_LABEL = 'C Major'
 const activeImpacts = new Map<string, number>()
 const impactParticles = createImpactParticleRenderer()
 let lastFrameMs = performance.now()
@@ -239,7 +240,8 @@ function currentKeySignature(session: NonNullable<typeof player.session>) {
 
 function currentKeyLabel(session: NonNullable<typeof player.session>) {
   if (!settings.showKeySignatureBookmarks) return ''
-  return currentKeySignature(session)?.label ?? DEFAULT_KEY_SIGNATURE_LABEL
+  const signature = currentKeySignature(session)
+  return formatKeySignature(signature?.key, signature?.scale, t, signature?.label)
 }
 
 function currentKeySignatureAccidentals(session: NonNullable<typeof player.session>) {

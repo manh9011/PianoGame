@@ -697,6 +697,7 @@ export const vi = {
     exportFailed: "Không thể xuất kết xuất: {message}",
     exportUnsupported: "Trình duyệt/runtime hiện tại chưa hỗ trợ các API cần thiết để xuất video.",
     cropSelection: "Vùng cắt",
+    resetCrop: "Đặt lại vùng cắt",
     backgroundImage: "Hình nền piano roll",
     logoImage: "Hình logo",
     chooseImage: "Chọn hình",

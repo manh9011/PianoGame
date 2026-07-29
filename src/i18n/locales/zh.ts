@@ -697,6 +697,7 @@ export const zh = {
     exportFailed: '无法导出渲染：{message}',
     exportUnsupported: '此浏览器/运行环境尚不支持视频导出所需的 API。',
     cropSelection: '裁剪范围',
+    resetCrop: '重置裁剪',
     backgroundImage: '钢琴卷帘背景',
     logoImage: 'Logo 图像',
     chooseImage: '选择图像',

@@ -137,6 +137,45 @@ const pianoKeys = computed(() => Array.from({ length: 128 }, (_, index) => {
   }
 }))
 
+interface OctaveBand {
+  id: string
+  top: number
+  height: number
+  shaded: boolean
+}
+
+const octaveBands = computed<OctaveBand[]>(() => {
+  const bands: OctaveBand[] = []
+  const octaveCStartPitches = [120, 108, 96, 84, 72, 60, 48, 36, 24, 12, 0]
+
+  octaveCStartPitches.forEach((cPitch, index) => {
+    const octaveNum = Math.floor(cPitch / 12) - 1
+    const topPitch = index === 0 ? 127 : cPitch + 11
+    const bottomPitch = cPitch
+    const topY = pitchToY(topPitch, props.rowHeight)
+    const bottomY = pitchToY(bottomPitch, props.rowHeight) + props.rowHeight
+    const height = bottomY - topY
+
+    bands.push({
+      id: `octave:${cPitch}`,
+      top: topY,
+      height,
+      shaded: octaveNum % 2 !== 0,
+    })
+  })
+  return bands
+})
+
+const blackKeyRows = computed(() => {
+  return pianoKeys.value
+    .filter(k => k.black)
+    .map(k => ({
+      noteId: k.noteId,
+      top: pitchToY(k.noteId, props.rowHeight),
+      height: props.rowHeight,
+    }))
+})
+
 const drawableNotes = computed<DrawableNote[]>(() => props.tracks
   .filter(track => !hiddenSet.value.has(track.id))
   .flatMap((track, trackIndex) => track.notes.map(note => {
@@ -559,6 +598,21 @@ watch(() => props.playheadUs, () => {
             @pointercancel="handlePointerUp"
           >
             <div
+              v-for="band in octaveBands"
+              :key="band.id"
+              class="octave-band"
+              :class="{ 'octave-band--shaded': band.shaded }"
+              :style="{ top: `${band.top}px`, height: `${band.height}px` }"
+            >
+              <div class="octave-divider-line"></div>
+            </div>
+            <div
+              v-for="row in blackKeyRows"
+              :key="`black:${row.noteId}`"
+              class="black-key-row"
+              :style="{ top: `${row.top}px`, height: `${row.height}px` }"
+            ></div>
+            <div
               v-for="line in subdivisionLines"
               :key="line.id"
               class="grid-line grid-line--subdivision"
@@ -831,11 +885,45 @@ watch(() => props.playheadUs, () => {
   position: relative;
   flex: 0 0 auto;
   min-width: calc(100% - 64px);
-  background-color: #24272c;
-  background-image:
-    repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 0, rgba(255, 255, 255, 0.035) 1px, transparent 1px, transparent var(--row-height)),
-    repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 0, rgba(255, 255, 255, 0.03) calc(var(--row-height) * 12), transparent calc(var(--row-height) * 12), transparent calc(var(--row-height) * 24));
+  background-color: #202328;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.04) 0,
+    rgba(255, 255, 255, 0.04) 1px,
+    transparent 1px,
+    transparent var(--row-height)
+  );
   touch-action: none;
+}
+
+.octave-band {
+  position: absolute;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+  background-color: rgba(255, 255, 255, 0.015);
+}
+
+.octave-band--shaded {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+.octave-divider-line {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: rgba(251, 191, 36, 0.32);
+  z-index: 1;
+}
+
+.black-key-row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+  background-color: rgba(0, 0, 0, 0.24);
 }
 
 .note-grid--pan-ready {

@@ -72,6 +72,7 @@ const bookmarkMarkers = computed(() => {
 })
 
 const loopRegion = computed(() => {
+  if (props.cropRangeActive) return null
   const loop = player.session?.loopState
   if (!loop || !player.loopRegionConfigured) return null
   return {
@@ -103,7 +104,7 @@ let previewEndUs = 0
 let canvasResizeObserver: ResizeObserver | null = null
 const CROP_HANDLE_HIT_PX = 16
 const loopPreview = ref<{ left: number; width: number } | null>(null)
-const shouldDrawPlayedRegions = computed(() => !!player.session && player.playbackManuallyStopped)
+const shouldDrawPlayedRegions = computed(() => !props.cropRangeActive && !!player.session && player.playbackManuallyStopped)
 const playedRegions = computed(() => {
   const total = totalUs.value
   if (!shouldDrawPlayedRegions.value || !total) return []
@@ -140,7 +141,7 @@ function mergeSegments(segments: Array<{ startUs: number; endUs: number }>) {
 const unassignedFingerRegions = computed(() => {
   const total = totalUs.value
   const session = player.session
-  if (!props.fingerModeActive || !session || !total) return []
+  if (props.cropRangeActive || !props.fingerModeActive || !session || !total) return []
 
   const segments = session.notes
     .filter(note => !note.finger || note.hand === 'unknown')

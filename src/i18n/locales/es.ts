@@ -697,6 +697,7 @@ export const es = {
     exportFailed: 'No se pudo exportar el render: {message}',
     exportUnsupported: 'Este navegador/entorno de ejecución aún no admite las API necesarias para exportar vídeo.',
     cropSelection: 'Rango de recorte',
+    resetCrop: 'Restablecer recorte',
     backgroundImage: 'Fondo del piano roll',
     logoImage: 'Imagen del logotipo',
     chooseImage: 'Elegir imagen',

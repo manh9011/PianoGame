@@ -697,6 +697,7 @@ export const pt = {
     exportFailed: 'Não foi possível exportar a renderização: {message}',
     exportUnsupported: 'Este navegador/runtime ainda não oferece suporte às APIs necessárias para exportação de vídeo.',
     cropSelection: 'Intervalo de corte',
+    resetCrop: 'Redefinir corte',
     backgroundImage: 'Fundo do piano roll',
     logoImage: 'Imagem do logo',
     chooseImage: 'Escolher imagem',
