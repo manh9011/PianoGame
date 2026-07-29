@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { useSettingsStore } from '../../../stores/settingsStore'
 
@@ -99,9 +99,9 @@ function handleClickOutside(event: MouseEvent) {
   flex-direction: column;
   width: 280px;
   border-radius: 12px;
-  background: #3a3d42;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-default);
+  box-shadow: var(--shadow-lg);
   overflow: visible;
   z-index: 100;
 }
@@ -120,12 +120,12 @@ function handleClickOutside(event: MouseEvent) {
   gap: 1rem;
   padding: 0.75rem;
   border-radius: 8px;
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border-default);
 }
 
 .setting-label {
-  color: #e3e4e8;
+  color: var(--color-text-primary);
   font-size: 0.95rem;
   font-weight: 500;
 }
@@ -175,8 +175,8 @@ function handleClickOutside(event: MouseEvent) {
   position: absolute;
   width: 14px;
   height: 14px;
-  background: #3a3d42;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-default);
   transform: rotate(45deg);
   pointer-events: none;
 }
@@ -202,3 +202,4 @@ function handleClickOutside(event: MouseEvent) {
   opacity: 0;
 }
 </style>
+

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BasePopover from './BasePopover.vue'
@@ -128,8 +128,8 @@ function toggleKeySignatureMode() {
   gap: 0;
   padding: 0;
   border-radius: 8px;
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border-default);
   overflow: hidden;
 }
 
@@ -140,7 +140,7 @@ function toggleKeySignatureMode() {
   gap: 0.7rem;
   min-height: 44px;
   padding: 0 0.7rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.13);
+  border-bottom: 1px solid var(--color-border-subtle);
 }
 
 .setting-row:last-child {
@@ -158,7 +158,7 @@ function toggleKeySignatureMode() {
 
 .setting-label {
   min-width: 9.5rem;
-  color: #e3e4e8;
+  color: var(--color-text-primary);
   font-size: 0.95rem;
   font-weight: 500;
 }
@@ -217,7 +217,7 @@ function toggleKeySignatureMode() {
 }
 
 .current-key {
-  color: #f3f4f6;
+  color: var(--color-text-primary);
   font-size: 1.25rem;
   text-align: center;
   padding: 0.6rem 0.7rem 0.7rem;
@@ -263,3 +263,4 @@ function toggleKeySignatureMode() {
   transform: translateX(22px);
 }
 </style>
+

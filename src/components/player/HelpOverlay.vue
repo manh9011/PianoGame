@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 
@@ -177,7 +177,7 @@ onBeforeUnmount(() => {
     rgba(0, 0, 0, 0.06),
     rgba(0, 0, 0, 0.12)
   );
-  color: #fff;
+  color: var(--color-text-primary);
   font-size: 0.85rem;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
 }
@@ -215,8 +215,8 @@ kbd {
   min-height: 1.35rem;
   padding: 0.1rem 0.35rem;
   border-radius: 4px;
-  background: rgba(180, 183, 188, 0.9);
-  color: #fff;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
   font: 600 0.75rem/1 Inter, Segoe UI, system-ui, sans-serif;
   text-shadow: none;
   box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.18), 0 1px 2px rgba(0, 0, 0, 0.3);
@@ -231,7 +231,7 @@ kbd {
   min-width: 23rem;
   padding: 0.85rem 0.75rem;
   border-radius: 4px;
-  background: rgba(20, 20, 20, 0.82);
+  background: var(--color-bg-tooltip);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
 }
 
@@ -249,7 +249,7 @@ kbd {
   margin: 0;
   padding: 0.65rem 0.75rem;
   border-radius: 4px;
-  background: rgba(20, 20, 20, 0.82);
+  background: var(--color-bg-tooltip);
   font-size: 0.98rem;
 }
 
@@ -279,3 +279,4 @@ kbd {
   }
 }
 </style>
+

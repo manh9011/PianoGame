@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useConfirmStore } from '../../../stores/confirmStore'
@@ -55,7 +55,7 @@ watch(
   gap: 0.7rem;
   padding: 0.45rem;
   margin: -1.25rem;
-  background: #666665;
+  background: var(--color-bg-header);
 }
 
 .confirm-dialog__topbar {
@@ -67,9 +67,9 @@ watch(
   min-height: 34px;
   padding: 0.3rem 0.65rem;
   border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  background: #2d2d2d;
-  color: #f6f6f6;
+  border: 1px solid var(--color-border-default);
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
   font-size: 0.95rem;
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08) inset;
   transition: filter 0.16s ease, transform 0.16s ease;
@@ -81,9 +81,9 @@ watch(
   display: grid;
   place-items: center;
   padding: 1.15rem 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: #3e3e3e;
-  color: rgba(255, 255, 255, 0.95);
+  border: 1px solid var(--color-border-default);
+  background: var(--color-bg-input);
+  color: var(--color-text-primary);
   font-size: 1.05rem;
   line-height: 1.65;
   text-align: center;
@@ -119,12 +119,12 @@ watch(
 }
 
 .confirm-dialog__button.primary {
-  background: #3465a4;
+  background: var(--color-accent-blue);
   color: #fff;
 }
 
 .confirm-dialog__button.danger {
-  background: #a82020;
+  background: var(--color-btn-danger-bg);
   color: #fff;
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
 }
@@ -135,3 +135,4 @@ watch(
   }
 }
 </style>
+

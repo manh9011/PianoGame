@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BasePopover from './BasePopover.vue'
@@ -104,8 +104,8 @@ function getVolumeLabel() {
   gap: 0.5rem;
   padding: 0.75rem;
   border-radius: 8px;
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border-default);
 }
 
 .setting-row {
@@ -116,13 +116,13 @@ function getVolumeLabel() {
 }
 
 .setting-label {
-  color: #e3e4e8;
+  color: var(--color-text-primary);
   font-size: 1rem;
   font-weight: 500;
 }
 
 .volume-value {
-  color: #9ca3af;
+  color: var(--color-text-secondary);
   font-size: 0.95rem;
 }
 
@@ -198,3 +198,4 @@ function getVolumeLabel() {
   transform: translateX(22px);
 }
 </style>
+

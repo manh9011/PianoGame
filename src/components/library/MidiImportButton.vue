@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { useLibraryStore } from '../../stores/libraryStore'
 import { useToastStore } from '../../stores/toastStore'
@@ -50,16 +50,16 @@ async function onFiles(files: FileList | null) {
   width: auto;
   min-height: 2rem;
   padding: 0.3rem 0.82rem;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid var(--color-border-default);
   border-radius: 0.28rem;
-  background: #666666;
-  color: rgba(255, 255, 255, 0.96);
+  background: var(--color-btn-secondary-bg);
+  color: var(--color-text-primary);
   cursor: pointer;
   white-space: nowrap;
 }
 
 .import-button:hover {
-  background: #727272;
+  background: var(--color-btn-secondary-hover);
 }
 
 .import-button input {
@@ -72,6 +72,8 @@ async function onFiles(files: FileList | null) {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 0.76rem;
-  color: rgba(255, 255, 255, 0.56);
+  color: var(--color-text-muted);
 }
 </style>
+
+

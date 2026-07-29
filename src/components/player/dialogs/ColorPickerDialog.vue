@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { TRACK_INVISIBLE_COLOR, TRACK_SETTINGS_PALETTE } from '../../../modules/game/trackProperties'
 
 const props = defineProps<{
@@ -70,10 +70,10 @@ function close() {
 .color-picker-dialog {
   position: fixed;
   width: 80px;
-  background: #2a2a2a;
-  border: 1px solid #1a1a1a;
+  background: var(--color-bg-elevated-2);
+  border: 1px solid var(--color-border-default);
   border-radius: 8px;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.42);
+  box-shadow: var(--shadow-lg);
   z-index: 1001;
   overflow: visible;
 }
@@ -82,8 +82,8 @@ function close() {
   position: absolute;
   width: 14px;
   height: 14px;
-  background: #1f1f1f;
-  border: 1px solid #1a1a1a;
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border-default);
   transform: rotate(45deg);
   z-index: -1;
 }
@@ -105,7 +105,7 @@ function close() {
   flex-direction: column;
   gap: 10px;
   padding: 10px;
-  background: linear-gradient(180deg, #3c3c3c, #282828);
+  background: var(--color-bg-elevated-2);
   border-radius: 8px;
 }
 
@@ -170,3 +170,4 @@ function close() {
   filter: brightness(1.06);
 }
 </style>
+

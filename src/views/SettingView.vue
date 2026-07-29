@@ -33,8 +33,8 @@ const { t } = useI18n()
   min-height: 0;
   display: grid;
   grid-template-rows: 2.75rem minmax(0, 1fr);
-  background: #4a4a4a;
-  color: #f0f0f0;
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
   overflow: hidden;
 }
 
@@ -44,9 +44,9 @@ const { t } = useI18n()
   align-items: center;
   gap: 1rem;
   padding: 0 0.85rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  background: linear-gradient(#323232, #262626);
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
+  border-bottom: 1px solid var(--color-border-subtle);
+  background: var(--color-bg-header);
+  box-shadow: var(--shadow-sm);
 }
 
 .settings-topbar h1 {
@@ -63,18 +63,18 @@ const { t } = useI18n()
   gap: 0.36rem;
   min-height: 1.9rem;
   padding: 0.34rem 0.68rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--color-border-default);
   border-radius: 0.34rem;
-  background: linear-gradient(#444444, #303030);
-  color: rgba(255, 255, 255, 0.9);
+  background: var(--color-btn-secondary-bg);
+  color: var(--color-btn-secondary-text);
 }
 
 .settings-back:hover {
-  background: linear-gradient(#515151, #393939);
+  background: var(--color-btn-secondary-hover);
 }
 
 .settings-brand {
-  color: rgba(255, 255, 255, 0.42);
+  color: var(--color-text-muted);
   font-size: 0.76rem;
 }
 
@@ -90,7 +90,7 @@ const { t } = useI18n()
   flex: 1;
   overflow: auto;
   padding: 0.82rem 1rem 1.4rem;
-  background: #4a4a4a;
+  background: var(--color-bg-primary);
 }
 
 .settings-content :deep(.settings-page) {
@@ -111,14 +111,14 @@ const { t } = useI18n()
 
 .settings-content :deep(.settings-page-title h2) {
   margin: 0;
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--color-text-primary);
   font-size: 1.12rem;
   font-weight: 600;
 }
 
 .settings-content :deep(.settings-page-title p) {
   margin: 0.18rem 0 0;
-  color: rgba(255, 255, 255, 0.48);
+  color: var(--color-text-muted);
   font-size: 0.78rem;
 }
 

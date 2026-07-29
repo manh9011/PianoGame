@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import BasePopover from './BasePopover.vue'
 import { useSettingsStore } from '../../../stores/settingsStore'
@@ -84,7 +84,7 @@ const settings = useSettingsStore()
 }
 
 .setting-label {
-  color: #e3e4e8;
+  color: var(--color-text-primary);
   font-size: 0.95rem;
   font-weight: 500;
 }
@@ -106,7 +106,7 @@ const settings = useSettingsStore()
   position: absolute;
   inset: 0;
   border-radius: 14px;
-  background: #5a5c61;
+  background: var(--color-bg-input);
   transition: background 0.3s ease;
 }
 
@@ -130,3 +130,4 @@ const settings = useSettingsStore()
   transform: translateX(22px);
 }
 </style>
+

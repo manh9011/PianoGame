@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
@@ -196,8 +196,8 @@ function decreaseSpeed() {
   flex-direction: column;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
-  background: #2b2d31;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--color-bg-tertiary);
+  border-bottom: 1px solid var(--color-border-default);
 }
 
 .top-main-row {
@@ -222,9 +222,9 @@ function decreaseSpeed() {
 .top-button {
   padding: 0.4rem 0.75rem;
   border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.05);
-  color: #e3e4e8;
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
   font-size: 0.9rem;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -241,7 +241,7 @@ function decreaseSpeed() {
 
 .top-button.benchmark-toggle--active,
 .top-button.help-toggle--active {
-  color: #fbbf24;
+  color: var(--color-accent-amber);
   background: rgba(251, 191, 36, 0.15);
   border-color: rgba(251, 191, 36, 0.4);
 }
@@ -257,9 +257,9 @@ function decreaseSpeed() {
   height: 36px;
   padding: 0;
   border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.05);
-  color: #e3e4e8;
+  border: 1px solid var(--color-border-default);
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
   font-size: 1.1rem;
   display: flex;
   align-items: center;
@@ -291,7 +291,7 @@ function decreaseSpeed() {
 
 .icon-button.loop-active,
 .icon-button.finger-active {
-  color: #fbbf24;
+  color: var(--color-accent-amber);
   background: rgba(251, 191, 36, 0.15);
   border-color: rgba(251, 191, 36, 0.4);
 }
@@ -312,10 +312,10 @@ function decreaseSpeed() {
   width: 36px;
   height: 36px;
   padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--color-border-strong);
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.05);
-  color: #e3e4e8;
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
   font-size: 0.9rem;
   display: flex;
   align-items: center;
@@ -346,19 +346,19 @@ function decreaseSpeed() {
   min-width: 4.5rem;
   padding: 0 0.6rem;
   border-radius: 4px;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--color-bg-subtle);
   line-height: 1.2;
 }
 
 .tempo-percent {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #e3e4e8;
+  color: var(--color-text-primary);
 }
 
 .tempo-bpm {
   font-size: 0.7rem;
-  color: #9ca3af;
+  color: var(--color-text-secondary);
   margin-top: 0.05rem;
 }
 
@@ -374,3 +374,4 @@ function decreaseSpeed() {
   }
 }
 </style>
+

@@ -140,8 +140,8 @@ onBeforeUnmount(() => {
   flex-direction: column;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
-  background: #2b2d31;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--color-bg-tertiary);
+  border-bottom: 1px solid var(--color-border-default);
 }
 
 .top-main-row {

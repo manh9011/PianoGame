@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { onBeforeUnmount, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
@@ -119,8 +119,8 @@ onBeforeUnmount(() => {
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  background: #383838;
-  color: #eeeeee;
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
 }
 
 .track-header {
@@ -130,8 +130,8 @@ onBeforeUnmount(() => {
   justify-content: center;
   min-height: 64px;
   padding: 0;
-  background: #2f2f2f;
-  border-bottom: 1px solid #262626;
+  background: var(--color-bg-header);
+  border-bottom: 1px solid var(--color-border-subtle);
 }
 
 .header-left {
@@ -143,10 +143,10 @@ onBeforeUnmount(() => {
 
 .header-btn {
   padding: 0.45rem 0.9rem;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid var(--color-border-default);
   border-radius: 6px;
   background: linear-gradient(#444, #303030);
-  color: #f0f0f0;
+  color: var(--color-text-primary);
   font-size: 1rem;
   cursor: pointer;
 }
@@ -159,7 +159,7 @@ onBeforeUnmount(() => {
   margin: 0;
   font-size: 1.55rem;
   font-weight: 500;
-  color: #f4f4f4;
+  color: var(--color-text-primary);
 }
 
 .tracks-container {
@@ -183,17 +183,17 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 0.75rem;
   padding: 0.85rem 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  background: #2f2f2f;
+  border-top: 1px solid var(--color-border-subtle);
+  background: var(--color-bg-header);
 }
 
 .footer-btn {
   min-height: 2.4rem;
   padding: 0 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid var(--color-border-default);
   border-radius: 8px;
   background: linear-gradient(#444, #303030);
-  color: #f0f0f0;
+  color: var(--color-text-primary);
   cursor: pointer;
 }
 
@@ -202,7 +202,7 @@ onBeforeUnmount(() => {
 }
 
 .footer-text {
-  color: rgba(255, 255, 255, 0.68);
+  color: var(--color-text-muted);
   text-align: center;
 }
 
@@ -220,3 +220,4 @@ onBeforeUnmount(() => {
   }
 }
 </style>
+

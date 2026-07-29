@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { GM_INSTRUMENT_GROUPS, getInstrumentEmoji } from '../../../modules/audio/gmInstrumentCatalog'
 
@@ -87,7 +87,7 @@ function close() {
   width: 500px;
   max-width: calc(100vw - 20px);
   max-height: 520px;
-  background: #1f1f1f;
+  background: var(--color-bg-elevated-2);
   border: 8px solid #1f1f1f;
   border-radius: 6px;
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
@@ -106,7 +106,7 @@ function close() {
   position: absolute;
   width: 18px;
   height: 18px;
-  background: #1f1f1f;
+  background: var(--color-bg-elevated-2);
   border: 1px solid rgba(0, 0, 0, 0.35);
   transform: rotate(45deg);
   z-index: 0;
@@ -129,7 +129,7 @@ function close() {
   z-index: 1;
   display: flex;
   flex-direction: column;
-  background: #383838;
+  background: var(--color-bg-input);
   border-right: 1px solid #171717;
   overflow-y: auto;
 }
@@ -139,8 +139,8 @@ function close() {
   padding: 0 10px;
   border: 0;
   border-bottom: 1px solid #242424;
-  background: #3a3a3a;
-  color: #eeeeee;
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
   text-align: left;
   font-size: 0.9rem;
   cursor: pointer;
@@ -149,15 +149,15 @@ function close() {
 
 .family-item:hover,
 .family-item.active {
-  background: #a7a7a7;
-  color: #202020;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-inverse);
 }
 
 .instrument-list {
   max-height: 520px;
   overflow-y: auto;
   padding: 10px;
-  background: #303030;
+  background: var(--color-bg-tertiary);
 }
 
 .instrument-item {
@@ -170,8 +170,8 @@ function close() {
   padding: 7px 10px;
   border: 1px solid #1d1d1d;
   border-bottom: 0;
-  background: #3b3b3b;
-  color: #f2f2f2;
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
   cursor: pointer;
   text-align: left;
   border-radius: 0;
@@ -251,3 +251,4 @@ function close() {
   }
 }
 </style>
+

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePlayerStore } from '../../stores/playerStore'
@@ -199,9 +199,9 @@ function clearLoop() {
 .control-box {
   padding: 0.75rem 1rem;
   border-radius: 6px;
-  background: rgba(16, 17, 20, 0.92);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.46);
+  background: var(--color-bg-tooltip);
+  border: 1px solid var(--color-border-default);
+  box-shadow: var(--shadow-md);
 }
 
 .clear-box {
@@ -224,7 +224,7 @@ function clearLoop() {
   padding: 0.4rem 0.9rem;
   border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 4px;
-  background: rgba(104, 108, 116, 0.92);
+  background: var(--color-bg-elevated);
   color: #ffffff;
   font-size: 0.85rem;
   font-weight: 500;
@@ -350,9 +350,9 @@ function clearLoop() {
   gap: 0.5rem;
   padding: 0.6rem 0.75rem;
   border-radius: 6px;
-  background: rgba(16, 17, 20, 0.92);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.46);
+  background: var(--color-bg-tooltip);
+  border: 1px solid var(--color-border-default);
+  box-shadow: var(--shadow-md);
 }
 
 .nav-group.left {
@@ -373,7 +373,7 @@ function clearLoop() {
   padding: 0;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 4px;
-  background: rgba(104, 108, 116, 0.92);
+  background: var(--color-bg-elevated);
   color: #ffffff;
   font-size: 0.9rem;
   display: flex;
@@ -449,3 +449,4 @@ function clearLoop() {
   }
 }
 </style>
+

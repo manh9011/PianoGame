@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useConfirmDialog } from '../../../composables/useConfirmDialog'
@@ -1069,7 +1069,7 @@ onBeforeUnmount(() => {
   inset: 0;
   z-index: 1400;
   padding: 6px;
-  background: rgba(0, 0, 0, 0.82);
+  background: var(--color-bg-overlay);
   backdrop-filter: blur(3px);
 }
 
@@ -1077,10 +1077,10 @@ onBeforeUnmount(() => {
   height: 100%;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid var(--color-border-default);
   border-radius: 6px;
-  background: #24272c;
-  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.45);
+  background: var(--color-bg-tertiary);
+  box-shadow: var(--shadow-xl);
   overflow: hidden;
 }
 
@@ -1091,7 +1091,7 @@ onBeforeUnmount(() => {
   align-items: center;
   padding: 0.35rem 0.45rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(0, 0, 0, 0.18);
+  background: var(--color-bg-subtle);
 }
 
 .editor-brand-icon {
@@ -1137,10 +1137,10 @@ onBeforeUnmount(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid var(--color-border-default);
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.06);
-  color: #e5e7eb;
+  color: var(--color-text-primary);
   cursor: pointer;
 }
 
@@ -1203,7 +1203,7 @@ onBeforeUnmount(() => {
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 4px;
   background: #1f2329;
-  color: #f3f4f6;
+  color: var(--color-text-primary);
 }
 
 .primary-actions,
@@ -1220,7 +1220,7 @@ onBeforeUnmount(() => {
   padding: 0 0.7rem;
   border-radius: 4px;
   border: 1px solid rgba(255, 255, 255, 0.18);
-  color: #f3f4f6;
+  color: var(--color-text-primary);
   cursor: pointer;
 }
 
@@ -1313,7 +1313,7 @@ onBeforeUnmount(() => {
 
 .panel-header h3 {
   margin: 0;
-  color: #f3f4f6;
+  color: var(--color-text-primary);
   font-size: 0.82rem;
 }
 
@@ -1369,7 +1369,7 @@ onBeforeUnmount(() => {
   background:
     radial-gradient(circle at 50% 38%, rgba(255, 255, 255, 0.16), transparent 46%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.16));
-  color: #f3f4f6;
+  color: var(--color-text-primary);
   cursor: pointer;
 }
 
@@ -1433,7 +1433,7 @@ onBeforeUnmount(() => {
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 4px;
   background: #1f2329;
-  color: #f3f4f6;
+  color: var(--color-text-primary);
 }
 
 .track-name-input {
@@ -1461,10 +1461,10 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid var(--color-border-default);
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.06);
-  color: #e5e7eb;
+  color: var(--color-text-primary);
   cursor: pointer;
 }
 
@@ -1538,7 +1538,7 @@ onBeforeUnmount(() => {
 .inspector-field select option,
 .subdivision-select option {
   background: #1f2329;
-  color: #f3f4f6;
+  color: var(--color-text-primary);
 }
 
 .inspector-empty {
@@ -1596,7 +1596,7 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   padding: 0.6rem 1rem;
   border-top: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(0, 0, 0, 0.18);
+  background: var(--color-bg-subtle);
 }
 
 .status-line,
@@ -1614,7 +1614,7 @@ onBeforeUnmount(() => {
 .track-chip {
   gap: 0.35rem;
   max-width: 16rem;
-  color: #e5e7eb;
+  color: var(--color-text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1648,3 +1648,4 @@ onBeforeUnmount(() => {
   }
 }
 </style>
+

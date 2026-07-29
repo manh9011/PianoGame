@@ -685,7 +685,7 @@ watch(() => player.stats, stats => {
   height: 100dvh;
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr) var(--keyboard-height);
-  background: #2b2d31;
+  background: var(--color-bg-tertiary);
   overflow: hidden;
 }
 

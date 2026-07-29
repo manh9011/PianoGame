@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BasePopover from './BasePopover.vue'
@@ -83,8 +83,8 @@ const outputVolume = computed({
   gap: 0.55rem;
   padding: 0.8rem;
   border-radius: 10px;
-  background: rgba(0, 0, 0, 0.18);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border-default);
 }
 
 .setting-item {
@@ -102,7 +102,7 @@ const outputVolume = computed({
 
 .setting-label,
 .setting-value {
-  color: #f3f4f6;
+  color: var(--color-text-primary);
 }
 
 .slider {
@@ -150,3 +150,4 @@ const outputVolume = computed({
   transform: translateX(22px);
 }
 </style>
+

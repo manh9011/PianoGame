@@ -6,6 +6,11 @@ import { loadSettings, saveSettings, defaultSettings } from '../modules/settings
 import { clampShowDuration, clampSpeed } from '../modules/game/playSession'
 import { persistQueue } from '../modules/storage/indexedDb'
 
+function updateThemeMetaColor(theme: 'dark' | 'light') {
+  const meta = document.querySelector('meta[name="theme-color"]')
+  if (meta) meta.setAttribute('content', theme === 'light' ? '#f6f7fb' : '#202020')
+}
+
 export const useSettingsStore = defineStore('settings', {
   state: () => ({
     ...defaultSettings,
@@ -20,6 +25,7 @@ export const useSettingsStore = defineStore('settings', {
         const settings = await loadSettings()
         Object.assign(this.$state, settings, { initialized: true, loading: false })
         document.documentElement.dataset.theme = this.theme
+        updateThemeMetaColor(this.theme)
         setI18nLocale(this.locale)
       } catch (error) {
         console.error('[Settings Store] Lỗi khi hydrate:', error)
@@ -41,7 +47,7 @@ export const useSettingsStore = defineStore('settings', {
     setMetronomeVolume(v: number) { this.metronomeVolume = Math.max(0, Math.min(100, Math.round(v / 5) * 5)); this.persist() },
     setMetronomeDoubleSpeed(v: boolean) { this.metronomeDoubleSpeed = v; this.persist() },
     setMetronomeEmphasizeFirstBeat(v: boolean) { this.metronomeEmphasizeFirstBeat = v; this.persist() },
-    setTheme(v: 'dark' | 'light') { this.theme = v; document.documentElement.dataset.theme = v; this.persist() },
+    setTheme(v: 'dark' | 'light') { this.theme = v; document.documentElement.dataset.theme = v; updateThemeMetaColor(v); this.persist() },
     setLocale(locale: SupportedLocale) { this.locale = locale; setI18nLocale(locale); this.persist() },
     setShowKeyLabels(show: boolean) { this.showKeyLabels = show; this.persist() },
     setShowNoteLabels(show: boolean) { this.showNoteLabels = show; this.persist() },

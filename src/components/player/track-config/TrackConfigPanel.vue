@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePlayerStore } from '../../../stores/playerStore'
@@ -257,7 +257,7 @@ function isSounded(mode: TrackMode) {
 </template>
 
 <style scoped>
-/* ── Shared panel wrapper ───────────────────────────────────── */
+/* ── Shared panel wrapper ─────────────────────────────────────────── */
 .track-config-panel {
   display: flex;
   flex-direction: column;
@@ -268,7 +268,7 @@ function isSounded(mode: TrackMode) {
   width: 100%;
 }
 
-/* ── Standalone: horizontal wrapping grid ───────────────────── */
+/* ── Standalone: horizontal wrapping grid ───────────────────────── */
 .track-grid {
   display: flex;
   flex-wrap: wrap;
@@ -282,7 +282,7 @@ function isSounded(mode: TrackMode) {
   flex: 0 0 320px;
 }
 
-/* ── Dialog: vertical list (unchanged) ──────────────────────── */
+/* ── Dialog: vertical list (unchanged) ──────────────────────────── */
 .track-list {
   display: flex;
   flex-direction: column;
@@ -291,13 +291,13 @@ function isSounded(mode: TrackMode) {
 
 .dialog-title {
   margin: 0;
-  color: #f3f4f6;
+  color: var(--color-text-primary);
   font-size: 1.1rem;
 }
 
 .dialog-subtitle {
   margin: 0.3rem 0 0;
-  color: #9ca3af;
+  color: var(--color-text-secondary);
   font-size: 0.85rem;
 }
 
@@ -341,7 +341,7 @@ function isSounded(mode: TrackMode) {
   padding: 0 4px;
   border: none;
   background: transparent;
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--color-text-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -484,3 +484,4 @@ function isSounded(mode: TrackMode) {
   transform: scaleX(-1);
 }
 </style>
+

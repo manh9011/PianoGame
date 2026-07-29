@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 interface Props {
   show: boolean
   title?: string
@@ -59,7 +59,7 @@ function handleOverlayClick(event: MouseEvent) {
   z-index: 3000;
   display: grid;
   place-items: center;
-  background: rgba(0, 0, 0, 0.75);
+  background: var(--color-bg-overlay);
   backdrop-filter: blur(4px);
 }
 
@@ -69,9 +69,9 @@ function handleOverlayClick(event: MouseEvent) {
   display: flex;
   flex-direction: column;
   border-radius: 12px;
-  background: #3a3d42;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-default);
+  box-shadow: var(--shadow-lg);
   overflow: hidden;
 }
 
@@ -80,13 +80,13 @@ function handleOverlayClick(event: MouseEvent) {
   align-items: center;
   justify-content: space-between;
   padding: 1rem 1.25rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid var(--color-border-default);
+  background: var(--color-bg-subtle);
 }
 
 .dialog-header h3 {
   margin: 0;
-  color: #e3e4e8;
+  color: var(--color-text-primary);
   font-size: 1.1rem;
   font-weight: 600;
 }
@@ -98,7 +98,7 @@ function handleOverlayClick(event: MouseEvent) {
   border: none;
   border-radius: 6px;
   background: transparent;
-  color: #9ca3af;
+  color: var(--color-text-secondary);
   font-size: 1.4rem;
   line-height: 1;
   cursor: pointer;
@@ -107,7 +107,7 @@ function handleOverlayClick(event: MouseEvent) {
 
 .close-button:hover {
   background: rgba(255, 255, 255, 0.1);
-  color: #e3e4e8;
+  color: var(--color-text-primary);
 }
 
 .dialog-content {
@@ -137,3 +137,4 @@ function handleOverlayClick(event: MouseEvent) {
   opacity: 0;
 }
 </style>
+

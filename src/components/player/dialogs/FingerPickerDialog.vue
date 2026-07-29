@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed } from 'vue'
 import type { SessionNote } from '../../../modules/game/playSession'
 
@@ -73,10 +73,10 @@ function isActive(finger: number) {
 .finger-picker-dialog {
   position: fixed;
   width: 250px;
-  background: #2a2a2a;
-  border: 1px solid #1a1a1a;
+  background: var(--color-bg-elevated-2);
+  border: 1px solid var(--color-border-default);
   border-radius: 8px;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.42);
+  box-shadow: var(--shadow-lg);
   z-index: 1001;
   overflow: visible;
 }
@@ -86,8 +86,8 @@ function isActive(finger: number) {
   top: -7px;
   width: 14px;
   height: 14px;
-  background: #3c3c3c;
-  border: 1px solid #1a1a1a;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-default);
   border-right: none;
   border-bottom: none;
   transform: rotate(45deg);
@@ -166,3 +166,4 @@ function isActive(finger: number) {
     0 1px 2px rgba(0, 0, 0, 0.35);
 }
 </style>
+

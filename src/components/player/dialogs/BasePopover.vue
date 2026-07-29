@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 interface Props {
   show: boolean
   width?: string
@@ -63,9 +63,9 @@ function handleClickOutside(event: MouseEvent) {
   display: flex;
   flex-direction: column;
   border-radius: 12px;
-  background: #3a3d42;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-default);
+  box-shadow: var(--shadow-lg);
   overflow: visible;
   pointer-events: auto;
 }
@@ -81,8 +81,8 @@ function handleClickOutside(event: MouseEvent) {
   position: absolute;
   width: 14px;
   height: 14px;
-  background: #3a3d42;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-default);
   transform: rotate(45deg);
   pointer-events: none;
 }
@@ -126,3 +126,4 @@ function handleClickOutside(event: MouseEvent) {
   opacity: 0;
 }
 </style>
+

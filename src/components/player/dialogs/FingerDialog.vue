@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePlayerStore } from '../../../stores/playerStore'
@@ -74,7 +74,7 @@ function sizeDescription(size: HandSizePreset) {
   width: fit-content;
   max-width: calc(100vw - 24px);
   padding: 0;
-  color: #e3e4e8;
+  color: var(--color-text-primary);
 }
 .control-box {
   display: flex;
@@ -83,15 +83,15 @@ function sizeDescription(size: HandSizePreset) {
   width: fit-content;
   padding: 0.6rem 0.75rem;
   border-radius: 6px;
-  background: rgba(16, 17, 20, 0.92);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.46);
+  background: var(--color-bg-tooltip);
+  border: 1px solid var(--color-border-default);
+  box-shadow: var(--shadow-md);
 }
 .top-section { justify-content: space-between; }
 .assist-section { justify-content: flex-end; }
 .size-section { display: flex; flex-direction: column; align-items: stretch; gap: 0.25rem; min-width: 220px; }
 .hand-size-row { display: flex; align-items: center; gap: 0.55rem; }
-.hand-size-icon { display: inline-flex; align-items: center; gap: 0.28rem; color: #e3e4e8; font-size: 0.95rem; text-shadow: 0 1px 2px rgba(0,0,0,0.9); }
+.hand-size-icon { display: inline-flex; align-items: center; gap: 0.28rem; color: var(--color-text-primary); font-size: 0.95rem; text-shadow: 0 1px 2px rgba(0,0,0,0.9); }
 .hand-size-select { width: 100%; border-radius: 4px; border: 1px solid rgba(255,255,255,0.2); background: rgba(104,108,116,0.92); color: #ffffff; padding: 0.42rem 0.55rem; font-size: 0.82rem; box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 3px 8px rgba(0,0,0,0.36); }
 .hint { margin: 0; color: #ffffff; font-size: 0.9rem; font-weight: 600; line-height: 1.3; white-space: nowrap; text-shadow: 0 1px 2px rgba(0,0,0,0.9); }
 .auto-button, .clear-all-button { border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; color: #ffffff; padding: 0.48rem 0.75rem; font-weight: 700; cursor: pointer; white-space: nowrap; text-shadow: 0 1px 2px rgba(0,0,0,0.9); box-shadow: inset 0 1px 0 rgba(255,255,255,0.18), 0 3px 8px rgba(0,0,0,0.42); }
@@ -108,3 +108,4 @@ function sizeDescription(size: HandSizePreset) {
   .size-section { flex: 1 1 220px; }
 }
 </style>
+

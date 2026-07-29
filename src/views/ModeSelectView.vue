@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
@@ -499,8 +499,8 @@ function goToTrackSettings() {
   height: 100dvh;
   display: grid;
   grid-template-rows: auto auto auto minmax(0, 1fr);
-  background: #3b3b3b;
-  color: #eeeeee;
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
   overflow: hidden;
 }
 
@@ -511,7 +511,7 @@ function goToTrackSettings() {
   gap: 0.75rem;
   min-height: 45px;
   padding: 0.35rem 0.5rem;
-  background: #2f2f2f;
+  background: var(--color-bg-header);
 }
 
 .header-actions {
@@ -522,9 +522,9 @@ function goToTrackSettings() {
 
 .header-button {
   padding: 0.38rem 0.85rem;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid var(--color-border-strong);
   border-radius: 6px;
-  background: #2f2f2f;
+  background: var(--color-bg-secondary);
   white-space: nowrap;
 }
 
@@ -559,7 +559,7 @@ function goToTrackSettings() {
   gap: clamp(1rem, 4vw, 4.5rem);
   align-items: end;
   padding: 1.35rem clamp(1rem, 10vw, 16rem) 1.75rem;
-  background: #3b3b3b;
+  background: var(--color-bg-secondary);
 }
 
 .setup-tools,
@@ -570,10 +570,10 @@ function goToTrackSettings() {
 
 .utility-card,
 .score-card {
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  border: 1px solid var(--color-border-default);
   border-radius: 4px;
-  background: var(--achievement-bg, #666666);
-  color: var(--achievement-color, #e8e8e8);
+  background: var(--achievement-bg, var(--color-btn-secondary-bg));
+  color: var(--achievement-color, var(--color-text-primary));
   box-shadow: inset 0 1px rgba(255, 255, 255, 0.12);
 }
 
@@ -640,7 +640,7 @@ function goToTrackSettings() {
 
 .mode-heading p {
   margin: 0;
-  color: #9e9e9e;
+  color: var(--color-text-muted);
 }
 
 .hand-pair {
@@ -689,7 +689,7 @@ function goToTrackSettings() {
 .hand-swatch {
   width: 0.65rem;
   height: 0.65rem;
-  border: 1px solid rgba(255, 255, 255, 0.65);
+  border: 1px solid var(--color-border-strong);
   border-radius: 999px;
   background: var(--hand-color);
   box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.18), 0 0 10px color-mix(in srgb, var(--hand-color) 58%, transparent);
@@ -698,7 +698,7 @@ function goToTrackSettings() {
 .selection-title {
   margin: 0;
   padding: 0.65rem 1rem;
-  background: #2f2f2f;
+  background: var(--color-bg-header);
   text-align: center;
   font-size: clamp(1.35rem, 1.8vw, 1.65rem);
   font-weight: 500;
@@ -708,36 +708,36 @@ function goToTrackSettings() {
   min-height: 0;
   display: grid;
   grid-template-columns: 180px minmax(0, 1fr);
-  background: #3b3b3b;
+  background: var(--color-bg-secondary);
 }
 
 .detail-tabs {
   display: grid;
   align-content: start;
-  border-inline-end: 1px solid #151515;
+  border-inline-end: 1px solid var(--color-border-strong);
 }
 
 .detail-tab {
   min-height: 45px;
   padding: 0 0.5rem;
   border-radius: 0;
-  border-bottom: 1px solid #222222;
+  border-bottom: 1px solid var(--color-border-subtle);
   background: transparent;
   text-align: left;
 }
 
 .detail-tab.active {
-  background: #aaaaaa;
-  color: #ffffff;
+  background: #999999;
+  color: var(--color-text-primary);
 }
 
 .detail-panel {
   min-height: 0;
   margin: 0.55rem 0.55rem 0.5rem 0.6rem;
   padding: 0;
-  border: 1px solid #1b1b1b;
+  border: 1px solid var(--color-border-subtle);
   border-radius: 10px;
-  background: #3c3c3c;
+  background: var(--color-bg-elevated);
   overflow: auto;
 }
 
@@ -766,32 +766,32 @@ function goToTrackSettings() {
   position: sticky;
   top: 0;
   z-index: 100;
-  background: #3c3c3c;
+  background: var(--color-bg-elevated);
 }
 
 .points-table th {
-  color: #eeeeee;
+  color: var(--color-text-primary);
   font-weight: 500;
-  background: #3c3c3c;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08);
+  background: var(--color-bg-elevated);
+  box-shadow: 0 1px 0 var(--color-border-subtle);
   cursor: pointer;
   user-select: none;
 }
 
 .points-table tbody tr {
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--color-border-subtle);
 }
 
 .sort-arrow {
   display: inline-block;
   margin-inline-end: 0.5rem;
-  color: #5f5f5f;
+  color: var(--color-text-muted);
   font-size: 0.75rem;
   transition: transform 0.2s, color 0.2s;
 }
 
 .sort-arrow.active {
-  color: #eeeeee;
+  color: var(--color-text-primary);
 }
 
 .sort-arrow.desc {
@@ -810,12 +810,12 @@ function goToTrackSettings() {
 
 .breakdown-note {
   margin: 0 0 0.35rem;
-  color: #eeeeee;
+  color: var(--color-text-primary);
 }
 
 .breakdown-board {
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.28);
+  border: 1px solid var(--color-border-strong);
   border-radius: 8px;
   background: rgba(0, 0, 0, 0.08);
 }
@@ -862,7 +862,7 @@ function goToTrackSettings() {
 
 .breakdown-date-row {
   min-height: 38px;
-  border-top-color: rgba(255, 255, 255, 0.22);
+  border-top-color: var(--color-border-default);
 }
 
 .breakdown-empty-state {
@@ -870,7 +870,7 @@ function goToTrackSettings() {
   display: grid;
   place-items: center;
   padding: 2rem;
-  color: #9b9b9b;
+  color: var(--color-text-muted);
   font-size: 1.15rem;
   line-height: 1.45;
   text-align: left;

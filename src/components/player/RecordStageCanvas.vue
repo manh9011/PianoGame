@@ -24,6 +24,7 @@ const backgroundUrl = ref('')
 const logoUrl = ref('')
 const currentUs = computed(() => player.session?.currentUs ?? -LEAD_IN_US)
 const title = computed(() => player.song?.title ?? '')
+const isPortrait = computed(() => settings.recordVideoOrientation === 'portrait')
 const previewAspectRatio = computed(() => {
   const dimensions = resolveRecordVideoDimensions(settings.recordVideoSize, settings.recordVideoOrientation)
   return dimensions.width / dimensions.height
@@ -31,6 +32,15 @@ const previewAspectRatio = computed(() => {
 const frameStyle = computed(() => ({
   width: frameWidth.value ? `${frameWidth.value}px` : '100%',
   height: frameHeight.value ? `${frameHeight.value}px` : '100%',
+}))
+const portraitContentStyle = computed(() => {
+  if (!isPortrait.value || !frameWidth.value) return {}
+  const cw = frameWidth.value
+  const ch = cw * 3 / 4
+  return { width: `${cw}px`, height: `${ch}px` }
+})
+const blurBackgroundStyle = computed(() => ({
+  backgroundImage: backgroundUrl.value ? `url(${backgroundUrl.value})` : undefined,
 }))
 const backgroundStyle = computed(() => backgroundUrl.value ? { backgroundImage: `url(${backgroundUrl.value})` } : {})
 const showLogo = computed(() => !!logoUrl.value)
@@ -86,6 +96,7 @@ function updatePreviewLayout() {
     frameHeight.value = availableHeight
     frameWidth.value = availableHeight * aspectRatio
   }
+
   const whiteKeyWidth = frameWidth.value / WHITE_KEY_COUNT
   keyboardHeight.value = whiteKeyWidth * WHITE_KEY_ASPECT_RATIO
   blackKeyHeight.value = keyboardHeight.value * BLACK_KEY_HEIGHT_RATIO
@@ -123,7 +134,28 @@ onBeforeUnmount(() => {
       '--preview-aspect-ratio': String(previewAspectRatio),
     }"
   >
-    <div class="record-stage-frame" :style="frameStyle">
+    <div v-if="isPortrait" class="record-stage-frame record-stage-frame--portrait" :style="frameStyle">
+      <div class="record-portrait-blur-background" :style="blurBackgroundStyle"></div>
+      <div class="record-portrait-content" :style="portraitContentStyle">
+        <div class="record-stage-content">
+          <div class="record-background" :style="backgroundStyle"></div>
+          <section class="record-roll-area">
+            <PianoRoll transparent-background />
+            <img v-if="showLogo" class="record-logo" :src="logoUrl" alt="" />
+          </section>
+          <section class="record-keyboard-shell">
+            <PianoKeyboard transparent-background preview-active-from-timeline />
+          </section>
+          <SongTitleIntroOverlay
+            :title="title"
+            :current-us="currentUs"
+            started
+            :manually-stopped="player.playbackManuallyStopped"
+          />
+        </div>
+      </div>
+    </div>
+    <div v-else class="record-stage-frame" :style="frameStyle">
       <div class="record-stage-content">
         <div class="record-background" :style="backgroundStyle"></div>
         <section class="record-roll-area">
@@ -163,6 +195,42 @@ onBeforeUnmount(() => {
   justify-content: stretch;
   background: #000;
   box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.42);
+}
+
+/* Portrait: frame is 9:16 cropping area */
+.record-stage-frame--portrait {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Blurred background fills full 9:16 frame, fit to height */
+.record-portrait-blur-background {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-position: center;
+  background-size: auto 100%;
+  background-repeat: no-repeat;
+  background-color: #303030;
+  filter: blur(60px);
+  transform: scale(1.1);
+  pointer-events: none;
+}
+
+.record-portrait-blur-background::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(48, 48, 48, 0.51);
+}
+
+/* 4:3 content area centered vertically in the 9:16 frame */
+.record-portrait-content {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
 }
 
 .record-stage-content {

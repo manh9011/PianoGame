@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
@@ -426,7 +426,7 @@ onBeforeUnmount(() => {
   height: 100dvh;
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr);
-  background: #2b2d31;
+  background: var(--color-bg-tertiary);
   overflow: hidden;
 }
 
@@ -445,10 +445,10 @@ onBeforeUnmount(() => {
   align-items: flex-end;
   gap: 0.15rem;
   padding: 0.55rem 0.7rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--color-border-default);
   border-radius: 0.5rem;
-  background: rgba(17, 24, 39, 0.78);
-  color: #e5e7eb;
+  background: var(--color-bg-tooltip);
+  color: var(--color-text-primary);
   font-size: 0.82rem;
   backdrop-filter: blur(6px);
 }
@@ -459,3 +459,4 @@ onBeforeUnmount(() => {
   text-align: right;
 }
 </style>
+

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 defineProps<{ title?: string; description?: string; note?: string }>()
 </script>
 
@@ -29,7 +29,7 @@ defineProps<{ title?: string; description?: string; note?: string }>()
 
 .settings-section-header h2 {
   margin: 0;
-  color: rgba(255, 255, 255, 0.66);
+  color: var(--color-text-secondary);
   font-size: 0.86rem;
   font-weight: 600;
   letter-spacing: 0.01em;
@@ -38,17 +38,17 @@ defineProps<{ title?: string; description?: string; note?: string }>()
 .settings-section-header p,
 .settings-section-note {
   margin: 0;
-  color: rgba(255, 255, 255, 0.43);
+  color: var(--color-text-muted);
   font-size: 0.73rem;
   line-height: 1.45;
 }
 
 .settings-section-body {
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.13);
+  border: 1px solid var(--color-border-default);
   border-radius: 0.62rem;
-  background: linear-gradient(#3d3d3d, #343434);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 1px 2px rgba(0, 0, 0, 0.28);
+  background: var(--color-bg-card);
+  box-shadow: inset 0 1px 0 var(--color-border-subtle), var(--shadow-sm);
 }
 
 .settings-section-note {
@@ -58,11 +58,11 @@ defineProps<{ title?: string; description?: string; note?: string }>()
 
 .settings-section :deep(.settings-control) {
   min-width: min(18rem, 100%);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid var(--color-border-input);
   border-radius: 0.36rem;
   padding: 0.44rem 0.58rem;
-  background: linear-gradient(#303030, #242424);
-  color: rgba(255, 255, 255, 0.88);
+  background: var(--color-bg-input);
+  color: var(--color-text-primary);
 }
 
 .settings-section :deep(.settings-control.compact) {
@@ -70,12 +70,12 @@ defineProps<{ title?: string; description?: string; note?: string }>()
 }
 
 .settings-section :deep(.settings-button) {
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid var(--color-border-input);
   border-radius: 0.38rem;
   padding: 0.48rem 0.8rem;
-  background: linear-gradient(#666666, #505050);
-  color: rgba(255, 255, 255, 0.92);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  background: var(--color-btn-secondary-bg);
+  color: var(--color-btn-secondary-text);
+  box-shadow: inset 0 1px 0 var(--color-border-subtle);
 }
 
 .settings-section :deep(.settings-button:hover) {
@@ -83,18 +83,18 @@ defineProps<{ title?: string; description?: string; note?: string }>()
 }
 
 .settings-section :deep(.settings-button.primary) {
-  background: linear-gradient(#5ea85d, #438b43);
+  background: var(--color-btn-primary-bg);
 }
 
 .settings-section :deep(.settings-button.danger) {
-  background: linear-gradient(#9d4a4a, #7b3030);
+  background: var(--color-btn-danger-bg);
 }
 
 .settings-section :deep(.settings-pill) {
   padding: 0.24rem 0.5rem;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.62);
+  background: var(--color-bg-subtle);
+  color: var(--color-text-muted);
   font-size: 0.72rem;
 }
 
@@ -104,3 +104,4 @@ defineProps<{ title?: string; description?: string; note?: string }>()
   }
 }
 </style>
+

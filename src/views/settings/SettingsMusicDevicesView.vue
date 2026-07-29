@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import SettingsRow from '../../components/settings/ui/SettingsRow.vue'
@@ -76,7 +76,8 @@ function selectOutput(id: string) {
 
 <style scoped>
 .device-count {
-  color: rgba(255, 255, 255, 0.48);
+  color: var(--color-text-muted);
   font-size: 0.78rem;
 }
 </style>
+

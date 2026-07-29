@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onBeforeUnmount, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BasePopover from './BasePopover.vue'
@@ -182,8 +182,8 @@ async function clearAsset(type: 'background' | 'logo') {
   gap: 0.55rem;
   padding: 0.8rem;
   border-radius: 10px;
-  background: rgba(0, 0, 0, 0.18);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border-default);
 }
 
 .asset-setting-block {
@@ -197,8 +197,8 @@ async function clearAsset(type: 'background' | 'logo') {
   height: 64px;
   border-radius: 10px;
   overflow: hidden;
-  background: rgba(17, 24, 39, 0.78);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--color-bg-tooltip);
+  border: 1px solid var(--color-border-default);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -233,7 +233,7 @@ async function clearAsset(type: 'background' | 'logo') {
 
 .setting-label,
 .asset-name {
-  color: #f3f4f6;
+  color: var(--color-text-primary);
 }
 
 .asset-name {
@@ -252,10 +252,10 @@ async function clearAsset(type: 'background' | 'logo') {
 
 .pill-btn,
 .mini-btn {
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--color-border-default);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  color: #f3f4f6;
+  background: var(--color-bg-subtle);
+  color: var(--color-text-primary);
   cursor: pointer;
 }
 
@@ -284,3 +284,4 @@ async function clearAsset(type: 'background' | 'logo') {
   display: none;
 }
 </style>
+

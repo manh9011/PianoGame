@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { supportsFileSystemAccess, pickSongFilesFromFolder } from '../../modules/library/fileSystemAccess'
 import { useLibraryStore } from '../../stores/libraryStore'
@@ -50,24 +50,24 @@ async function pick() {
   min-height: 2.42rem;
   min-width: 0;
   padding: 0.06rem 0.18rem;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid var(--color-border-input);
   border-radius: 0.7rem;
-  background: #3f3f3f;
+  background: var(--color-bg-input);
 }
 
 .folder-button {
   width: auto;
   min-height: 1.9rem;
   padding: 0.26rem 0.58rem;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid var(--color-border-input);
   border-radius: 0.3rem;
-  background: #5a5a5a;
-  color: #f3f3f3;
+  background: var(--color-btn-secondary-bg);
+  color: var(--color-text-primary);
   white-space: nowrap;
 }
 
 .folder-button:hover {
-  background: #666666;
+  background: var(--color-btn-secondary-bg);
 }
 
 .folder-summary,
@@ -76,7 +76,7 @@ async function pick() {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: rgba(255, 255, 255, 0.68);
+  color: var(--color-text-secondary);
 }
 
 .folder-message {
@@ -90,3 +90,5 @@ async function pick() {
   }
 }
 </style>
+
+

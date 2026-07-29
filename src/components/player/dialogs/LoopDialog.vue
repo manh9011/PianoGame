@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BasePopover from './BasePopover.vue'
@@ -102,7 +102,7 @@ const restartLoopAfterErrors = ref(false)
 .instruction-text {
   margin: 0;
   flex: 1;
-  color: #e3e4e8;
+  color: var(--color-text-primary);
   font-size: 0.9rem;
   line-height: 1.4;
 }
@@ -111,8 +111,8 @@ const restartLoopAfterErrors = ref(false)
   padding: 0.4rem 0.8rem;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 6px;
-  background: rgba(0, 0, 0, 0.3);
-  color: #e3e4e8;
+  background: var(--color-bg-subtle);
+  color: var(--color-text-primary);
   font-size: 0.85rem;
   font-weight: 500;
   cursor: pointer;
@@ -131,7 +131,7 @@ const restartLoopAfterErrors = ref(false)
 }
 
 .slider-label {
-  color: #e3e4e8;
+  color: var(--color-text-primary);
   font-size: 0.9rem;
   font-weight: 500;
 }
@@ -175,7 +175,7 @@ const restartLoopAfterErrors = ref(false)
 
 .toggle-label {
   flex: 1;
-  color: #e3e4e8;
+  color: var(--color-text-primary);
   font-size: 0.9rem;
   font-weight: 500;
 }
@@ -222,7 +222,7 @@ const restartLoopAfterErrors = ref(false)
 }
 
 .disabled-label {
-  color: #9ca3af;
+  color: var(--color-text-secondary);
   font-size: 0.85rem;
 }
 
@@ -240,8 +240,8 @@ const restartLoopAfterErrors = ref(false)
   gap: 0.5rem;
   padding: 0.6rem;
   border-radius: 6px;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border-default);
 }
 
 .nav-button {
@@ -250,8 +250,8 @@ const restartLoopAfterErrors = ref(false)
   padding: 0;
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 4px;
-  background: rgba(0, 0, 0, 0.3);
-  color: #e3e4e8;
+  background: var(--color-bg-subtle);
+  color: var(--color-text-primary);
   font-size: 0.9rem;
   display: flex;
   align-items: center;
@@ -272,9 +272,10 @@ const restartLoopAfterErrors = ref(false)
 .section-label {
   flex: 1;
   text-align: center;
-  color: #e3e4e8;
+  color: var(--color-text-primary);
   font-size: 0.8rem;
   font-weight: 500;
   white-space: nowrap;
 }
 </style>
+

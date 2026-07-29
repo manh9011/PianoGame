@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { localeOptions, type SupportedLocale } from '../../i18n'
@@ -93,19 +93,19 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 0.42rem;
   padding: 0.34rem 0.56rem;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid var(--color-border-default);
   border-radius: 0.45rem;
-  background: rgba(255, 255, 255, 0.06);
-  color: #e0e0e0;
+  background: var(--color-bg-subtle);
+  color: var(--color-text-primary);
   font-size: 0.85rem;
 }
 
 .language-trigger:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--color-bg-subtle);
 }
 
 .language-trigger i {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--color-text-muted);
   font-size: 0.66rem;
 }
 
@@ -118,9 +118,9 @@ onBeforeUnmount(() => {
   max-height: min(18rem, 65dvh);
   overflow: auto;
   padding: 0.28rem;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid var(--color-border-default);
   border-radius: 0.56rem;
-  background: #343434;
+  background: var(--color-bg-elevated-2);
   box-shadow: 0 0.7rem 1.5rem rgba(0, 0, 0, 0.38);
 }
 
@@ -134,14 +134,14 @@ onBeforeUnmount(() => {
   border: 0;
   border-radius: 0.4rem;
   background: transparent;
-  color: rgba(255, 255, 255, 0.82);
+  color: var(--color-text-primary);
   text-align: start;
 }
 
 .language-option:hover,
 .language-option.active {
-  background: rgba(255, 255, 255, 0.1);
-  color: #ffffff;
+  background: var(--color-bg-subtle);
+  color: var(--color-text-primary);
 }
 
 .language-flag {
@@ -174,7 +174,7 @@ onBeforeUnmount(() => {
 
 .language-english {
   grid-column: 2;
-  color: rgba(255, 255, 255, 0.48);
+  color: var(--color-text-muted);
   font-size: 0.72rem;
 }
 
@@ -185,3 +185,5 @@ onBeforeUnmount(() => {
   font-size: 0.78rem;
 }
 </style>
+
+

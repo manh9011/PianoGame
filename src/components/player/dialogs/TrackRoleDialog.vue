@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import type { TrackRole } from '../../../modules/game/trackProperties'
 
@@ -68,10 +68,10 @@ function close() {
   z-index: 1051;
   width: 290px;
   padding: 10px;
-  background: #242424;
-  border: 8px solid #171717;
+  background: var(--color-bg-elevated-2);
+  border: 8px solid var(--color-bg-tertiary);
   border-radius: 5px;
-  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.45);
+  box-shadow: var(--shadow-xl);
 }
 
 .dialog-arrow {
@@ -95,8 +95,8 @@ function close() {
   gap: 10px;
   border: 1px solid #1a1a1a;
   border-bottom: 0;
-  background: #3a3a3a;
-  color: #f1f1f1;
+  background: var(--color-bg-card);
+  color: var(--color-text-primary);
   padding: 5px 10px;
   cursor: pointer;
   text-align: start;
@@ -107,9 +107,10 @@ function close() {
 .role-item:first-of-type { border-radius: 8px 8px 0 0; }
 .role-item:last-of-type { border-bottom: 1px solid #1a1a1a; border-radius: 0 0 8px 8px; }
 .role-item:hover:not(.disabled),
-.role-item.selected { background: #454545; }
-.role-item.disabled { color: #9a9a9a; cursor: not-allowed; opacity: 0.7; }
+.role-item.selected { background: var(--color-bg-card-hover); }
+.role-item.disabled { color: var(--color-text-muted); cursor: not-allowed; opacity: 0.7; }
 .role-icon { display: grid; place-items: center; color: #d9d9d9; font-size: 1.35rem; }
 .role-icon.flipped { transform: scaleX(-1); }
 .role-check { color: #d3d931; }
 </style>
+

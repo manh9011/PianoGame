@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 import { settingsNavigation } from '../../../modules/settings/settingsNavigation'
@@ -25,8 +25,8 @@ const { t } = useI18n()
 .settings-sidebar {
   width: 10.15rem;
   min-width: 10.15rem;
-  border-inline-end: 1px solid rgba(255, 255, 255, 0.08);
-  background: #303030;
+  border-inline-end: 1px solid var(--color-border-subtle);
+  background: var(--color-bg-secondary);
 }
 
 .settings-sidebar-item {
@@ -36,20 +36,20 @@ const { t } = useI18n()
   gap: 0.42rem;
   min-height: 2.1rem;
   padding: 0.5rem 0.38rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.72);
+  border-bottom: 1px solid var(--color-border-subtle);
+  color: var(--color-text-secondary);
   font-size: 0.8rem;
   text-decoration: none;
 }
 
 .settings-sidebar-item:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.9);
+  background: var(--color-bg-subtle);
+  color: var(--color-text-primary);
 }
 
 .settings-sidebar-item.router-link-active {
-  background: #9d9d9d;
-  color: #ffffff;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
 }
 
 .settings-sidebar-item span {
@@ -71,7 +71,7 @@ const { t } = useI18n()
     display: flex;
     overflow-x: auto;
     border-inline-end: 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid var(--color-border-subtle);
   }
 
   .settings-sidebar-item {
@@ -85,3 +85,4 @@ const { t } = useI18n()
   }
 }
 </style>
+

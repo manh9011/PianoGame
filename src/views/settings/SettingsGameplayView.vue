@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import SettingsRow from '../../components/settings/ui/SettingsRow.vue'
 import SettingsSection from '../../components/settings/ui/SettingsSection.vue'
@@ -78,8 +78,9 @@ const keyboardRangeOptions: Array<{ value: KeyboardRangeMode; labelKey: string }
 <style scoped>
 .unit {
   min-width: 2.4rem;
-  color: rgba(255, 255, 255, 0.58);
+  color: var(--color-text-secondary);
   font-size: 0.78rem;
   text-align: end;
 }
 </style>
+

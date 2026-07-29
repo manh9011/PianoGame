@@ -41,9 +41,9 @@ const keys: { key: SongSortKey; labelKey: string }[] = [
   align-items: center;
   gap: 0.12rem;
   padding: 0.18rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--color-border-default);
   border-radius: 0.85rem;
-  background: #5d5d5d;
+  background: var(--color-btn-secondary-bg);
 }
 
 .sort-cell {
@@ -55,18 +55,18 @@ const keys: { key: SongSortKey; labelKey: string }[] = [
   border: 0;
   border-radius: 0.68rem;
   background: transparent;
-  color: rgba(255, 255, 255, 0.86);
+  color: var(--color-text-primary);
   font-size: 0.9rem;
   font-weight: 500;
   white-space: nowrap;
 }
 
 .sort-cell:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--color-bg-subtle);
 }
 
 .sort-cell.active {
-  background: rgba(72, 72, 72, 0.9);
+  background: var(--color-bg-elevated);
 }
 
 .sort-label {
@@ -75,7 +75,7 @@ const keys: { key: SongSortKey; labelKey: string }[] = [
 }
 
 .sort-direction {
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--color-text-muted);
   font-size: 0.8rem;
 }
 
@@ -93,3 +93,4 @@ const keys: { key: SongSortKey; labelKey: string }[] = [
   }
 }
 </style>
+

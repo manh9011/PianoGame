@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 defineProps<{ title: string; description?: string; align?: 'center' | 'start' }>()
 </script>
 
@@ -22,8 +22,8 @@ defineProps<{ title: string; description?: string; align?: 'center' | 'start' }>
   gap: 1rem;
   min-height: 2.58rem;
   padding: 0.46rem 0.62rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
-  background: rgba(255, 255, 255, 0.015);
+  border-bottom: 1px solid var(--color-border-subtle);
+  background: transparent;
 }
 
 .settings-row:first-child {
@@ -48,12 +48,12 @@ defineProps<{ title: string; description?: string; align?: 'center' | 'start' }>
 }
 
 .settings-row-title {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--color-text-primary);
   font-size: 0.94rem;
 }
 
 .settings-row-description {
-  color: rgba(255, 255, 255, 0.48);
+  color: var(--color-text-muted);
   font-size: 0.74rem;
   line-height: 1.35;
 }
@@ -64,7 +64,7 @@ defineProps<{ title: string; description?: string; align?: 'center' | 'start' }>
   justify-content: flex-end;
   align-items: center;
   gap: 0.55rem;
-  color: rgba(255, 255, 255, 0.78);
+  color: var(--color-text-primary);
 }
 
 @media (max-width: 760px) {
@@ -78,3 +78,4 @@ defineProps<{ title: string; description?: string; align?: 'center' | 'start' }>
   }
 }
 </style>
+

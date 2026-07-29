@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <Transition name="toast">
     <div
       v-if="toastStore.visible"
@@ -51,8 +51,8 @@ function handleClick() {
   transform: translate(-50%, -50%);
   min-width: 400px;
   max-width: 500px;
-  background: rgba(40, 40, 40, 0.98);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: var(--color-bg-tooltip);
+  border: 1px solid var(--color-border-default);
   border-radius: 12px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
   overflow: hidden;
@@ -77,7 +77,7 @@ function handleClick() {
   flex: 1;
   font-size: 15px;
   line-height: 1.5;
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--color-text-primary);
   font-weight: 500;
 }
 
@@ -160,3 +160,5 @@ function handleClick() {
   transform: translate(-50%, -50%) scale(0.7);
 }
 </style>
+
+

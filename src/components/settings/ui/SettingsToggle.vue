@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 const props = defineProps<{ modelValue: boolean; disabled?: boolean; label?: string }>()
 const emit = defineEmits<{ 'update:modelValue': [value: boolean]; change: [value: boolean] }>()
 
@@ -28,18 +28,18 @@ function toggle() {
 .settings-toggle {
   width: 3.25rem;
   height: 1.65rem;
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid var(--color-border-default);
   border-radius: 999px;
   padding: 0.12rem;
-  background: linear-gradient(#111111, #2f2f2f);
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.65), 0 1px 0 rgba(255, 255, 255, 0.08);
+  background: var(--color-bg-input);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.65), 0 1px 0 var(--color-border-subtle);
   cursor: pointer;
   transition: background 0.16s ease, border-color 0.16s ease;
 }
 
 .settings-toggle.active {
-  border-color: rgba(118, 220, 119, 0.6);
-  background: linear-gradient(#69c769, #3b9a43);
+  border-color: var(--color-border-strong);
+  background: var(--color-theme-toggle);
 }
 
 .settings-toggle-thumb {
@@ -57,3 +57,4 @@ function toggle() {
   transform: translateX(1.48rem);
 }
 </style>
+

@@ -542,7 +542,7 @@ function clearDifficulty() {
   gap: 0;
   min-height: 0;
   padding: 0;
-  background: #454545;
+  background: var(--color-bg-secondary);
 }
 
 .song-row {
@@ -554,25 +554,25 @@ function clearDifficulty() {
   min-height: 2.52rem;
   padding: 0.08rem 0.82rem 0.08rem 0.18rem;
   border: 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.16);
+  border-top: 1px solid var(--color-border-default);
   border-radius: 0;
   background: transparent;
-  color: rgba(255, 255, 255, 0.84);
+  color: var(--color-text-primary);
   text-align: left;
   cursor: pointer;
 }
 
 .song-row:last-child {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+  border-bottom: 1px solid var(--color-border-default);
 }
 
 .song-row:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--color-bg-subtle);
 }
 
 .song-row.selected {
-  background: rgba(184, 184, 184, 0.62);
-  color: #ffffff;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
 }
 
 .song-score {
@@ -620,15 +620,15 @@ function clearDifficulty() {
   min-width: 0;
   height: 1.8rem;
   padding: 0.18rem 0.42rem;
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  border: 1px solid var(--color-border-strong);
   border-radius: 0.22rem;
-  background: rgba(30, 30, 30, 0.72);
-  color: rgba(255, 255, 255, 0.96);
+  background: var(--color-bg-input);
+  color: var(--color-text-primary);
   font: inherit;
 }
 
 .song-title-input:focus {
-  outline: 1px solid rgba(255, 255, 255, 0.42);
+  outline: 1px solid var(--color-border-strong);
   outline-offset: 1px;
 }
 
@@ -641,16 +641,16 @@ function clearDifficulty() {
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.68);
+  background: var(--color-bg-primary);
+  color: var(--color-text-secondary);
   font-size: 0.72rem;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
 .rename-button:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.18);
-  color: rgba(255, 255, 255, 0.92);
+  background: var(--color-bg-card-hover);
+  color: var(--color-text-primary);
   transform: scale(1.08);
 }
 
@@ -668,8 +668,8 @@ function clearDifficulty() {
 }
 
 .song-row.selected .rename-button {
-  background: rgba(255, 255, 255, 0.22);
-  color: rgba(255, 255, 255, 0.86);
+  background: var(--color-bg-card-hover);
+  color: var(--color-text-primary);
 }
 
 .song-row.selected .rename-confirm-button {
@@ -683,7 +683,7 @@ function clearDifficulty() {
 .song-imported-at,
 .song-last-played,
 .song-duration {
-  color: rgba(255, 255, 255, 0.56);
+  color: var(--color-text-muted);
   font-size: 0.84rem;
 }
 
@@ -695,12 +695,12 @@ function clearDifficulty() {
 .song-row.selected .song-imported-at,
 .song-row.selected .song-last-played,
 .song-row.selected .song-duration {
-  color: rgba(255, 255, 255, 0.82);
+  color: var(--color-text-secondary);
 }
 
 .song-play-count {
   justify-self: center;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--color-text-secondary);
   font-variant-numeric: tabular-nums;
 }
 
@@ -709,7 +709,7 @@ function clearDifficulty() {
   padding: 0;
   border: 0;
   background: transparent;
-  color: rgba(28, 28, 28, 0.62);
+  color: var(--color-text-muted);
   letter-spacing: 0.03em;
   white-space: nowrap;
   cursor: pointer;
@@ -717,7 +717,7 @@ function clearDifficulty() {
 }
 
 .song-rating:hover {
-  color: rgba(28, 28, 28, 0.8);
+  color: var(--color-text-secondary);
   transform: scale(1.05);
 }
 
@@ -732,7 +732,7 @@ function clearDifficulty() {
 }
 
 .song-row.selected .song-rating {
-  color: rgba(36, 36, 36, 0.74);
+  color: var(--color-text-muted);
 }
 
 .song-row.selected .song-rating.has-rating {
@@ -770,7 +770,7 @@ function clearDifficulty() {
 .difficulty-bar {
   width: 0.24rem;
   border-radius: 0;
-  background: rgba(24, 24, 24, 0.28);
+  background: var(--color-bg-subtle);
 }
 
 .difficulty-bar:nth-child(1) { height: 20%; }
@@ -785,7 +785,7 @@ function clearDifficulty() {
 .difficulty-bar:nth-child(10) { height: 98%; }
 
 .difficulty-bar.filled {
-  background: rgba(226, 226, 226, 0.68);
+  background: var(--color-text-secondary);
 }
 
 .difficulty-bar.filled[data-level="1"] { background: #22c55e; }
@@ -813,8 +813,8 @@ function clearDifficulty() {
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.6);
+  background: var(--color-bg-subtle);
+  color: var(--color-text-secondary);
   font-size: 1rem;
   line-height: 1;
   cursor: pointer;
@@ -827,14 +827,14 @@ function clearDifficulty() {
 }
 
 .detail-button:hover {
-  background: rgba(255, 255, 255, 0.18);
-  color: rgba(255, 255, 255, 0.9);
+  background: var(--color-bg-card-hover);
+  color: var(--color-text-primary);
   transform: scale(1.1);
 }
 
 .song-row.selected .detail-button {
-  background: rgba(255, 255, 255, 0.22);
-  color: rgba(255, 255, 255, 0.85);
+  background: var(--color-bg-card-hover);
+  color: var(--color-text-primary);
 }
 
 /* Detail popup styles */
@@ -842,7 +842,7 @@ function clearDifficulty() {
   position: fixed;
   inset: 0;
   z-index: 1000;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--color-bg-overlay);
 }
 
 .detail-popup {
@@ -850,13 +850,9 @@ function clearDifficulty() {
   z-index: 1001;
   width: 18rem;
   border-radius: 0.5rem;
-  background: linear-gradient(145deg, #4a4a4a, #3e3e3e);
-  box-shadow:
-    inset 1px 1px 2px rgba(255, 255, 255, 0.2),
-    inset -1px -1px 2px rgba(0, 0, 0, 0.4),
-    0 8px 16px rgba(0, 0, 0, 0.5),
-    0 2px 4px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--color-bg-elevated);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--color-border-default);
   overflow: visible;
 }
 
@@ -865,20 +861,20 @@ function clearDifficulty() {
   width: 14px;
   height: 14px;
   transform: translateY(-50%) rotate(45deg);
-  background: linear-gradient(135deg, #4a4a4a, #3e3e3e);
+  background: var(--color-bg-elevated);
   z-index: -1;
 }
 
 .detail-arrow.arrow-right {
   right: -7px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--color-border-default);
+  border-right: 1px solid var(--color-border-default);
 }
 
 .detail-arrow.arrow-left {
   left: -7px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--color-border-default);
+  border-left: 1px solid var(--color-border-default);
 }
 
 .detail-content {
@@ -891,24 +887,24 @@ function clearDifficulty() {
 .detail-dialog-title {
   margin: 0 0 5px 0;
   padding: 0 0 3px 0;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--color-text-primary);
   font-size: 0.85rem;
   font-weight: 600;
   text-align: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--color-border-subtle);
 }
 
 .detail-title {
   margin: 0 0 8px 0;
   padding-bottom: 8px;
-  color: rgba(255, 255, 255, 0.95);
+  color: var(--color-text-primary);
   font-size: 0.95rem;
   font-weight: 600;
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
   text-align: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  border-bottom: 1px solid var(--color-border-default);
 }
 
 .detail-info {
@@ -917,10 +913,8 @@ function clearDifficulty() {
   gap: 0.4rem;
   padding: 10px;
   border-radius: 0.35rem;
-  background: rgba(0, 0, 0, 0.25);
-  box-shadow:
-    inset 2px 2px 4px rgba(0, 0, 0, 0.5),
-    inset -1px -1px 2px rgba(255, 255, 255, 0.08);
+  background: var(--color-bg-subtle);
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
 }
 
 .detail-row {
@@ -932,12 +926,12 @@ function clearDifficulty() {
 }
 
 .detail-label {
-  color: rgba(255, 255, 255, 0.65);
+  color: var(--color-text-secondary);
   font-weight: 500;
 }
 
 .detail-value {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--color-text-primary);
   font-weight: 400;
   text-align: right;
 }
@@ -947,20 +941,16 @@ function clearDifficulty() {
   position: fixed;
   inset: 0;
   z-index: 1000;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--color-bg-overlay);
 }
 
 .quick-dialog {
   position: fixed;
   z-index: 1001;
   border-radius: 0.5rem;
-  background: linear-gradient(145deg, #4a4a4a, #3e3e3e);
-  box-shadow:
-    inset 1px 1px 2px rgba(255, 255, 255, 0.2),
-    inset -1px -1px 2px rgba(0, 0, 0, 0.4),
-    0 8px 16px rgba(0, 0, 0, 0.5),
-    0 2px 4px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--color-bg-elevated);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--color-border-default);
   overflow: visible;
 }
 
@@ -969,20 +959,20 @@ function clearDifficulty() {
   width: 14px;
   height: 14px;
   transform: translateY(-50%) rotate(45deg);
-  background: linear-gradient(135deg, #4a4a4a, #3e3e3e);
+  background: var(--color-bg-elevated);
   z-index: -1;
 }
 
 .dialog-arrow.arrow-right {
   right: -7px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid var(--color-border-default);
+  border-right: 1px solid var(--color-border-default);
 }
 
 .dialog-arrow.arrow-left {
   left: -7px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  border-left: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--color-border-default);
+  border-left: 1px solid var(--color-border-default);
 }
 
 .dialog-content {
@@ -996,11 +986,11 @@ function clearDifficulty() {
 .dialog-title {
   margin: 0;
   padding: 0 0 3px 0;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--color-text-primary);
   font-size: 0.85rem;
   font-weight: 600;
   text-align: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--color-border-subtle);
 }
 
 .dialog-stars {
@@ -1013,7 +1003,7 @@ function clearDifficulty() {
   padding: 0;
   border: 0;
   background: transparent;
-  color: rgba(255, 255, 255, 0.3);
+  color: var(--color-text-muted);
   font-size: 1.8rem;
   line-height: 1;
   cursor: pointer;
@@ -1021,7 +1011,7 @@ function clearDifficulty() {
 }
 
 .star-button:hover {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--color-text-secondary);
   transform: scale(1.15);
 }
 
@@ -1062,7 +1052,7 @@ function clearDifficulty() {
 
 .bar-button .bar-fill {
   width: 100%;
-  background: rgba(255, 255, 255, 0.3);
+  background: var(--color-text-muted);
   border-radius: 2px;
   transition: all 0.15s ease;
 }
@@ -1110,27 +1100,27 @@ function clearDifficulty() {
 }
 
 .auto-button {
-  border: 1px solid rgba(120, 180, 255, 0.4);
-  background: rgba(40, 100, 180, 0.28);
-  color: rgba(170, 210, 255, 0.94);
+  border: 1px solid var(--color-border-default);
+  background: var(--color-bg-subtle);
+  color: var(--color-text-secondary);
 }
 
 .auto-button:hover:not(:disabled) {
-  background: rgba(40, 120, 220, 0.45);
-  border-color: rgba(140, 200, 255, 0.62);
-  color: rgba(220, 240, 255, 1);
+  background: var(--color-bg-card-hover);
+  border-color: var(--color-border-strong);
+  color: var(--color-text-primary);
 }
 
 .clear-button {
-  border: 1px solid rgba(255, 100, 100, 0.4);
-  background: rgba(200, 0, 0, 0.3);
-  color: rgba(255, 150, 150, 0.9);
+  border: 1px solid var(--color-border-default);
+  background: var(--color-bg-subtle);
+  color: var(--color-accent-red);
 }
 
 .clear-button:hover:not(:disabled) {
-  background: rgba(220, 0, 0, 0.5);
-  border-color: rgba(255, 100, 100, 0.6);
-  color: rgba(255, 200, 200, 1);
+  background: var(--color-bg-card-hover);
+  border-color: var(--color-border-strong);
+  color: var(--color-accent-red);
 }
 
 .auto-button:disabled,
@@ -1180,3 +1170,4 @@ function clearDifficulty() {
   }
 }
 </style>
+

@@ -361,11 +361,11 @@ onBeforeUnmount(() => {
   height: 100dvh;
   padding: 0;
   overflow: hidden;
-  background: #373737;
+  background: var(--color-bg-secondary);
 }
 
 .library-page :deep(.muted) {
-  color: rgba(255, 255, 255, 0.56);
+  color: var(--color-text-muted);
 }
 
 .library-header {
@@ -375,16 +375,16 @@ onBeforeUnmount(() => {
   gap: 0.6rem;
   min-height: 3.05rem;
   padding: 0.1rem 0.38rem;
-  background: #353535;
+  background: var(--color-bg-header);
 }
 
 .header-tab,
 .action-button,
 .icon-button {
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--color-border-default);
   border-radius: 0.32rem;
-  background: #414141;
-  color: #f1f1f1;
+  background: var(--color-bg-card-hover);
+  color: var(--color-text-primary);
 }
 
 .header-tab,
@@ -394,9 +394,7 @@ onBeforeUnmount(() => {
   white-space: nowrap;
 }
 
-.continue-button {
-  background: #484848;
-}
+
 
 .header-actions {
   display: flex;
@@ -435,9 +433,9 @@ onBeforeUnmount(() => {
   display: grid;
   min-width: 14.75rem;
   padding: 0.35rem;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--color-border-default);
   border-radius: 0.48rem;
-  background: #3f3f3f;
+  background: var(--color-bg-input);
   box-shadow: 0 0.5rem 1.2rem rgba(0, 0, 0, 0.28);
   z-index: 20;
 }
@@ -452,23 +450,23 @@ onBeforeUnmount(() => {
   border: 0;
   border-radius: 0.35rem;
   background: transparent;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--color-text-primary);
   text-align: left;
   white-space: nowrap;
   cursor: pointer;
 }
 
 .download-options button:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--color-bg-subtle);
 }
 
 .download-options button:disabled {
-  color: rgba(255, 255, 255, 0.42);
+  color: var(--color-text-muted);
   cursor: not-allowed;
 }
 
 .download-extension {
-  color: rgba(255, 255, 255, 0.52);
+  color: var(--color-text-muted);
   font-size: 0.78rem;
 }
 
@@ -480,7 +478,7 @@ onBeforeUnmount(() => {
 
 .preview-song {
   overflow: hidden;
-  color: rgba(255, 255, 255, 0.96);
+  color: var(--color-text-primary);
   text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -492,7 +490,7 @@ onBeforeUnmount(() => {
   position: relative;
   height: 0.72rem;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--color-text-primary);
   overflow: visible;
   cursor: pointer;
 }
@@ -502,7 +500,7 @@ onBeforeUnmount(() => {
   height: 100%;
   min-width: 0.8rem;
   border-radius: 999px;
-  background: rgba(150, 150, 150, 0.92);
+  background: var(--color-text-secondary);
 }
 
 .preview-fill::after {
@@ -512,9 +510,9 @@ onBeforeUnmount(() => {
   right: 0;
   width: 0.92rem;
   height: 0.92rem;
-  border: 1px solid rgba(58, 58, 58, 0.42);
+  border: 2px solid var(--color-bg-elevated-2);
   border-radius: 50%;
-  background: #f3f3f3;
+  background: var(--color-text-primary);
   transform: translate(50%, -50%);
 }
 
@@ -525,7 +523,7 @@ onBeforeUnmount(() => {
   gap: 0.32rem;
   padding: 5px;
   border: 0;
-  background: #4c4c4c;
+  background: var(--color-bg-primary);
   transition: grid-template-columns 0.24s ease;
 }
 
@@ -545,10 +543,10 @@ onBeforeUnmount(() => {
   width: 100%;
   min-height: 2.42rem;
   padding: 0.32rem 0.82rem;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid var(--color-border-input);
   border-radius: 0.7rem;
-  background: #3f3f3f;
-  color: rgba(255, 255, 255, 0.88);
+  background: var(--color-bg-input);
+  color: var(--color-text-primary);
 }
 
 .search-field input {
@@ -561,15 +559,15 @@ onBeforeUnmount(() => {
 }
 
 .search-field input:focus {
-  border-color: rgba(255, 255, 255, 0.32);
+  border-color: var(--color-border-strong);
   outline: none;
-  background: #464646;
+  background: var(--color-bg-input-focus);
   box-shadow: 0 0.35rem 1rem rgba(0, 0, 0, 0.18);
   transform: translateY(-1px);
 }
 
 .library-tools input::placeholder {
-  color: rgba(255, 255, 255, 0.42);
+  color: var(--color-text-muted);
 }
 
 .search-clear-button {
@@ -582,20 +580,20 @@ onBeforeUnmount(() => {
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.74);
+  background: var(--color-bg-subtle);
+  color: var(--color-text-secondary);
   cursor: pointer;
 }
 
 .search-clear-button:hover {
-  background: rgba(255, 255, 255, 0.18);
-  color: rgba(255, 255, 255, 0.9);
+  background: var(--color-bg-subtle);
+  color: var(--color-text-primary);
 }
 
 .library-main {
   min-height: 0;
   overflow: auto;
-  background: #424242;
+  background: var(--color-bg-secondary);
 }
 
 .library-footer {
@@ -604,7 +602,9 @@ onBeforeUnmount(() => {
   align-items: end;
   gap: 0.55rem;
   padding: 5px;
-  background: transparent;
+  background: var(--color-bg-secondary);
+  border-top: 1px solid var(--color-border-default);
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.18);
 }
 
 .footer-sort {
@@ -636,9 +636,9 @@ onBeforeUnmount(() => {
   max-height: 92dvh;
   padding: 0.85rem;
   overflow: auto;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--color-border-default);
   border-radius: 0;
-  background: #3a3a3a;
+  background: var(--color-bg-header);
 }
 
 .detail-header {
@@ -709,3 +709,5 @@ onBeforeUnmount(() => {
   }
 }
 </style>
+
+

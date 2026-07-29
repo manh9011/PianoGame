@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BasePopover from './BasePopover.vue'
@@ -117,8 +117,8 @@ function volumeLabel() {
   gap: 0.6rem;
   padding: 0.75rem;
   border-radius: 8px;
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--color-bg-subtle);
+  border: 1px solid var(--color-border-default);
 }
 
 .setting-row {
@@ -129,13 +129,13 @@ function volumeLabel() {
 }
 
 .setting-label {
-  color: #e3e4e8;
+  color: var(--color-text-primary);
   font-size: 0.95rem;
   font-weight: 500;
 }
 
 .volume-value {
-  color: #cbd5e1;
+  color: var(--color-text-secondary);
   font-size: 0.9rem;
   font-variant-numeric: tabular-nums;
 }
@@ -222,10 +222,10 @@ function volumeLabel() {
 .signature-option {
   min-height: 74px;
   padding: 0.35rem;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--color-border-default);
   border-radius: 8px;
-  background: rgba(0, 0, 0, 0.2);
-  color: #e5e7eb;
+  background: var(--color-bg-subtle);
+  color: var(--color-text-primary);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -281,3 +281,4 @@ function volumeLabel() {
   border: 0;
 }
 </style>
+

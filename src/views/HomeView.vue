@@ -133,8 +133,8 @@ function closeProfileManager() {
   display: flex;
   flex-direction: column;
   height: 100dvh;
-  background: #4a4a4a;
-  color: #e0e0e0;
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
 }
 
 /* Header */
@@ -143,8 +143,8 @@ function closeProfileManager() {
   justify-content: space-between;
   align-items: center;
   padding: 15px 20px;
-  background: #3a3a3a;
-  border-bottom: 1px solid #2a2a2a;
+  background: var(--color-bg-header);
+  border-bottom: 1px solid var(--color-border-subtle);
 }
 
 .header-left {
@@ -161,21 +161,21 @@ function closeProfileManager() {
   margin: 0;
   font-size: 1.8rem;
   font-weight: 400;
-  color: #ffffff;
+  color: var(--color-text-primary);
 }
 
 .header-right {
   position: relative;
   font-size: 1.1rem;
-  color: #b0b0b0;
+  color: var(--color-text-secondary);
 }
 
 .username-button {
   padding: 8px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--color-border-strong);
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.05);
-  color: #e0e0e0;
+  background: var(--color-bg-subtle);
+  color: var(--color-text-primary);
   font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
@@ -183,15 +183,15 @@ function closeProfileManager() {
 }
 
 .username-button:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: var(--color-bg-card-hover);
+  border-color: var(--color-border-default);
 }
 
 .profile-dropdown-overlay {
   position: fixed;
   inset: 0;
   z-index: 1000;
-  background: rgba(0, 0, 0, 0.3);
+  background: var(--color-bg-overlay);
 }
 
 .profile-dropdown {
@@ -202,9 +202,9 @@ function closeProfileManager() {
   min-width: 400px;
   padding: 15px;
   border-radius: 6px;
-  background: #3a3a3a;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--color-bg-header);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--color-border-default);
 }
 
 .profile-dropdown :deep(.panel) {
@@ -217,7 +217,7 @@ function closeProfileManager() {
 
 .profile-dropdown :deep(h2) {
   margin: 0 0 12px 0;
-  color: #ffffff;
+  color: var(--color-text-primary);
   font-size: 1.1rem;
 }
 
@@ -232,10 +232,10 @@ function closeProfileManager() {
   flex: 1;
   min-width: 150px;
   padding: 8px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--color-border-strong);
   border-radius: 4px;
-  background: #4a4a4a;
-  color: #e0e0e0;
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
   font-size: 0.9rem;
 }
 
@@ -243,23 +243,23 @@ function closeProfileManager() {
   padding: 8px 16px;
   border: 0;
   border-radius: 4px;
-  background: #5a9e5a;
-  color: #ffffff;
+  background: var(--color-btn-primary-bg);
+  color: var(--color-btn-primary-text);
   font-size: 0.9rem;
   cursor: pointer;
   transition: background 0.2s ease;
 }
 
 .profile-dropdown :deep(button:hover) {
-  background: #6ab06a;
+  background: var(--color-btn-primary-hover);
 }
 
 .profile-dropdown :deep(button.danger) {
-  background: #c55a5a;
+  background: var(--color-btn-danger-bg);
 }
 
 .profile-dropdown :deep(button.danger:hover:not(:disabled)) {
-  background: #d56a6a;
+  background: var(--color-btn-danger-hover);
 }
 
 .profile-dropdown :deep(button:disabled) {
@@ -297,21 +297,21 @@ function closeProfileManager() {
 }
 
 .menu-button.primary {
-  background: #5a9e5a;
-  color: #ffffff;
+  background: var(--color-btn-primary-bg);
+  color: var(--color-btn-primary-text);
 }
 
 .menu-button.primary:hover:not(:disabled) {
-  background: #6ab06a;
+  background: var(--color-btn-primary-hover);
 }
 
 .menu-button.secondary {
-  background: #6a6a6a;
-  color: #d0d0d0;
+  background: var(--color-btn-secondary-bg);
+  color: var(--color-btn-secondary-text);
 }
 
 .menu-button.secondary:hover:not(:disabled) {
-  background: #7a7a7a;
+  background: var(--color-btn-secondary-hover);
 }
 
 .menu-button:disabled {
@@ -323,7 +323,7 @@ function closeProfileManager() {
 .right-panel {
   display: flex;
   flex-direction: column;
-  background: #3a3a3a;
+  background: var(--color-bg-secondary);
   border-radius: 8px;
   padding: 20px;
   min-height: 0;
@@ -333,7 +333,7 @@ function closeProfileManager() {
   margin: 0 0 15px 0;
   font-size: 1.3rem;
   font-weight: 500;
-  color: #ffffff;
+  color: var(--color-text-primary);
 }
 
 .recent-list {
@@ -350,16 +350,16 @@ function closeProfileManager() {
   padding: 15px 20px;
   border: 0;
   background: transparent;
-  color: #e0e0e0;
+  color: var(--color-text-primary);
   cursor: pointer;
   transition: background 0.2s ease;
   text-align: left;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid var(--color-border-subtle);
   border-radius: 0;
 }
 
 .recent-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--color-bg-subtle);
 }
 
 .song-name {
@@ -375,19 +375,19 @@ function closeProfileManager() {
 
 .song-time {
   font-size: 0.9rem;
-  color: #a0a0a0;
+  color: var(--color-text-muted);
 }
 
 .arrow {
   font-size: 1.5rem;
-  color: #808080;
+  color: var(--color-text-muted);
 }
 
 .empty-message {
   margin: 0;
   padding: 20px;
   text-align: center;
-  color: #888888;
+  color: var(--color-text-muted);
 }
 
 /* Footer */
@@ -396,10 +396,10 @@ function closeProfileManager() {
   grid-template-columns: 1fr 2fr 1fr;
   align-items: center;
   padding: 10px 20px;
-  background: #2a2a2a;
-  border-top: 1px solid #1a1a1a;
+  background: var(--color-bg-tertiary);
+  border-top: 1px solid var(--color-border-subtle);
   font-size: 0.85rem;
-  color: #a0a0a0;
+  color: var(--color-text-secondary);
 }
 
 .footer-left,

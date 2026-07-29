@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useConfirmDialog } from '../../composables/useConfirmDialog'
@@ -253,14 +253,14 @@ function toggleLoop(track: FreePlayTrack, event: MouseEvent) {
   padding: 0 1rem;
   border: 3px solid transparent;
   border-radius: 4px;
-  background: rgba(116, 116, 116, 0.86);
+  background: var(--color-bg-elevated);
   transition: border-color 0.15s ease, background 0.15s ease;
 }
 
 .track-row:hover .track-item,
 .track-row:focus-within .track-item,
 .track-row.selected .track-item {
-  background: rgba(128, 128, 128, 0.92);
+  background: var(--color-bg-elevated-2);
 }
 
 .track-row.selected .track-item {
@@ -330,7 +330,7 @@ function toggleLoop(track: FreePlayTrack, event: MouseEvent) {
   width: 22px;
   height: 22px;
   border-radius: 4px;
-  background: rgba(32, 34, 38, 0.82);
+  background: var(--color-bg-tooltip);
   font-size: 0.72rem;
 }
 
@@ -359,3 +359,4 @@ function toggleLoop(track: FreePlayTrack, event: MouseEvent) {
   opacity: 0.45;
 }
 </style>
+

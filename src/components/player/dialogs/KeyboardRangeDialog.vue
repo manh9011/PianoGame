@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BasePopover from './BasePopover.vue'
@@ -108,7 +108,7 @@ function selectOption(option: RangeOption) {
 
 .instruction-text {
   margin: 0;
-  color: #9ca3af;
+  color: var(--color-text-secondary);
   font-size: 0.9rem;
   line-height: 1.5;
 }
@@ -119,7 +119,7 @@ function selectOption(option: RangeOption) {
   gap: 0;
   border-radius: 8px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--color-border-default);
 }
 
 .option-item {
@@ -129,8 +129,8 @@ function selectOption(option: RangeOption) {
   padding: 0.5rem 0.5rem;
   border: none;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(0, 0, 0, 0.2);
-  color: #e3e4e8;
+  background: var(--color-bg-subtle);
+  color: var(--color-text-primary);
   font-size: 1rem;
   text-align: start;
   cursor: pointer;
@@ -167,7 +167,7 @@ function selectOption(option: RangeOption) {
 
 .option-description {
   font-size: 0.8rem;
-  color: #9ca3af;
+  color: var(--color-text-secondary);
 }
 
 .checkmark {
@@ -194,7 +194,7 @@ function selectOption(option: RangeOption) {
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 8px;
   background: rgba(0, 0, 0, 0.3);
-  color: #e3e4e8;
+  color: var(--color-text-primary);
   font-size: 1.3rem;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -214,3 +214,4 @@ function selectOption(option: RangeOption) {
   cursor: not-allowed;
 }
 </style>
+

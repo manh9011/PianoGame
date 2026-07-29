@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { playbackProfilerSnapshot, type PlaybackProfilerSnapshot, type PlaybackProfilerSpanStat } from '../../modules/perf/playbackProfiler'
@@ -253,7 +253,7 @@ const miniPolyline = computed(() => miniPoints(activeSnapshot.value.timeline.fps
   border-radius: 10px;
   background: rgba(8, 13, 24, 0.8);
   color: #e5f8ba;
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.34);
+  box-shadow: var(--shadow-lg);
   backdrop-filter: blur(8px);
   cursor: pointer;
   font: 700 11px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -504,3 +504,4 @@ code {
   color: rgba(229, 248, 186, 0.72);
 }
 </style>
+

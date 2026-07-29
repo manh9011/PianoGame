@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed, ref, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePlayerStore } from '../../../stores/playerStore'
@@ -191,9 +191,9 @@ function clearAllUserBookmarks() {
   display: flex;
   flex-direction: column;
   border-radius: 12px;
-  background: #3a3d42;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-default);
+  box-shadow: var(--shadow-lg);
   overflow: hidden;
   pointer-events: auto;
 }
@@ -246,7 +246,7 @@ function clearAllUserBookmarks() {
 
 .bookmark-label {
   flex: 1;
-  color: #e3e4e8;
+  color: var(--color-text-primary);
   font-size: 0.95rem;
   font-weight: 500;
 }
@@ -316,7 +316,7 @@ function clearAllUserBookmarks() {
 
 .section-count {
   font-size: 0.75rem;
-  color: #9ca3af;
+  color: var(--color-text-secondary);
   background: rgba(255, 187, 50, 0.2);
   padding: 0.15rem 0.5rem;
   border-radius: 10px;
@@ -379,7 +379,7 @@ function clearAllUserBookmarks() {
 
 .bookmark-name {
   font-size: 0.9rem;
-  color: #e3e4e8;
+  color: var(--color-text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -387,7 +387,7 @@ function clearAllUserBookmarks() {
 
 .bookmark-time {
   font-size: 0.75rem;
-  color: #9ca3af;
+  color: var(--color-text-secondary);
 }
 
 .bookmark-edit-input {
@@ -396,7 +396,7 @@ function clearAllUserBookmarks() {
   border: 1px solid #FFBB32;
   border-radius: 4px;
   background: rgba(0, 0, 0, 0.3);
-  color: #e3e4e8;
+  color: var(--color-text-primary);
   font-size: 0.9rem;
   outline: none;
 }
@@ -450,7 +450,7 @@ function clearAllUserBookmarks() {
   margin: 0;
   padding: 0.75rem 1rem;
   text-align: center;
-  color: #9ca3af;
+  color: var(--color-text-secondary);
   font-size: 0.85rem;
   line-height: 1.4;
   background: rgba(0, 0, 0, 0.15);
@@ -468,3 +468,4 @@ function clearAllUserBookmarks() {
   transform: translateY(10px);
 }
 </style>
+

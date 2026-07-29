@@ -160,7 +160,7 @@ export interface RecordSceneRenderInput {
   activeNoteIds?: number[]
 }
 
-export function renderRecordScene({ ctx, width, height, currentUs, scene, visuals, images, activeNoteIds }: RecordSceneRenderInput) {
+function renderRecordSceneLandscape({ ctx, width, height, currentUs, scene, visuals, images, activeNoteIds }: RecordSceneRenderInput) {
   const keyboardHeight = visuals.showKeyboard ? (width / WHITE_KEY_COUNT) * WHITE_KEY_ASPECT_RATIO : 0
   const rollHeight = Math.max(1, height - keyboardHeight)
   const activeNotes = activeNoteIds ?? activeNotesAt(currentUs, scene)
@@ -223,4 +223,115 @@ export function renderRecordScene({ ctx, width, height, currentUs, scene, visual
   })
 
   drawIntroOverlay(ctx, width, height, currentUs, scene.title)
+}
+
+function renderRecordScenePortrait({ ctx, width, height, currentUs, scene, visuals, images, activeNoteIds: inputActiveNoteIds }: RecordSceneRenderInput) {
+  // 1. Full 9:16 frame dark background
+  ctx.fillStyle = '#303030'
+  ctx.fillRect(0, 0, width, height)
+
+  // 2. Blurred background covering full frame, fit to height
+  if (images?.background) {
+    ctx.save()
+    ctx.filter = 'blur(60px)'
+    drawImageCover(ctx, images.background, 0, 0, width, height)
+    ctx.restore()
+    ctx.fillStyle = `rgba(48,48,48,${visuals.backgroundOpacity + 0.15})`
+    ctx.fillRect(0, 0, width, height)
+  }
+
+  // 3. 4:3 content area centered vertically
+  const contentWidth = width
+  const contentHeight = width * 3 / 4
+  const contentY = (height - contentHeight) / 2
+  const activeNotes = inputActiveNoteIds ?? activeNotesAt(currentUs, scene)
+  const keySignatureAccidentals = currentKeySignatureAccidentals(currentUs, scene)
+
+  ctx.save()
+  ctx.beginPath()
+  ctx.rect(0, contentY, contentWidth, contentHeight)
+  ctx.clip()
+
+  // Content area background (non-blurred copy)
+  if (images?.background) {
+    drawImageCover(ctx, images.background, 0, contentY, contentWidth, contentHeight)
+  }
+  ctx.fillStyle = `rgba(48,48,48,${visuals.backgroundOpacity})`
+  ctx.fillRect(0, contentY, contentWidth, contentHeight)
+
+  // But the piano roll renderAt = 0 (relative to content area), so translate down by contentY
+  ctx.translate(0, contentY)
+
+  const keyboardHeight = visuals.showKeyboard ? (contentWidth / WHITE_KEY_COUNT) * WHITE_KEY_ASPECT_RATIO : 0
+  const rollHeight = Math.max(1, contentHeight - keyboardHeight)
+
+  // Piano roll within content area
+  ctx.save()
+  ctx.beginPath()
+  ctx.rect(0, 0, contentWidth, rollHeight)
+  ctx.clip()
+  renderPianoRoll({
+    ctx,
+    width: contentWidth,
+    height: rollHeight,
+    currentUs,
+    scene,
+    visuals,
+    keySignatureAccidentals,
+    drawBackground: false,
+    drawImpacts: true,
+    drawLogo: false,
+  })
+  ctx.restore()
+
+  // Keyboard within content area
+  if (visuals.showKeyboard) {
+    const keyboardLayer = new OffscreenCanvas(contentWidth, keyboardHeight)
+    const keyboardCtx = keyboardLayer.getContext('2d')
+    if (!keyboardCtx) throw new Error('Could not create keyboard layer context.')
+
+    renderPianoKeyboard({
+      ctx: keyboardCtx,
+      width: contentWidth,
+      height: keyboardHeight,
+      scene,
+      visuals,
+      activeNoteIds: activeNotes,
+      keySignatureAccidentals,
+    })
+
+    ctx.save()
+    ctx.globalAlpha = 0.85
+    ctx.drawImage(keyboardLayer, 0, rollHeight)
+    ctx.restore()
+  }
+
+  // Logo within content area
+  renderPianoRoll({
+    ctx,
+    width: contentWidth,
+    height: rollHeight,
+    currentUs,
+    scene,
+    visuals,
+    images,
+    keySignatureAccidentals,
+    drawBackground: false,
+    drawContent: false,
+    drawImpacts: false,
+    drawLogo: true,
+  })
+
+  ctx.restore() // pop translate + clip
+
+  // Intro overlay on full frame
+  drawIntroOverlay(ctx, width, height, currentUs, scene.title)
+}
+
+export function renderRecordScene(input: RecordSceneRenderInput) {
+  if (input.visuals.orientation === 'portrait') {
+    renderRecordScenePortrait(input)
+    return
+  }
+  renderRecordSceneLandscape(input)
 }

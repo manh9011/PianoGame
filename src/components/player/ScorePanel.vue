@@ -1,4 +1,4 @@
-<script setup lang="ts">
+﻿<script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePlayerStore } from '../../stores/playerStore'
@@ -66,7 +66,7 @@ const comboDisplay = computed(() => `${comboBonus.value.label} (${comboBonus.val
   padding: 0.5rem 0.65rem;
   border-radius: 4px;
   background: transparent;
-  color: #f2f5f8;
+  color: var(--color-text-primary);
   font-size: 0.92rem;
   line-height: 1.2;
 }
@@ -97,7 +97,7 @@ const comboDisplay = computed(() => `${comboBonus.value.label} (${comboBonus.val
 }
 
 .muted {
-  color: #c9cdd3;
+  color: var(--color-text-secondary);
 }
 
 .overlay {
@@ -130,3 +130,4 @@ const comboDisplay = computed(() => `${comboBonus.value.label} (${comboBonus.val
   }
 }
 </style>
+
