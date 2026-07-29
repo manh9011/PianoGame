@@ -23,7 +23,6 @@ export class SimpleSynth {
       this.master.connect(this.context.destination)
     }
     if (this.context.state === 'suspended') await this.context.resume()
-    await this.loadInstrument(getInstrumentByProgram(0).soundfontId)
   }
 
   async noteOn(voiceIdOrNoteId: string | number, noteIdOrVelocity?: number, velocityOrInstrument = 80, instrumentId?: string) {
@@ -36,7 +35,9 @@ export class SimpleSynth {
     if (!this.context || !this.master || this.active.has(voiceId) || this.fallbackActive.has(voiceId)) return
     this.cancelled.delete(voiceId)
 
-    const instrument = await this.loadInstrument(soundfontId)
+    const cachedInstrument = this.instruments.get(soundfontId)
+    const canTrySoundfont = cachedInstrument || typeof navigator === 'undefined' || navigator.onLine
+    const instrument = cachedInstrument ?? (canTrySoundfont ? await this.loadInstrument(soundfontId) : null)
     if (this.cancelled.has(voiceId)) {
       this.cancelled.delete(voiceId)
       return

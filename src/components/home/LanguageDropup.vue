@@ -10,7 +10,14 @@ const open = ref(false)
 const root = ref<HTMLElement | null>(null)
 
 const selectedLocale = computed(() => localeOptions.find(option => option.code === settings.locale) ?? localeOptions[1])
-const flagUrl = (flagCode: string) => `https://flagcdn.com/16x12/${flagCode}.png`
+
+function flagEmoji(flagCode: string) {
+  const code = flagCode === 'es-ct' ? 'es' : flagCode
+  if (!/^[a-z]{2}$/i.test(code)) return '🏳️'
+  return [...code.toUpperCase()]
+    .map(char => String.fromCodePoint(127397 + char.charCodeAt(0)))
+    .join('')
+}
 
 function toggle() {
   open.value = !open.value
@@ -49,13 +56,7 @@ onBeforeUnmount(() => {
       :aria-expanded="open"
       @click.stop="toggle"
     >
-      <img
-        class="language-flag"
-        :src="flagUrl(selectedLocale.flagCode)"
-        width="16"
-        height="12"
-        :alt="selectedLocale.englishName"
-      />
+      <span class="language-flag" aria-hidden="true">{{ flagEmoji(selectedLocale.flagCode) }}</span>
       <span>{{ selectedLocale.nativeName }}</span>
       <i class="fa-solid fa-chevron-up" aria-hidden="true" />
     </button>
@@ -72,13 +73,7 @@ onBeforeUnmount(() => {
         :dir="option.dir"
         @click="selectLocale(option.code)"
       >
-        <img
-          class="language-flag"
-          :src="flagUrl(option.flagCode)"
-          width="16"
-          height="12"
-          :alt="option.englishName"
-        />
+        <span class="language-flag" aria-hidden="true">{{ flagEmoji(option.flagCode) }}</span>
         <span class="language-name">{{ option.nativeName }}</span>
         <span class="language-english">{{ option.englishName }}</span>
         <i v-if="option.code === settings.locale" class="fa-solid fa-check" aria-hidden="true" />
@@ -150,10 +145,14 @@ onBeforeUnmount(() => {
 }
 
 .language-flag {
+  display: inline-flex;
   flex: 0 0 auto;
-  overflow: hidden;
-  border-radius: 0.08rem;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12);
+  align-items: center;
+  justify-content: center;
+  width: 1.2rem;
+  line-height: 1;
+  font-family: 'Noto Color Emoji', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
+  font-size: 1rem;
 }
 
 .language-option .language-flag {

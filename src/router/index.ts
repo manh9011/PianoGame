@@ -1,27 +1,19 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
-import LibraryView from '../views/LibraryView.vue'
-import ModeSelectView from '../views/ModeSelectView.vue'
-import TrackSettingsView from '../views/TrackSettingsView.vue'
-import PlayView from '../views/PlayView.vue'
-import RecordView from '../views/RecordView.vue'
-import FreePlayView from '../views/FreePlayView.vue'
-import SettingView from '../views/SettingView.vue'
 
 export default createRouter({
   history: createWebHashHistory(),
   routes: [
-    { path: '/', name: 'home', component: HomeView },
-    { path: '/library', name: 'library', component: LibraryView },
-    { path: '/mode-select/:hash?', name: 'mode-select', component: ModeSelectView },
-    { path: '/track-settings/:hash?', name: 'track-settings', component: TrackSettingsView },
-    { path: '/play/:hash/:modeId', name: 'play', component: PlayView },
-    { path: '/record/:hash', name: 'record', component: RecordView },
-    { path: '/free-play', name: 'free-play', component: FreePlayView },
+    { path: '/', name: 'home', component: () => import('../views/HomeView.vue') },
+    { path: '/library', name: 'library', component: () => import('../views/LibraryView.vue') },
+    { path: '/mode-select/:hash?', name: 'mode-select', component: () => import('../views/ModeSelectView.vue') },
+    { path: '/track-settings/:hash?', name: 'track-settings', component: () => import('../views/TrackSettingsView.vue') },
+    { path: '/play/:hash/:modeId', name: 'play', component: () => import('../views/PlayView.vue') },
+    { path: '/record/:hash', name: 'record', component: () => import('../views/RecordView.vue') },
+    { path: '/free-play', name: 'free-play', component: () => import('../views/FreePlayView.vue') },
     {
       path: '/settings',
       name: 'settings',
-      component: SettingView,
+      component: () => import('../views/SettingView.vue'),
       redirect: '/settings/music-devices',
       children: [
         { path: 'music-devices', name: 'settings-music-devices', component: () => import('../views/settings/SettingsMusicDevicesView.vue') },
