@@ -71,6 +71,13 @@ function openRecord() {
   router.push(`/record/${hash}`)
 }
 
+function editInFreePlay() {
+  const song = selectedSong.value
+  if (!song) return
+  library.stopPreview()
+  router.push({ name: 'free-play', query: { librarySongId: song.id, openEditor: '1' } })
+}
+
 function togglePreview() {
   const enabled = !settings.libraryAutoPreviewEnabled
   settings.setLibraryAutoPreviewEnabled(enabled)
@@ -296,6 +303,10 @@ onBeforeUnmount(() => {
           <i class="fa-solid fa-video" aria-hidden="true" />
         </button>
 
+        <button class="icon-button" :disabled="!selectedSong" :aria-label="t('library.editInFreePlay')" :title="t('library.editInFreePlay')" @click="editInFreePlay">
+          <i class="fa-solid fa-pen-to-square" aria-hidden="true" />
+        </button>
+
         <button class="icon-button" :disabled="!selectedSong" :aria-label="t('library.deleteSong')" :title="t('library.deleteSong')" @click="deleteSong">
           <i class="fa-regular fa-trash-can" aria-hidden="true" />
         </button>
@@ -395,7 +406,7 @@ onBeforeUnmount(() => {
 
 .library-playback {
   display: grid;
-  grid-template-columns: 2.2rem minmax(0, 25rem) 2.2rem 2.2rem 2.2rem;
+  grid-template-columns: 2.2rem minmax(0, 25rem) 2.2rem 2.2rem 2.2rem 2.2rem;
   align-items: center;
   gap: 0.48rem;
   justify-self: center;

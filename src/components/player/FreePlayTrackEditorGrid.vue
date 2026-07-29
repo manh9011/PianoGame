@@ -8,7 +8,7 @@ import { canPlaceTrackEditorNotes, cloneTrackEditorTracks, mutateTrackEditorNote
 
 export type FreePlayTrackEditorMode = 'select' | 'draw' | 'marquee' | 'erase'
 
-type InteractionKind = 'idle' | 'dragging-note' | 'resizing-left' | 'resizing-right' | 'drawing-note' | 'marquee-selecting'
+type InteractionKind = 'idle' | 'dragging-note' | 'resizing-left' | 'resizing-right' | 'drawing-note' | 'marquee-selecting' | 'panning-view' | 'erasing-notes'
 
 interface EditorPoint {
   x: number
@@ -32,6 +32,8 @@ interface InteractionState {
   anchorNoteId?: string
   snapshots: DragSnapshot[]
   marquee?: { left: number; top: number; width: number; height: number }
+  pan?: { clientX: number; clientY: number; scrollLeft: number; scrollTop: number }
+  erasedNoteIds?: string[]
 }
 
 interface DrawableNote extends FreePlayRecordedNote {
@@ -242,12 +244,31 @@ function deleteSelected() {
   deleteNoteIds(props.selectedNoteIds)
 }
 
+function noteIdAtPointer(event: PointerEvent) {
+  const rect = gridRef.value?.getBoundingClientRect()
+  if (!rect) return null
+  const x = event.clientX - rect.left
+  const y = event.clientY - rect.top
+  return drawableNotes.value.find(note => {
+    const left = timeToX(note.startUs, props.bpm, props.pixelsPerQuarter)
+    const right = timeToX(note.endUs, props.bpm, props.pixelsPerQuarter)
+    const top = pitchToY(note.noteId, props.rowHeight)
+    const bottom = top + props.rowHeight
+    return x >= left && x <= right && y >= top && y <= bottom
+  })?.id ?? null
+}
+
 defineExpose({ deleteSelected })
 
 function handleGridPointerDown(event: PointerEvent) {
   if (event.button !== 0) return
   const point = getPoint(event)
   gridRef.value?.setPointerCapture(event.pointerId)
+
+  if (props.mode === 'erase') {
+    interaction.value = { kind: 'erasing-notes', pointerId: event.pointerId, origin: point, snapshots: [], erasedNoteIds: [] }
+    return
+  }
 
   if (props.mode === 'draw') {
     const startUs = snapTimeUs(point.timeUs, props.bpm, props.snapSubdivision, props.snapEnabled)
@@ -278,6 +299,20 @@ function handleGridPointerDown(event: PointerEvent) {
   }
 
   setSelected([])
+  if (props.mode === 'select' && viewportRef.value) {
+    interaction.value = {
+      kind: 'panning-view',
+      pointerId: event.pointerId,
+      origin: point,
+      snapshots: [],
+      pan: {
+        clientX: event.clientX,
+        clientY: event.clientY,
+        scrollLeft: viewportRef.value.scrollLeft,
+        scrollTop: viewportRef.value.scrollTop,
+      },
+    }
+  }
 }
 
 function handleNotePointerDown(event: PointerEvent, note: DrawableNote) {
@@ -288,8 +323,9 @@ function handleNotePointerDown(event: PointerEvent, note: DrawableNote) {
   if (props.mode !== 'erase') emit('preview-note', note)
 
   if (props.mode === 'erase') {
+    gridRef.value?.setPointerCapture(event.pointerId)
     deleteNoteIds([note.id])
-    interaction.value = { kind: 'idle', pointerId: -1, origin: point, snapshots: [] }
+    interaction.value = { kind: 'erasing-notes', pointerId: event.pointerId, origin: point, snapshots: [], erasedNoteIds: [note.id] }
     return
   }
 
@@ -395,6 +431,19 @@ function updateMarquee(point: EditorPoint) {
 function handlePointerMove(event: PointerEvent) {
   const state = interaction.value
   if (state.kind === 'idle' || state.pointerId !== event.pointerId) return
+  if (state.kind === 'panning-view') {
+    if (!viewportRef.value || !state.pan) return
+    viewportRef.value.scrollLeft = state.pan.scrollLeft + state.pan.clientX - event.clientX
+    viewportRef.value.scrollTop = state.pan.scrollTop + state.pan.clientY - event.clientY
+    return
+  }
+  if (state.kind === 'erasing-notes') {
+    const noteId = noteIdAtPointer(event)
+    if (!noteId || state.erasedNoteIds?.includes(noteId)) return
+    deleteNoteIds([noteId])
+    interaction.value = { ...state, erasedNoteIds: [...(state.erasedNoteIds ?? []), noteId] }
+    return
+  }
   const point = getPoint(event)
   if (state.kind === 'dragging-note') updateDrag(point)
   else if (state.kind === 'resizing-left' || state.kind === 'resizing-right') updateResize(point)
@@ -502,6 +551,7 @@ watch(() => props.playheadUs, () => {
           <div
             ref="gridRef"
             class="note-grid"
+            :class="{ 'note-grid--pan-ready': mode === 'select', 'note-grid--erase-ready': mode === 'erase', 'note-grid--panning': interaction.kind === 'panning-view', 'note-grid--erasing': interaction.kind === 'erasing-notes' }"
             :style="{ width: `${gridWidth}px`, height: `${gridHeight}px`, '--row-height': `${rowHeight}px` }"
             @pointerdown="handleGridPointerDown"
             @pointermove="handlePointerMove"
@@ -786,6 +836,19 @@ watch(() => props.playheadUs, () => {
     repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.035) 0, rgba(255, 255, 255, 0.035) 1px, transparent 1px, transparent var(--row-height)),
     repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 0, rgba(255, 255, 255, 0.03) calc(var(--row-height) * 12), transparent calc(var(--row-height) * 12), transparent calc(var(--row-height) * 24));
   touch-action: none;
+}
+
+.note-grid--pan-ready {
+  cursor: grab;
+}
+
+.note-grid--panning {
+  cursor: grabbing;
+}
+
+.note-grid--erase-ready,
+.note-grid--erasing {
+  cursor: cell;
 }
 
 .grid-line {

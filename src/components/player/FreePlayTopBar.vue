@@ -20,6 +20,7 @@ const emit = defineEmits<{
   startRecording: []
   stopRecording: []
   exportMidi: []
+  importMidi: []
   openTrackEditor: []
   deleteRecording: []
   openSettings: [event: MouseEvent]
@@ -58,6 +59,15 @@ function toggleRecording() {
         <div class="record-actions" :aria-label="t('freePlay.recordingActions')">
           <button v-if="freePlay.hasRecording" class="icon-button export-button" :title="t('freePlay.exportMidi')" :aria-label="t('freePlay.exportMidi')" @click="emit('exportMidi')">
             <i class="fas fa-arrow-up-from-bracket"></i>
+          </button>
+          <button
+            class="icon-button import-button"
+            :disabled="freePlay.status === 'recording'"
+            :title="t('freePlay.importMidi')"
+            :aria-label="t('freePlay.importMidi')"
+            @click="emit('importMidi')"
+          >
+            <i class="fas fa-file-import"></i>
           </button>
           <button
             class="icon-button edit-button"

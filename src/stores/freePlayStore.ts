@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
 import { DEFAULT_INSTRUMENT_PROGRAM } from '../modules/audio/gmInstrumentCatalog'
+import { buildFreePlaySessionFromMidi } from '../modules/freePlay/freePlayMidiImport'
 import { TRACK_INVISIBLE_COLOR, TRACK_SETTINGS_PALETTE } from '../modules/game/trackProperties'
+import { base64ToBuffer, loadSongMidiData } from '../modules/library/songLibrary'
 import { get, persistQueue, put } from '../modules/storage/indexedDb'
 import type { NoteInputEvent, NoteInputSource } from './playerStore'
 
@@ -310,6 +312,22 @@ export const useFreePlayStore = defineStore('freePlay', {
       }
     },
     persist() {
+      const tracks = this.tracks.map(track => ({
+        id: track.id,
+        name: track.name,
+        instrumentProgram: track.instrumentProgram,
+        color: track.color,
+        loop: track.loop,
+        notes: track.notes.map(note => ({
+          id: note.id,
+          trackId: note.trackId,
+          noteId: note.noteId,
+          startUs: note.startUs,
+          endUs: note.endUs,
+          velocity: note.velocity,
+          source: note.source,
+        })),
+      }))
       const preferences: FreePlayPreferences = {
         bpm: this.bpm,
         timeSignature: this.timeSignature,
@@ -322,7 +340,7 @@ export const useFreePlayStore = defineStore('freePlay', {
         showKeySignature: this.showKeySignature,
         keySignature: this.keySignature,
         keySignatureMode: this.keySignatureMode,
-        tracks: this.tracks,
+        tracks,
         selectedTrackId: this.selectedTrackId,
         nextTrackId: this.nextTrackId,
         nextNoteId: this.nextNoteId,
@@ -390,6 +408,33 @@ export const useFreePlayStore = defineStore('freePlay', {
       this.activeNotesByPitch.clear()
       this.touchTracks()
       this.persist()
+    },
+    async importLibrarySongToEditor(songId: string) {
+      const data = await loadSongMidiData(songId)
+      if (!data) throw new Error('missingMidiData')
+      return this.importMidiBufferToEditor(base64ToBuffer(data))
+    },
+    importMidiBufferToEditor(buffer: ArrayBuffer) {
+      const imported = buildFreePlaySessionFromMidi(buffer)
+      const normalizedTracks = normalizeTracks(imported.tracks)
+      const trackIds = new Set(normalizedTracks.map(track => track.id))
+      const maxTrackId = Math.max(0, ...normalizedTracks.map(track => track.id))
+      const maxNoteId = Math.max(0, ...normalizedTracks.flatMap(track => track.notes.map(note => Number(note.id.split(':').pop()) || 0)))
+
+      this.bpm = clampBpm(imported.bpm)
+      this.timeSignature = imported.timeSignature
+      this.tracks = normalizedTracks
+      this.selectedTrackId = trackIds.has(imported.selectedTrackId) ? imported.selectedTrackId : normalizedTracks[0]?.id ?? 1
+      this.nextTrackId = Math.max(imported.nextTrackId, maxTrackId + 1)
+      this.nextNoteId = Math.max(imported.nextNoteId, maxNoteId + 1)
+      this.status = this.hasRecording ? 'recorded' : 'idle'
+      this.recordStartMs = 0
+      this.recordStopMs = 0
+      this.recordingTrackId = null
+      this.activeNotesByPitch.clear()
+      this.touchTracks()
+      this.persist()
+      return { truncatedTrackCount: imported.truncatedTrackCount }
     },
     commitTrackEditorDraft(nextTracks: FreePlayTrack[], selectedTrackId?: number | null) {
       const normalizedTracks = normalizeTracks(nextTracks)

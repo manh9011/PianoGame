@@ -499,12 +499,40 @@ function quantizeTimeUs(timeUs: number, unitUs = quantizeUnitUs()) {
   return Math.max(0, Math.round(Math.round(timeUs / unitUs) * unitUs))
 }
 
-function quantizeNotes() {
-  const targetIds = selectedNoteIds.value.length
-    ? selectedNoteIds.value
-    : draftTracks.value.flatMap(track => track.notes.map(note => note.id))
+async function quantizeNotes() {
+  const quantizeAll = !selectedNoteIds.value.length
+  const targetIds = quantizeAll
+    ? draftTracks.value.flatMap(track => track.notes.map(note => note.id))
+    : [...selectedNoteIds.value]
   if (!targetIds.length) return
+
+  if (quantizeAll) {
+    const confirmed = await confirm({
+      title: t('freePlay.trackEditorQuantizeAllConfirmTitle'),
+      message: t('freePlay.trackEditorQuantizeAllConfirmMessage'),
+      confirmLabel: t('common.continue'),
+      cancelLabel: t('common.cancel'),
+      tone: 'primary',
+    })
+    if (!confirmed) return
+  }
+
   const unitUs = quantizeUnitUs()
+  if (quantizeAll) {
+    const tracks = cloneTracks(draftTracks.value)
+    for (const track of tracks) {
+      for (const note of track.notes) {
+        const startUs = quantizeTimeUs(note.startUs, unitUs)
+        note.startUs = startUs
+        note.endUs = Math.max(startUs + unitUs, quantizeTimeUs(note.endUs, unitUs))
+      }
+      sortTrackNotes(track)
+    }
+    commitDraftTracks(tracks)
+    selectedNoteIds.value = targetIds
+    return
+  }
+
   const tracks = mutateTrackEditorNotes(draftTracks.value, targetIds, note => {
     const startUs = quantizeTimeUs(note.startUs, unitUs)
     const endUs = Math.max(startUs + unitUs, quantizeTimeUs(note.endUs, unitUs))
@@ -624,7 +652,7 @@ async function requestClose() {
   const confirmed = await confirm({
     title: t('freePlay.trackEditorDiscardTitle'),
     message: t('freePlay.trackEditorDiscardMessage'),
-    confirmLabel: t('common.delete'),
+    confirmLabel: t('freePlay.trackEditorDiscardConfirm'),
     cancelLabel: t('common.cancel'),
     tone: 'danger',
   })

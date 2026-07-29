@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRoute, useRouter } from 'vue-router'
 import { useConfirmDialog } from '../composables/useConfirmDialog'
 import { getFreePlayTrackLoopDurationUs, parseFreePlayTimeSignature, useFreePlayStore } from '../stores/freePlayStore'
 import { usePlayerStore } from '../stores/playerStore'
@@ -24,6 +25,8 @@ const WHITE_KEY_ASPECT_RATIO = 150 / 23.5
 const BLACK_KEY_HEIGHT_RATIO = 95 / 150
 
 const { t } = useI18n()
+const route = useRoute()
+const router = useRouter()
 const { confirm } = useConfirmDialog()
 const freePlay = useFreePlayStore()
 const player = usePlayerStore()
@@ -54,6 +57,7 @@ const metronomeArrowPlacement = ref<'left' | 'right' | 'top'>('right')
 const keyboardRangePopupStyle = ref({ top: '0px', left: '0px' })
 const keyboardRangeArrowStyle = ref<{ top: string; left?: string; right?: string }>({ top: '0px', right: '-7px' })
 const keyboardRangeArrowPlacement = ref<'left' | 'right'>('right')
+const importingFromLibrarySongId = ref<string | null>(null)
 const labelsPopupStyle = ref({ top: '0px', left: '0px' })
 const labelsArrowStyle = ref<{ top: string; left?: string; right?: string }>({ top: '0px', right: '-7px' })
 const labelsArrowPlacement = ref<'left' | 'right'>('right')
@@ -286,6 +290,74 @@ function openTrackEditor() {
   showTrackEditorDialog.value = true
 }
 
+function showImportResult(result: { truncatedTrackCount: number }) {
+  if (result.truncatedTrackCount > 0) {
+    toast.show(t('freePlay.importTrackLimitWarning', { count: 6 }), 'info')
+    return
+  }
+  toast.showSuccess(t('freePlay.importSuccess'))
+}
+
+async function confirmImportReplace() {
+  if (freePlay.status === 'recording') {
+    toast.showError(t('freePlay.importWhileRecordingBlocked'))
+    return false
+  }
+  if (!freePlay.hasRecording || !settings.advancedConfirmBeforeDestructiveAction) return true
+  return confirm({
+    title: t('freePlay.importReplaceConfirmTitle'),
+    message: t('freePlay.importReplaceConfirmMessage'),
+    confirmLabel: t('common.continue'),
+    cancelLabel: t('common.cancel'),
+    tone: 'danger',
+  })
+}
+
+function openImportedEditor() {
+  closeDialogs()
+  stopBackingPlayback()
+  showTrackEditorDialog.value = true
+}
+
+async function importMidiFile() {
+  if (!await confirmImportReplace()) return
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.accept = '.mid,.midi,.rmi,.rmid,audio/midi,audio/x-midi'
+  input.addEventListener('change', async () => {
+    const file = input.files?.[0]
+    if (!file) return
+    try {
+      const result = freePlay.importMidiBufferToEditor(await file.arrayBuffer())
+      openImportedEditor()
+      showImportResult(result)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      toast.showError(t('freePlay.importFailed', { message }))
+    }
+  }, { once: true })
+  input.click()
+}
+
+async function importLibrarySongToEditor(songId: string) {
+  if (importingFromLibrarySongId.value === songId) return
+  importingFromLibrarySongId.value = songId
+  try {
+    if (!await confirmImportReplace()) return
+    const result = await freePlay.importLibrarySongToEditor(songId)
+    openImportedEditor()
+    showImportResult(result)
+  } catch (error) {
+    const message = error instanceof Error && error.message === 'missingMidiData'
+      ? t('sheetMusic.errors.missingMidiData')
+      : error instanceof Error ? error.message : String(error)
+    toast.showError(t('freePlay.importFailed', { message }))
+  } finally {
+    importingFromLibrarySongId.value = null
+    if (route.query.librarySongId) router.replace({ name: 'free-play' })
+  }
+}
+
 async function deleteRecording() {
   if (!freePlay.hasRecording) return
   if (settings.advancedConfirmBeforeDestructiveAction) {
@@ -408,6 +480,11 @@ watch(() => freePlay.status, status => {
   if (status === 'recording') startTimer()
   else stopTimer()
 }, { immediate: true })
+
+watch(() => route.query.librarySongId, value => {
+  const songId = Array.isArray(value) ? value[0] : value
+  if (songId) void importLibrarySongToEditor(songId)
+}, { immediate: true })
 </script>
 
 <template>
@@ -426,6 +503,7 @@ watch(() => freePlay.status, status => {
       @start-recording="startRecording"
       @stop-recording="stopRecording"
       @export-midi="exportMidi"
+      @import-midi="importMidiFile"
       @open-track-editor="openTrackEditor"
       @delete-recording="deleteRecording"
       @open-settings="openSettings"
