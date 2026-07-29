@@ -716,6 +716,7 @@ export const de = {
       landscape: 'Querformat',
       portrait: 'Hochformat',
     },
+    cancelExport: 'Cancel export',
     presets: {
       mp4Full: 'MP4 vollständig',
       webmFull: 'WebM vollständig',

@@ -716,6 +716,7 @@ export const ca = {
       landscape: 'Horitzontal',
       portrait: 'Vertical',
     },
+    cancelExport: 'Cancel export',
     presets: {
       mp4Full: 'MP4 complet',
       webmFull: 'WebM complet',

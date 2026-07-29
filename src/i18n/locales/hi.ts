@@ -716,6 +716,7 @@ export const hi = {
       landscape: 'लैंडस्केप',
       portrait: 'पोर्ट्रेट',
     },
+    cancelExport: 'Cancel export',
     presets: {
       mp4Full: 'MP4 पूर्ण',
       webmFull: 'WebM पूर्ण',

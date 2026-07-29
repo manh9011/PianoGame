@@ -716,6 +716,7 @@ export const tr = {
       landscape: 'Yatay',
       portrait: 'Dikey',
     },
+    cancelExport: 'Cancel export',
     presets: {
       mp4Full: 'MP4 tam',
       webmFull: 'WebM tam',

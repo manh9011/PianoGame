@@ -716,6 +716,7 @@ export const th = {
       landscape: 'แนวนอน',
       portrait: 'แนวตั้ง',
     },
+    cancelExport: 'Cancel export',
     presets: {
       mp4Full: 'MP4 เต็ม',
       webmFull: 'WebM เต็ม',

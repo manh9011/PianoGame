@@ -106,10 +106,23 @@ function waitForWorkerReady(worker: Worker) {
   })
 }
 
-export function renderExportJob(options: RenderExportJobOptions): Promise<RenderExportResultMessage> {
+export function renderExportJob(options: RenderExportJobOptions, signal?: AbortSignal): Promise<RenderExportResultMessage> {
   const requestId = nextRequestId++
   return new Promise<RenderExportResultMessage>(async (resolve, reject) => {
     let exportWorker: Worker | null = null
+    let aborted = false
+
+    const handleAbort = () => {
+      aborted = true
+      cleanup()
+      reject(new DOMException('Render export aborted by user.', 'AbortError'))
+    }
+
+    if (signal?.aborted) {
+      handleAbort()
+      return
+    }
+    signal?.addEventListener('abort', handleAbort, { once: true })
 
     const cleanup = () => {
       if (exportWorker) {
@@ -118,9 +131,11 @@ export function renderExportJob(options: RenderExportJobOptions): Promise<Render
         exportWorker.terminate()
         exportWorker = null
       }
+      signal?.removeEventListener('abort', handleAbort)
     }
 
     const handleError = (event: ErrorEvent | Event) => {
+      if (aborted) return
       cleanup()
       if (event instanceof ErrorEvent && event.error instanceof Error) {
         reject(event.error)
@@ -133,6 +148,7 @@ export function renderExportJob(options: RenderExportJobOptions): Promise<Render
     }
 
     const handleMessage = (event: MessageEvent<RenderExportWorkerMessage>) => {
+      if (aborted) return
       const message = event.data
       if (message.type === 'ready' || message.requestId !== requestId) return
       if (message.type === 'progress') {
@@ -167,6 +183,8 @@ export function renderExportJob(options: RenderExportJobOptions): Promise<Render
         audio: null,
       }
 
+      if (aborted) return
+
       options.onProgress?.({
         type: 'progress',
         requestId,
@@ -185,8 +203,14 @@ export function renderExportJob(options: RenderExportJobOptions): Promise<Render
         }),
       }))
 
+      if (aborted) return
+
       exportWorker = getWorker()
       await waitForWorkerReady(exportWorker)
+      if (aborted) {
+        cleanup()
+        return
+      }
       exportWorker.addEventListener('message', handleMessage)
       exportWorker.addEventListener('error', handleError)
 
@@ -197,8 +221,10 @@ export function renderExportJob(options: RenderExportJobOptions): Promise<Render
 
       exportWorker.postMessage(request, transfers)
     } catch (error) {
-      cleanup()
-      reject(error)
+      if (!aborted) {
+        cleanup()
+        reject(error)
+      }
     }
   })
 }

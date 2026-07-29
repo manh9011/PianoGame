@@ -716,6 +716,7 @@ export const sl = {
       landscape: 'Ležeče',
       portrait: 'Pokončno',
     },
+    cancelExport: 'Cancel export',
     presets: {
       mp4Full: 'MP4 polno',
       webmFull: 'WebM polno',

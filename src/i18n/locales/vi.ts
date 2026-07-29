@@ -716,6 +716,7 @@ export const vi = {
       landscape: "Ngang",
       portrait: "Dọc",
     },
+    cancelExport: 'Hủy xuất video',
     presets: {
       mp4Full: "MP4 đầy đủ",
       webmFull: "WebM đầy đủ",

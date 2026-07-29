@@ -716,6 +716,7 @@ export const nl = {
       landscape: 'Liggend',
       portrait: 'Staand',
     },
+    cancelExport: 'Cancel export',
     presets: {
       mp4Full: 'MP4 volledig',
       webmFull: 'WebM volledig',

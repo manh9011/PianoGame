@@ -716,6 +716,7 @@ export const pl = {
       landscape: 'Pozioma',
       portrait: 'Pionowa',
     },
+    cancelExport: 'Cancel export',
     presets: {
       mp4Full: 'MP4 pełny',
       webmFull: 'WebM pełny',

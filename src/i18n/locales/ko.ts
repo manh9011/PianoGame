@@ -716,6 +716,7 @@ export const ko = {
       landscape: '가로',
       portrait: '세로',
     },
+    cancelExport: 'Cancel export',
     presets: {
       mp4Full: 'MP4 전체',
       webmFull: 'WebM 전체',

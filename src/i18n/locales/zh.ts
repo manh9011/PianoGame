@@ -716,6 +716,7 @@ export const zh = {
       landscape: '横向',
       portrait: '纵向',
     },
+    cancelExport: 'Cancel export',
     presets: {
       mp4Full: '完整 MP4',
       webmFull: '完整 WebM',

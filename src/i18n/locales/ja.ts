@@ -716,6 +716,7 @@ export const ja = {
       landscape: '横向き',
       portrait: '縦向き',
     },
+    cancelExport: 'Cancel export',
     presets: {
       mp4Full: 'MP4 フル',
       webmFull: 'WebM フル',

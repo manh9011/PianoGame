@@ -716,6 +716,7 @@ export const ru = {
       landscape: 'Альбомная',
       portrait: 'Портретная',
     },
+    cancelExport: 'Cancel export',
     presets: {
       mp4Full: 'MP4 полный',
       webmFull: 'WebM полный',

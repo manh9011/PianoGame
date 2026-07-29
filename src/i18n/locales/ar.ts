@@ -716,6 +716,7 @@ export const ar = {
       landscape: 'أفقي',
       portrait: 'عمودي',
     },
+    cancelExport: 'Cancel export',
     presets: {
       mp4Full: 'MP4 كامل',
       webmFull: 'WebM كامل',

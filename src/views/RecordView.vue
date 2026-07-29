@@ -53,7 +53,6 @@ const labelsArrowStyle = ref<{ top: string; left?: string; right?: string }>({ t
 const labelsArrowPlacement = ref<'left' | 'right'>('right')
 
 const headerTitle = computed(() => player.song?.title ?? t('record.title'))
-const showExportStatus = computed(() => record.exporting || record.exportProgress.stage === 'done' || !!record.lastExportError)
 const exportVisuals = computed<RecordRenderVisualOptions>(() => ({
   showGrid: settings.showGrid,
   showFallingNotes: settings.showFallingNotes,
@@ -277,8 +276,11 @@ function presetLabelKey(preset: RecordExportPreset) {
 
 function handleWorkerProgress(message: RenderExportProgressMessage) {
   record.updateExportProgress(message.stage, message.percent, t(`record.exportStages.${message.stage}`))
-  toast.showLoading(t(`record.exportStages.${message.stage}`))
-  toast.updateProgress(message.percent)
+}
+
+function cancelExport() {
+  record.cancelExport()
+  toast.hide()
 }
 
 async function runRenderPreset(preset: RecordExportPreset) {
@@ -308,14 +310,19 @@ async function runRenderPreset(preset: RecordExportPreset) {
       backgroundAssetId: settings.recordBackgroundAssetId,
       logoAssetId: settings.recordLogoAssetId,
       onProgress: handleWorkerProgress,
-    })
+    }, record.abortController?.signal)
 
     triggerDownload(new Blob([result.data], { type: result.mimeType }), buildExportFileName(preset))
     const successMessage = t('record.exportSuccessPreset', { preset: t(presetLabelKey(preset)) })
     record.finishExport(successMessage)
     toast.showSuccess(successMessage)
     void playRenderCompleteSound()
-  } catch (error) {
+  } catch (error: unknown) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      record.cancelExport()
+      toast.hide()
+      return
+    }
     const message = error instanceof Error ? error.message : String(error)
     record.failExport(message)
     toast.showError(t('record.exportFailed', { message }))
@@ -370,12 +377,6 @@ onBeforeUnmount(() => {
     />
 
     <section class="record-stage-area">
-      <div v-if="showExportStatus" class="export-status">
-        <strong>{{ t('record.exportProgress') }}</strong>
-        <span>{{ record.exportProgress.message || t(`record.exportStages.${record.exportProgress.stage}`) }}</span>
-        <span v-if="record.exporting">{{ record.exportProgress.percent }}%</span>
-        <span v-else-if="record.lastExportError" class="error">{{ record.lastExportError }}</span>
-      </div>
       <RecordStageCanvas />
     </section>
 
@@ -418,6 +419,28 @@ onBeforeUnmount(() => {
       :arrow-placement="labelsArrowPlacement"
       @close="showLabelsDialog = false"
     />
+
+    <Teleport to="body">
+      <Transition name="render-overlay">
+        <div v-if="record.exporting" class="render-mask" @click.self="cancelExport">
+          <div class="render-overlay">
+            <div class="render-overlay__content">
+              <div class="render-overlay__icon">
+                <i class="fas fa-spinner fa-spin"></i>
+              </div>
+              <div class="render-overlay__info">
+                <div class="render-overlay__title">{{ t('record.exportProgress') }}</div>
+                <div class="render-overlay__message">{{ record.exportProgress.message || t(`record.exportStages.${record.exportProgress.stage}`) }}</div>
+              </div>
+              <button class="render-overlay__cancel" @click.stop="cancelExport" :title="t('record.cancelExport')">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+            <div class="render-overlay__progress" :style="{ width: `${record.exportProgress.percent}%` }"></div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </main>
 </template>
 
@@ -435,28 +458,110 @@ onBeforeUnmount(() => {
   min-height: 0;
 }
 
-.export-status {
-  position: absolute;
-  z-index: 20;
-  top: 0.75rem;
-  right: 0.85rem;
+</style>
+
+<style>
+.render-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.15rem;
-  padding: 0.55rem 0.7rem;
-  border: 1px solid var(--color-border-default);
-  border-radius: 0.5rem;
-  background: var(--color-bg-tooltip);
-  color: var(--color-text-primary);
-  font-size: 0.82rem;
-  backdrop-filter: blur(6px);
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(3px);
 }
 
-.export-status .error {
-  color: #fca5a5;
-  max-width: 24rem;
-  text-align: right;
+.render-overlay {
+  min-width: 400px;
+  max-width: 500px;
+  background: var(--color-bg-tooltip);
+  border: 1px solid var(--color-border-default);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  color: #22c55e;
+}
+
+.render-overlay__content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+}
+
+.render-overlay__icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  color: #22c55e;
+}
+
+.render-overlay__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.render-overlay__title {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--color-text-primary);
+}
+
+.render-overlay__message {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.render-overlay__cancel {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 16px;
+  flex-shrink: 0;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+  border-radius: 4px;
+}
+
+.render-overlay__cancel:hover {
+  opacity: 1;
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.render-overlay__progress {
+  height: 4px;
+  background: #22c55e;
+  transition: width 0.3s ease;
+  box-shadow: 0 0 8px #22c55e;
+}
+
+.render-overlay-enter-active {
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.render-overlay-leave-active {
+  transition: all 0.25s cubic-bezier(0.4, 0, 1, 1);
+}
+
+.render-overlay-enter-from {
+  opacity: 0;
+}
+
+.render-overlay-enter-from .render-overlay {
+  transform: scale(0.95);
+}
+
+.render-overlay-leave-to {
+  opacity: 0;
 }
 </style>
 

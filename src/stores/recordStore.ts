@@ -36,6 +36,7 @@ export const useRecordStore = defineStore('record', {
       message: '',
     } as RecordExportProgress,
     lastExportError: '',
+    abortController: null as AbortController | null,
   }),
   getters: {
     hasCropRange: state => state.cropEndUs > state.cropStartUs,
@@ -71,9 +72,17 @@ export const useRecordStore = defineStore('record', {
       this.exportPreset = preset
     },
     startExport(message = '') {
+      this.abortController?.abort()
+      this.abortController = new AbortController()
       this.exporting = true
       this.lastExportError = ''
       this.exportProgress = { stage: 'preparing', percent: 0, message }
+    },
+    cancelExport() {
+      this.abortController?.abort()
+      this.abortController = null
+      this.exporting = false
+      this.exportProgress = { stage: 'idle', percent: 0, message: '' }
     },
     updateExportProgress(stage: RecordExportStage, percent: number, message = '') {
       this.exportProgress = {
@@ -92,6 +101,8 @@ export const useRecordStore = defineStore('record', {
       this.exportProgress = { stage: 'error', percent: 0, message }
     },
     clearExportState() {
+      this.abortController?.abort()
+      this.abortController = null
       this.exporting = false
       this.exportProgress = { stage: 'idle', percent: 0, message: '' }
       this.lastExportError = ''

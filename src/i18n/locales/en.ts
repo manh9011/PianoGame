@@ -708,6 +708,7 @@ export const en = {
       landscape: 'Landscape',
       portrait: 'Portrait',
     },
+    cancelExport: 'Cancel export',
     presets: {
       mp4Full: 'MP4 full',
       webmFull: 'WebM full',
