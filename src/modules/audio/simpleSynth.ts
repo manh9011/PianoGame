@@ -1,5 +1,6 @@
 import type * as Soundfont from 'soundfont-player'
 import { getInstrumentByProgram } from './gmInstrumentCatalog'
+import { soundfontNameToUrl } from './soundfontSource'
 
 interface PlayingNote { stop: (when?: number) => unknown }
 interface FallbackVoice { oscillator: OscillatorNode; gain: GainNode }
@@ -35,9 +36,7 @@ export class SimpleSynth {
     if (!this.context || !this.master || this.active.has(voiceId) || this.fallbackActive.has(voiceId)) return
     this.cancelled.delete(voiceId)
 
-    const cachedInstrument = this.instruments.get(soundfontId)
-    const canTrySoundfont = cachedInstrument || typeof navigator === 'undefined' || navigator.onLine
-    const instrument = cachedInstrument ?? (canTrySoundfont ? await this.loadInstrument(soundfontId) : null)
+    const instrument = await this.loadInstrument(soundfontId)
     if (this.cancelled.has(voiceId)) {
       this.cancelled.delete(voiceId)
       return
@@ -91,6 +90,7 @@ export class SimpleSynth {
       return sf.instrument(this.context!, soundfontId as any, {
         soundfont: 'FluidR3_GM',
         format: 'mp3',
+        nameToUrl: soundfontNameToUrl,
         destination: this.master!,
         gain: 1,
       })

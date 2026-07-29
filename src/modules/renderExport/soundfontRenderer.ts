@@ -1,5 +1,6 @@
 import type * as Soundfont from 'soundfont-player'
 import { getInstrumentByProgram } from '../audio/gmInstrumentCatalog'
+import { soundfontNameToUrl } from '../audio/soundfontSource'
 import type { RenderExportRequest } from './exportTypes'
 import {
   type OfflineAudioRenderResult,
@@ -28,6 +29,7 @@ async function loadSoundfontInstrument(context: OfflineAudioContext, master: Gai
   return await sf.instrument(context as unknown as AudioContext, soundfontId as any, {
     soundfont: 'FluidR3_GM',
     format: 'mp3',
+    nameToUrl: soundfontNameToUrl,
     destination: master,
     gain: 1,
     notes,
