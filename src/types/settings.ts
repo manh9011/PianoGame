@@ -72,4 +72,10 @@ export interface UserSettings {
   advancedEnableDebugOverlay: boolean
   advancedConfirmBeforeDestructiveAction: boolean
   advancedCompactMode: boolean
+  advancedMidiInstrumentChange: boolean
+  advancedMidiBankSelect: boolean
+  advancedMidiSysEx: boolean
+  advancedMidiPedal: boolean
+  advancedMidiZeroVolumeKeyLights: boolean
+  advancedMidiForceUniqueTrackChannels: boolean
 }

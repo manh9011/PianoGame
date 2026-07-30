@@ -14,11 +14,11 @@ export async function requestMidiAccess(options?: { sysex?: boolean }): Promise<
 export function listInputs(access: MidiAccess | null): MidiDeviceInfo[] { return access ? [...access.inputs.values()].map(d => ({ id: d.id, name: d.name || d.id })) : [] }
 export function listOutputs(access: MidiAccess | null): MidiDeviceInfo[] { return access ? [...access.outputs.values()].map(d => ({ id: d.id, name: d.name || d.id })) : [] }
 
-export function bindInput(access: MidiAccess | null, id: string, cb: (note: number, velocity: number, on: boolean) => void) {
+export function bindInput(access: MidiAccess | null, id: string, cb: (note: number, velocity: number, on: boolean) => void, cbCC?: (controller: number, value: number) => void) {
   access?.inputs.forEach(input => { input.onmidimessage = null })
   const input = access?.inputs.get(id)
   if (!input) return
-  input.onmidimessage = e => { const [s, n, v] = [...e.data]; const k = s & 0xf0; if (k === 0x90 || k === 0x80) cb(n, v, k === 0x90 && v > 0) }
+  input.onmidimessage = e => { const [s, n, v] = [...e.data]; const k = s & 0xf0; if (k === 0x90 || k === 0x80) cb(n, v, k === 0x90 && v > 0); else if (k === 0xb0 && cbCC) cbCC(n, v) }
 }
 
 export function sendNote(access: MidiAccess | null, id: string, note: number, velocity: number, on: boolean, channel = 0) {

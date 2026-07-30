@@ -8,3 +8,4 @@ export interface MidiTrackInfo { trackId: number; channel: number; name?: string
 export interface MidiFile { header: MidiHeader; events: RawMidiEvent[]; tracks: MidiTrackInfo[]; durationPulse: number; bookmarks: MidiBookmarkEvent[]; keySignatures: MidiKeySignatureEvent[] }
 export type NoteState = 'waiting' | 'hit' | 'missed' | 'active' | 'done'
 export interface TranslatedNote { id: string; start: number; end: number; noteId: number; trackId: number; channel: number; velocity: number; state: NoteState }
+export interface TranslatedControlChange { id: string; timeUs: number; trackId: number; channel: number; controllerNumber: number; value: number }

@@ -45,6 +45,7 @@ export class AutoNotePlayer {
     session: PlaySession
     notes: SessionNote[]
     nextStartIndex: number
+    nextControlChangeIndex: number
     maxDurationUs: number
     sortedByStart: boolean
     key: string
@@ -89,6 +90,7 @@ export class AutoNotePlayer {
         session,
         notes: session.notes,
         nextStartIndex: 0,
+        nextControlChangeIndex: 0,
         maxDurationUs: maxNoteDurationUs(session.notes),
         sortedByStart: notesSortedByStart(session.notes),
         key: autoKey,

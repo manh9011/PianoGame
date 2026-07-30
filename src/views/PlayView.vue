@@ -16,6 +16,7 @@ import PlayTopBar from '../components/player/PlayTopBar.vue'
 import TrackProgressBar from '../components/player/TrackProgressBar.vue'
 import SheetMusicPanel from '../components/player/SheetMusicPanel.vue'
 import PianoRoll from '../components/player/PianoRoll.vue'
+import PedalIndicator from '../components/player/PedalIndicator.vue'
 import PianoKeyboard from '../components/player/PianoKeyboard.vue'
 import ScorePanel from '../components/player/ScorePanel.vue'
 import PerformanceOverlay from '../components/player/PerformanceOverlay.vue'
@@ -576,7 +577,17 @@ onMounted(async () => {
   sheetReady.value = !settings.showSheetMusic
   startWhenSheetIsReady()
   midiAccess = await requestMidiAccess()
-  bindInput(midiAccess, settings.midiInputId, (note, velocity, on) => player.noteInput(note, on, { velocity, source: 'midi' }))
+  bindInput(
+    midiAccess, 
+    settings.midiInputId, 
+    (note, velocity, on) => player.noteInput(note, on, { velocity, source: 'midi' }),
+    (controller, value) => {
+      if (!settings.advancedMidiPedal) return
+      if (controller === 64) player.setPedal('sustain', value > 0, 'midi_keyboard')
+      else if (controller === 66) player.setPedal('sostenuto', value > 0, 'midi_keyboard')
+      else if (controller === 67) player.setPedal('soft', value > 0, 'midi_keyboard')
+    }
+  )
 
   document.addEventListener('fullscreenchange', updateFullscreenState)
   window.addEventListener('resize', updateFullscreenState)
@@ -709,6 +720,7 @@ watch(() => player.stats, stats => {
           :finger-mode="showFingerDialog"
           @select-finger-note="openFingerForNote"
         />
+        <PedalIndicator />
       </section>
       <SongTitleIntroOverlay
         :title="player.song?.title ?? ''"

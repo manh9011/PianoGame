@@ -38,6 +38,7 @@ let resizeObserver: ResizeObserver | null = null
 let rafId: number | null = null
 let dirty = true
 let animatingPressFlash = false
+let lastFrameMs = 0
 let logicalWidth = 0
 let logicalHeight = 0
 let pixelRatio = 1
@@ -848,6 +849,15 @@ function requestDraw() {
 function drawFrame() {
   rafId = null
   if (!dirty) return
+  
+  const now = performance.now()
+  if (settings.advancedReduceAnimations && now - lastFrameMs < 33.0) {
+    if (animatingPressFlash) requestDraw()
+    // leave dirty = true so it will redraw eventually
+    return
+  }
+  lastFrameMs = now
+
   dirty = false
   draw()
   if (animatingPressFlash) requestDraw()

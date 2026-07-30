@@ -8,10 +8,12 @@ import { DEFAULT_SHORTCUTS } from '../../modules/settings/defaultShortcuts'
 import { requestMidiAccess, bindMidiMessageListener } from '../../modules/midi/webMidi'
 
 import { isShortcutsPaused } from '../../composables/useShortcuts'
+import { useConfirmDialog } from '../../composables/useConfirmDialog'
 import type { ShortcutCategory } from '../../modules/settings/defaultShortcuts'
 
 const { t } = useI18n()
 const settingsStore = useSettingsStore()
+const { confirm } = useConfirmDialog()
 
 const activeAction = ref<{ category: ShortcutCategory; actionName: string } | null>(null)
 const isModalOpen = ref(false)
@@ -185,14 +187,32 @@ function addNewShortcut() {
   openCaptureModal(newIndex)
 }
 
-function resetCurrentAction() {
+async function resetCurrentAction() {
   if (!activeAction.value) return
+  const confirmed = await confirm({
+    title: t('settings.resetToDefaults'),
+    message: t('settings.resetActionShortcutConfirm'),
+    confirmLabel: t('settings.resetToDefaults'),
+    cancelLabel: t('common.cancel'),
+    tone: 'danger',
+  })
+  if (!confirmed) return
+
   const { category, actionName } = activeAction.value
   settingsStore.resetActionShortcut(category, actionName)
   closeCaptureModal()
 }
 
-function handleResetAll() {
+async function handleResetAll() {
+  const confirmed = await confirm({
+    title: t('settings.resetAllShortcuts'),
+    message: t('settings.resetAllShortcutsConfirm'),
+    confirmLabel: t('settings.resetToDefaults'),
+    cancelLabel: t('common.cancel'),
+    tone: 'danger',
+  })
+  if (!confirmed) return
+
   settingsStore.resetAllShortcuts()
   closeCaptureModal()
 }
@@ -223,9 +243,6 @@ onUnmounted(() => {
           <h2>{{ t('settings.shortcuts') }}</h2>
           <p>{{ t('settings.shortcutsDescription') }}</p>
         </div>
-        <button class="settings-button danger text-sm" type="button" @click="handleResetAll">
-          {{ t('settings.resetAllShortcuts') }}
-        </button>
       </header>
 
       <div class="category-sections">
@@ -243,6 +260,14 @@ onUnmounted(() => {
               </div>
             </SettingsRow>
           </div>
+        </SettingsSection>
+
+        <SettingsSection :title="t('settings.resetShortcutsTitle')">
+          <SettingsRow :title="t('settings.resetAllShortcuts')" :description="t('settings.resetAllShortcutsDescription')">
+            <button class="settings-button danger" type="button" @click="handleResetAll">
+              {{ t('settings.resetAllShortcuts') }}
+            </button>
+          </SettingsRow>
         </SettingsSection>
       </div>
     </template>
@@ -491,10 +516,10 @@ onUnmounted(() => {
 
 .action-btn-danger {
   padding: 0.48rem 1.1rem;
-  border: none;
+  border: 1px solid var(--color-border-input);
   border-radius: 0.4rem;
-  background: #aa2a2a;
-  color: #ffffff;
+  background: var(--color-btn-danger-bg);
+  color: var(--color-btn-danger-text);
   font-size: 0.88rem;
   font-weight: 500;
   cursor: pointer;
@@ -502,7 +527,7 @@ onUnmounted(() => {
 }
 
 .action-btn-danger:hover {
-  background: #c23333;
+  background: var(--color-btn-danger-hover);
 }
 
 .action-btn-add {

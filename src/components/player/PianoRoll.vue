@@ -11,7 +11,7 @@ import { FLAT_GRAY, MISSED_NOTE_COLOR, TRACK_INVISIBLE_COLOR } from '../../modul
 import { HAND_COLORS, HAND_HIT_COLORS } from '../../modules/game/handAssignment'
 import { CanvasSpriteCache, createSpriteCanvas } from '../../modules/render/canvasSpriteCache'
 import { drawRollHitLine, ROLL_HIT_LINE_HEIGHT as HIT_LINE_HEIGHT } from '../../modules/render/hitLineRenderer'
-import { createImpactParticleRenderer, IMPACT_REPEAT_THROTTLE_MS, IMPACT_REWIND_THRESHOLD_US } from '../../modules/render/impactParticlesRenderer'
+import { createImpactParticleRenderer, getImpactRepeatThrottleMs, IMPACT_REWIND_THRESHOLD_US } from '../../modules/render/impactParticlesRenderer'
 import { addActivePlaybackCounter, addPlaybackCounter, beginRenderFrame, endRenderFrame, measurePlaybackSpan, setPlaybackGauge, type PlaybackProfilerContext } from '../../modules/perf/playbackProfiler'
 import type { SessionBookmark, SessionNote, UserBookmark } from '../../modules/game/playSession'
 import type { MidiBookmarkSource } from '../../modules/midi/midiTypes'
@@ -195,7 +195,8 @@ function triggerImpacts(notes: LaidOutNote<SessionNote>[], session: NonNullable<
     if (!canSpawn) continue
 
     const lastSpawnMs = activeImpacts.get(key)
-    if (lastSpawnMs !== undefined && nowMs - lastSpawnMs < IMPACT_REPEAT_THROTTLE_MS) continue
+    const throttleMs = getImpactRepeatThrottleMs(settings.advancedReduceAnimations)
+    if (lastSpawnMs !== undefined && nowMs - lastSpawnMs < throttleMs) continue
 
     activeImpacts.set(key, nowMs)
     spawnImpact(note)
@@ -736,6 +737,10 @@ function draw(dt: number, nowMs: number, frameProfile: PlaybackProfilerContext |
 function drawFrame() {
   const now = performance.now()
   const rawDt = now - lastFrameMs
+  if (settings.advancedReduceAnimations && rawDt < 33.0) {
+    rafId = requestAnimationFrame(drawFrame)
+    return
+  }
   const dt = Math.min(32, rawDt)
   lastFrameMs = now
   fpsFrames += 1

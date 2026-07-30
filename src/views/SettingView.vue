@@ -15,7 +15,6 @@ const { t } = useI18n()
         {{ t('common.back') }}
       </button>
       <h1>{{ t('settings.title') }}</h1>
-      <span class="settings-brand">{{ t('app.brand') }}</span>
     </header>
 
     <div class="settings-frame">

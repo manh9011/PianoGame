@@ -4,9 +4,22 @@ import SettingsRow from '../../components/settings/ui/SettingsRow.vue'
 import SettingsSection from '../../components/settings/ui/SettingsSection.vue'
 import SettingsToggle from '../../components/settings/ui/SettingsToggle.vue'
 import { useSettingsStore } from '../../stores/settingsStore'
+import { useConfirmDialog } from '../../composables/useConfirmDialog'
 
 const { t } = useI18n()
 const settings = useSettingsStore()
+const { confirm } = useConfirmDialog()
+
+async function resetAdvanced() {
+  const confirmed = await confirm({
+    message: t('settings.resetAdvancedConfirm'),
+    confirmLabel: t('settings.resetToDefaults'),
+    cancelLabel: t('common.cancel'),
+    tone: 'danger',
+  })
+  if (!confirmed) return
+  settings.resetAdvancedSettings()
+}
 </script>
 
 <template>
@@ -16,27 +29,57 @@ const settings = useSettingsStore()
         <h2>{{ t('settings.advanced') }}</h2>
         <p>{{ t('settings.advancedDescription') }}</p>
       </div>
-      <span class="settings-pill">{{ t('settings.saved') }}</span>
     </header>
 
     <SettingsSection :title="t('settings.interface')">
       <SettingsRow :title="t('settings.reduceMotion')" :description="t('settings.reduceMotionDescription')">
-        <SettingsToggle :model-value="settings.advancedReduceAnimations" @change="settings.patchSettings({ advancedReduceAnimations: $event })" />
+        <SettingsToggle :model-value="settings.advancedReduceAnimations"
+          @change="settings.patchSettings({ advancedReduceAnimations: $event })" />
       </SettingsRow>
       <SettingsRow :title="t('settings.compactMode')" :description="t('settings.compactModeDescription')">
-        <SettingsToggle :model-value="settings.advancedCompactMode" @change="settings.patchSettings({ advancedCompactMode: $event })" />
+        <SettingsToggle :model-value="settings.advancedCompactMode"
+          @change="settings.patchSettings({ advancedCompactMode: $event })" />
       </SettingsRow>
       <SettingsRow :title="t('settings.confirmDestructive')" :description="t('settings.confirmDestructiveDescription')">
-        <SettingsToggle :model-value="settings.advancedConfirmBeforeDestructiveAction" @change="settings.patchSettings({ advancedConfirmBeforeDestructiveAction: $event })" />
+        <SettingsToggle :model-value="settings.advancedConfirmBeforeDestructiveAction"
+          @change="settings.patchSettings({ advancedConfirmBeforeDestructiveAction: $event })" />
       </SettingsRow>
     </SettingsSection>
 
-    <SettingsSection :title="t('settings.diagnostics')" :note="t('settings.diagnosticsNote')">
+    <SettingsSection :title="t('settings.midiData')">
+      <SettingsRow :title="t('settings.midiInstrumentChange')">
+        <SettingsToggle :model-value="settings.advancedMidiInstrumentChange"
+          @change="settings.patchSettings({ advancedMidiInstrumentChange: $event })" />
+      </SettingsRow>
+      <SettingsRow :title="t('settings.midiBankSelect')">
+        <SettingsToggle :model-value="settings.advancedMidiBankSelect"
+          @change="settings.patchSettings({ advancedMidiBankSelect: $event })" />
+      </SettingsRow>
+      <SettingsRow :title="t('settings.midiSysEx')">
+        <SettingsToggle :model-value="settings.advancedMidiSysEx"
+          @change="settings.patchSettings({ advancedMidiSysEx: $event })" />
+      </SettingsRow>
+      <SettingsRow :title="t('settings.midiPedal')">
+        <SettingsToggle :model-value="settings.advancedMidiPedal"
+          @change="settings.patchSettings({ advancedMidiPedal: $event })" />
+      </SettingsRow>
+      <SettingsRow :title="t('settings.midiZeroVolumeKeyLights')">
+        <SettingsToggle :model-value="settings.advancedMidiZeroVolumeKeyLights"
+          @change="settings.patchSettings({ advancedMidiZeroVolumeKeyLights: $event })" />
+      </SettingsRow>
+      <SettingsRow :title="t('settings.midiForceUniqueTrackChannels')">
+        <SettingsToggle :model-value="settings.advancedMidiForceUniqueTrackChannels"
+          @change="settings.patchSettings({ advancedMidiForceUniqueTrackChannels: $event })" />
+      </SettingsRow>
+    </SettingsSection>
+
+    <SettingsSection :title="t('settings.diagnostics')">
       <SettingsRow :title="t('settings.debugOverlay')" :description="t('settings.debugOverlayDescription')">
-        <SettingsToggle :model-value="settings.advancedEnableDebugOverlay" @change="settings.patchSettings({ advancedEnableDebugOverlay: $event })" />
+        <SettingsToggle :model-value="settings.advancedEnableDebugOverlay"
+          @change="settings.patchSettings({ advancedEnableDebugOverlay: $event })" />
       </SettingsRow>
       <SettingsRow :title="t('settings.resetToDefaults')" :description="t('settings.resetToDefaultsDescription')">
-        <button class="settings-button" type="button" disabled>{{ t('settings.resetToDefaults') }}</button>
+        <button class="settings-button danger" type="button" @click="resetAdvanced">{{ t('settings.resetToDefaults') }}</button>
       </SettingsRow>
     </SettingsSection>
   </div>

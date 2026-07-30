@@ -3,6 +3,16 @@ import type { Canvas2DContext } from './hitLineRenderer'
 export const IMPACT_REWIND_THRESHOLD_US = 80_000
 export const IMPACT_REPEAT_THROTTLE_MS = 150
 export const IMPACT_REPEAT_THROTTLE_US = IMPACT_REPEAT_THROTTLE_MS * 1000
+export const REDUCED_MOTION_IMPACT_REPEAT_THROTTLE_MS = 300
+export const REDUCED_MOTION_IMPACT_REPEAT_THROTTLE_US = REDUCED_MOTION_IMPACT_REPEAT_THROTTLE_MS * 1000
+
+export function getImpactRepeatThrottleMs(reduceMotion: boolean) {
+  return reduceMotion ? REDUCED_MOTION_IMPACT_REPEAT_THROTTLE_MS : IMPACT_REPEAT_THROTTLE_MS
+}
+
+export function getImpactRepeatThrottleUs(reduceMotion: boolean) {
+  return reduceMotion ? REDUCED_MOTION_IMPACT_REPEAT_THROTTLE_US : IMPACT_REPEAT_THROTTLE_US
+}
 export const IMPACT_RAY_LIFE_MS = 350
 export const IMPACT_RAY_LIFE_US = IMPACT_RAY_LIFE_MS * 1000
 export const IMPACT_FLOAT_LIFE_MS = 940
@@ -348,6 +358,7 @@ export function drawImpactParticlesStateless(
   height: number,
   yOffset = 0,
   sprites?: ImpactSpriteBundle,
+  reduceMotion = false,
 ) {
   const maxBurstAgeUs = Math.max(IMPACT_RAY_LIFE_US, IMPACT_FLOAT_LIFE_US)
   const impactedNotes = notes.filter(note => currentUs >= noteStartUs(note) && currentUs <= noteEndUs(note) + maxBurstAgeUs)
@@ -362,11 +373,12 @@ export function drawImpactParticlesStateless(
     const lastPlayableUs = Math.min(currentUs, endUs)
     if (lastPlayableUs < startUs) continue
     const baseSeed = Number(note.id.replace(/\D/g, '').slice(-6)) || note.noteId * 97 + note.trackId * 31
-    const lastBurstIndex = Math.floor((lastPlayableUs - startUs) / IMPACT_REPEAT_THROTTLE_US)
-    const firstBurstIndex = Math.max(0, Math.floor((currentUs - startUs - maxBurstAgeUs) / IMPACT_REPEAT_THROTTLE_US))
+    const throttleUs = getImpactRepeatThrottleUs(reduceMotion)
+    const lastBurstIndex = Math.floor((lastPlayableUs - startUs) / throttleUs)
+    const firstBurstIndex = Math.max(0, Math.floor((currentUs - startUs - maxBurstAgeUs) / throttleUs))
 
     for (let burstIndex = firstBurstIndex; burstIndex <= lastBurstIndex; burstIndex += 1) {
-      const burstUs = startUs + burstIndex * IMPACT_REPEAT_THROTTLE_US
+      const burstUs = startUs + burstIndex * throttleUs
       const ageUs = currentUs - burstUs
       if (ageUs < 0 || ageUs > maxBurstAgeUs) continue
       drawImpactBurst(ctx, note, baseSeed + burstIndex * 1009, ageUs, height, yOffset, sprites)
@@ -407,8 +419,9 @@ export function drawImpactParticlesStatelessWithSprites(
   currentUs: number,
   height: number,
   yOffset = 0,
+  reduceMotion = false,
 ) {
-  drawImpactParticlesStateless(ctx, notes, currentUs, height, yOffset, getOffscreenImpactSprites() ?? undefined)
+  drawImpactParticlesStateless(ctx, notes, currentUs, height, yOffset, getOffscreenImpactSprites() ?? undefined, reduceMotion)
 }
 
 export function createImpactParticleRenderer(createCanvas: CanvasFactory = defaultCanvasFactory, random: () => number = Math.random) {

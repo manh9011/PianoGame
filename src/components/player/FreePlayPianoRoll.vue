@@ -25,6 +25,7 @@ let rafId: number | null = null
 let logicalWidth = 0
 let logicalHeight = 0
 let pixelRatio = 1
+let lastFrameMs = 0
 
 const keyboardRange = computed(() => player.session?.keyboardRange ?? null)
 const selectedKeySignature = computed(() => FREE_PLAY_KEY_SIGNATURES.find(signature => signature.id === freePlay.keySignature) ?? FREE_PLAY_KEY_SIGNATURES[0])
@@ -291,6 +292,17 @@ function resizeCanvas() {
 }
 
 function animationFrame() {
+  const now = performance.now()
+  if (settings.advancedReduceAnimations && now - lastFrameMs < 33.0) {
+    if (freePlay.status === 'recording') {
+      rafId = requestAnimationFrame(animationFrame)
+    } else {
+      rafId = null
+    }
+    return
+  }
+  lastFrameMs = now
+
   draw()
   if (freePlay.status === 'recording') {
     rafId = requestAnimationFrame(animationFrame)

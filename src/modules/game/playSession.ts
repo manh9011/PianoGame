@@ -1,6 +1,6 @@
 import type { MetronomeBeat } from '../audio/metronomePlayer'
 import type { TempoPoint } from '../midi/midiTempo'
-import type { MidiBookmarkSource, TranslatedNote } from '../midi/midiTypes'
+import type { MidiBookmarkSource, TranslatedControlChange, TranslatedNote } from '../midi/midiTypes'
 import { resolveTrackModeForSession, type TrackProperties } from './trackProperties'
 import { createScoreState, type ScoreState } from './scoring'
 import type { KeyboardRange } from '../render/keyboardRange'
@@ -29,6 +29,7 @@ export interface ConfigureSessionOptions { mode: PlayMode; handSelection: HandSe
 
 export interface PlaySession {
   notes: SessionNote[]
+  controlChanges: TranslatedControlChange[]
   tracks: TrackProperties[]
   mode: PlayMode
   modeConfig: PlayModeConfig
@@ -93,13 +94,14 @@ export function createBackgroundScores(handSelection: HandSelection, scoringEnab
     : undefined
 }
 
-export function createPlaySession(notes: SessionNote[], tracks: TrackProperties[], options: PlaySessionOptions & { needsTrackConfiguration?: boolean }): PlaySession {
+export function createPlaySession(notes: SessionNote[], controlChanges: TranslatedControlChange[], tracks: TrackProperties[], options: PlaySessionOptions & { needsTrackConfiguration?: boolean }): PlaySession {
   const mode = options.mode ?? 'practice'
   const modeConfig = PLAY_MODE_CONFIGS[mode]
   const speed = modeConfig.fixedSpeed ?? clampSpeed(options.speed)
   const durationUs = options.durationUs ?? 0
   return {
     notes: notes.map(n => ({ ...n, state: 'waiting' })),
+    controlChanges,
     tracks,
     mode,
     modeConfig,

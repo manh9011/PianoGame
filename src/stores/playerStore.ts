@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import type { SongMetadata } from '../types/song'
 import { base64ToBuffer, loadSongMidiData } from '../modules/library/songLibrary'
 import { parseMidi } from '../modules/midi/midiParser'
-import { translateNotes } from '../modules/midi/midiNoteTranslator'
+import { translateControlChanges, translateNotes } from '../modules/midi/midiNoteTranslator'
 import type { MidiBookmarkSource } from '../modules/midi/midiTypes'
 import { buildTempoMap, pulseToMicroseconds } from '../modules/midi/midiTempo'
 import { createDefaultTrackProperties, isTrackRoleComplete, resolveTrackModeForSession, roleToHandAssignment, TRACK_ROLE_COLORS, type TrackMode, type TrackProperties, type TrackRole } from '../modules/game/trackProperties'
@@ -444,6 +444,8 @@ export const usePlayerStore = defineStore('player', {
     interactionLocked: false,
     loopAttemptHistory: [] as LoopAttemptSummary[],
     loopAttemptCounter: 0,
+    pedalState: { sustain: false, sostenuto: false, soft: false },
+    pedalEventIndex: 0,
   }),
   getters: {
     canSeek: state => !!state.session?.setupComplete && !state.stats && !state.session.finished && state.session.mode !== 'performance',
@@ -463,6 +465,9 @@ export const usePlayerStore = defineStore('player', {
       const settings = useSettingsStore()
       session.keyboardRange = getKeyboardRange(settings.keyboardRangeMode, session.notes)
     },
+    setPedal(type: 'sustain' | 'sostenuto' | 'soft', isPressed: boolean, source: 'song' | 'midi_keyboard' = 'song') {
+      this.pedalState[type] = isPressed
+    },
     subscribeNoteInput(listener: NoteInputListener) {
       noteInputListeners.add(listener)
       return () => noteInputListeners.delete(listener)
@@ -475,7 +480,7 @@ export const usePlayerStore = defineStore('player', {
       this.song = null
       const track = createDefaultTrackProperties([{ trackId: monitorTrack.trackId ?? 0, role: 'background', instrumentProgram: monitorTrack.instrumentProgram ?? 0 }])[0]
       if (monitorTrack.color) track.color = monitorTrack.color
-      this.session = createPlaySession([], [track], {
+      this.session = createPlaySession([], [], [track], {
         mode: 'listen',
         handSelection: 'both',
         speed,
@@ -502,6 +507,7 @@ export const usePlayerStore = defineStore('player', {
       if (!data) throw new Error('Bài hát không có dữ liệu MIDI')
       const midi = parseMidi(base64ToBuffer(data))
       const { notes, needsManualAssignment } = assignHands(translateNotes(midi))
+      const controlChanges = translateControlChanges(midi)
       const trackIds = [...new Set(notes.map(n => n.trackId))]
       const tracks = createDefaultTrackProperties(trackIds.map(trackId => {
         const info = midi.tracks.find(track => track.trackId === trackId)
@@ -522,7 +528,7 @@ export const usePlayerStore = defineStore('player', {
       const bookmarks = createSessionBookmarks(midi, tempoMap)
       const keySignatures = createSessionKeySignatures(midi, tempoMap)
       this.song = song
-      this.session = createPlaySession(notes, tracks, { speed, showDuration, octaveShift, tempoMap, measureGridUs, metronomeBeatGrid, bookmarks, keySignatures, needsTrackConfiguration: needsManualAssignment && tracks.some(track => !isTrackRoleComplete(track)), durationUs: duration })
+      this.session = createPlaySession(notes, controlChanges, tracks, { speed, showDuration, octaveShift, tempoMap, measureGridUs, metronomeBeatGrid, bookmarks, keySignatures, needsTrackConfiguration: needsManualAssignment && tracks.some(track => !isTrackRoleComplete(track)), durationUs: duration })
       restoreSavedTrackSettings(song.id, this.session)
       resetBackgroundScores(this.session)
       this.refreshKeyboardRange()
@@ -630,6 +636,20 @@ export const usePlayerStore = defineStore('player', {
             })
           } else {
             measurePlaybackSpan(tickProfile, 'tick.autoPlayer', () => this.autoPlayer.tick(session))
+            measurePlaybackSpan(tickProfile, 'tick.pedals', () => {
+              if (session.controlChanges && session.controlChanges.length && settings.advancedMidiPedal) {
+                while (
+                  this.pedalEventIndex < session.controlChanges.length && 
+                  session.controlChanges[this.pedalEventIndex].timeUs <= state.currentUs
+                ) {
+                  const cc = session.controlChanges[this.pedalEventIndex]
+                  if (cc.controllerNumber === 64) this.setPedal('sustain', cc.value > 0, 'song')
+                  else if (cc.controllerNumber === 66) this.setPedal('sostenuto', cc.value > 0, 'song')
+                  else if (cc.controllerNumber === 67) this.setPedal('soft', cc.value > 0, 'song')
+                  this.pedalEventIndex++
+                }
+              }
+            })
             measurePlaybackSpan(tickProfile, 'tick.metronome', () => this.metronome.tick(session.metronomeBeatGrid, state.currentUs, {
               volume: settings.metronomeVolume,
               doubleSpeed: settings.metronomeDoubleSpeed,
@@ -869,6 +889,24 @@ export const usePlayerStore = defineStore('player', {
       session.failureReason = undefined
       session.melodyWaitNoteId = undefined
       session.melodyWaitStartedMs = undefined
+      this.pedalEventIndex = 0
+      this.pedalState.sustain = false
+      this.pedalState.sostenuto = false
+      this.pedalState.soft = false
+      
+      if (session.controlChanges) {
+        while (
+          this.pedalEventIndex < session.controlChanges.length && 
+          session.controlChanges[this.pedalEventIndex].timeUs <= seekUs
+        ) {
+          const cc = session.controlChanges[this.pedalEventIndex]
+          if (cc.controllerNumber === 64) this.pedalState.sustain = cc.value > 0
+          else if (cc.controllerNumber === 66) this.pedalState.sostenuto = cc.value > 0
+          else if (cc.controllerNumber === 67) this.pedalState.soft = cc.value > 0
+          this.pedalEventIndex++
+        }
+      }
+
       session.finished = false
       this.stats = null
       this.completedStatsBatch = []
@@ -1268,7 +1306,7 @@ export const usePlayerStore = defineStore('player', {
       const firstStartUs = Math.min(...notes.map(note => note.start))
       const lastEndUs = Math.max(...notes.map(note => note.end))
       const previewTrack = { ...track, mode: 'playedAutomatically' as TrackMode }
-      const previewSession = createPlaySession(notes, [previewTrack], {
+      const previewSession = createPlaySession(notes, [], [previewTrack], {
         mode: 'listen',
         handSelection: 'both',
         speed: session.speed,

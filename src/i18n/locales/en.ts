@@ -1,7 +1,6 @@
 export const en = {
   app: {
     name: 'PianoGame',
-    brand: 'Synthesia Style',
     version: 'v1.0.0',
     copyright: '©2026 PianoGame',
   },
@@ -536,7 +535,6 @@ export const en = {
     webMidi: 'Web MIDI',
     keys18: '18 Keys',
     empty: 'Empty',
-    saved: 'Saved',
     uiOnly: 'UI only',
     folders: '{count} folders',
     profiles: '{count} profiles',
@@ -619,7 +617,11 @@ export const en = {
     emphasizeFirstBeatDescription: 'Emphasize the first beat of each measure.',
     shortcutsDescription: 'Customize keyboard shortcuts and controls for navigation, playback, and gameplay features.',
     shortcutsNote: 'These shortcuts are stored now; real keyboard binding will be integrated later.',
+    resetShortcutsTitle: 'Reset Shortcuts',
     resetAllShortcuts: 'Reset All Shortcuts',
+    resetAllShortcutsDescription: 'Restore all keyboard shortcut bindings to default settings.',
+    resetAllShortcutsConfirm: 'All keyboard shortcuts will be restored to their default bindings. Are you sure you want to proceed?',
+    resetActionShortcutConfirm: 'Restore default shortcut bindings for this action?',
     addShortcut: 'Add Shortcut',
     pressKeyPrompt: 'Press key combination...',
     recording: 'Listening...',
@@ -753,11 +755,25 @@ export const en = {
     confirmDestructive: 'Confirm before destructive actions',
     confirmDestructiveDescription: 'Show confirmation before deleting/import overwrites.',
     diagnostics: 'Diagnostics',
-    diagnosticsNote: 'Advanced diagnostics are available while playing.',
     debugOverlay: 'Debug overlay',
     debugOverlayDescription: 'Show live performance diagnostics while playing.',
     resetToDefaults: 'Reset to defaults',
-    resetToDefaultsDescription: 'Reset will be wired later to avoid losing configuration unintentionally.',
+    resetToDefaultsDescription: 'Restore all advanced settings to their factory defaults.',
+    resetAdvancedConfirm: 'All advanced settings will be restored to their defaults. This cannot be undone.',
+    midiData: "MIDI Data",
+    midiDataDescription: "Process advanced MIDI events.",
+    midiInstrumentChange: "Instrument Change Messages",
+    midiInstrumentChangeDescription: "Toggle processing of Instrument Change messages.",
+    midiBankSelect: "Bank Select Messages",
+    midiBankSelectDescription: "Toggle processing of Bank Select messages.",
+    midiSysEx: "SysEx Messages",
+    midiSysExDescription: "Toggle processing of SysEx messages.",
+    midiPedal: "Pedal Messages",
+    midiPedalDescription: "Toggle processing of Pedal messages.",
+    midiZeroVolumeKeyLights: "Zero Volume Key Lights",
+    midiZeroVolumeKeyLightsDescription: "Toggle lighting up keys with zero volume.",
+    midiForceUniqueTrackChannels: "Force Unique Track Channels",
+    midiForceUniqueTrackChannelsDescription: "Force unique channels for tracks.",
   },
   profile: {
     localProfiles: 'Local profiles',
@@ -885,7 +901,6 @@ export const en = {
     },
   },
 } as const
-
 type DeepWiden<T> =
   T extends string ? string :
   T extends number ? number :
@@ -893,5 +908,4 @@ type DeepWiden<T> =
   T extends readonly (infer U)[] ? readonly DeepWiden<U>[] :
   T extends object ? { -readonly [K in keyof T]: DeepWiden<T[K]> } :
   T
-
 export type LocaleMessages = DeepWiden<typeof en>

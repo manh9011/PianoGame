@@ -3,7 +3,7 @@ import type { SongMetadata, SongSortKey, SortDirection } from '../types/song'
 import { base64ToBuffer, deleteSongFromLibrary, loadLibrary, saveLibrary, sortSongs, loadSongCompressedMusicXmlData, loadSongMidiData, loadSongMusicXmlData } from '../modules/library/songLibrary'
 import { persistQueue } from '../modules/storage/indexedDb'
 import { parseMidi } from '../modules/midi/midiParser'
-import { translateNotes } from '../modules/midi/midiNoteTranslator'
+import { translateControlChanges, translateNotes } from '../modules/midi/midiNoteTranslator'
 import { buildTempoMap, pulseToMicroseconds } from '../modules/midi/midiTempo'
 import { createDefaultTrackProperties } from '../modules/game/trackProperties'
 import { PLAY_MODE_CONFIGS, createPlaySession, type PlaySession } from '../modules/game/playSession'
@@ -286,10 +286,11 @@ export const useLibraryStore = defineStore('library', {
       const midi = parseMidi(base64ToBuffer(data))
       if (!isCurrentRequest()) return
       const { notes } = assignHands(translateNotes(midi))
+      const controlChanges = translateControlChanges(midi)
       const trackIds = [...new Set(notes.map(note => note.trackId))]
       const tracks = createDefaultTrackProperties(trackIds)
       const duration = pulseToMicroseconds(midi.durationPulse, midi.header.ticksPerQuarter, buildTempoMap(midi))
-      const session = createPlaySession(notes, tracks, { speed, showDuration, octaveShift })
+      const session = createPlaySession(notes, controlChanges, tracks, { speed, showDuration, octaveShift })
       session.mode = 'listen'
       session.modeConfig = PLAY_MODE_CONFIGS.listen
       session.handSelection = 'both'

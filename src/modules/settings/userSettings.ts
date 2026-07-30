@@ -53,6 +53,12 @@ export const defaultSettings: UserSettings = {
   advancedEnableDebugOverlay: false,
   advancedConfirmBeforeDestructiveAction: true,
   advancedCompactMode: false,
+  advancedMidiInstrumentChange: true,
+  advancedMidiBankSelect: true,
+  advancedMidiSysEx: true,
+  advancedMidiPedal: true,
+  advancedMidiZeroVolumeKeyLights: true,
+  advancedMidiForceUniqueTrackChannels: true,
 }
 
 function normalizeShortcuts(userShortcuts?: Record<string, Record<string, string[]>>): Record<string, Record<string, string[]>> {

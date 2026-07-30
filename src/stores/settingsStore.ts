@@ -89,5 +89,13 @@ export const useSettingsStore = defineStore('settings', {
       this.shortcuts = JSON.parse(JSON.stringify(DEFAULT_SHORTCUTS))
       this.persist()
     },
+    resetAdvancedSettings() {
+      for (const key of Object.keys(defaultSettings) as (keyof typeof defaultSettings)[]) {
+        if (key.startsWith('advanced')) {
+          (this as any)[key] = defaultSettings[key]
+        }
+      }
+      this.persist()
+    },
   },
 })
