@@ -448,7 +448,11 @@ export const usePlayerStore = defineStore('player', {
     pedalEventIndex: 0,
   }),
   getters: {
-    canSeek: state => !!state.session?.setupComplete && !state.stats && !state.session.finished && state.session.mode !== 'performance',
+    canSeek: state => {
+      if (!state.session?.setupComplete || state.session.mode === 'performance') return false
+      if (state.session.mode === 'listen') return true
+      return !state.stats && !state.session.finished
+    },
     loopRegionConfigured: state => isLoopRegionConfigured(state.session?.loopState),
     recentLoopAttempts: state => state.loopAttemptHistory.slice(-5).reverse(),
     bestLoopAttempt: state => state.loopAttemptHistory.reduce<LoopAttemptSummary | null>((best, attempt) => {
@@ -727,7 +731,11 @@ export const usePlayerStore = defineStore('player', {
       markKeyboardVisualChanged(session)
     },
     start() {
-      if (!this.session?.setupComplete || this.stats || this.interactionLocked) return
+      if (!this.session?.setupComplete || this.interactionLocked) return
+      if (this.stats && this.session.mode !== 'listen') return
+      if (this.session.finished) {
+        this.seekToUs(0)
+      }
       this.stopTrackPreview()
       this.playbackManuallyStopped = false
       this.playbackRunning = true
@@ -736,7 +744,11 @@ export const usePlayerStore = defineStore('player', {
     },
     togglePause() {
       const session = this.session
-      if (!session?.setupComplete || !session.modeConfig.pauseAllowed || this.stats || this.interactionLocked) return
+      if (!session?.setupComplete || !session.modeConfig.pauseAllowed || this.interactionLocked) return
+      if (this.stats && session.mode !== 'listen') return
+      if (session.finished && !this.clock?.state.running) {
+        this.seekToUs(0)
+      }
       this.clock?.toggle()
       session.paused = !this.clock?.state.running
       this.playbackRunning = !!this.clock?.state.running
@@ -1354,7 +1366,8 @@ export const usePlayerStore = defineStore('player', {
     noteInput(noteId: number, on: boolean, options: NoteInputOptions = {}) {
       const session = this.session
       if (this.playbackOutputBlocked || this.interactionLocked) return
-      if (!session?.setupComplete || session.finished || this.stats) return
+      if (!session?.setupComplete) return
+      if ((session.finished || this.stats) && session.mode !== 'listen') return
       const velocity = Math.max(0, Math.min(127, Math.round(options.velocity ?? 80)))
       const source = options.source ?? 'midi'
       const inputTrackId = options.trackId ?? session.tracks[0]?.trackId
