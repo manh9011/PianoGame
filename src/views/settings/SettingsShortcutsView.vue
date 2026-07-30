@@ -7,10 +7,13 @@ import { useSettingsStore } from '../../stores/settingsStore'
 import { DEFAULT_SHORTCUTS } from '../../modules/settings/defaultShortcuts'
 import { requestMidiAccess, bindMidiMessageListener } from '../../modules/midi/webMidi'
 
+import { isShortcutsPaused } from '../../composables/useShortcuts'
+import type { ShortcutCategory } from '../../modules/settings/defaultShortcuts'
+
 const { t } = useI18n()
 const settingsStore = useSettingsStore()
 
-const activeAction = ref<{ category: string; actionName: string } | null>(null)
+const activeAction = ref<{ category: ShortcutCategory; actionName: string } | null>(null)
 const isModalOpen = ref(false)
 const editingIndex = ref<number | null>(null)
 const capturedKey = ref('')
@@ -27,7 +30,7 @@ const currentActionKeys = computed(() => {
   return shortcutsConfig.value[category]?.[actionName] ?? []
 })
 
-function selectAction(category: string, actionName: string) {
+function selectAction(category: ShortcutCategory, actionName: string) {
   closeCaptureModal()
   activeAction.value = { category, actionName }
 }
@@ -45,6 +48,7 @@ async function openCaptureModal(index: number) {
     capturedKey.value = ''
   }
   isModalOpen.value = true
+  isShortcutsPaused.value = true // Pause global shortcuts
   window.addEventListener('keydown', handleModalKeyDown, true)
   window.addEventListener('wheel', handleModalWheel, { passive: false, capture: true })
 
@@ -65,6 +69,7 @@ async function openCaptureModal(index: number) {
 
 function closeCaptureModal() {
   isModalOpen.value = false
+  isShortcutsPaused.value = false // Resume global shortcuts
   editingIndex.value = null
   capturedKey.value = ''
   window.removeEventListener('keydown', handleModalKeyDown, true)
@@ -224,23 +229,13 @@ onUnmounted(() => {
       </header>
 
       <div class="category-sections">
-        <SettingsSection
-          v-for="(actions, categoryName) in shortcutsConfig"
-          :key="categoryName"
-          :title="getCategoryLabel(String(categoryName))"
-        >
-          <div
-            v-for="(_, actionName) in actions"
-            :key="actionName"
-            class="shortcut-overview-row"
-            @click="selectAction(String(categoryName), String(actionName))"
-          >
-            <SettingsRow :title="getActionLabel(String(actionName))">
+        <SettingsSection v-for="(actions, categoryName) in shortcutsConfig" :key="categoryName"
+          :title="getCategoryLabel(categoryName)">
+          <div v-for="(_, actionName) in actions" :key="actionName" class="shortcut-overview-row"
+            @click="selectAction(categoryName, actionName)">
+            <SettingsRow :title="getActionLabel(actionName)">
               <div class="shortcut-badges">
-                <span
-                  v-if="shortcutsConfig[categoryName]?.[actionName]?.length"
-                  class="shortcut-text-list"
-                >
+                <span v-if="shortcutsConfig[categoryName]?.[actionName]?.length" class="shortcut-text-list">
                   {{ shortcutsConfig[categoryName][actionName].join(', ') }}
                 </span>
                 <span v-else class="empty-badge">(none)</span>
@@ -267,12 +262,8 @@ onUnmounted(() => {
         <!-- SHORTCUTS LIST CARD -->
         <div class="shortcuts-card">
           <template v-if="currentActionKeys.length > 0">
-            <div
-              v-for="(keyStr, index) in currentActionKeys"
-              :key="index"
-              class="shortcut-card-row"
-              @click="openCaptureModal(index)"
-            >
+            <div v-for="(keyStr, index) in currentActionKeys" :key="index" class="shortcut-card-row"
+              @click="openCaptureModal(index)">
               <div class="shortcut-key-label">
                 <span class="key-name">{{ keyStr }}</span>
               </div>
@@ -659,13 +650,16 @@ onUnmounted(() => {
     grid-template-columns: 1fr;
     gap: 0.5rem;
   }
+
   .detail-header-spacer {
     display: none;
   }
+
   .detail-actions {
     flex-direction: column;
     align-items: stretch;
   }
+
   .right-actions {
     margin-left: 0;
     justify-content: flex-end;

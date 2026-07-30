@@ -87,6 +87,12 @@ onMounted(() => {
 onBeforeUnmount(() => {
   player.stopTrackPreview()
 })
+
+import { useShortcuts } from '../composables/useShortcuts'
+
+useShortcuts({
+  menuBack: back,
+})
 </script>
 
 <template>

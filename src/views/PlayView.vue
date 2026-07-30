@@ -35,8 +35,11 @@ import FingerPickerDialog from '../components/player/dialogs/FingerPickerDialog.
 import { freezePlaybackProfiler, resumePlaybackProfiler, setPlaybackProfilerMode, type PlaybackProfilerSnapshot } from '../modules/perf/playbackProfiler'
 import type { HandSizePreset } from '../modules/fingering/fingeringTypes'
 
+import { useShortcuts } from '../composables/useShortcuts'
+
 const WHITE_KEY_ASPECT_RATIO = 150 / 23.5  // 6.383
 const BLACK_KEY_HEIGHT_RATIO = 95 / 150    // 0.633
+
 const { t } = useI18n()
 const route = useRoute()
 const router = useRouter()
@@ -176,59 +179,67 @@ function closeAllDialogs() {
   showSettingsDialog.value = false
 }
 
-function openMetronome(event: MouseEvent) {
+function openMetronome(event?: MouseEvent) {
   if (showMetronomeDialog.value) {
     showMetronomeDialog.value = false
     return
   }
   closeAllDialogs()
-  const element = event.currentTarget as HTMLElement
-  const { popupStyle, arrowStyle, arrowPlacement } = calculatePopupPosition(element, 320, 300)
-  metronomePopupStyle.value = popupStyle
-  metronomeArrowStyle.value = arrowStyle
-  metronomeArrowPlacement.value = arrowPlacement
+  if (event) {
+    const element = event.currentTarget as HTMLElement
+    const { popupStyle, arrowStyle, arrowPlacement } = calculatePopupPosition(element, 320, 300)
+    metronomePopupStyle.value = popupStyle
+    metronomeArrowStyle.value = arrowStyle
+    metronomeArrowPlacement.value = arrowPlacement
+  }
   showMetronomeDialog.value = true
 }
 
-function openTrackConfig(event: MouseEvent) {
+function openTrackConfig(event?: MouseEvent) {
   if (showTrackConfigDialog.value) {
     showTrackConfigDialog.value = false
     return
   }
   closeAllDialogs()
-  const element = event.currentTarget as HTMLElement
-  const { popupStyle, arrowStyle, arrowPlacement } = calculatePopupPosition(element, 420, 420)
-  trackConfigPopupStyle.value = popupStyle
-  trackConfigArrowStyle.value = arrowStyle
-  trackConfigArrowPlacement.value = arrowPlacement
+  if (event) {
+    const element = event.currentTarget as HTMLElement
+    const { popupStyle, arrowStyle, arrowPlacement } = calculatePopupPosition(element, 420, 420)
+    trackConfigPopupStyle.value = popupStyle
+    trackConfigArrowStyle.value = arrowStyle
+    trackConfigArrowPlacement.value = arrowPlacement
+  }
   showTrackConfigDialog.value = true
 }
 
-function openKeyboardRange(event: MouseEvent) {
+function openKeyboardRange(event?: MouseEvent) {
   if (showKeyboardRangeDialog.value) {
     showKeyboardRangeDialog.value = false
     return
   }
   closeAllDialogs()
-  const element = event.currentTarget as HTMLElement
-  const { popupStyle, arrowStyle, arrowPlacement } = calculatePopupPosition(element, 360, 400)
-  keyboardRangePopupStyle.value = popupStyle
-  keyboardRangeArrowStyle.value = arrowStyle
-  keyboardRangeArrowPlacement.value = arrowPlacement
+  if (event) {
+    const element = event.currentTarget as HTMLElement
+    const { popupStyle, arrowStyle, arrowPlacement } = calculatePopupPosition(element, 360, 400)
+    keyboardRangePopupStyle.value = popupStyle
+    keyboardRangeArrowStyle.value = arrowStyle
+    keyboardRangeArrowPlacement.value = arrowPlacement
+  }
   showKeyboardRangeDialog.value = true
 }
 
-function openLabels(event: MouseEvent) {
+function openLabels(event?: MouseEvent) {
   if (showLabelsDialog.value) {
     showLabelsDialog.value = false
     return
   }
   closeAllDialogs()
-  const element = event.currentTarget as HTMLElement
-  const { popupStyle, arrowStyle, arrowPlacement } = calculatePopupPosition(element, 430, 520)
-  labelsPopupStyle.value = popupStyle
-  labelsArrowStyle.value = arrowStyle
-  labelsArrowPlacement.value = arrowPlacement
+  if (event) {
+    const element = event.currentTarget as HTMLElement
+    const { popupStyle, arrowStyle, arrowPlacement } = calculatePopupPosition(element, 430, 520)
+    labelsPopupStyle.value = popupStyle
+    labelsArrowStyle.value = arrowStyle
+    labelsArrowPlacement.value = arrowPlacement
+  }
   showLabelsDialog.value = true
 }
 
@@ -327,17 +338,19 @@ async function clearAllFingers() {
   toast.showSuccess(t('fingerDialog.clearAllSuccess'))
 }
 
-function openSettings(event: MouseEvent) {
+function openSettings(event?: MouseEvent) {
   if (showSettingsDialog.value) {
     showSettingsDialog.value = false
     return
   }
   closeAllDialogs()
-  const element = event.currentTarget as HTMLElement
-  const { popupStyle, arrowStyle, arrowPlacement } = calculatePopupPosition(element, 280, 250)
-  settingsPopupStyle.value = popupStyle
-  settingsArrowStyle.value = arrowStyle
-  settingsArrowPlacement.value = arrowPlacement
+  if (event) {
+    const element = event.currentTarget as HTMLElement
+    const { popupStyle, arrowStyle, arrowPlacement } = calculatePopupPosition(element, 280, 250)
+    settingsPopupStyle.value = popupStyle
+    settingsArrowStyle.value = arrowStyle
+    settingsArrowPlacement.value = arrowPlacement
+  }
   showSettingsDialog.value = true
 }
 
@@ -386,12 +399,6 @@ function updateFullscreenState() {
   isFullscreen.value = !!document.fullscreenElement || isBrowserFullscreen()
 }
 
-function handleFullscreenShortcut(event: KeyboardEvent) {
-  if (event.key === 'F11') {
-    setTimeout(updateFullscreenState, 100)
-  }
-}
-
 function startWhenSheetIsReady() {
   if (settings.showSheetMusic && !sheetReady.value) {
     shouldStartAfterSheetReady.value = true
@@ -410,6 +417,116 @@ function handleSheetReady() {
     player.start()
   }
 }
+
+useShortcuts({
+  // Play Controls
+  showGameHelp: toggleHelpOverlay,
+  pauseResume: () => {
+    if (playbackBlocked.value) return
+    if (player.playbackRunning) player.stopPlayback()
+    else player.start()
+  },
+  toggleBookmarkEditingMode: openBookmarks,
+  toggleLoopEditingMode: openLoop,
+  toggleFingerHintEditingMode: openFinger,
+  shiftInputOctaveUp: () => settings.patchSettings({ octaveShift: Math.min(settings.octaveShift + 1, 3) }),
+  shiftInputOctaveDown: () => settings.patchSettings({ octaveShift: Math.max(settings.octaveShift - 1, -3) }),
+  toggleSheetMusic: () => settings.patchSettings({ showSheetMusic: !settings.showSheetMusic }),
+  
+  // Song Navigation
+  speedUp: () => {
+    if (!player.session?.modeConfig.speedChangeAllowed) return
+    const newSpeed = Math.min(400, (player.session?.speed ?? 100) + 10)
+    player.setSpeed(newSpeed)
+  },
+  speedDown: () => {
+    if (!player.session?.modeConfig.speedChangeAllowed) return
+    const newSpeed = Math.max(10, (player.session?.speed ?? 100) - 10)
+    player.setSpeed(newSpeed)
+  },
+  speedUpSmallStep: () => {
+    if (!player.session?.modeConfig.speedChangeAllowed) return
+    const newSpeed = Math.min(400, (player.session?.speed ?? 100) + 1)
+    player.setSpeed(newSpeed)
+  },
+  speedDownSmallStep: () => {
+    if (!player.session?.modeConfig.speedChangeAllowed) return
+    const newSpeed = Math.max(10, (player.session?.speed ?? 100) - 1)
+    player.setSpeed(newSpeed)
+  },
+  stepBackward: () => {
+    if (!playbackBlocked.value && player.canSeek && player.session) {
+      player.seekToUs(player.session.currentUs - 2_000_000)
+    }
+  },
+  stepForward: () => {
+    if (!playbackBlocked.value && player.canSeek && player.session) {
+      player.seekToUs(player.session.currentUs + 2_000_000)
+    }
+  },
+  stretchFallingNoteDisplay: () => {
+    const currentZoom = Math.round(3.25 / settings.showDuration * 100)
+    const newPercent = Math.min(200, currentZoom + 10)
+    settings.setShowDuration(3.25 / (newPercent / 100))
+  },
+  compressFallingNoteDisplay: () => {
+    const currentZoom = Math.round(3.25 / settings.showDuration * 100)
+    const newPercent = Math.max(50, currentZoom - 10)
+    settings.setShowDuration(3.25 / (newPercent / 100))
+  },
+
+  // Bookmarks
+  previousBookmark: () => {
+    if (!playbackBlocked.value && player.canSeek) player.seekToPreviousBookmark()
+  },
+  nextBookmark: () => {
+    if (!playbackBlocked.value && player.canSeek) player.seekToNextBookmark()
+  },
+  toggleBookmarkCurrentPosition: () => {
+    if (player.session && player.canSeek) {
+      const pos = player.session.currentUs
+      // Toggle bookmark logic
+      const existing = player.session.userBookmarks?.find(b => Math.abs(b.timeUs - pos) < 10000)
+      if (existing) player.removeUserBookmark(existing.id)
+      else player.addUserBookmark(pos, `Bookmark ${player.session.userBookmarks?.length ? player.session.userBookmarks.length + 1 : 1}`)
+    }
+  },
+
+  // Loops
+  toggleLoop: () => {
+    if (player.loopRegionConfigured) player.clearLoopRegion()
+  },
+
+  // Finger Hints
+  toggleLeftFinger1: () => assignSelectedFinger('left', 1),
+  toggleLeftFinger2: () => assignSelectedFinger('left', 2),
+  toggleLeftFinger3: () => assignSelectedFinger('left', 3),
+  toggleLeftFinger4: () => assignSelectedFinger('left', 4),
+  toggleLeftFinger5: () => assignSelectedFinger('left', 5),
+  toggleRightFinger1: () => assignSelectedFinger('right', 1),
+  toggleRightFinger2: () => assignSelectedFinger('right', 2),
+  toggleRightFinger3: () => assignSelectedFinger('right', 3),
+  toggleRightFinger4: () => assignSelectedFinger('right', 4),
+  toggleRightFinger5: () => assignSelectedFinger('right', 5),
+  removeFingerHint: () => clearSelectedFinger(),
+
+  // Bookmark Jumps
+  ...Object.fromEntries(
+    Array.from({ length: 9 }, (_, i) => [
+      `jumpToBookmark${i + 1}`,
+      () => {
+        if (!playbackBlocked.value && player.canSeek && player.session?.userBookmarks?.[i]) {
+          player.seekToUs(player.session.userBookmarks[i].timeUs)
+        }
+      }
+    ])
+  ),
+  jumpToBeginningSong: () => {
+    if (!playbackBlocked.value && player.canSeek) {
+      player.seekToUs(-LEAD_IN_US)
+    }
+  }
+})
 
 onMounted(async () => {
   const hash = route.params.hash as string
@@ -463,7 +580,6 @@ onMounted(async () => {
 
   document.addEventListener('fullscreenchange', updateFullscreenState)
   window.addEventListener('resize', updateFullscreenState)
-  window.addEventListener('keyup', handleFullscreenShortcut)
   updateFullscreenState()
 
   await nextTick()
@@ -478,7 +594,6 @@ onBeforeUnmount(() => {
   bindInput(midiAccess, '', () => {})
   document.removeEventListener('fullscreenchange', updateFullscreenState)
   window.removeEventListener('resize', updateFullscreenState)
-  window.removeEventListener('keyup', handleFullscreenShortcut)
   if (resizeObserver) {
     resizeObserver.disconnect()
     resizeObserver = null
@@ -487,6 +602,10 @@ onBeforeUnmount(() => {
 
 watch(() => settings.keyboardRangeMode, () => {
   player.refreshKeyboardRange()
+})
+
+watch(() => settings.showDuration, duration => {
+  if (player.session) player.session.showDuration = duration
 })
 
 watch(() => settings.showSheetMusic, show => {

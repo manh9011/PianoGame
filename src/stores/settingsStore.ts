@@ -6,7 +6,7 @@ import { loadSettings, saveSettings, defaultSettings } from '../modules/settings
 import { clampShowDuration, clampSpeed } from '../modules/game/playSession'
 import { persistQueue } from '../modules/storage/indexedDb'
 
-import { DEFAULT_SHORTCUTS } from '../modules/settings/defaultShortcuts'
+import { DEFAULT_SHORTCUTS, type ShortcutCategory, type ShortcutsConfig } from '../modules/settings/defaultShortcuts'
 
 function updateThemeMetaColor(theme: 'dark' | 'light') {
   const meta = document.querySelector('meta[name="theme-color"]')
@@ -70,14 +70,14 @@ export const useSettingsStore = defineStore('settings', {
     setRecordOutputVolume(volume: number) { this.recordOutputVolume = Math.max(0, Math.min(200, Math.round(volume))); this.persist() },
     setRecordBackgroundAssetId(assetId: string) { this.recordBackgroundAssetId = assetId; this.persist() },
     setRecordLogoAssetId(assetId: string) { this.recordLogoAssetId = assetId; this.persist() },
-    setShortcutAction(category: string, actionName: string, keys: string[]) {
+    setShortcutAction(category: ShortcutCategory, actionName: string, keys: string[]) {
       if (!this.shortcuts[category]) {
         this.shortcuts[category] = {}
       }
       this.shortcuts[category][actionName] = [...keys]
       this.persist()
     },
-    resetActionShortcut(category: string, actionName: string) {
+    resetActionShortcut(category: ShortcutCategory, actionName: string) {
       const defaultKeys = DEFAULT_SHORTCUTS[category]?.[actionName] ?? []
       if (!this.shortcuts[category]) {
         this.shortcuts[category] = {}

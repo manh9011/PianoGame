@@ -21,6 +21,8 @@ import KeyboardRangeDialog from '../components/player/dialogs/KeyboardRangeDialo
 import LabelsDialog from '../components/player/dialogs/LabelsDialog.vue'
 import FreePlayTrackEditorDialog from '../components/player/dialogs/FreePlayTrackEditorDialog.vue'
 
+import { useShortcuts } from '../composables/useShortcuts'
+
 const WHITE_KEY_ASPECT_RATIO = 150 / 23.5
 const BLACK_KEY_HEIGHT_RATIO = 95 / 150
 
@@ -391,10 +393,6 @@ function updateFullscreenState() {
   isFullscreen.value = !!document.fullscreenElement || isBrowserFullscreen()
 }
 
-function handleFullscreenShortcut(event: KeyboardEvent) {
-  if (event.key === 'F11') setTimeout(updateFullscreenState, 100)
-}
-
 function tickFreePlayClock() {
   freePlay.tickClock()
   if (freePlay.status !== 'recording') return
@@ -426,6 +424,13 @@ function stopTimer() {
   timerId = null
 }
 
+useShortcuts({
+  startStopRecording: () => {
+    if (freePlay.status === 'recording') stopRecording()
+    else startRecording()
+  }
+})
+
 onMounted(async () => {
   player.loadFreePlaySession(settings.defaultSpeed, settings.showDuration, settings.octaveShift, {
     trackId: freePlay.selectedTrack.id,
@@ -439,7 +444,6 @@ onMounted(async () => {
 
   document.addEventListener('fullscreenchange', updateFullscreenState)
   window.addEventListener('resize', updateFullscreenState)
-  window.addEventListener('keyup', handleFullscreenShortcut)
   updateFullscreenState()
 
   await nextTick()
@@ -460,7 +464,6 @@ onBeforeUnmount(() => {
   player.inputSynth.allNotesOff()
   document.removeEventListener('fullscreenchange', updateFullscreenState)
   window.removeEventListener('resize', updateFullscreenState)
-  window.removeEventListener('keyup', handleFullscreenShortcut)
   if (resizeObserver) resizeObserver.disconnect()
 })
 

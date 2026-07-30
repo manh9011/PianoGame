@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { usePlayerStore } from '../../stores/playerStore'
+import { useSettingsStore } from '../../stores/settingsStore'
 import BaseButton from '../ui/BaseButton.vue'
 import { getTempoPointAtMicroseconds, microsecondsPerQuarterToBpm } from '../../modules/midi/midiTempo'
 
@@ -10,6 +11,7 @@ const DEBUG = import.meta.env.DEV
 const router = useRouter()
 const { t } = useI18n()
 const player = usePlayerStore()
+const settings = useSettingsStore()
 
 const props = defineProps<{
   isFullscreen: boolean
@@ -89,6 +91,18 @@ function decreaseSpeed() {
   const newSpeed = Math.max(10, (player.session?.speed ?? 100) - 10)
   player.setSpeed(newSpeed)
 }
+
+const currentZoomPercent = computed(() => Math.round(3.25 / settings.showDuration * 100))
+
+function zoomOut() {
+  const newPercent = Math.max(50, currentZoomPercent.value - 10)
+  settings.setShowDuration(3.25 / (newPercent / 100))
+}
+
+function zoomIn() {
+  const newPercent = Math.min(200, currentZoomPercent.value + 10)
+  settings.setShowDuration(3.25 / (newPercent / 100))
+}
 </script>
 
 <template>
@@ -140,6 +154,19 @@ function decreaseSpeed() {
           </div>
           <BaseButton variant="icon" data-help-anchor="speed-up" :disabled="speedControlsDisabled" :title="t('play.speedUp')" :aria-label="t('play.speedUp')" @click="increaseSpeed">
             <i class="fas fa-plus"></i>
+          </BaseButton>
+        </div>
+
+        <div class="tempo-control">
+          <BaseButton variant="icon" data-help-anchor="zoom-out" :title="t('play.zoomOut', 'Thu nhỏ')" :aria-label="t('play.zoomOut', 'Thu nhỏ')" @click="zoomOut">
+            <i class="fas fa-search-minus"></i>
+          </BaseButton>
+          <div class="tempo-display">
+            <div class="tempo-percent">{{ currentZoomPercent }}%</div>
+            <div class="tempo-bpm">Zoom</div>
+          </div>
+          <BaseButton variant="icon" data-help-anchor="zoom-in" :title="t('play.zoomIn', 'Phóng to')" :aria-label="t('play.zoomIn', 'Phóng to')" @click="zoomIn">
+            <i class="fas fa-search-plus"></i>
           </BaseButton>
         </div>
       </div>

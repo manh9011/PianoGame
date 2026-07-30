@@ -1,12 +1,15 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useSettingsStore } from '../../stores/settingsStore'
+import type { ShortcutCategory } from '../../modules/settings/defaultShortcuts'
 
 type HintDefinition = {
   key: string
   anchor: string
   labelKey: string
-  kbd?: string
+  shortcutCategory?: ShortcutCategory
+  shortcutAction?: string
   group: 'main' | 'right'
   row: number
 }
@@ -22,22 +25,29 @@ const props = defineProps<{
 }>()
 
 const { t } = useI18n()
+const settingsStore = useSettingsStore()
+
+const getShortcutText = (category?: ShortcutCategory, action?: string) => {
+  if (!category || !action) return undefined
+  const keys = settingsStore.shortcuts?.[category]?.[action]
+  return keys?.[0]
+}
 
 const topHints: HintDefinition[] = [
-  { key: 'play', anchor: 'play-pause', labelKey: 'play.playPause', kbd: 'Space', group: 'main', row: 0 },
-  { key: 'previous-bookmark', anchor: 'previous-bookmark', labelKey: 'play.previousBookmark', kbd: 'Comma', group: 'main', row: 1 },
-  { key: 'next-bookmark', anchor: 'next-bookmark', labelKey: 'play.nextBookmark', kbd: 'Period', group: 'main', row: 2 },
-  { key: 'speed-down', anchor: 'speed-down', labelKey: 'play.speedDown', kbd: 'Down', group: 'main', row: 3 },
-  { key: 'speed-up', anchor: 'speed-up', labelKey: 'play.speedUp', kbd: 'Up', group: 'main', row: 3 },
+  { key: 'play', anchor: 'play-pause', labelKey: 'play.playPause', shortcutCategory: 'playControls', shortcutAction: 'pauseResume', group: 'main', row: 0 },
+  { key: 'previous-bookmark', anchor: 'previous-bookmark', labelKey: 'play.previousBookmark', shortcutCategory: 'bookmarks', shortcutAction: 'previousBookmark', group: 'main', row: 1 },
+  { key: 'next-bookmark', anchor: 'next-bookmark', labelKey: 'play.nextBookmark', shortcutCategory: 'bookmarks', shortcutAction: 'nextBookmark', group: 'main', row: 2 },
+  { key: 'speed-down', anchor: 'speed-down', labelKey: 'play.speedDown', shortcutCategory: 'songNavigation', shortcutAction: 'speedDown', group: 'main', row: 3 },
+  { key: 'speed-up', anchor: 'speed-up', labelKey: 'play.speedUp', shortcutCategory: 'songNavigation', shortcutAction: 'speedUp', group: 'main', row: 3 },
   { key: 'settings', anchor: 'settings', labelKey: 'common.settings', group: 'right', row: 0 },
   { key: 'metronome', anchor: 'metronome', labelKey: 'play.metronome', group: 'right', row: 1 },
   { key: 'track-config', anchor: 'track-config', labelKey: 'play.trackConfig', group: 'right', row: 2 },
   { key: 'keyboard-range', anchor: 'keyboard-range', labelKey: 'play.keyboardRange', group: 'right', row: 3 },
-  { key: 'finger-hints', anchor: 'finger-hints', labelKey: 'play.fingerHints', kbd: 'H', group: 'right', row: 4 },
-  { key: 'bookmarks', anchor: 'bookmarks', labelKey: 'play.bookmarks', kbd: 'B', group: 'right', row: 5 },
+  { key: 'finger-hints', anchor: 'finger-hints', labelKey: 'play.fingerHints', shortcutCategory: 'playControls', shortcutAction: 'toggleFingerHintEditingMode', group: 'right', row: 4 },
+  { key: 'bookmarks', anchor: 'bookmarks', labelKey: 'play.bookmarks', shortcutCategory: 'playControls', shortcutAction: 'toggleBookmarkEditingMode', group: 'right', row: 5 },
   { key: 'note-labels', anchor: 'note-labels', labelKey: 'play.noteLabels', group: 'right', row: 6 },
-  { key: 'looping', anchor: 'looping', labelKey: 'play.loop', kbd: 'V', group: 'right', row: 7 },
-  { key: 'fullscreen', anchor: 'fullscreen', labelKey: 'play.fullscreen', kbd: 'F11', group: 'right', row: 8 },
+  { key: 'looping', anchor: 'looping', labelKey: 'play.loop', shortcutCategory: 'playControls', shortcutAction: 'toggleLoopEditingMode', group: 'right', row: 7 },
+  { key: 'fullscreen', anchor: 'fullscreen', labelKey: 'play.fullscreen', shortcutCategory: 'advanced', shortcutAction: 'toggleFullScreen', group: 'right', row: 8 },
 ]
 
 const placements = ref<Record<string, HintPlacement>>({})
@@ -46,11 +56,23 @@ const visibleTopHints = computed(() => topHints
   .filter((hint): hint is HintDefinition & { placement: HintPlacement } => Boolean(hint.placement))
 )
 
+const stageTop = ref(0)
 let animationFrameId = 0
 
 function updatePlacements() {
   const nextPlacements: Record<string, HintPlacement> = {}
   const viewportHeight = window.innerHeight
+
+  const trackProgress = document.querySelector('.track-progress')
+  const stage = document.querySelector('.play-stage')
+  
+  if (trackProgress) {
+    stageTop.value = Math.round(trackProgress.getBoundingClientRect().top)
+  } else if (stage) {
+    stageTop.value = Math.round(stage.getBoundingClientRect().top)
+  } else {
+    stageTop.value = 48
+  }
 
   for (const hint of topHints) {
     const anchor = document.querySelector<HTMLElement>(`[data-help-anchor="${hint.anchor}"]`)
@@ -117,7 +139,8 @@ onBeforeUnmount(() => {
 <template>
   <Teleport to="body">
     <Transition name="help-fade">
-      <section v-if="show" class="help-overlay" :aria-label="t('help.aria')">
+      <section v-if="show" class="help-overlay" :aria-label="t('help.aria')" :style="{ '--stage-top': `${stageTop}px` }">
+        <div class="help-bg" aria-hidden="true"></div>
         <div class="top-hints" aria-hidden="true">
           <div
             v-for="hint in visibleTopHints"
@@ -130,34 +153,34 @@ onBeforeUnmount(() => {
             }"
           >
             <span>{{ t(hint.labelKey) }}</span>
-            <kbd v-if="hint.kbd">{{ hint.kbd }}</kbd>
+            <kbd v-if="getShortcutText(hint.shortcutCategory, hint.shortcutAction)">{{ getShortcutText(hint.shortcutCategory, hint.shortcutAction) }}</kbd>
           </div>
         </div>
 
         <aside class="shortcut-card">
           <div class="shortcut-row">
             <span>{{ t('help.stepBackward') }}:</span>
-            <kbd>Left</kbd>
+            <kbd v-if="getShortcutText('songNavigation', 'stepBackward')">{{ getShortcutText('songNavigation', 'stepBackward') }}</kbd>
           </div>
           <div class="shortcut-row">
             <span>{{ t('help.stepForward') }}:</span>
-            <kbd>Right</kbd>
+            <kbd v-if="getShortcutText('songNavigation', 'stepForward')">{{ getShortcutText('songNavigation', 'stepForward') }}</kbd>
           </div>
           <div class="shortcut-row">
             <span>{{ t('help.stretchFallingNotes') }}:</span>
-            <kbd>Page Up</kbd>
+            <kbd v-if="getShortcutText('playControls', 'stretchFallingNoteDisplay')">{{ getShortcutText('playControls', 'stretchFallingNoteDisplay') }}</kbd>
           </div>
           <div class="shortcut-row">
             <span>{{ t('help.compressFallingNotes') }}:</span>
-            <kbd>Page Down</kbd>
+            <kbd v-if="getShortcutText('playControls', 'compressFallingNoteDisplay')">{{ getShortcutText('playControls', 'compressFallingNoteDisplay') }}</kbd>
           </div>
           <div class="shortcut-row">
             <span>{{ t('help.shiftInputOctaveUp') }}:</span>
-            <kbd>X</kbd>
+            <kbd v-if="getShortcutText('playControls', 'shiftInputOctaveUp')">{{ getShortcutText('playControls', 'shiftInputOctaveUp') }}</kbd>
           </div>
           <div class="shortcut-row">
             <span>{{ t('help.shiftInputOctaveDown') }}:</span>
-            <kbd>Z</kbd>
+            <kbd v-if="getShortcutText('playControls', 'shiftInputOctaveDown')">{{ getShortcutText('playControls', 'shiftInputOctaveDown') }}</kbd>
           </div>
         </aside>
 
@@ -173,13 +196,19 @@ onBeforeUnmount(() => {
   inset: 0;
   z-index: 80;
   pointer-events: none;
-  background: linear-gradient(
-    rgba(0, 0, 0, 0.06),
-    rgba(0, 0, 0, 0.12)
-  );
   color: var(--color-text-primary);
   font-size: 0.85rem;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+.help-bg {
+  position: absolute;
+  top: var(--stage-top, 48px);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(2px);
 }
 
 .top-hints {

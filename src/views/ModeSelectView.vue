@@ -377,6 +377,13 @@ function goToTrackSettings() {
   if (!song || !hash) return
   router.push(`/track-settings/${hash}`)
 }
+
+import { useShortcuts } from '../composables/useShortcuts'
+
+useShortcuts({
+  menuContinue: startPlay,
+  menuBack: () => router.push('/library'),
+})
 </script>
 
 <template>

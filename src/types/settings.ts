@@ -1,4 +1,5 @@
 import type { SupportedLocale } from '../i18n'
+import { ShortcutCategory } from '../modules/settings/defaultShortcuts'
 
 export type LabelMode =
   | 'octaves'
@@ -66,7 +67,7 @@ export interface UserSettings {
   shortcutsRestartKey: string
   shortcutsMetronomeKey: string
   shortcutsToggleLabelsKey: string
-  shortcuts: Record<string, Record<string, string[]>>
+  shortcuts: Record<ShortcutCategory, Record<string, string[]>>
   advancedReduceAnimations: boolean
   advancedEnableDebugOverlay: boolean
   advancedConfirmBeforeDestructiveAction: boolean

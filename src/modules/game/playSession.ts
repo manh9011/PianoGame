@@ -174,4 +174,4 @@ export function applySessionOptions(session: PlaySession, options: ConfigureSess
 }
 
 export function clampSpeed(v: number) { return Math.max(0, Math.min(400, Math.round(v / 10) * 10)) }
-export function clampShowDuration(v: number) { return Math.max(0.25, Math.min(10, Math.round(v / 0.25) * 0.25)) }
+export function clampShowDuration(v: number) { return Math.max(0.25, Math.min(10, v)) }

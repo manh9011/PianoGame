@@ -39,6 +39,43 @@ watch(
   { immediate: true },
 )
 
+import { useShortcuts } from '../composables/useShortcuts'
+
+useShortcuts({
+  menuSelectNextItem: () => {
+    const index = library.sortedSongs.findIndex(s => s.id === selectedSong.value?.id)
+    if (index < library.sortedSongs.length - 1) {
+      handleSelectSong(library.sortedSongs[index + 1])
+    } else if (index === -1 && library.sortedSongs.length > 0) {
+      handleSelectSong(library.sortedSongs[0])
+    }
+  },
+  menuSelectPreviousItem: () => {
+    const index = library.sortedSongs.findIndex(s => s.id === selectedSong.value?.id)
+    if (index > 0) {
+      handleSelectSong(library.sortedSongs[index - 1])
+    } else if (index === -1 && library.sortedSongs.length > 0) {
+      handleSelectSong(library.sortedSongs[0])
+    }
+  },
+  menuNextPage: () => {
+    const index = library.sortedSongs.findIndex(s => s.id === selectedSong.value?.id)
+    const newIndex = Math.min(Math.max(index, 0) + 10, library.sortedSongs.length - 1)
+    if (newIndex >= 0) handleSelectSong(library.sortedSongs[newIndex])
+  },
+  menuPreviousPage: () => {
+    const index = library.sortedSongs.findIndex(s => s.id === selectedSong.value?.id)
+    const newIndex = Math.max(Math.max(index, 0) - 10, 0)
+    if (library.sortedSongs.length > 0) handleSelectSong(library.sortedSongs[newIndex])
+  },
+  menuContinue: () => {
+    if (selectedSong.value) continuePlay()
+  },
+  menuBack: () => {
+    router.push('/')
+  },
+})
+
 function startPreview(song: SongMetadata | null) {
   if (!song) return
   library.startPreview(song, settings.midiOutputId, settings.defaultSpeed, settings.showDuration, settings.octaveShift)
