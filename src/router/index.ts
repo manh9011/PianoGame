@@ -1,6 +1,6 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 
-export default createRouter({
+const router = createRouter({
   history: createWebHashHistory(),
   routes: [
     { path: '/', name: 'home', component: () => import('../views/HomeView.vue') },
@@ -27,3 +27,34 @@ export default createRouter({
     },
   ],
 })
+
+router.onError((error, to) => {
+  const isChunkError =
+    error.message.includes('Failed to fetch dynamically imported module') ||
+    error.message.includes('Importing a module script failed') ||
+    error.message.includes('dynamically imported module')
+
+  if (isChunkError) {
+    const targetPath = to?.fullPath || window.location.href
+    const lastReloadTarget = sessionStorage.getItem('chunk_reload_target')
+
+    // Nếu đã thử reload cho trang này mà vẫn lỗi -> Ngắt lặp, về trang chủ
+    if (lastReloadTarget === targetPath) {
+      sessionStorage.removeItem('chunk_reload_target')
+      window.location.href = '/'
+      return
+    }
+
+    // Đánh dấu và tiến hành reload lần đầu tiên
+    sessionStorage.setItem('chunk_reload_target', targetPath)
+    window.location.reload()
+  }
+})
+
+router.afterEach(() => {
+  sessionStorage.removeItem('chunk_reload_target')
+})
+
+export default router
+
+
