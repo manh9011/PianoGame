@@ -4,12 +4,12 @@ import { useI18n } from 'vue-i18n'
 import { useConfirmDialog } from '../../../composables/useConfirmDialog'
 import { getEmojiFontFamily, getInstrumentByProgram, getInstrumentEmoji } from '../../../modules/audio/gmInstrumentCatalog'
 import { TRACK_SETTINGS_PALETTE } from '../../../modules/game/trackProperties'
-import { editorBeatUs } from '../../../modules/freePlay/editor/freePlayTrackEditorGeometry'
+import { clampPitch, editorBeatUs } from '../../../modules/freePlay/editor/freePlayTrackEditorGeometry'
 import { canPlaceTrackEditorNotes, mutateTrackEditorNotes } from '../../../modules/freePlay/editor/freePlayTrackEditorMutations'
 import { FREE_PLAY_EDITOR_SUBDIVISIONS, quarterNoteUs, subdivisionUs, type FreePlayEditorSubdivision } from '../../../modules/freePlay/editor/freePlayTrackEditorSnap'
 import { FREE_PLAY_DEFAULT_TRACK_COLOR, MAX_FREE_PLAY_TRACKS, resolveFreePlayUniqueTrackColor, useFreePlayStore, type FreePlayRecordedNote, type FreePlayTrack } from '../../../stores/freePlayStore'
 import { usePlayerStore } from '../../../stores/playerStore'
-import FreePlayTrackEditorGrid, { type FreePlayTrackEditorMode } from '../FreePlayTrackEditorGrid.vue'
+import FreePlayTrackEditorGrid, { type FreePlayTrackEditorMode, type FreePlayEditorGhostNote } from '../FreePlayTrackEditorGrid.vue'
 import ColorPickerDialog from './ColorPickerDialog.vue'
 import TrackInstrumentDialog from './TrackInstrumentDialog.vue'
 import BaseButton from '../../ui/BaseButton.vue'
@@ -68,6 +68,7 @@ const copiedNotes = ref<FreePlayRecordedNote[]>([])
 const undoStack = ref<FreePlayTrack[][]>([])
 const redoStack = ref<FreePlayTrack[][]>([])
 const historyPaused = ref(false)
+const isGhostPasteMode = ref(false)
 
 const selectedCount = computed(() => selectedNoteIds.value.length)
 const noteCount = computed(() => draftTracks.value.reduce((total, track) => total + track.notes.length, 0))
@@ -81,6 +82,21 @@ const selectionVelocityValue = computed(() => {
   if (!selectedNotes.value.length) return ''
   const firstVelocity = selectedNotes.value[0].velocity
   return selectedNotes.value.every(note => note.velocity === firstVelocity) ? firstVelocity : ''
+})
+
+const pasteGhostNotes = computed<FreePlayEditorGhostNote[]>(() => {
+  if (!isGhostPasteMode.value || !copiedNotes.value.length) return []
+  const trackColorMap = new Map(draftTracks.value.map(t => [t.id, t.color]))
+  const fallbackColor = activeTrack.value?.color ?? '#4f93c0'
+  return copiedNotes.value.map(note => ({
+    id: note.id,
+    trackId: note.trackId,
+    noteId: note.noteId,
+    startUs: note.startUs,
+    endUs: note.endUs,
+    velocity: note.velocity,
+    color: trackColorMap.get(note.trackId) ?? fallbackColor,
+  }))
 })
 const modeButtons = computed<{ mode: FreePlayTrackEditorMode; label: string; icon: string }[]>(() => [
   { mode: 'select', label: t('freePlay.trackEditorSelectMode'), icon: 'far fa-hand-pointer' },
@@ -117,6 +133,7 @@ function resetDraft() {
   undoStack.value = []
   redoStack.value = []
   copiedNotes.value = []
+  isGhostPasteMode.value = false
   mode.value = 'select'
   dirty.value = false
 }
@@ -554,6 +571,44 @@ function copySelectedNotes() {
     .sort((left, right) => left.startUs - right.startUs || left.noteId - right.noteId)
 }
 
+function startGhostPaste() {
+  if (!copiedNotes.value.length) return
+  isGhostPasteMode.value = true
+}
+
+function commitGhostPaste(mouseTimeUs: number, pitchDelta: number) {
+  if (!copiedNotes.value.length) return
+  const tracks = cloneTracks(draftTracks.value)
+  const trackIds = new Set(tracks.map(track => track.id))
+  const fallbackTrackId = activeTrack.value?.id ?? tracks[0]?.id ?? 1
+  const earliest = Math.min(...copiedNotes.value.map(n => n.startUs))
+  const proposals = copiedNotes.value.map(note => {
+    const startUs = Math.max(0, Math.round(mouseTimeUs + (note.startUs - earliest)))
+    const endUs = startUs + Math.max(10_000, note.endUs - note.startUs)
+    return {
+      ...note,
+      id: `paste:${Date.now?.() ?? performance.now()}:${pastedNoteCounter++}`,
+      trackId: trackIds.has(note.trackId) ? note.trackId : fallbackTrackId,
+      noteId: clampPitch(note.noteId + pitchDelta),
+      startUs,
+      endUs,
+    }
+  })
+  if (!canPlaceTrackEditorNotes(tracks, proposals)) return
+  for (const note of proposals) {
+    const track = tracks.find(t => t.id === note.trackId)
+    if (track) track.notes.push(note)
+  }
+  for (const track of tracks) sortTrackNotes(track)
+  commitDraftTracks(tracks)
+  selectedNoteIds.value = proposals.map(n => n.id)
+  isGhostPasteMode.value = false
+}
+
+function cancelGhostPaste() {
+  isGhostPasteMode.value = false
+}
+
 function pasteCopiedNotes() {
   if (!copiedNotes.value.length) return
   const tracks = cloneTracks(draftTracks.value)
@@ -697,7 +752,7 @@ function handleKeydown(event: KeyboardEvent) {
     }
     if (key === 'v') {
       event.preventDefault()
-      pasteCopiedNotes()
+      startGhostPaste()
       return
     }
     if (key === 'z') {
@@ -721,6 +776,10 @@ function handleKeydown(event: KeyboardEvent) {
   }
   if (event.key === 'Escape') {
     event.preventDefault()
+    if (isGhostPasteMode.value) {
+      cancelGhostPaste()
+      return
+    }
     if (selectedNoteIds.value.length) {
       selectedNoteIds.value = []
       return
@@ -807,7 +866,7 @@ onBeforeUnmount(() => {
               <button class="tool-button" :disabled="!selectedCount" :title="t('freePlay.trackEditorCopy')" :aria-label="t('freePlay.trackEditorCopy')" @click="copySelectedNotes">
                 <i class="fas fa-copy"></i>
               </button>
-              <button class="tool-button" :disabled="!copiedNotes.length" :title="t('freePlay.trackEditorPaste')" :aria-label="t('freePlay.trackEditorPaste')" @click="pasteCopiedNotes">
+              <button class="tool-button" :disabled="!copiedNotes.length" :title="t('freePlay.trackEditorPaste')" :aria-label="t('freePlay.trackEditorPaste')" @click="startGhostPaste">
                 <i class="fas fa-paste"></i>
               </button>
             </div>
@@ -922,11 +981,14 @@ onBeforeUnmount(() => {
               :row-height="rowHeight"
               :playhead-us="playheadUs"
               :follow-playhead="editorPlaying"
+              :paste-ghost-notes="pasteGhostNotes"
               @update:tracks="updateDraftTracks"
               @update:selected-note-ids="selectedNoteIds = $event"
               @preview-note="auditionNote"
               @seek="seekEditorPlayback"
               @dirty="markDirty"
+              @paste-commit="commitGhostPaste"
+              @paste-cancel="cancelGhostPaste"
             />
           </section>
 

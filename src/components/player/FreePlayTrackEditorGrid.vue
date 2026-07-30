@@ -8,6 +8,16 @@ import { canPlaceTrackEditorNotes, cloneTrackEditorTracks, mutateTrackEditorNote
 
 export type FreePlayTrackEditorMode = 'select' | 'draw' | 'marquee' | 'erase'
 
+export interface FreePlayEditorGhostNote {
+  id: string
+  trackId: number
+  noteId: number
+  startUs: number
+  endUs: number
+  velocity: number
+  color: string
+}
+
 type InteractionKind = 'idle' | 'dragging-note' | 'resizing-left' | 'resizing-right' | 'drawing-note' | 'marquee-selecting' | 'panning-view' | 'erasing-notes'
 
 interface EditorPoint {
@@ -68,6 +78,7 @@ const props = defineProps<{
   rowHeight: number
   playheadUs: number
   followPlayhead: boolean
+  pasteGhostNotes?: FreePlayEditorGhostNote[]
 }>()
 
 const emit = defineEmits<{
@@ -76,6 +87,8 @@ const emit = defineEmits<{
   'preview-note': [note: FreePlayRecordedNote]
   seek: [timeUs: number]
   dirty: []
+  'paste-commit': [timeUs: number, pitchDelta: number]
+  'paste-cancel': []
 }>()
 
 const viewportRef = ref<HTMLElement | null>(null)
@@ -84,6 +97,8 @@ const velocityLaneRef = ref<HTMLElement | null>(null)
 const interaction = ref<InteractionState>({ kind: 'idle', pointerId: -1, origin: { x: 0, y: 0, timeUs: 0, noteId: 60 }, snapshots: [] })
 const velocityDragNoteId = ref<string | null>(null)
 let draftNoteCounter = 1
+const ghostMouseX = ref(-1)
+const ghostMousePitch = ref(-1)
 
 const selectedSet = computed(() => new Set(props.selectedNoteIds))
 const mutedSet = computed(() => new Set(props.mutedTrackIds ?? []))
@@ -97,6 +112,78 @@ const gridHeight = computed(() => 128 * props.rowHeight)
 const playheadX = computed(() => Math.min(gridWidth.value, timeToX(props.playheadUs, props.bpm, props.pixelsPerQuarter)))
 const beatUs = computed(() => editorBeatUs(props.bpm, props.timeSignature))
 const measureUs = computed(() => editorMeasureUs(props.bpm, props.timeSignature))
+
+const isGhostPasteActive = computed(() => (props.pasteGhostNotes?.length ?? 0) > 0)
+
+const ghostAnchorStartUs = computed(() => {
+  if (!props.pasteGhostNotes?.length) return 0
+  return Math.min(...props.pasteGhostNotes.map(n => n.startUs))
+})
+
+const ghostAnchorPitch = computed(() => {
+  if (!props.pasteGhostNotes?.length) return 60
+  return Math.min(...props.pasteGhostNotes.map(n => n.noteId))
+})
+
+const ghostMaxPitch = computed(() => {
+  if (!props.pasteGhostNotes?.length) return 60
+  return Math.max(...props.pasteGhostNotes.map(n => n.noteId))
+})
+
+const ghostSnappedTimeUs = computed(() => {
+  if (ghostMouseX.value < 0) return -1
+  return snapTimeUs(xToTime(ghostMouseX.value, props.bpm, props.pixelsPerQuarter), props.bpm, props.snapSubdivision, props.snapEnabled)
+})
+
+const ghostPitchDelta = computed(() => {
+  if (ghostMousePitch.value < 0 || !isGhostPasteActive.value) return 0
+  const rawDelta = ghostMousePitch.value - ghostAnchorPitch.value
+  return Math.max(-ghostAnchorPitch.value, Math.min(127 - ghostMaxPitch.value, rawDelta))
+})
+
+const EMPTY_GHOST_DISPLAYS: { key: string; color: string; style: Record<string, string> }[] = []
+
+const ghostNoteDisplays = computed(() => {
+  if (!isGhostPasteActive.value || ghostMouseX.value < 0) return EMPTY_GHOST_DISPLAYS
+  const mouseTimeUs = ghostSnappedTimeUs.value
+  const anchorStartUs = ghostAnchorStartUs.value
+  const pitchDelta = ghostPitchDelta.value
+  return (props.pasteGhostNotes ?? []).map(note => {
+    const startUs = Math.max(0, mouseTimeUs + (note.startUs - anchorStartUs))
+    const endUs = startUs + Math.max(10_000, note.endUs - note.startUs)
+    const left = timeToX(startUs, props.bpm, props.pixelsPerQuarter)
+    const right = timeToX(endUs, props.bpm, props.pixelsPerQuarter)
+    const shiftedPitch = clampPitch(note.noteId + pitchDelta)
+    const top = pitchToY(shiftedPitch, props.rowHeight)
+    return {
+      key: note.id,
+      color: note.color,
+      style: {
+        left: `${left}px`,
+        top: `${top}px`,
+        width: `${Math.max(8, right - left)}px`,
+        height: `${Math.max(10, props.rowHeight - 2)}px`,
+        backgroundColor: note.color,
+      },
+    }
+  })
+})
+
+const ghostIsValid = computed(() => {
+  if (!isGhostPasteActive.value || ghostMouseX.value < 0) return true
+  const mouseTimeUs = ghostSnappedTimeUs.value
+  const anchorStartUs = ghostAnchorStartUs.value
+  const pitchDelta = ghostPitchDelta.value
+  const proposals = (props.pasteGhostNotes ?? []).map(note => ({
+    ...note,
+    id: `ghost-check:${note.id}`,
+    noteId: clampPitch(note.noteId + pitchDelta),
+    startUs: Math.max(0, mouseTimeUs + (note.startUs - anchorStartUs)),
+    endUs: Math.max(0, mouseTimeUs + (note.startUs - anchorStartUs)) + Math.max(10_000, note.endUs - note.startUs),
+    source: 'pointer' as const,
+  }))
+  return canPlaceTrackEditorNotes(props.tracks, proposals)
+})
 
 const beatLines = computed(() => {
   const lines: { id: string; x: number; measure: boolean; label?: string }[] = []
@@ -299,7 +386,31 @@ function noteIdAtPointer(event: PointerEvent) {
 
 defineExpose({ deleteSelected })
 
+function handleGhostMouseMove(event: MouseEvent) {
+  const rect = gridRef.value?.getBoundingClientRect()
+  ghostMouseX.value = Math.max(0, event.clientX - (rect?.left ?? 0))
+  ghostMousePitch.value = yToPitch(Math.max(0, event.clientY - (rect?.top ?? 0)), props.rowHeight)
+}
+
+function handleGhostMouseLeave() {
+  if (isGhostPasteActive.value) return
+  ghostMouseX.value = -1
+  ghostMousePitch.value = -1
+}
+
+function handleGhostContextMenu(event: MouseEvent) {
+  if (!isGhostPasteActive.value) return
+  event.preventDefault()
+  emit('paste-cancel')
+}
+
 function handleGridPointerDown(event: PointerEvent) {
+  if (isGhostPasteActive.value) {
+    if (event.button === 0 && ghostSnappedTimeUs.value >= 0) {
+      emit('paste-commit', ghostSnappedTimeUs.value, ghostPitchDelta.value)
+    }
+    return
+  }
   if (event.button !== 0) return
   const point = getPoint(event)
   gridRef.value?.setPointerCapture(event.pointerId)
@@ -333,6 +444,7 @@ function handleGridPointerDown(event: PointerEvent) {
   }
 
   if (props.mode === 'marquee') {
+    if (!noteIdAtPointer(event) && props.selectedNoteIds.length) setSelected([])
     interaction.value = { kind: 'marquee-selecting', pointerId: event.pointerId, origin: point, snapshots: [], marquee: { left: point.x, top: point.y, width: 0, height: 0 } }
     return
   }
@@ -590,12 +702,21 @@ watch(() => props.playheadUs, () => {
           <div
             ref="gridRef"
             class="note-grid"
-            :class="{ 'note-grid--pan-ready': mode === 'select', 'note-grid--erase-ready': mode === 'erase', 'note-grid--panning': interaction.kind === 'panning-view', 'note-grid--erasing': interaction.kind === 'erasing-notes' }"
+            :class="{
+              'note-grid--pan-ready': mode === 'select' && !isGhostPasteActive,
+              'note-grid--erase-ready': mode === 'erase' && !isGhostPasteActive,
+              'note-grid--panning': interaction.kind === 'panning-view',
+              'note-grid--erasing': interaction.kind === 'erasing-notes',
+              'note-grid--pasting': isGhostPasteActive,
+            }"
             :style="{ width: `${gridWidth}px`, height: `${gridHeight}px`, '--row-height': `${rowHeight}px` }"
             @pointerdown="handleGridPointerDown"
             @pointermove="handlePointerMove"
             @pointerup="handlePointerUp"
             @pointercancel="handlePointerUp"
+            @mousemove="handleGhostMouseMove"
+            @mouseleave="handleGhostMouseLeave"
+            @contextmenu="handleGhostContextMenu"
           >
             <div
               v-for="band in octaveBands"
@@ -639,6 +760,13 @@ watch(() => props.playheadUs, () => {
               <span class="note-body"></span>
               <span class="note-handle note-handle--right" @pointerdown="handleResizePointerDown($event, note, 'right')"></span>
             </button>
+            <div
+              v-for="ghost in ghostNoteDisplays"
+              :key="`ghost:${ghost.key}`"
+              class="editor-note editor-note--ghost"
+              :class="{ 'editor-note--ghost-invalid': !ghostIsValid }"
+              :style="ghost.style"
+            />
             <div
               v-if="interaction.marquee"
               class="selection-rect"
@@ -939,6 +1067,10 @@ watch(() => props.playheadUs, () => {
   cursor: cell;
 }
 
+.note-grid--pasting {
+  cursor: copy;
+}
+
 .grid-line {
   position: absolute;
   top: 0;
@@ -975,6 +1107,19 @@ watch(() => props.playheadUs, () => {
   outline: 2px solid #ffffff;
   outline-offset: 1px;
   z-index: 5;
+}
+
+.editor-note--ghost {
+  opacity: 0.52;
+  pointer-events: none;
+  border: 2px dashed rgba(255, 255, 255, 0.85) !important;
+  box-shadow: none !important;
+  z-index: 20;
+}
+
+.editor-note--ghost-invalid {
+  filter: hue-rotate(200deg) saturate(1.6);
+  opacity: 0.38;
 }
 
 .editor-note:active {
