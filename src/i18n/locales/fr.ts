@@ -570,6 +570,8 @@ export const fr = {
     addSongsFolderDescription: "Choisissez un dossier MIDI comme dans la section Songs de Synthesia.",
     savedFolderDescription: "Dossier enregistré dans le store des paramètres.",
     remove: "Supprimer",
+    removeFolderConfirm: "Voulez-vous vraiment supprimer le dossier « {folder} » et ses morceaux de la bibliothèque ?",
+    folderRemoved: "Le dossier « {folder} » a été supprimé de la bibliothèque.",
     noFolders: "Aucun dossier",
     noFoldersDescription: "Aucun dossier de morceaux n’a encore été ajouté.",
     libraryBehavior: "Comportement de la bibliothèque",

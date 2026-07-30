@@ -570,6 +570,8 @@ export const it = {
     addSongsFolderDescription: "Scegli una cartella MIDI come nella sezione Songs di Synthesia.",
     savedFolderDescription: "Cartella salvata nello store delle impostazioni.",
     remove: "Rimuovi",
+    removeFolderConfirm: "Sei sicuro di voler rimuovere la cartella \"{folder}\" e i suoi brani dalla libreria?",
+    folderRemoved: "Cartella \"{folder}\" rimossa dalla libreria.",
     noFolders: "Nessuna cartella",
     noFoldersDescription: "Non sono ancora state aggiunte cartelle di brani.",
     libraryBehavior: "Comportamento della libreria",

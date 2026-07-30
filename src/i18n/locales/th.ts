@@ -570,6 +570,8 @@ export const th = {
     addSongsFolderDescription: "เลือกโฟลเดอร์ MIDI เหมือนส่วน Songs ของ Synthesia",
     savedFolderDescription: "โฟลเดอร์ที่บันทึกไว้ในที่เก็บการตั้งค่า",
     remove: "นำออก",
+    removeFolderConfirm: "คุณแน่ใจหรือไม่ว่าต้องการลบโฟลเดอร์ “{folder}” และเพลงออกจากคลัง?",
+    folderRemoved: "ลบโฟลเดอร์ “{folder}” ออกจากคลังแล้ว",
     noFolders: "ไม่มีโฟลเดอร์",
     noFoldersDescription: "ยังไม่ได้เพิ่มโฟลเดอร์เพลง",
     libraryBehavior: "พฤติกรรมคลังเพลง",

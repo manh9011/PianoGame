@@ -570,6 +570,8 @@ export const pl = {
     addSongsFolderDescription: "Wybierz folder MIDI jak w sekcji Songs w Synthesia.",
     savedFolderDescription: "Folder zapisany w magazynie ustawień.",
     remove: "Usuń",
+    removeFolderConfirm: "Czy na pewno chcesz usunąć folder „{folder}” i jego utwory z biblioteki?",
+    folderRemoved: "Usunięto folder „{folder}” z biblioteki.",
     noFolders: "Brak folderów",
     noFoldersDescription: "Nie dodano jeszcze żadnych folderów z utworami.",
     libraryBehavior: "Zachowanie biblioteki",

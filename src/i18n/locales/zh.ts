@@ -570,6 +570,8 @@ export const zh = {
     addSongsFolderDescription: "像 Synthesia 的歌曲页面一样选择 MIDI 文件夹。",
     savedFolderDescription: "已保存到设置 store 的文件夹。",
     remove: "移除",
+    removeFolderConfirm: "确定要从曲库中移除文件夹“{folder}”及其曲目吗？",
+    folderRemoved: "已从曲库中移除文件夹“{folder}”。",
     noFolders: "没有文件夹",
     noFoldersDescription: "尚未添加任何歌曲文件夹。",
     libraryBehavior: "曲库行为",

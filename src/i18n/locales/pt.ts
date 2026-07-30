@@ -570,6 +570,8 @@ export const pt = {
     addSongsFolderDescription: "Escolha uma pasta MIDI como na seção Songs do Synthesia.",
     savedFolderDescription: "Pasta salva no armazenamento de configurações.",
     remove: "Remover",
+    removeFolderConfirm: "Tem certeza de que deseja remover a pasta \"{folder}\" e suas músicas da biblioteca?",
+    folderRemoved: "Pasta \"{folder}\" removida da biblioteca.",
     noFolders: "Sem pastas",
     noFoldersDescription: "Nenhuma pasta de músicas foi adicionada ainda.",
     libraryBehavior: "Comportamento da biblioteca",

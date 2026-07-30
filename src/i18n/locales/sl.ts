@@ -570,6 +570,8 @@ export const sl = {
     addSongsFolderDescription: "Izberite MIDI mapo, podobno razdelku Songs v Synthesii.",
     savedFolderDescription: "Mapa je shranjena v shrambi nastavitev.",
     remove: "Odstrani",
+    removeFolderConfirm: "Ali res želite odstraniti mapo »{folder}« in njene skladbe iz knjižnice?",
+    folderRemoved: "Mapa »{folder}« je bila odstranjena iz knjižnice.",
     noFolders: "Ni map",
     noFoldersDescription: "Dodana ni še nobena mapa skladb.",
     libraryBehavior: "Vedenje knjižnice",

@@ -570,6 +570,8 @@ export const ru = {
     addSongsFolderDescription: "Выберите MIDI-папку, как в разделе Songs Synthesia.",
     savedFolderDescription: "Папка сохранена в хранилище настроек.",
     remove: "Удалить",
+    removeFolderConfirm: "Вы уверены, что хотите удалить папку «{folder}» и её песни из библиотеки?",
+    folderRemoved: "Папка «{folder}» удалена из библиотеки.",
     noFolders: "Нет папок",
     noFoldersDescription: "Папки с песнями ещё не добавлены.",
     libraryBehavior: "Поведение библиотеки",

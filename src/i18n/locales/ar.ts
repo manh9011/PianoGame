@@ -570,6 +570,8 @@ export const ar = {
     addSongsFolderDescription: "اختر مجلد MIDI كما في قسم Songs في Synthesia.",
     savedFolderDescription: "مجلد محفوظ في متجر الإعدادات.",
     remove: "إزالة",
+    removeFolderConfirm: "هل أنت تأكد من أنك تريد إزالة المجلد \"{folder}\" وأغانيه من المكتبة؟",
+    folderRemoved: "تمت إزالة المجلد \"{folder}\" من المكتبة.",
     noFolders: "لا توجد مجلدات",
     noFoldersDescription: "لم تتم إضافة أي مجلدات أغاني بعد.",
     libraryBehavior: "سلوك المكتبة",

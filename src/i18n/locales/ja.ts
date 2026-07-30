@@ -570,6 +570,8 @@ export const ja = {
     addSongsFolderDescription: "Synthesia の Songs セクションのような MIDI フォルダーを選択します。",
     savedFolderDescription: "設定ストアに保存されたフォルダーです。",
     remove: "削除",
+    removeFolderConfirm: "フォルダー「{folder}」とその曲をライブラリから削除してもよろしいですか？",
+    folderRemoved: "ライブラリからフォルダー「{folder}」を削除しました。",
     noFolders: "フォルダーなし",
     noFoldersDescription: "曲フォルダーはまだ追加されていません。",
     libraryBehavior: "ライブラリの動作",

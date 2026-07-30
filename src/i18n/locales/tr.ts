@@ -570,6 +570,8 @@ export const tr = {
     addSongsFolderDescription: "Synthesia’nın Songs bölümündeki gibi bir MIDI klasörü seçin.",
     savedFolderDescription: "Ayarlar deposuna kaydedilen klasör.",
     remove: "Kaldır",
+    removeFolderConfirm: "\"{folder}\" klasörünü ve şarkılarını kitaplıktan kaldırmak istediğinize emin misiniz?",
+    folderRemoved: "\"{folder}\" klasörü kitaplıktan kaldırıldı.",
     noFolders: "Klasör yok",
     noFoldersDescription: "Henüz şarkı klasörü eklenmedi.",
     libraryBehavior: "Kitaplık davranışı",

@@ -5,12 +5,29 @@ import SettingsRow from '../../components/settings/ui/SettingsRow.vue'
 import SettingsSection from '../../components/settings/ui/SettingsSection.vue'
 import SettingsToggle from '../../components/settings/ui/SettingsToggle.vue'
 import { useSettingsStore } from '../../stores/settingsStore'
+import { useLibraryStore } from '../../stores/libraryStore'
+import { useConfirmDialog } from '../../composables/useConfirmDialog'
+import { useToastStore } from '../../stores/toastStore'
 
 const { t } = useI18n()
 const settings = useSettingsStore()
+const library = useLibraryStore()
+const toastStore = useToastStore()
+const { confirm } = useConfirmDialog()
 
-function removeFolder(folder: string) {
-  settings.patchSettings({ folders: settings.folders.filter(item => item !== folder) })
+async function removeFolder(folder: string) {
+  if (settings.advancedConfirmBeforeDestructiveAction) {
+    const confirmed = await confirm({
+      message: t('settings.removeFolderConfirm', { folder }),
+      confirmLabel: t('settings.remove'),
+      cancelLabel: t('common.cancel'),
+      tone: 'danger',
+    })
+    if (!confirmed) return
+  }
+
+  await library.removeFolder(folder)
+  toastStore.showSuccess(t('settings.folderRemoved', { folder }))
 }
 </script>
 

@@ -570,6 +570,8 @@ export const ko = {
     addSongsFolderDescription: "Synthesia의 Songs 섹션처럼 MIDI 폴더를 선택합니다.",
     savedFolderDescription: "설정 저장소에 저장된 폴더입니다.",
     remove: "제거",
+    removeFolderConfirm: "라이브러리에서 “{folder}” 폴더와 해당 곡을 삭제하시겠습니까?",
+    folderRemoved: "라이브러리에서 “{folder}” 폴더를 삭제했습니다.",
     noFolders: "폴더 없음",
     noFoldersDescription: "아직 곡 폴더가 추가되지 않았습니다.",
     libraryBehavior: "라이브러리 동작",

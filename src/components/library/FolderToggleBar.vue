@@ -121,6 +121,7 @@ async function refreshFolder() {
     </nav>
 
     <button
+      v-if="library.selectedFolder !== 'all' && library.selectedFolder !== 'imported'"
       type="button"
       class="folder-add-btn"
       :disabled="!supportsFileSystemAccess()"

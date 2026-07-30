@@ -570,6 +570,8 @@ export const es = {
     addSongsFolderDescription: "Elige una carpeta MIDI como en la sección Songs de Synthesia.",
     savedFolderDescription: "Carpeta guardada en el almacén de ajustes.",
     remove: "Eliminar",
+    removeFolderConfirm: "¿Está seguro de que desea eliminar la carpeta \"{folder}\" y sus canciones de la biblioteca?",
+    folderRemoved: "Se eliminó la carpeta \"{folder}\" de la biblioteca.",
     noFolders: "Sin carpetas",
     noFoldersDescription: "Todavía no se ha añadido ninguna carpeta de canciones.",
     libraryBehavior: "Comportamiento de la biblioteca",

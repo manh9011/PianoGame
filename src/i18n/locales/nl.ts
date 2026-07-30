@@ -570,6 +570,8 @@ export const nl = {
     addSongsFolderDescription: "Kies een MIDI-map zoals in het onderdeel Songs van Synthesia.",
     savedFolderDescription: "Map opgeslagen in de instellingenstore.",
     remove: "Verwijderen",
+    removeFolderConfirm: "Weet u zeker dat u de map \"{folder}\" en de nummers uit de bibliotheek wilt verwijderen?",
+    folderRemoved: "Map \"{folder}\" is verwijderd uit de bibliotheek.",
     noFolders: "Geen mappen",
     noFoldersDescription: "Er zijn nog geen mappen met nummers toegevoegd.",
     libraryBehavior: "Bibliotheekgedrag",

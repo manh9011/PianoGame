@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
 import type { SongMetadata, SongSortKey, SortDirection } from '../types/song'
 import { base64ToBuffer, deleteSongFromLibrary, loadLibrary, saveLibrary, sortSongs, loadSongCompressedMusicXmlData, loadSongMidiData, loadSongMusicXmlData } from '../modules/library/songLibrary'
-import { persistQueue } from '../modules/storage/indexedDb'
+import { persistQueue, deleteRecord } from '../modules/storage/indexedDb'
+import { useSettingsStore } from './settingsStore'
 import { parseMidi } from '../modules/midi/midiParser'
 import { translateControlChanges, translateNotes } from '../modules/midi/midiNoteTranslator'
 import { buildTempoMap, pulseToMicroseconds } from '../modules/midi/midiTempo'
@@ -388,6 +389,42 @@ export const useLibraryStore = defineStore('library', {
         this.selectedSongId = previousSelectedSongId
         throw error
       }
+    },
+    async removeFolder(folderName: string) {
+      const settings = useSettingsStore()
+      settings.patchSettings({
+        folders: settings.folders.filter(f => f !== folderName),
+        ...(settings.lastSelectedFolder === folderName ? { lastSelectedFolder: 'all' } : {}),
+      })
+
+      try {
+        await deleteRecord('app-state', `folder-handle:${folderName}`)
+      } catch (e) {
+        console.warn('[Library Store] Could not delete folder handle:', e)
+      }
+
+      const songsToRemove = this.songs.filter(s => s.folderPath === folderName)
+      if (this.previewSongId && songsToRemove.some(s => s.id === this.previewSongId)) {
+        this.stopPreview()
+      }
+
+      const removeIds = new Set(songsToRemove.map(s => s.id))
+      this.songs = this.songs.filter(s => !removeIds.has(s.id))
+
+      if (this.selectedFolder === folderName) {
+        this.selectedFolder = 'all'
+      }
+
+      if (this.selectedSongId && removeIds.has(this.selectedSongId)) {
+        this.selectedSongId = this.sortedSongs[0]?.id ?? null
+      }
+
+      await persistQueue.run(async () => {
+        for (const id of removeIds) {
+          await deleteSongFromLibrary(id)
+        }
+        await saveLibrary(this.songs)
+      })
     },
   },
 })

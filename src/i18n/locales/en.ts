@@ -563,6 +563,8 @@ export const en = {
     addSongsFolderDescription: 'Choose a MIDI folder like Synthesia’s Songs section.',
     savedFolderDescription: 'Folder saved in the settings store.',
     remove: 'Remove',
+    removeFolderConfirm: 'Are you sure you want to remove folder "{folder}" and its songs from the library?',
+    folderRemoved: 'Removed folder "{folder}" from library.',
     noFolders: 'No folders',
     noFoldersDescription: 'No song folders have been added yet.',
     libraryBehavior: 'Library Behavior',

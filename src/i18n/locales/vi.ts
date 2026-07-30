@@ -570,6 +570,8 @@ export const vi = {
     addSongsFolderDescription: "Chọn thư mục MIDI giống mục Songs trong Synthesia.",
     savedFolderDescription: "Thư mục đã lưu trong kho cài đặt.",
     remove: "Gỡ bỏ",
+    removeFolderConfirm: "Bạn có chắc chắn muốn xóa thư mục “{folder}” và các bài hát thuộc thư mục này khỏi thư viện?",
+    folderRemoved: "Đã xóa thư mục “{folder}” khỏi thư viện.",
     noFolders: "Chưa có thư mục",
     noFoldersDescription: "Chưa có thư mục bài hát nào được thêm.",
     libraryBehavior: "Hành vi thư viện",
