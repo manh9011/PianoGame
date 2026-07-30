@@ -84,6 +84,23 @@ export async function deleteSongFromLibrary(songId: string): Promise<void> {
   await deleteRecord('songs-data', songId)
 }
 
+export async function migrateSongIdInLibrary(oldId: string, newId: string): Promise<void> {
+  const metadata = await get<SongMeta>('songs-metadata', oldId)
+  if (!metadata) return
+  const data = await get<SongDataRecord>('songs-data', oldId)
+
+  metadata.id = newId
+  await put('songs-metadata', metadata)
+  
+  if (data) {
+    data.id = newId
+    await put('songs-data', data)
+  }
+
+  await deleteRecord('songs-metadata', oldId)
+  if (data) await deleteRecord('songs-data', oldId)
+}
+
 export async function loadSongPayload(songId: string): Promise<SongPayload> {
   try {
     const record = await get<SongDataRecord>('songs-data', songId)

@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
 import type { SongMetadata, SongSortKey, SortDirection } from '../types/song'
-import { base64ToBuffer, deleteSongFromLibrary, loadLibrary, saveLibrary, sortSongs, loadSongCompressedMusicXmlData, loadSongMidiData, loadSongMusicXmlData } from '../modules/library/songLibrary'
+import { base64ToBuffer, deleteSongFromLibrary, loadLibrary, saveLibrary, sortSongs, loadSongCompressedMusicXmlData, loadSongMidiData, loadSongMusicXmlData, migrateSongIdInLibrary } from '../modules/library/songLibrary'
 import { persistQueue, deleteRecord } from '../modules/storage/indexedDb'
+import { useProfileStore } from './profileStore'
 import { useSettingsStore } from './settingsStore'
 import { parseMidi } from '../modules/midi/midiParser'
 import { translateControlChanges, translateNotes } from '../modules/midi/midiNoteTranslator'
@@ -143,6 +144,29 @@ export const useLibraryStore = defineStore('library', {
       this.loading = true
       try {
         this.songs = await loadLibrary()
+
+        const idMigrations = new Map<string, string>()
+        let needsMigration = false
+        for (const song of this.songs) {
+          if (song.playbackHash && song.id !== song.playbackHash) {
+            idMigrations.set(song.id, song.playbackHash)
+            song.id = song.playbackHash
+            needsMigration = true
+          }
+        }
+
+        if (needsMigration) {
+          await Promise.all(
+            Array.from(idMigrations.entries()).map(([oldId, newId]) =>
+              migrateSongIdInLibrary(oldId, newId)
+            )
+          )
+          const profileStore = useProfileStore()
+          await profileStore.hydrate()
+          profileStore.migrateSongIds(idMigrations)
+          await saveLibrary(this.songs)
+        }
+
         this.initialized = true
         this.loading = false
       } catch (error) {
@@ -161,7 +185,7 @@ export const useLibraryStore = defineStore('library', {
       const existingMusicXmlData = existing?.musicXmlData ?? (existing?.hasMusicXmlSource ? await loadSongMusicXmlData(existing.id) : undefined)
       const existingCompressedMusicXmlData = existing?.compressedMusicXmlData ?? (existing?.hasMusicXmlSource ? await loadSongCompressedMusicXmlData(existing.id) : undefined)
       const song: SongMetadata = {
-        id: existing?.id ?? crypto.randomUUID?.() ?? `${file.name}-${Date.now()}`,
+        id: existing?.id ?? candidate.playbackHash ?? crypto.randomUUID?.() ?? `${file.name}-${Date.now()}`,
         title: existing?.title ?? candidate.title,
         duration: candidate.duration,
         trackCount: candidate.trackCount,

@@ -240,5 +240,50 @@ export const useProfileStore = defineStore('profiles', {
       this.lastAchievementCelebration = null
       return celebration
     },
+    migrateSongIds(idMap: Map<string, string>) {
+      let changed = false
+      for (const p of this.profiles) {
+        const newRecent = p.recentSongIds.map(id => idMap.get(id) || id)
+        const dedupedRecent = [...new Set(newRecent)]
+        if (p.recentSongIds.join() !== dedupedRecent.join()) {
+          p.recentSongIds = dedupedRecent
+          changed = true
+        }
+
+        const migrateMap = (obj: Record<string, any> | undefined) => {
+          if (!obj) return
+          for (const [oldId, newId] of idMap.entries()) {
+            if (obj[oldId] !== undefined) {
+              obj[newId] = obj[oldId]
+              delete obj[oldId]
+              changed = true
+            }
+          }
+        }
+        migrateMap(p.loopRegionsBySongId)
+        migrateMap(p.fingeringsBySongId)
+        migrateMap(p.trackSettingsBySongId)
+
+        if (p.scoresByMode) {
+          let scoresChanged = false
+          for (const mode of Object.keys(p.scoresByMode)) {
+            const list = p.scoresByMode[mode as keyof UserProfile['scoresByMode']]
+            if (!list) continue
+            for (const entry of list) {
+              const newId = idMap.get(entry.songId)
+              if (newId) {
+                entry.songId = newId
+                scoresChanged = true
+              }
+            }
+          }
+          if (scoresChanged) {
+            p.bestScoresBySongMode = rebuildBestScoresBySongMode(p.scoresByMode)
+            changed = true
+          }
+        }
+      }
+      if (changed) this.persist()
+    },
   },
 })
