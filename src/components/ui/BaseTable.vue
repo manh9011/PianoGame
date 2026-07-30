@@ -16,6 +16,7 @@ interface Props {
   sortDesc?: boolean
   hideHeader?: boolean
   hoverable?: boolean
+  bordered?: boolean
   selectedKey?: any
 }
 
@@ -27,6 +28,7 @@ const props = withDefaults(defineProps<Props>(), {
   sortDesc: false,
   hideHeader: false,
   hoverable: true,
+  bordered: false,
 })
 
 const emit = defineEmits<{
@@ -51,8 +53,8 @@ function handleSort(col: TableColumn) {
 </script>
 
 <template>
-  <div class="base-table-wrapper">
-    <table class="base-table" :class="{ 'is-hoverable': hoverable }">
+  <div class="base-table-wrapper" :class="{ 'is-empty': !data.length }">
+    <table class="base-table" :class="{ 'is-hoverable': hoverable, 'is-empty': !data.length, 'is-bordered': bordered }">
       <colgroup>
         <col v-for="col in columns" :key="`col-${col.key}`" :style="{ width: col.width }" />
       </colgroup>
@@ -213,12 +215,34 @@ function handleSort(col: TableColumn) {
   width: 100%;
 }
 
+.align-center .th-content,
 .align-center .td-content { justify-content: center; }
+
+.align-right .th-content,
 .align-right .td-content { justify-content: flex-end; }
 
 .empty-row td {
   text-align: center;
   padding: 2rem;
   color: var(--color-text-muted, rgba(255, 255, 255, 0.4));
+}
+
+.base-table-wrapper.is-empty {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.base-table.is-empty {
+  flex-grow: 1;
+}
+
+.base-table tbody tr.empty-row:last-child {
+  border-bottom: none;
+}
+
+.base-table.is-bordered th:not(:last-child),
+.base-table.is-bordered td:not(:last-child) {
+  border-right: 1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.08));
 }
 </style>

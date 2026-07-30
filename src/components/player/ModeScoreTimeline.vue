@@ -48,10 +48,8 @@ function valueRange(_u: uPlot, _min: number, max: number): [number, number] {
 
 function makeDateFormatter() {
   return new Intl.DateTimeFormat(props.locale, {
-    month: '2-digit',
     day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
+    month: '2-digit',
   })
 }
 
@@ -60,7 +58,7 @@ function makeOptions(): uPlot.Options {
   return {
     width: chartWidth(),
     height: chartHeight(),
-    padding: [8, 8, 4, 4],
+    padding: [6, 8, 4, 8],
     cursor: { drag: { x: false, y: false } },
     legend: { show: false },
     scales: {
@@ -72,14 +70,14 @@ function makeOptions(): uPlot.Options {
         stroke: 'rgba(238,238,238,0.62)',
         grid: { stroke: 'rgba(255,255,255,0.08)', width: 1 },
         ticks: { stroke: 'rgba(255,255,255,0.14)', width: 1 },
-        size: 46,
+        size: 24,
         values: (_u, vals) => vals.map(value => dateFormatter.format(value * 1000)),
       },
       {
         stroke: 'rgba(238,238,238,0.62)',
         grid: { stroke: 'rgba(255,255,255,0.08)', width: 1 },
         ticks: { stroke: 'rgba(255,255,255,0.14)', width: 1 },
-        size: 48,
+        size: 54,
         values: (_u, vals) => vals.map(value => `${Math.round(value)}`),
       },
     ],
@@ -175,6 +173,8 @@ onBeforeUnmount(() => {
   min-height: 0;
   overflow: hidden;
   background: rgba(0, 0, 0, 0.12);
+  padding: 0.5rem;
+  box-sizing: border-box;
 }
 
 .timeline-chart {

@@ -2,6 +2,7 @@ import type { UserSettings } from '../../types/settings'
 import { detectLocaleFromNavigator, isSupportedLocale } from '../../i18n'
 import { STORAGE_KEYS } from './storageKeys'
 import { get, put } from '../storage/indexedDb'
+import { DEFAULT_SHORTCUTS } from './defaultShortcuts'
 
 export const defaultSettings: UserSettings = {
   locale: 'en',
@@ -47,15 +48,29 @@ export const defaultSettings: UserSettings = {
   shortcutsRestartKey: 'Backspace',
   shortcutsMetronomeKey: 'M',
   shortcutsToggleLabelsKey: 'L',
+  shortcuts: DEFAULT_SHORTCUTS,
   advancedReduceAnimations: false,
   advancedEnableDebugOverlay: false,
   advancedConfirmBeforeDestructiveAction: true,
   advancedCompactMode: false,
 }
 
+function normalizeShortcuts(userShortcuts?: Record<string, Record<string, string[]>>): Record<string, Record<string, string[]>> {
+  const merged: Record<string, Record<string, string[]>> = {}
+  for (const [category, actions] of Object.entries(DEFAULT_SHORTCUTS)) {
+    merged[category] = {}
+    for (const [action, defaultKeys] of Object.entries(actions)) {
+      const userKeys = userShortcuts?.[category]?.[action]
+      merged[category][action] = Array.isArray(userKeys) ? userKeys : [...defaultKeys]
+    }
+  }
+  return merged
+}
+
 function normalizeSettings(value?: Partial<UserSettings> | null): UserSettings {
   const locale = isSupportedLocale(value?.locale) ? value.locale : detectLocaleFromNavigator()
-  return { ...defaultSettings, ...value, locale }
+  const shortcuts = normalizeShortcuts(value?.shortcuts)
+  return { ...defaultSettings, ...value, locale, shortcuts }
 }
 
 export async function loadSettings(): Promise<UserSettings> {

@@ -12,7 +12,7 @@ import { achievementColorStyle } from '../modules/game/achievementColors'
 import { trackSelectionKeyForTracks } from '../modules/game/scoreKeys'
 import { HAND_SELECTION_COLORS } from '../modules/game/handAssignment'
 import type { ModeScoreEntry } from '../types/profile'
-import { formatDateTime } from '../i18n/formatters'
+import { formatDate } from '../i18n/formatters'
 import AchievementCelebration from '../components/player/AchievementCelebration.vue'
 import ModeScoreTimeline from '../components/player/ModeScoreTimeline.vue'
 import type { AchievementCelebration as AchievementCelebrationState } from '../stores/profileStore'
@@ -32,7 +32,7 @@ const mode = ref<PlayMode>('noteMemory')
 const handSelection = ref<HandSelection>('right')
 const speed = ref(settings.defaultSpeed)
 const detailTab = ref<'instructions' | 'breakdown' | 'chart' | 'points'>('points')
-const sortColumn = ref<'name' | 'points' | 'accuracy' | 'errors' | 'speed' | 'time' | 'date'>('points')
+const sortColumn = ref<'playIndex' | 'name' | 'points' | 'accuracy' | 'errors' | 'speed' | 'time' | 'date'>('points')
 const sortDirection = ref<'asc' | 'desc'>('desc')
 const achievementCelebration = ref<AchievementCelebrationState | null>(null)
 const animatedAchievementScores = ref<Record<string, number>>({})
@@ -69,17 +69,29 @@ const breakdownAttempts = computed(() => topAchievementAttempts(selectedScoreEnt
 const needsTrackConfig = computed(() => player.session?.needsTrackConfiguration ?? false)
 const currentTrackSelectionKey = computed(() => trackSelectionKeyForTracks(player.session?.tracks))
 const chartEntries = computed<ModeScoreEntry[]>(() => selectedScoreEntries.value.slice().sort((a, b) => a.playedAt - b.playedAt))
-const scoreRows = computed<ModeScoreEntry[]>(() => {
-  const entries = selectedScoreEntries.value.slice()
+type ScoreRowItem = ModeScoreEntry & { playIndex: number; isLatest: boolean };
 
-  return entries.sort((a, b) => {
+const scoreRows = computed<ScoreRowItem[]>(() => {
+  const entries = selectedScoreEntries.value.slice()
+  entries.sort((a, b) => a.playedAt - b.playedAt)
+  const items = entries.map((entry, index) => ({
+    ...entry,
+    playIndex: index + 1,
+    isLatest: index === entries.length - 1
+  }))
+
+  return items.sort((a, b) => {
     let aVal: string | number
     let bVal: string | number
 
     switch (sortColumn.value) {
+      case 'playIndex':
+        aVal = a.playIndex
+        bVal = b.playIndex
+        break
       case 'name':
-        aVal = `${t(handLabelKeys[a.handSelection])} • ${t(modeTitleKeys[a.mode])}`
-        bVal = `${t(handLabelKeys[b.handSelection])} • ${t(modeTitleKeys[b.mode])}`
+        aVal = profiles.activeProfile.name
+        bVal = profiles.activeProfile.name
         break
       case 'points':
         aVal = a.gameplayPoints ?? a.score
@@ -107,6 +119,10 @@ const scoreRows = computed<ModeScoreEntry[]>(() => {
         break
     }
 
+    if (aVal === bVal) {
+      return a.playIndex - b.playIndex
+    }
+
     if (sortDirection.value === 'asc') {
       return aVal < bVal ? -1 : aVal > bVal ? 1 : 0
     } else {
@@ -115,7 +131,14 @@ const scoreRows = computed<ModeScoreEntry[]>(() => {
   })
 })
 
+const latestPlayedAt = computed(() => {
+  const entries = selectedScoreEntries.value
+  if (!entries.length) return undefined
+  return Math.max(...entries.map(e => e.playedAt))
+})
+
 const pointsColumns: TableColumn[] = [
+  { key: 'playIndex', label: '#', sortable: true, width: '48px', align: 'center' },
   { key: 'name', label: t('modeSelect.table.name'), sortable: true },
   { key: 'points', label: t('modeSelect.table.points'), sortable: true },
   { key: 'accuracy', label: t('modeSelect.table.notesHit'), sortable: true },
@@ -124,6 +147,52 @@ const pointsColumns: TableColumn[] = [
   { key: 'time', label: t('modeSelect.table.timeSpent'), sortable: true },
   { key: 'date', label: t('modeSelect.table.dateEarned'), sortable: true },
 ]
+
+const breakdownColumns = computed<TableColumn[]>(() => [
+  { key: 'label', label: '', width: '44%' },
+  { key: 'achievement', label: t('modeSelect.breakdown.achievement'), align: 'center', width: '14%' },
+  { key: 'attempt1', label: '#1', align: 'center', width: '14%' },
+  { key: 'attempt2', label: '#2', align: 'center', width: '14%' },
+  { key: 'attempt3', label: '#3', align: 'center', width: '14%' },
+])
+
+const breakdownRows = computed(() => {
+  if (!breakdownAttempts.value.length) return []
+  return [
+    {
+      id: 'notes',
+      label: t('modeSelect.breakdown.hitEveryNote'),
+      achievement: aggregateBreakdownScore('notes'),
+      attempt1: breakdownScore(breakdownAttempts.value[0], 'notes'),
+      attempt2: breakdownScore(breakdownAttempts.value[1], 'notes'),
+      attempt3: breakdownScore(breakdownAttempts.value[2], 'notes'),
+    },
+    {
+      id: 'hold',
+      label: t('modeSelect.breakdown.holdFullDuration'),
+      achievement: aggregateBreakdownScore('hold'),
+      attempt1: breakdownScore(breakdownAttempts.value[0], 'hold'),
+      attempt2: breakdownScore(breakdownAttempts.value[1], 'hold'),
+      attempt3: breakdownScore(breakdownAttempts.value[2], 'hold'),
+    },
+    {
+      id: 'speed',
+      label: t('modeSelect.breakdown.closeToFullSpeed'),
+      achievement: aggregateBreakdownScore('speed'),
+      attempt1: breakdownScore(breakdownAttempts.value[0], 'speed'),
+      attempt2: breakdownScore(breakdownAttempts.value[1], 'speed'),
+      attempt3: breakdownScore(breakdownAttempts.value[2], 'speed'),
+    },
+    {
+      id: 'date',
+      label: t('modeSelect.breakdown.date'),
+      achievement: '',
+      attempt1: breakdownAttempts.value[0] ? date(breakdownAttempts.value[0].playedAt) : '--',
+      attempt2: breakdownAttempts.value[1] ? date(breakdownAttempts.value[1].playedAt) : '--',
+      attempt3: breakdownAttempts.value[2] ? date(breakdownAttempts.value[2].playedAt) : '--',
+    },
+  ]
+})
 
 function toggleSort(column: typeof sortColumn.value) {
   if (sortColumn.value === column) {
@@ -258,7 +327,7 @@ function formatDuration(us?: number) {
   const seconds = totalSeconds % 60
   return `${minutes}:${seconds.toString().padStart(2, '0')}`
 }
-function date(ms: number) { return ms ? formatDateTime(ms, settings.locale) : '-' }
+function date(ms: number) { return ms ? formatDate(ms, settings.locale, { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-' }
 
 async function testAchievementCelebration() {
   const songId = player.song?.id ?? '__test__'
@@ -417,48 +486,32 @@ function goToTrackSettings() {
         </template>
 
         <template v-else-if="detailTab === 'breakdown'">
-          <div v-if="breakdownAttempts.length" class="detail-content breakdown-content">
+          <div class="detail-content breakdown-content">
             <p class="breakdown-note">{{ t('modeSelect.breakdown.note') }}</p>
-            <div class="breakdown-board">
-              <div class="breakdown-row breakdown-header-row">
-                <span></span>
-                <strong>{{ t('modeSelect.breakdown.achievement') }}</strong>
-                <strong>#1</strong>
-                <strong>#2</strong>
-                <strong>#3</strong>
-              </div>
-              <div class="breakdown-row">
-                <span>{{ t('modeSelect.breakdown.hitEveryNote') }}</span>
-                <strong>{{ aggregateBreakdownScore('notes') }}</strong>
-                <strong v-for="index in 3" :key="`notes-${index}`" :class="{ empty: !breakdownAttempts[index - 1] }">
-                  {{ breakdownScore(breakdownAttempts[index - 1], 'notes') }}
-                </strong>
-              </div>
-              <div class="breakdown-row">
-                <span>{{ t('modeSelect.breakdown.holdFullDuration') }}</span>
-                <strong>{{ aggregateBreakdownScore('hold') }}</strong>
-                <strong v-for="index in 3" :key="`hold-${index}`" :class="{ empty: !breakdownAttempts[index - 1] }">
-                  {{ breakdownScore(breakdownAttempts[index - 1], 'hold') }}
-                </strong>
-              </div>
-              <div class="breakdown-row">
-                <span>{{ t('modeSelect.breakdown.closeToFullSpeed') }}</span>
-                <strong>{{ aggregateBreakdownScore('speed') }}</strong>
-                <strong v-for="index in 3" :key="`speed-${index}`" :class="{ empty: !breakdownAttempts[index - 1] }">
-                  {{ breakdownScore(breakdownAttempts[index - 1], 'speed') }}
-                </strong>
-              </div>
-              <div class="breakdown-row breakdown-date-row">
-                <span>{{ t('modeSelect.breakdown.date') }}</span>
-                <span></span>
-                <span v-for="index in 3" :key="`date-${index}`" :class="{ empty: !breakdownAttempts[index - 1] }">
-                  {{ breakdownAttempts[index - 1] ? date(breakdownAttempts[index - 1].playedAt) : '--' }}
-                </span>
-              </div>
-            </div>
-          </div>
-          <div v-else class="breakdown-empty-state">
-            <p>{{ t('modeSelect.breakdown.empty') }}</p>
+            <BaseTable
+              :columns="breakdownColumns"
+              :data="breakdownRows"
+              :hoverable="false"
+              bordered
+              class="breakdown-table-override"
+              row-key="id"
+            >
+              <template #cell-achievement="{ value }">
+                <span :class="{ muted: value === '--' || !value }">{{ value || '' }}</span>
+              </template>
+              <template #cell-attempt1="{ value }">
+                <span :class="{ muted: value === '--' }">{{ value }}</span>
+              </template>
+              <template #cell-attempt2="{ value }">
+                <span :class="{ muted: value === '--' }">{{ value }}</span>
+              </template>
+              <template #cell-attempt3="{ value }">
+                <span :class="{ muted: value === '--' }">{{ value }}</span>
+              </template>
+              <template #empty>
+                <p class="empty-table muted">{{ t('modeSelect.breakdown.empty') }}</p>
+              </template>
+            </BaseTable>
           </div>
         </template>
 
@@ -482,10 +535,16 @@ function goToTrackSettings() {
             @update:sort-by="toggleSort($event as any)"
             @update:sort-desc="handleSortDescChange"
             :hoverable="false"
+            bordered
             class="points-table-override"
+            row-key="playedAt"
+            :selected-key="latestPlayedAt"
           >
+            <template #cell-playIndex="{ item }">
+              {{ item.playIndex }}
+            </template>
             <template #cell-name="{ item }">
-              {{ t(handLabelKeys[item.handSelection as HandSelection]) }} • {{ t(modeTitleKeys[item.mode as PlayMode]) }}
+              {{ profiles.activeProfile.name }}
             </template>
             <template #cell-points="{ item }">
               {{ item.gameplayPoints ?? item.score }}
@@ -781,12 +840,28 @@ function goToTrackSettings() {
   padding: 1rem;
 }
 
+.detail-content.chart-content {
+  height: 100%;
+  padding: 0;
+}
+
 .detail-content h2 {
   margin-top: 0;
 }
 
 .points-table-override {
   width: 100%;
+  height: 100%;
+}
+
+.points-table-override :deep(.base-table-row) {
+  background: transparent;
+  color: var(--color-text-muted);
+}
+
+.points-table-override :deep(.base-table-row.is-selected) {
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: var(--color-text-primary) !important;
 }
 
 :deep(.base-table) {
@@ -824,60 +899,47 @@ function goToTrackSettings() {
 }
 
 .breakdown-note {
-  margin: 0 0 0.35rem;
+  margin: 0 0 0.5rem;
   color: var(--color-text-primary);
+  font-size: 0.88rem;
 }
 
-.breakdown-board {
-  overflow: hidden;
-  border: 1px solid var(--color-border-strong);
+.breakdown-table-override {
+  border: 1px solid var(--color-border-strong, rgba(255, 255, 255, 0.15));
   border-radius: 8px;
+  overflow: hidden;
   background: rgba(0, 0, 0, 0.08);
 }
 
-.breakdown-row {
-  display: grid;
-  grid-template-columns: minmax(18rem, 1fr) repeat(4, minmax(5.5rem, 0.18fr));
-  align-items: center;
-  min-height: 28px;
-  border-top: 1px solid rgba(0, 0, 0, 0.35);
+.breakdown-table-override :deep(th) {
+  background: rgba(0, 0, 0, 0.22);
+  font-size: 1.1rem;
+  font-weight: 500;
+  padding: 0.45rem 0.75rem;
 }
 
-.breakdown-row:first-child {
-  border-top: 0;
-}
-
-.breakdown-row > * {
-  padding: 0.25rem 0.55rem;
-}
-
-.breakdown-row > *:not(:first-child) {
-  text-align: center;
-}
-
-.breakdown-header-row {
-  min-height: 35px;
-  background: rgba(0, 0, 0, 0.12);
-  font-size: 1.25rem;
-  font-weight: 400;
-}
-
-.breakdown-header-row strong {
-  font-weight: 400;
-}
-
-.breakdown-row strong:not(:first-child) {
+.breakdown-table-override :deep(th:not(:first-child)) {
   color: #eeff44;
-  font-weight: 400;
 }
 
-.breakdown-row .empty {
+.breakdown-table-override :deep(td) {
+  padding: 0.35rem 0.75rem;
+}
+
+.breakdown-table-override :deep(.base-table-row:not(:last-child) td:not(:first-child)) {
+  color: #eeff44;
+}
+
+.breakdown-table-override :deep(.base-table-row:last-child) {
+  border-top: 1px solid var(--color-border-default, rgba(255, 255, 255, 0.15));
+}
+
+.breakdown-table-override :deep(.base-table-row:last-child td) {
+  color: var(--color-text-primary);
+}
+
+.breakdown-table-override :deep(.muted) {
   color: #8f8f8f !important;
-}
-
-.breakdown-date-row {
-  min-height: 38px;
-  border-top-color: var(--color-border-default);
 }
 
 .breakdown-empty-state {

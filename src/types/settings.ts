@@ -66,6 +66,7 @@ export interface UserSettings {
   shortcutsRestartKey: string
   shortcutsMetronomeKey: string
   shortcutsToggleLabelsKey: string
+  shortcuts: Record<string, Record<string, string[]>>
   advancedReduceAnimations: boolean
   advancedEnableDebugOverlay: boolean
   advancedConfirmBeforeDestructiveAction: boolean
