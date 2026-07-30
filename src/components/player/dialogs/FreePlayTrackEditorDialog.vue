@@ -155,6 +155,15 @@ function markDirty() {
   dirty.value = true
 }
 
+function onGridDragStart() {
+  pushHistorySnapshot()
+  historyPaused.value = true
+}
+
+function onGridDragEnd() {
+  historyPaused.value = false
+}
+
 function updateDraftTracks(tracks: FreePlayTrack[]) {
   commitDraftTracks(tracks)
 }
@@ -987,6 +996,8 @@ onBeforeUnmount(() => {
               @preview-note="auditionNote"
               @seek="seekEditorPlayback"
               @dirty="markDirty"
+              @drag-start="onGridDragStart"
+              @drag-end="onGridDragEnd"
               @paste-commit="commitGhostPaste"
               @paste-cancel="cancelGhostPaste"
             />

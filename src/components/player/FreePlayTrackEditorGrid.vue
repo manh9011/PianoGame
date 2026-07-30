@@ -44,6 +44,10 @@ interface InteractionState {
   marquee?: { left: number; top: number; width: number; height: number }
   pan?: { clientX: number; clientY: number; scrollLeft: number; scrollTop: number }
   erasedNoteIds?: string[]
+  dragDeltaTimeUs?: number
+  dragDeltaPitch?: number
+  dragDeltaStartUs?: number
+  dragDeltaEndUs?: number
 }
 
 interface DrawableNote extends FreePlayRecordedNote {
@@ -87,6 +91,8 @@ const emit = defineEmits<{
   'preview-note': [note: FreePlayRecordedNote]
   seek: [timeUs: number]
   dirty: []
+  'drag-start': []
+  'drag-end': []
   'paste-commit': [timeUs: number, pitchDelta: number]
   'paste-cancel': []
 }>()
@@ -263,27 +269,54 @@ const blackKeyRows = computed(() => {
     }))
 })
 
-const drawableNotes = computed<DrawableNote[]>(() => props.tracks
-  .filter(track => !hiddenSet.value.has(track.id))
-  .flatMap((track, trackIndex) => track.notes.map(note => {
-    const left = timeToX(note.startUs, props.bpm, props.pixelsPerQuarter)
-    const right = timeToX(note.endUs, props.bpm, props.pixelsPerQuarter)
-    const muted = mutedSet.value.has(track.id)
-    return {
-      ...note,
-      color: track.color,
-      trackIndex,
-      muted,
-      style: {
-        left: `${left}px`,
-        top: `${pitchToY(note.noteId, props.rowHeight)}px`,
-        width: `${Math.max(8, right - left)}px`,
-        height: `${Math.max(10, props.rowHeight - 2)}px`,
-        backgroundColor: track.color,
-        opacity: muted ? '0.32' : '1',
-      },
-    }
-  })))
+const drawableNotes = computed<DrawableNote[]>(() => {
+  const dragState = interaction.value
+  return props.tracks
+    .filter(track => !hiddenSet.value.has(track.id))
+    .flatMap((track, trackIndex) => track.notes.map(note => {
+      let startUs = note.startUs
+      let endUs = note.endUs
+      let noteId = note.noteId
+      const isSelected = selectedSet.value.has(note.id)
+
+      if (isSelected) {
+        if (dragState.kind === 'dragging-note') {
+          startUs += dragState.dragDeltaTimeUs ?? 0
+          endUs += dragState.dragDeltaTimeUs ?? 0
+          noteId = clampPitch(noteId + (dragState.dragDeltaPitch ?? 0))
+        } else if (dragState.kind === 'resizing-left' && dragState.anchorNoteId === note.id) {
+          startUs += dragState.dragDeltaStartUs ?? 0
+        } else if (dragState.kind === 'resizing-right' && dragState.anchorNoteId === note.id) {
+          endUs += dragState.dragDeltaEndUs ?? 0
+        } else if (dragState.kind === 'drawing-note' && dragState.anchorNoteId === note.id) {
+          startUs += dragState.dragDeltaStartUs ?? 0
+          endUs += dragState.dragDeltaEndUs ?? 0
+          noteId = clampPitch(noteId + (dragState.dragDeltaPitch ?? 0))
+        }
+      }
+
+      const left = timeToX(startUs, props.bpm, props.pixelsPerQuarter)
+      const right = timeToX(endUs, props.bpm, props.pixelsPerQuarter)
+      const muted = mutedSet.value.has(track.id)
+      return {
+        ...note,
+        startUs,
+        endUs,
+        noteId,
+        color: track.color,
+        trackIndex,
+        muted,
+        style: {
+          left: `${left}px`,
+          top: `${pitchToY(noteId, props.rowHeight)}px`,
+          width: `${Math.max(8, right - left)}px`,
+          height: `${Math.max(10, props.rowHeight - 2)}px`,
+          backgroundColor: track.color,
+          opacity: muted ? '0.32' : '1',
+        },
+      }
+    }))
+})
 
 const velocityBars = computed<VelocityBar[]>(() => drawableNotes.value.map(note => {
   const left = timeToX(note.startUs, props.bpm, props.pixelsPerQuarter)
@@ -302,6 +335,40 @@ const velocityBars = computed<VelocityBar[]>(() => drawableNotes.value.map(note 
     },
   }
 }))
+
+const selectionBoundingBox = computed(() => {
+  if (selectedSet.value.size === 0) return null
+  
+  const selectedDrawables = drawableNotes.value.filter(n => selectedSet.value.has(n.id))
+  if (!selectedDrawables.length) return null
+  
+  let minStart = Infinity
+  let maxEnd = -Infinity
+  let minPitch = Infinity
+  let maxPitch = -Infinity
+  
+  for (const n of selectedDrawables) {
+    if (n.startUs < minStart) minStart = n.startUs
+    if (n.endUs > maxEnd) maxEnd = n.endUs
+    if (n.noteId < minPitch) minPitch = n.noteId
+    if (n.noteId > maxPitch) maxPitch = n.noteId
+  }
+  
+  const PADDING = 6
+  const left = timeToX(minStart, props.bpm, props.pixelsPerQuarter)
+  const right = timeToX(maxEnd, props.bpm, props.pixelsPerQuarter)
+  const top = pitchToY(maxPitch, props.rowHeight)
+  const bottom = pitchToY(minPitch, props.rowHeight) + props.rowHeight
+  
+  return {
+    style: {
+      left: `${left - PADDING}px`,
+      top: `${top - PADDING}px`,
+      width: `${Math.max(0, right - left) + PADDING * 2}px`,
+      height: `${Math.max(0, bottom - top) + PADDING * 2}px`,
+    }
+  }
+})
 
 function cloneTracks() {
   return cloneTrackEditorTracks(props.tracks)
@@ -416,6 +483,7 @@ function handleGridPointerDown(event: PointerEvent) {
   gridRef.value?.setPointerCapture(event.pointerId)
 
   if (props.mode === 'erase') {
+    emit('drag-start')
     interaction.value = { kind: 'erasing-notes', pointerId: event.pointerId, origin: point, snapshots: [], erasedNoteIds: [] }
     return
   }
@@ -437,9 +505,10 @@ function handleGridPointerDown(event: PointerEvent) {
     const targetTrack = tracks.find(track => track.id === targetTrackId) ?? tracks[0]
     const savedNote = { ...note, trackId: targetTrack?.id ?? note.trackId }
     if (targetTrack) targetTrack.notes.push(savedNote)
+    emit('drag-start')
     emitTracks(tracks)
     setSelected([savedNote.id])
-    interaction.value = { kind: 'drawing-note', pointerId: event.pointerId, origin: point, anchorNoteId: savedNote.id, snapshots: [{ id: savedNote.id, trackId: savedNote.trackId, startUs, endUs: savedNote.endUs, noteId: point.noteId }] }
+    interaction.value = { kind: 'drawing-note', pointerId: event.pointerId, origin: point, anchorNoteId: savedNote.id, snapshots: [{ id: savedNote.id, trackId: savedNote.trackId, startUs, endUs: savedNote.endUs, noteId: point.noteId }], dragDeltaStartUs: 0, dragDeltaEndUs: 0, dragDeltaPitch: 0 }
     return
   }
 
@@ -475,6 +544,7 @@ function handleNotePointerDown(event: PointerEvent, note: DrawableNote) {
 
   if (props.mode === 'erase') {
     gridRef.value?.setPointerCapture(event.pointerId)
+    emit('drag-start')
     deleteNoteIds([note.id])
     interaction.value = { kind: 'erasing-notes', pointerId: event.pointerId, origin: point, snapshots: [], erasedNoteIds: [note.id] }
     return
@@ -493,7 +563,17 @@ function handleNotePointerDown(event: PointerEvent, note: DrawableNote) {
 
   const ids = selectedSet.value.has(note.id) ? props.selectedNoteIds : [note.id]
   if (!selectedSet.value.has(note.id)) setSelected(ids)
-  interaction.value = { kind: 'dragging-note', pointerId: event.pointerId, origin: point, anchorNoteId: note.id, snapshots: snapshotsFor(ids) }
+  emit('drag-start')
+  interaction.value = { kind: 'dragging-note', pointerId: event.pointerId, origin: point, anchorNoteId: note.id, snapshots: snapshotsFor(ids), dragDeltaTimeUs: 0, dragDeltaPitch: 0 }
+}
+
+function handleBoundingBoxPointerDown(event: PointerEvent) {
+  if (event.button !== 0 || props.mode === 'erase') return
+  event.stopPropagation()
+  const point = getPoint(event)
+  gridRef.value?.setPointerCapture(event.pointerId)
+  emit('drag-start')
+  interaction.value = { kind: 'dragging-note', pointerId: event.pointerId, origin: point, anchorNoteId: props.selectedNoteIds[0], snapshots: snapshotsFor(props.selectedNoteIds), dragDeltaTimeUs: 0, dragDeltaPitch: 0 }
 }
 
 function handleResizePointerDown(event: PointerEvent, note: DrawableNote, side: 'left' | 'right') {
@@ -503,7 +583,8 @@ function handleResizePointerDown(event: PointerEvent, note: DrawableNote, side: 
   const point = getPoint(event)
   gridRef.value?.setPointerCapture(event.pointerId)
   setSelected([note.id])
-  interaction.value = { kind: side === 'left' ? 'resizing-left' : 'resizing-right', pointerId: event.pointerId, origin: point, anchorNoteId: note.id, snapshots: snapshotsFor([note.id]) }
+  emit('drag-start')
+  interaction.value = { kind: side === 'left' ? 'resizing-left' : 'resizing-right', pointerId: event.pointerId, origin: point, anchorNoteId: note.id, snapshots: snapshotsFor([note.id]), dragDeltaStartUs: 0, dragDeltaEndUs: 0 }
 }
 
 function updateDrag(point: EditorPoint) {
@@ -521,11 +602,11 @@ function updateDrag(point: EditorPoint) {
   const maxPitch = Math.max(...state.snapshots.map(snapshot => snapshot.noteId))
   const deltaPitch = Math.max(-minPitch, Math.min(127 - maxPitch, rawPitchDelta))
 
-  updateNotes(state.snapshots, snapshot => ({
-    startUs: Math.max(0, Math.round(snapshot.startUs + deltaTimeUs)),
-    endUs: Math.max(FREE_PLAY_EDITOR_MIN_NOTE_DURATION_US, Math.round(snapshot.endUs + deltaTimeUs)),
-    noteId: clampPitch(snapshot.noteId + deltaPitch),
-  }))
+  interaction.value = {
+    ...state,
+    dragDeltaTimeUs: deltaTimeUs,
+    dragDeltaPitch: deltaPitch
+  }
 }
 
 function updateResize(point: EditorPoint) {
@@ -535,11 +616,11 @@ function updateResize(point: EditorPoint) {
   const snappedTime = snapTimeUs(point.timeUs, props.bpm, props.snapSubdivision, props.snapEnabled)
   if (state.kind === 'resizing-left') {
     const startUs = Math.max(0, Math.min(snappedTime, snapshot.endUs - FREE_PLAY_EDITOR_MIN_NOTE_DURATION_US))
-    updateNotes([snapshot], () => ({ startUs }))
+    interaction.value = { ...state, dragDeltaStartUs: startUs - snapshot.startUs }
   } else {
     const minDuration = props.snapEnabled ? Math.max(FREE_PLAY_EDITOR_MIN_NOTE_DURATION_US, snapUnitUs.value) : FREE_PLAY_EDITOR_MIN_NOTE_DURATION_US
     const endUs = Math.max(snapshot.startUs + minDuration, snappedTime)
-    updateNotes([snapshot], () => ({ endUs }))
+    interaction.value = { ...state, dragDeltaEndUs: endUs - snapshot.endUs }
   }
 }
 
@@ -550,11 +631,13 @@ function updateDrawing(point: EditorPoint) {
   const currentUs = snapTimeUs(point.timeUs, props.bpm, props.snapSubdivision, props.snapEnabled)
   const startUs = Math.min(snapshot.startUs, currentUs)
   const endUs = Math.max(snapshot.startUs + FREE_PLAY_EDITOR_MIN_NOTE_DURATION_US, Math.max(snapshot.startUs, currentUs))
-  updateNotes([snapshot], () => ({
-    startUs,
-    endUs: Math.max(startUs + FREE_PLAY_EDITOR_MIN_NOTE_DURATION_US, endUs),
-    noteId: point.noteId,
-  }))
+  
+  interaction.value = { 
+    ...state, 
+    dragDeltaStartUs: startUs - snapshot.startUs,
+    dragDeltaEndUs: endUs - snapshot.endUs,
+    dragDeltaPitch: point.noteId - snapshot.noteId
+  }
 }
 
 function noteRect(note: FreePlayRecordedNote) {
@@ -604,8 +687,45 @@ function handlePointerMove(event: PointerEvent) {
 
 function handlePointerUp(event: PointerEvent) {
   if (interaction.value.pointerId !== event.pointerId) return
+  const state = interaction.value
+  const hadDrag = state.kind !== 'idle' && state.kind !== 'panning-view' && state.kind !== 'marquee-selecting'
+  
+  if (state.kind === 'dragging-note') {
+    const deltaTimeUs = state.dragDeltaTimeUs ?? 0
+    const deltaPitch = state.dragDeltaPitch ?? 0
+    if (deltaTimeUs !== 0 || deltaPitch !== 0) {
+      updateNotes(state.snapshots, snapshot => ({
+        startUs: Math.max(0, Math.round(snapshot.startUs + deltaTimeUs)),
+        endUs: Math.max(FREE_PLAY_EDITOR_MIN_NOTE_DURATION_US, Math.round(snapshot.endUs + deltaTimeUs)),
+        noteId: clampPitch(snapshot.noteId + deltaPitch),
+      }))
+    }
+  } else if (state.kind === 'resizing-left') {
+    const deltaStart = state.dragDeltaStartUs ?? 0
+    if (deltaStart !== 0) {
+      updateNotes(state.snapshots, snapshot => ({ startUs: snapshot.startUs + deltaStart }))
+    }
+  } else if (state.kind === 'resizing-right') {
+    const deltaEnd = state.dragDeltaEndUs ?? 0
+    if (deltaEnd !== 0) {
+      updateNotes(state.snapshots, snapshot => ({ endUs: snapshot.endUs + deltaEnd }))
+    }
+  } else if (state.kind === 'drawing-note') {
+    const deltaStart = state.dragDeltaStartUs ?? 0
+    const deltaEnd = state.dragDeltaEndUs ?? 0
+    const deltaPitch = state.dragDeltaPitch ?? 0
+    if (deltaStart !== 0 || deltaEnd !== 0 || deltaPitch !== 0) {
+      updateNotes(state.snapshots, snapshot => ({ 
+        startUs: snapshot.startUs + deltaStart,
+        endUs: snapshot.endUs + deltaEnd,
+        noteId: clampPitch(snapshot.noteId + deltaPitch)
+      }))
+    }
+  }
+
   gridRef.value?.releasePointerCapture(event.pointerId)
   interaction.value = { kind: 'idle', pointerId: -1, origin: { x: 0, y: 0, timeUs: 0, noteId: 60 }, snapshots: [] }
+  if (hadDrag) emit('drag-end')
 }
 
 function setVelocityForSelection(noteId: string, velocity: number) {
@@ -621,6 +741,7 @@ function handleVelocityPointerDown(event: PointerEvent, noteId: string) {
   event.stopPropagation()
   velocityLaneRef.value?.setPointerCapture(event.pointerId)
   velocityDragNoteId.value = noteId
+  emit('drag-start')
   setVelocityForSelection(noteId, velocityFromEvent(event))
 }
 
@@ -633,6 +754,7 @@ function handleVelocityPointerUp(event: PointerEvent) {
   if (!velocityDragNoteId.value) return
   velocityLaneRef.value?.releasePointerCapture(event.pointerId)
   velocityDragNoteId.value = null
+  emit('drag-end')
 }
 
 function handleRulerDoubleClick(event: MouseEvent) {
@@ -675,13 +797,8 @@ watch(() => props.playheadUs, () => {
             <div class="playhead playhead--ruler" :style="{ left: `${playheadX}px` }">
               <span class="playhead-triangle"></span>
             </div>
-            <div
-              v-for="line in beatLines"
-              :key="`ruler:${line.id}`"
-              class="ruler-tick"
-              :class="{ 'ruler-tick--measure': line.measure }"
-              :style="{ left: `${line.x}px` }"
-            >
+            <div v-for="line in beatLines" :key="`ruler:${line.id}`" class="ruler-tick"
+              :class="{ 'ruler-tick--measure': line.measure }" :style="{ left: `${line.x}px` }">
               <span v-if="line.label" class="ruler-label">{{ line.label }}</span>
             </div>
           </div>
@@ -689,120 +806,66 @@ watch(() => props.playheadUs, () => {
 
         <div class="note-row" :style="{ height: `${gridHeight}px` }">
           <div class="piano-ruler" :style="{ height: `${gridHeight}px` }">
-            <div
-              v-for="key in pianoKeys"
-              :key="key.noteId"
-              class="piano-key"
+            <div v-for="key in pianoKeys" :key="key.noteId" class="piano-key"
               :class="{ 'piano-key--black': key.black, 'piano-key--octave': key.octave }"
-              :style="{ top: `${pitchToY(key.noteId, rowHeight)}px`, height: `${rowHeight}px` }"
-            >
+              :style="{ top: `${pitchToY(key.noteId, rowHeight)}px`, height: `${rowHeight}px` }">
               <span class="piano-key-label">{{ key.octave ? key.label : key.noteName }}</span>
             </div>
           </div>
-          <div
-            ref="gridRef"
-            class="note-grid"
-            :class="{
-              'note-grid--pan-ready': mode === 'select' && !isGhostPasteActive,
-              'note-grid--erase-ready': mode === 'erase' && !isGhostPasteActive,
-              'note-grid--panning': interaction.kind === 'panning-view',
-              'note-grid--erasing': interaction.kind === 'erasing-notes',
-              'note-grid--pasting': isGhostPasteActive,
-            }"
-            :style="{ width: `${gridWidth}px`, height: `${gridHeight}px`, '--row-height': `${rowHeight}px` }"
-            @pointerdown="handleGridPointerDown"
-            @pointermove="handlePointerMove"
-            @pointerup="handlePointerUp"
-            @pointercancel="handlePointerUp"
-            @mousemove="handleGhostMouseMove"
-            @mouseleave="handleGhostMouseLeave"
-            @contextmenu="handleGhostContextMenu"
-          >
-            <div
-              v-for="band in octaveBands"
-              :key="band.id"
-              class="octave-band"
+          <div ref="gridRef" class="note-grid" :class="{
+            'note-grid--pan-ready': mode === 'select' && !isGhostPasteActive,
+            'note-grid--erase-ready': mode === 'erase' && !isGhostPasteActive,
+            'note-grid--panning': interaction.kind === 'panning-view',
+            'note-grid--erasing': interaction.kind === 'erasing-notes',
+            'note-grid--pasting': isGhostPasteActive,
+          }" :style="{ width: `${gridWidth}px`, height: `${gridHeight}px`, '--row-height': `${rowHeight}px` }"
+            @pointerdown="handleGridPointerDown" @pointermove="handlePointerMove" @pointerup="handlePointerUp"
+            @pointercancel="handlePointerUp" @mousemove="handleGhostMouseMove" @mouseleave="handleGhostMouseLeave"
+            @contextmenu="handleGhostContextMenu">
+            <div v-for="band in octaveBands" :key="band.id" class="octave-band"
               :class="{ 'octave-band--shaded': band.shaded }"
-              :style="{ top: `${band.top}px`, height: `${band.height}px` }"
-            >
+              :style="{ top: `${band.top}px`, height: `${band.height}px` }">
               <div class="octave-divider-line"></div>
             </div>
-            <div
-              v-for="row in blackKeyRows"
-              :key="`black:${row.noteId}`"
-              class="black-key-row"
-              :style="{ top: `${row.top}px`, height: `${row.height}px` }"
-            ></div>
-            <div
-              v-for="line in subdivisionLines"
-              :key="line.id"
-              class="grid-line grid-line--subdivision"
-              :style="{ left: `${line.x}px` }"
-            ></div>
-            <div
-              v-for="line in beatLines"
-              :key="line.id"
-              class="grid-line"
-              :class="{ 'grid-line--measure': line.measure }"
-              :style="{ left: `${line.x}px` }"
-            ></div>
+            <div v-for="row in blackKeyRows" :key="`black:${row.noteId}`" class="black-key-row"
+              :style="{ top: `${row.top}px`, height: `${row.height}px` }"></div>
+            <div v-for="line in subdivisionLines" :key="line.id" class="grid-line grid-line--subdivision"
+              :style="{ left: `${line.x}px` }"></div>
+            <div v-for="line in beatLines" :key="line.id" class="grid-line"
+              :class="{ 'grid-line--measure': line.measure }" :style="{ left: `${line.x}px` }"></div>
             <div class="playhead playhead--grid" :style="{ left: `${playheadX}px` }"></div>
-            <button
-              v-for="note in drawableNotes"
-              :key="note.id"
-              class="editor-note"
-              :class="{ selected: selectedSet.has(note.id) }"
-              :style="note.style"
-              type="button"
-              @pointerdown="handleNotePointerDown($event, note)"
-            >
-              <span class="note-handle note-handle--left" @pointerdown="handleResizePointerDown($event, note, 'left')"></span>
+            <div v-if="selectionBoundingBox" class="selection-bounding-box" :style="selectionBoundingBox.style" @pointerdown="handleBoundingBoxPointerDown"></div>
+            <button v-for="note in drawableNotes" :key="note.id" class="editor-note"
+              :class="{ selected: selectedSet.has(note.id) }" :style="note.style" type="button"
+              @pointerdown="handleNotePointerDown($event, note)">
+              <span class="note-handle note-handle--left"
+                @pointerdown="handleResizePointerDown($event, note, 'left')"></span>
               <span class="note-body"></span>
-              <span class="note-handle note-handle--right" @pointerdown="handleResizePointerDown($event, note, 'right')"></span>
+              <span class="note-handle note-handle--right"
+                @pointerdown="handleResizePointerDown($event, note, 'right')"></span>
             </button>
-            <div
-              v-for="ghost in ghostNoteDisplays"
-              :key="`ghost:${ghost.key}`"
-              class="editor-note editor-note--ghost"
-              :class="{ 'editor-note--ghost-invalid': !ghostIsValid }"
-              :style="ghost.style"
-            />
-            <div
-              v-if="interaction.marquee"
-              class="selection-rect"
-              :style="{
-                left: `${interaction.marquee.left}px`,
-                top: `${interaction.marquee.top}px`,
-                width: `${interaction.marquee.width}px`,
-                height: `${interaction.marquee.height}px`,
-              }"
-            ></div>
+            <div v-for="ghost in ghostNoteDisplays" :key="`ghost:${ghost.key}`" class="editor-note editor-note--ghost"
+              :class="{ 'editor-note--ghost-invalid': !ghostIsValid }" :style="ghost.style" />
+            <div v-if="interaction.marquee" class="selection-rect" :style="{
+              left: `${interaction.marquee.left}px`,
+              top: `${interaction.marquee.top}px`,
+              width: `${interaction.marquee.width}px`,
+              height: `${interaction.marquee.height}px`,
+            }"></div>
           </div>
         </div>
 
         <div class="velocity-row">
           <div class="velocity-corner">{{ velocityLabel }}</div>
-          <div
-            ref="velocityLaneRef"
-            class="velocity-lane"
-            :style="{ width: `${gridWidth}px` }"
-            @pointermove="handleVelocityPointerMove"
-            @pointerup="handleVelocityPointerUp"
-            @pointercancel="handleVelocityPointerUp"
-          >
+          <div ref="velocityLaneRef" class="velocity-lane" :style="{ width: `${gridWidth}px` }"
+            @pointermove="handleVelocityPointerMove" @pointerup="handleVelocityPointerUp"
+            @pointercancel="handleVelocityPointerUp">
             <div class="playhead playhead--velocity" :style="{ left: `${playheadX}px` }"></div>
             <div class="velocity-guide velocity-guide--top">127</div>
             <div class="velocity-guide velocity-guide--mid">64</div>
-            <button
-              v-for="bar in velocityBars"
-              :key="bar.id"
-              class="velocity-bar"
-              :class="{ selected: bar.selected, muted: bar.muted }"
-              :style="bar.style"
-              type="button"
-              :data-note-id="bar.noteId"
-              @pointerdown="handleVelocityPointerDown($event, bar.noteId)"
-            ></button>
+            <button v-for="bar in velocityBars" :key="bar.id" class="velocity-bar"
+              :class="{ selected: bar.selected, muted: bar.muted }" :style="bar.style" type="button"
+              :data-note-id="bar.noteId" @pointerdown="handleVelocityPointerDown($event, bar.noteId)"></button>
           </div>
         </div>
       </div>
@@ -1014,13 +1077,11 @@ watch(() => props.playheadUs, () => {
   flex: 0 0 auto;
   min-width: calc(100% - 64px);
   background-color: #202328;
-  background-image: repeating-linear-gradient(
-    to bottom,
-    rgba(255, 255, 255, 0.04) 0,
-    rgba(255, 255, 255, 0.04) 1px,
-    transparent 1px,
-    transparent var(--row-height)
-  );
+  background-image: repeating-linear-gradient(to bottom,
+      rgba(255, 255, 255, 0.04) 0,
+      rgba(255, 255, 255, 0.04) 1px,
+      transparent 1px,
+      transparent var(--row-height));
   touch-action: none;
 }
 
@@ -1087,6 +1148,21 @@ watch(() => props.playheadUs, () => {
 .grid-line--measure {
   width: 2px;
   background: rgba(251, 191, 36, 0.32);
+}
+
+.selection-bounding-box {
+  position: absolute;
+  border: 1.5px dashed rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  cursor: grab;
+  z-index: 2;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.selection-bounding-box:active {
+  cursor: grabbing;
 }
 
 .editor-note {

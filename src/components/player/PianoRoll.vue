@@ -280,7 +280,11 @@ function drawBookmarkTick(ctx: CanvasRenderingContext2D, bookmark: SessionBookma
   ctx.restore()
 }
 function drawBookmarkLabel(ctx: CanvasRenderingContext2D, bookmark: SessionBookmark, y: number) {
-  const text = bookmark.label.length > 18 ? `${bookmark.label.slice(0, 17)}…` : bookmark.label
+  let labelText = bookmark.label
+  if (bookmark.source === 'keySignature') {
+    labelText = formatKeySignature(undefined, undefined, t, bookmark.label)
+  }
+  const text = labelText.length > 18 ? `${labelText.slice(0, 17)}…` : labelText
   ctx.save()
   ctx.font = '700 18px sans-serif'
   ctx.textAlign = 'left'

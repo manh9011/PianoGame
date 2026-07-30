@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { usePlayerStore } from '../../stores/playerStore'
 import { useSettingsStore } from '../../stores/settingsStore'
 import type { MidiBookmarkSource } from '../../modules/midi/midiTypes'
+import { formatKeySignature } from '../../modules/render/pianoLabels'
 
 const { t } = useI18n()
 const props = withDefaults(defineProps<{
@@ -55,7 +56,13 @@ const bookmarkMarkers = computed(() => {
   if (!total) return []
   const midiBookmarks = (player.session?.bookmarks ?? [])
     .filter(bookmark => bookmarkVisible(bookmark.source) && bookmark.timeUs >= 0 && bookmark.timeUs <= total)
-    .map(bookmark => ({ ...bookmark, left: timeToPercent(bookmark.timeUs) }))
+    .map(bookmark => {
+      let label = bookmark.label
+      if (bookmark.source === 'keySignature') {
+        label = formatKeySignature(undefined, undefined, t, bookmark.label)
+      }
+      return { ...bookmark, label, left: timeToPercent(bookmark.timeUs) }
+    })
   const userBookmarks = settings.showMyBookmarks
     ? (player.session?.userBookmarks ?? [])
         .filter(bookmark => bookmark.timeUs >= 0 && bookmark.timeUs <= total)
