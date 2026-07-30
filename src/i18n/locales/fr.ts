@@ -723,7 +723,7 @@ export const fr = {
     toggleMetronomeDescription: "Activer ou désactiver le métronome pendant le jeu.",
     toggleLabels: "Afficher ou masquer les étiquettes",
     toggleLabelsDescription: "Afficher ou masquer rapidement les étiquettes des notes ou des touches.",
-    colorThemeDescription: "Choisissez les couleurs de l’interface et la manière d’afficher les étiquettes des notes et des touches.",
+    colorThemeDescription: 'Choisissez les couleurs de l\'interface.',
     themePreview: "Aperçu du thème",
     synthesiaClassic: "Synthesia classique",
     crystalLight: "Cristal clair",

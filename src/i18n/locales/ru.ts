@@ -723,7 +723,7 @@ export const ru = {
     toggleMetronomeDescription: "Включать/выключать метроном во время игры.",
     toggleLabels: "Включить/выключить метки",
     toggleLabelsDescription: "Быстро показать/скрыть метки нот и клавиш.",
-    colorThemeDescription: "Выберите цвета интерфейса и способ отображения меток нот/клавиш.",
+    colorThemeDescription: 'Выберите цвета интерфейса.',
     themePreview: "Предпросмотр темы",
     synthesiaClassic: "Классическая Synthesia",
     crystalLight: "Кристально-светлая",

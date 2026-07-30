@@ -723,7 +723,7 @@ export const es = {
     toggleMetronomeDescription: "Activar o desactivar el metrónomo mientras tocas.",
     toggleLabels: "Alternar etiquetas",
     toggleLabelsDescription: "Mostrar u ocultar rápidamente las etiquetas de notas o teclas.",
-    colorThemeDescription: "Elige los colores de la interfaz y cómo se muestran las etiquetas de notas y teclas.",
+    colorThemeDescription: 'Elige los colores de la interfaz.',
     themePreview: "Vista previa del tema",
     synthesiaClassic: "Synthesia clásico",
     crystalLight: "Cristal claro",

@@ -5,22 +5,10 @@ import SettingsSection from '../../components/settings/ui/SettingsSection.vue'
 import SettingsToggle from '../../components/settings/ui/SettingsToggle.vue'
 import BaseInput from '../../components/ui/BaseInput.vue'
 import BaseSelect from '../../components/ui/BaseSelect.vue'
-import type { LabelMode } from '../../types/settings'
 import { useSettingsStore } from '../../stores/settingsStore'
 
 const { t } = useI18n()
 const settings = useSettingsStore()
-
-const labelModes: Array<{ value: LabelMode; labelKey: string }> = [
-  { value: 'octaves', labelKey: 'settings.labelModeOptions.octaves' },
-  { value: 'finger-hint', labelKey: 'settings.labelModeOptions.fingerHint' },
-  { value: 'virtual-piano', labelKey: 'settings.labelModeOptions.virtualPiano' },
-  { value: 'english', labelKey: 'settings.labelModeOptions.english' },
-  { value: 'fixed-do', labelKey: 'settings.labelModeOptions.fixedDo' },
-  { value: 'movable-do', labelKey: 'settings.labelModeOptions.movableDo' },
-  { value: 'scale-number', labelKey: 'settings.labelModeOptions.scaleNumber' },
-  { value: 'simple', labelKey: 'settings.labelModeOptions.simple' },
-]
 </script>
 
 <template>
@@ -59,34 +47,6 @@ const labelModes: Array<{ value: LabelMode; labelKey: string }> = [
           <span class="theme-desc">{{ t('settings.colorThemeDescription') }}</span>
         </button>
       </div>
-    </SettingsSection>
-
-    <SettingsSection :title="t('settings.labels')">
-      <SettingsRow :title="t('settings.keyLabels')" :description="t('settings.keyLabelsDescription')">
-        <SettingsToggle :model-value="settings.showKeyLabels" @change="settings.setShowKeyLabels($event)" />
-      </SettingsRow>
-      <SettingsRow :title="t('settings.keyLabelMode')" :description="t('settings.keyLabelModeDescription')">
-        <BaseSelect class="settings-control" :model-value="settings.keyLabelMode" @update:model-value="settings.setKeyLabelMode($event as LabelMode)">
-          <option v-for="mode in labelModes" :key="mode.value" :value="mode.value">{{ t(mode.labelKey) }}</option>
-        </BaseSelect>
-      </SettingsRow>
-      <SettingsRow :title="t('settings.keyLabelSize')" :description="t('settings.keyLabelSizeDescription')">
-        <BaseInput class="settings-control compact" type="number" min="-10" max="25" step="1" :model-value="settings.keyLabelSize" @update:model-value="settings.setKeyLabelSize(Number($event))" />
-      </SettingsRow>
-      <SettingsRow :title="t('settings.fallingNoteLabels')" :description="t('settings.fallingNoteLabelsDescription')">
-        <SettingsToggle :model-value="settings.showNoteLabels" @change="settings.setShowNoteLabels($event)" />
-      </SettingsRow>
-      <SettingsRow :title="t('settings.noteLabelMode')" :description="t('settings.noteLabelModeDescription')">
-        <BaseSelect class="settings-control" :model-value="settings.noteLabelMode" @update:model-value="settings.setNoteLabelMode($event as LabelMode)">
-          <option v-for="mode in labelModes" :key="mode.value" :value="mode.value">{{ t(mode.labelKey) }}</option>
-        </BaseSelect>
-      </SettingsRow>
-      <SettingsRow :title="t('settings.noteLabelSize')" :description="t('settings.noteLabelSizeDescription')">
-        <BaseInput class="settings-control compact" type="number" min="-10" max="25" step="1" :model-value="settings.noteLabelSize" @update:model-value="settings.setNoteLabelSize(Number($event))" />
-      </SettingsRow>
-      <SettingsRow :title="t('settings.coloredFingerHints')" :description="t('settings.coloredFingerHintsDescription')">
-        <SettingsToggle :model-value="settings.showColoredFingerHints" @change="settings.setShowColoredFingerHints($event)" />
-      </SettingsRow>
     </SettingsSection>
   </div>
 </template>

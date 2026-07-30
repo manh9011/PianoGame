@@ -723,7 +723,7 @@ export const vi = {
     toggleMetronomeDescription: "Bật/tắt máy đếm nhịp trong lúc chơi.",
     toggleLabels: "Bật/tắt nhãn",
     toggleLabelsDescription: "Nhanh chóng hiện/ẩn nhãn nốt/phím.",
-    colorThemeDescription: "Chọn màu giao diện và cách hiển thị nhãn nốt/phím.",
+    colorThemeDescription: 'Chọn màu giao diện.',
     themePreview: "Xem trước chủ đề",
     synthesiaClassic: "Synthesia cổ điển",
     crystalLight: "Pha lê sáng",

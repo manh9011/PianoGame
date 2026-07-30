@@ -723,7 +723,7 @@ export const hi = {
     toggleMetronomeDescription: "चलाते समय मेट्रोनोम चालू/बंद करें।",
     toggleLabels: "लेबल चालू/बंद करें",
     toggleLabelsDescription: "नोट/की लेबल जल्दी दिखाएँ/छिपाएँ।",
-    colorThemeDescription: "इंटरफ़ेस रंग और नोट/की लेबल दिखाने का तरीका चुनें।",
+    colorThemeDescription: 'इंटरफ़ेस के रंग चुनें।',
     themePreview: "थीम पूर्वावलोकन",
     synthesiaClassic: "Synthesia क्लासिक",
     crystalLight: "क्रिस्टल लाइट",

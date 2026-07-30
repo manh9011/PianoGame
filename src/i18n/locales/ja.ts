@@ -723,7 +723,7 @@ export const ja = {
     toggleMetronomeDescription: "演奏中にメトロノームのオン/オフを切り替えます。",
     toggleLabels: "ラベルを切り替え",
     toggleLabelsDescription: "ノート/鍵盤ラベルを素早く表示/非表示します。",
-    colorThemeDescription: "インターフェイスの色とノート/鍵盤ラベルの表示方法を選択します。",
+    colorThemeDescription: 'インターフェイスの色を選択します。',
     themePreview: "テーマプレビュー",
     synthesiaClassic: "Synthesia クラシック",
     crystalLight: "クリスタルライト",

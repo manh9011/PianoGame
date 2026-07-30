@@ -723,7 +723,7 @@ export const ca = {
     toggleMetronomeDescription: "Activa o desactiva el metrònom mentre toques.",
     toggleLabels: "Commuta les etiquetes",
     toggleLabelsDescription: "Mostra o amaga ràpidament les etiquetes de notes o tecles.",
-    colorThemeDescription: "Tria els colors de la interfície i com es mostren les etiquetes de notes i tecles.",
+    colorThemeDescription: 'Trieu els colors de la interfície.',
     themePreview: "Vista prèvia del tema",
     synthesiaClassic: "Synthesia clàssic",
     crystalLight: "Cristall clar",

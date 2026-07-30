@@ -723,7 +723,7 @@ export const sl = {
     toggleMetronomeDescription: "Med igranjem vklopi/izklopi metronom.",
     toggleLabels: "Vklopi/izklopi oznake",
     toggleLabelsDescription: "Hitro prikaži/skrij oznake not/tipk.",
-    colorThemeDescription: "Izberite barve vmesnika in način prikaza oznak not/tipk.",
+    colorThemeDescription: 'Izberite barve vmesnika.',
     themePreview: "Predogled teme",
     synthesiaClassic: "Klasična Synthesia",
     crystalLight: "Kristalno svetla",

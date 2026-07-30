@@ -723,7 +723,7 @@ export const pl = {
     toggleMetronomeDescription: "Włączaj/wyłączaj metronom podczas gry.",
     toggleLabels: "Przełącz etykiety",
     toggleLabelsDescription: "Szybko pokazuj/ukrywaj etykiety nut i klawiszy.",
-    colorThemeDescription: "Wybierz kolory interfejsu i sposób wyświetlania etykiet nut i klawiszy.",
+    colorThemeDescription: 'Wybierz kolory interfejsu.',
     themePreview: "Podgląd motywu",
     synthesiaClassic: "Klasyczny Synthesia",
     crystalLight: "Jasny kryształ",

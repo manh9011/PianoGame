@@ -723,7 +723,7 @@ export const ko = {
     toggleMetronomeDescription: "연주 중 메트로놈을 켜거나 끕니다.",
     toggleLabels: "라벨 전환",
     toggleLabelsDescription: "노트/건반 라벨을 빠르게 표시하거나 숨깁니다.",
-    colorThemeDescription: "인터페이스 색상과 노트/건반 라벨 표시 방식을 선택합니다.",
+    colorThemeDescription: '인터페이스 색상을 선택합니다.',
     themePreview: "테마 미리보기",
     synthesiaClassic: "Synthesia 클래식",
     crystalLight: "크리스털 라이트",

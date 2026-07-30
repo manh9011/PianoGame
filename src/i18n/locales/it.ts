@@ -723,7 +723,7 @@ export const it = {
     toggleMetronomeDescription: "Accendi o spegni il metronomo durante l'esecuzione.",
     toggleLabels: "Attiva/disattiva etichette",
     toggleLabelsDescription: "Mostra/nascondi rapidamente le etichette di note e tasti.",
-    colorThemeDescription: "Scegli i colori dell'interfaccia e come mostrare le etichette di note e tasti.",
+    colorThemeDescription: 'Scegli i colori dell\'interfaccia.',
     themePreview: "Anteprima tema",
     synthesiaClassic: "Synthesia classico",
     crystalLight: "Cristallo chiaro",

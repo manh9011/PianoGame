@@ -723,7 +723,7 @@ export const nl = {
     toggleMetronomeDescription: "Zet de metronoom tijdens het spelen aan of uit.",
     toggleLabels: "Labels aan/uit zetten",
     toggleLabelsDescription: "Toon of verberg snel labels van noten en toetsen.",
-    colorThemeDescription: "Kies interfacekleuren en hoe noot-/toetslabels worden getoond.",
+    colorThemeDescription: 'Kies interfacekleuren.',
     themePreview: "Voorbeeld van thema",
     synthesiaClassic: "Synthesia-klassiek",
     crystalLight: "Kristalhelder",

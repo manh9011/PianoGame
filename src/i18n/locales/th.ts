@@ -723,7 +723,7 @@ export const th = {
     toggleMetronomeDescription: "เปิด/ปิดเมโทรนอมระหว่างเล่น",
     toggleLabels: "เปิด/ปิดป้ายกำกับ",
     toggleLabelsDescription: "แสดง/ซ่อนป้ายกำกับโน้ตและคีย์อย่างรวดเร็ว",
-    colorThemeDescription: "เลือกสีอินเทอร์เฟซและวิธีแสดงป้ายกำกับโน้ต/คีย์",
+    colorThemeDescription: 'เลือกสีของอินเทอร์เฟซ',
     themePreview: "ตัวอย่างธีม",
     synthesiaClassic: "Synthesia คลาสสิก",
     crystalLight: "คริสตัลสว่าง",

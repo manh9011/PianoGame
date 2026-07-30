@@ -715,7 +715,7 @@ export const en = {
     toggleMetronomeDescription: 'Turn the metronome on/off while playing.',
     toggleLabels: 'Toggle Labels',
     toggleLabelsDescription: 'Quickly show/hide note/key labels.',
-    colorThemeDescription: 'Choose interface colors and how note/key labels are shown.',
+    colorThemeDescription: 'Choose interface colors.',
     themePreview: 'Theme Preview',
     synthesiaClassic: 'Synthesia Classic',
     crystalLight: 'Crystal Light',

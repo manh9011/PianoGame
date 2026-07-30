@@ -723,7 +723,7 @@ export const zh = {
     toggleMetronomeDescription: "演奏时打开/关闭节拍器。",
     toggleLabels: "切换标签",
     toggleLabelsDescription: "快速显示/隐藏音符和琴键标签。",
-    colorThemeDescription: "选择界面颜色以及音符/琴键标签的显示方式。",
+    colorThemeDescription: '选择界面颜色。',
     themePreview: "主题预览",
     synthesiaClassic: "Synthesia 经典",
     crystalLight: "水晶亮色",

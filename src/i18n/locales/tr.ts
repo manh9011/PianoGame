@@ -723,7 +723,7 @@ export const tr = {
     toggleMetronomeDescription: "Çalarken metronomu aç/kapat.",
     toggleLabels: "Etiketleri aç/kapat",
     toggleLabelsDescription: "Nota/tuş etiketlerini hızlıca göster/gizle.",
-    colorThemeDescription: "Arayüz renklerini ve nota/tuş etiketlerinin nasıl gösterileceğini seçin.",
+    colorThemeDescription: 'Arayüz renklerini seçin.',
     themePreview: "Tema önizlemesi",
     synthesiaClassic: "Klasik Synthesia",
     crystalLight: "Kristal aydınlık",

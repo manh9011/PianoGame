@@ -723,7 +723,7 @@ export const ar = {
     toggleMetronomeDescription: "شغّل/أوقف المترونوم أثناء العزف.",
     toggleLabels: "تبديل التسميات",
     toggleLabelsDescription: "أظهر/أخفِ تسميات النغمات والمفاتيح بسرعة.",
-    colorThemeDescription: "اختر ألوان الواجهة وكيفية عرض تسميات النغمات والمفاتيح.",
+    colorThemeDescription: 'اختر ألوان الواجهة.',
     themePreview: "معاينة السمة",
     synthesiaClassic: "Synthesia الكلاسيكي",
     crystalLight: "كريستال فاتح",

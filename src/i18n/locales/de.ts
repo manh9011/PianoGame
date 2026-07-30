@@ -723,7 +723,7 @@ export const de = {
     toggleMetronomeDescription: "Metronom während des Spielens ein-/ausschalten.",
     toggleLabels: "Beschriftungen umschalten",
     toggleLabelsDescription: "Noten-/Tastenbeschriftungen schnell anzeigen/ausblenden.",
-    colorThemeDescription: "Wähle Oberflächenfarben und wie Noten-/Tastenbeschriftungen angezeigt werden.",
+    colorThemeDescription: 'Wählen Sie die Farben der Benutzeroberfläche.',
     themePreview: "Designvorschau",
     synthesiaClassic: "Synthesia-Klassiker",
     crystalLight: "Kristallhell",
