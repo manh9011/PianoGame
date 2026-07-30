@@ -838,6 +838,9 @@ export const pt = {
     },
   },
   library: {
+    allFolders: "Todas as pastas",
+    importedFolder: "Importados",
+    rescanFolder: "Reescanear / Obter músicas da pasta",
     chooseFolder: "Escolher pasta...",
     folderUnsupported: "Este navegador não oferece suporte à API File System Access",
     folderNoMidi: "A pasta \"{name}\" não contém arquivos MIDI.",

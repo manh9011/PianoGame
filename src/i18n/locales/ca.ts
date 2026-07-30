@@ -838,6 +838,9 @@ export const ca = {
     },
   },
   library: {
+    allFolders: "Totes les carpetes",
+    importedFolder: "Importats",
+    rescanFolder: "Torna a escanear / Obtén cançons de la carpeta",
     chooseFolder: "Tria una carpeta...",
     folderUnsupported: "Aquest navegador no és compatible amb l’API File System Access",
     folderNoMidi: "La carpeta \"{name}\" no conté fitxers MIDI.",

@@ -37,6 +37,7 @@ export const defaultSettings: UserSettings = {
   folders: [],
   songsRescanOnStartup: false,
   songsRememberLastFolder: true,
+  lastSelectedFolder: 'all',
   songsSortByRecentlyImported: false,
   keyboardRangeMode: 'song-only',
   recordVideoSize: 'fhd',

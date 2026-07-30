@@ -838,6 +838,9 @@ export const sl = {
     },
   },
   library: {
+    allFolders: "Vse mape",
+    importedFolder: "Uvoženo",
+    rescanFolder: "Ponovno skeniraj / Pridobi skladbe iz mape",
     chooseFolder: "Izberi mapo...",
     folderUnsupported: "Ta brskalnik ne podpira File System Access API",
     folderNoMidi: "Mapa »{name}« ne vsebuje MIDI datotek.",

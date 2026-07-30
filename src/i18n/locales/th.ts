@@ -838,6 +838,9 @@ export const th = {
     },
   },
   library: {
+    allFolders: "โฟลเดอร์ทั้งหมด",
+    importedFolder: "นำเข้าแล้ว",
+    rescanFolder: "สแกนซ้ำ / ดึงเพลงจากโฟลเดอร์",
     chooseFolder: "เลือกโฟลเดอร์...",
     folderUnsupported: "เบราว์เซอร์นี้ไม่รองรับ File System Access API",
     folderNoMidi: "โฟลเดอร์ “{name}” ไม่มีไฟล์ MIDI",

@@ -93,6 +93,7 @@ export const useLibraryStore = defineStore('library', {
     sortDirection: 'asc' as SortDirection,
     sortTouched: false,
     searchQuery: '',
+    selectedFolder: 'all' as string,
     selectedSongId: null as string | null,
     previewClock: null as MidiPlayerClock | null,
     previewSession: null as PlaySession | null,
@@ -106,9 +107,15 @@ export const useLibraryStore = defineStore('library', {
   }),
   getters: {
     filteredSongs(state): SongMetadata[] {
+      let result = state.songs
+      if (state.selectedFolder === 'imported') {
+        result = result.filter(song => !song.folderPath)
+      } else if (state.selectedFolder && state.selectedFolder !== 'all') {
+        result = result.filter(song => song.folderPath === state.selectedFolder)
+      }
       const query = state.searchQuery.trim().toLowerCase()
-      if (!query) return state.songs
-      return state.songs.filter(song => [
+      if (!query) return result
+      return result.filter(song => [
         song.title,
         song.folderPath ?? '',
         String(song.bestScore),
@@ -197,6 +204,12 @@ export const useLibraryStore = defineStore('library', {
     updateAfterPlay(id: string, score: number) { const song = this.songs.find(s => s.id === id); if (!song) return; song.playCount++; song.lastPlayed = Date.now(); song.recent = true; song.bestScore = Math.max(song.bestScore, score); this.persist() },
     setSearch(query: string) {
       this.searchQuery = query
+      if (this.selectedSongId && !this.sortedSongs.some(song => song.id === this.selectedSongId)) {
+        this.selectedSongId = this.sortedSongs[0]?.id ?? null
+      }
+    },
+    setSelectedFolder(folder: string) {
+      this.selectedFolder = folder
       if (this.selectedSongId && !this.sortedSongs.some(song => song.id === this.selectedSongId)) {
         this.selectedSongId = this.sortedSongs[0]?.id ?? null
       }

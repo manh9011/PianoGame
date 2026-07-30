@@ -838,6 +838,9 @@ export const ko = {
     },
   },
   library: {
+    allFolders: "모든 폴더",
+    importedFolder: "가져온 곡",
+    rescanFolder: "폴더에서 곡 다시 스캔 / 가져오기",
     chooseFolder: "폴더 선택...",
     folderUnsupported: "이 브라우저는 File System Access API를 지원하지 않습니다",
     folderNoMidi: "“{name}” 폴더에 MIDI 파일이 없습니다.",

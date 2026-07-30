@@ -838,6 +838,9 @@ export const tr = {
     },
   },
   library: {
+    allFolders: "Tüm Klasörler",
+    importedFolder: "İçe Aktarılanlar",
+    rescanFolder: "Klasördeki şarkıları yeniden tara / getir",
     chooseFolder: "Klasör seç...",
     folderUnsupported: "Bu tarayıcı File System Access API desteklemiyor",
     folderNoMidi: "“{name}” klasöründe MIDI dosyası yok.",

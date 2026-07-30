@@ -838,6 +838,9 @@ export const hi = {
     },
   },
   library: {
+    allFolders: "सभी फ़ोल्डर",
+    importedFolder: "आयातित",
+    rescanFolder: "फ़ोल्डर से गाने फिर से स्कैन / प्राप्त करें",
     chooseFolder: "फ़ोल्डर चुनें...",
     folderUnsupported: "यह ब्राउज़र File System Access API का समर्थन नहीं करता",
     folderNoMidi: "फ़ोल्डर \"{name}\" में कोई MIDI फ़ाइल नहीं है।",

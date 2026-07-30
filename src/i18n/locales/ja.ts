@@ -838,6 +838,9 @@ export const ja = {
     },
   },
   library: {
+    allFolders: "すべてのフォルダ",
+    importedFolder: "インポート済み",
+    rescanFolder: "フォルダから曲を再スキャン / 取得",
     chooseFolder: "フォルダーを選択...",
     folderUnsupported: "このブラウザーは File System Access API をサポートしていません",
     folderNoMidi: "フォルダー「{name}」に MIDI ファイルはありません。",

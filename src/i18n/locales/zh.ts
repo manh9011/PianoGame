@@ -838,6 +838,9 @@ export const zh = {
     },
   },
   library: {
+    allFolders: "所有文件夹",
+    importedFolder: "导入的曲目",
+    rescanFolder: "重新扫描 / 从文件夹获取曲目",
     chooseFolder: "选择文件夹...",
     folderUnsupported: "此浏览器不支持 File System Access API",
     folderNoMidi: "文件夹“{name}”中没有 MIDI 文件。",

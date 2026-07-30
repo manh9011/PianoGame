@@ -838,6 +838,9 @@ export const ar = {
     },
   },
   library: {
+    allFolders: "جميع المجلدات",
+    importedFolder: "المستوردة",
+    rescanFolder: "إعادة مسح / جلب الأغاني من المجلد",
     chooseFolder: "اختر مجلدًا...",
     folderUnsupported: "هذا المتصفح لا يدعم File System Access API",
     folderNoMidi: "لا يحتوي المجلد \"{name}\" على ملفات MIDI.",

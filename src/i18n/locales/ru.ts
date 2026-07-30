@@ -838,6 +838,9 @@ export const ru = {
     },
   },
   library: {
+    allFolders: "Все папки",
+    importedFolder: "Импортированные",
+    rescanFolder: "Повторно сканировать / Получить песни из папки",
     chooseFolder: "Выберите папку...",
     folderUnsupported: "Этот браузер не поддерживает File System Access API",
     folderNoMidi: "В папке «{name}» нет MIDI-файлов.",

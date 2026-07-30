@@ -838,6 +838,9 @@ export const nl = {
     },
   },
   library: {
+    allFolders: "Alle mappen",
+    importedFolder: "Geïmporteerd",
+    rescanFolder: "Map opnieuw scannen / nummers ophalen",
     chooseFolder: "Map kiezen...",
     folderUnsupported: "Deze browser ondersteunt de File System Access API niet",
     folderNoMidi: "Map \"{name}\" bevat geen MIDI-bestanden.",

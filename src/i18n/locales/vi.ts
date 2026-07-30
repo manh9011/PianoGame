@@ -838,6 +838,9 @@ export const vi = {
     },
   },
   library: {
+    allFolders: "Tất cả thư mục",
+    importedFolder: "Thư mục import",
+    rescanFolder: "Nạp thêm bài hát từ thư mục",
     chooseFolder: "Chọn thư mục...",
     folderUnsupported: "Trình duyệt này không hỗ trợ File System Access API",
     folderNoMidi: "Thư mục “{name}” không có tệp MIDI.",

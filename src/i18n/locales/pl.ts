@@ -838,6 +838,9 @@ export const pl = {
     },
   },
   library: {
+    allFolders: "Wszystkie foldery",
+    importedFolder: "Zaimportowane",
+    rescanFolder: "Przeskanuj ponownie / Pobierz utwory z folderu",
     chooseFolder: "Wybierz folder...",
     folderUnsupported: "Ta przeglądarka nie obsługuje File System Access API",
     folderNoMidi: "Folder \"{name}\" nie zawiera plików MIDI.",

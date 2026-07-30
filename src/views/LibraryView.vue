@@ -3,7 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import MidiImportButton from '../components/library/MidiImportButton.vue'
-import FolderSelector from '../components/library/FolderSelector.vue'
+import FolderToggleBar from '../components/library/FolderToggleBar.vue'
 import SongList from '../components/library/SongList.vue'
 import SongSortBar from '../components/library/SongSortBar.vue'
 import { base64ToBuffer, loadSongMidiData, loadSongMusicXmlData } from '../modules/library/songLibrary'
@@ -365,7 +365,7 @@ onBeforeUnmount(() => {
 
     <BaseToolbar class="library-tools">
       <template #left>
-        <FolderSelector />
+        <FolderToggleBar />
       </template>
       <template #right>
         <div class="search-field">
@@ -575,13 +575,13 @@ onBeforeUnmount(() => {
 
 .search-field :deep(.base-input-field) {
   width: 100% !important;
-  height: 36px !important;
+  height: 38px !important;
   padding: 0 2rem 0 0.75rem !important;
   font-size: 0.9rem !important;
-  border-radius: 6px !important;
-  background: var(--color-bg-input) !important;
+  border-radius: 8px !important;
+  background: var(--color-bg-input, rgba(0, 0, 0, 0.35)) !important;
   color: var(--color-text-primary) !important;
-  border: 1px solid var(--color-border-input) !important;
+  border: 1px solid var(--color-border-input, rgba(255, 255, 255, 0.16)) !important;
   transition: all 0.2s ease !important;
 }
 
