@@ -33,11 +33,7 @@ const downloadMenuOpen = ref(false)
 const missingDifficultyPromptShown = ref(false)
 const autoEvaluatingMissingDifficulty = ref(false)
 
-watch(
-  () => settings.songsSortByRecentlyImported,
-  recentlyImportedFirst => library.setDefaultSortFromSettings(recentlyImportedFirst),
-  { immediate: true },
-)
+
 
 import { useShortcuts } from '../composables/useShortcuts'
 

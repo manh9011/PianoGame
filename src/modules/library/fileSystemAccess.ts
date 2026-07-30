@@ -56,13 +56,13 @@ export async function pickSongFilesFromFolder(targetFolderName?: string): Promis
   return { name: folderName, files }
 }
 
-export async function rescanSongFilesFromFolder(folderName: string): Promise<PickedSongFolder | null> {
+export async function rescanSongFilesFromFolder(folderName: string, allowPickerFallback = true): Promise<PickedSongFolder | null> {
   const handle = await getFolderHandle(folderName)
   if (handle) {
     try {
       if (handle.queryPermission) {
         let state = await handle.queryPermission({ mode: 'read' })
-        if (state !== 'granted' && handle.requestPermission) {
+        if (state !== 'granted' && allowPickerFallback && handle.requestPermission) {
           state = await handle.requestPermission({ mode: 'read' })
         }
         if (state === 'granted') {
@@ -74,8 +74,12 @@ export async function rescanSongFilesFromFolder(folderName: string): Promise<Pic
         return { name: folderName, files }
       }
     } catch (e) {
-      console.warn('[FS Access] Silent rescan with handle failed, opening picker:', e)
+      console.warn('[FS Access] Silent rescan with handle failed:', e)
     }
+  }
+
+  if (!allowPickerFallback) {
+    return null
   }
 
   // Fallback to picker ONCE to establish handle for future silent rescans
@@ -88,9 +92,18 @@ export async function pickMidiFilesFromFolder(): Promise<PickedSongFolder | null
 
 async function collectSongFiles(directory: DirectoryHandleLike): Promise<File[]> {
   const files: File[] = []
+  let count = 0
   for await (const entry of directory.values()) {
-    if (entry.kind === 'file' && isSupportedSongFile(entry.name) && entry.getFile) files.push(await entry.getFile())
-    if (entry.kind === 'directory' && entry.values) files.push(...await collectSongFiles(entry as DirectoryHandleLike))
+    if (entry.kind === 'file' && isSupportedSongFile(entry.name) && entry.getFile) {
+      files.push(await entry.getFile())
+      count++
+      if (count % 25 === 0) {
+        await new Promise(resolve => setTimeout(resolve, 20))
+      }
+    }
+    if (entry.kind === 'directory' && entry.values) {
+      files.push(...await collectSongFiles(entry as DirectoryHandleLike))
+    }
   }
   return files
 }

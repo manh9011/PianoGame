@@ -42,13 +42,13 @@ function normalizeMetadata(meta: SongMeta, payload?: SongPayload): SongMetadata 
 export async function loadLibrary(): Promise<SongMetadata[]> {
   try {
     const metadata = await getAll<SongMeta>('songs-metadata')
-    return Promise.all(metadata.map(async meta => normalizeMetadata(meta, await loadSongPayload(meta.id))))
+    return metadata.map(meta => normalizeMetadata(meta))
   } catch (error) {
     console.error('[Song Library] Lỗi khi load từ IndexedDB, fallback về localStorage:', error)
     const raw = localStorage.getItem(STORAGE_KEYS.library)
     if (!raw) return []
     const songs = JSON.parse(raw) as SongMetadata[]
-    return songs.map(song => normalizeMetadata(song as SongMeta, { midiData: song.midiData ?? song.data, musicXmlData: song.musicXmlData, compressedMusicXmlData: song.compressedMusicXmlData }))
+    return songs.map(song => normalizeMetadata(song as SongMeta))
   }
 }
 

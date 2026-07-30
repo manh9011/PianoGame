@@ -13,6 +13,7 @@ import { assignHands } from '../modules/game/handAssignment'
 import { AutoNotePlayer } from '../modules/audio/autoNotePlayer'
 import { createImportedSongCandidate, type ImportedSongCandidate } from '../modules/library/songImport'
 import { evaluateMidiDifficultyAuto } from '../modules/midi/midiDifficulty'
+import { supportsFileSystemAccess, rescanSongFilesFromFolder } from '../modules/library/fileSystemAccess'
 
 export interface ImportResult {
   imported: number
@@ -153,7 +154,7 @@ export const useLibraryStore = defineStore('library', {
       const songs = JSON.parse(JSON.stringify(this.songs))
       persistQueue.enqueue(() => saveLibrary(songs))
     },
-    async importFile(file: File, folderPath?: string) {
+    async importFile(file: File, folderPath?: string, shouldPersist = true) {
       const candidate = await createImportedSongCandidate(file, folderPath)
       const importedAt = Date.now()
       const existing = findMergeTarget(this.songs, candidate)
@@ -187,20 +188,74 @@ export const useLibraryStore = defineStore('library', {
       }
       this.songs = [song, ...this.songs.filter(s => s.id !== song.id && playbackHash(s) !== candidate.playbackHash)]
       this.selectedSongId ??= song.id
-      this.persist()
+      if (shouldPersist) {
+        this.persist()
+      }
       return song
     },
-    async importFiles(files: File[], folderPath?: string): Promise<ImportResult> {
+    async importFiles(files: File[], folderPath?: string, isBackground = false): Promise<ImportResult> {
       const result: ImportResult = { imported: 0, failed: [] }
+      if (!files.length) return result
+
+      // Fast lookup set of existing folder:filename pairs to skip redundant parsing
+      const existingKeys = new Set(
+        this.songs
+          .filter(s => s.originalFileName)
+          .map(s => `${s.folderPath || ''}:${s.originalFileName}`)
+      )
+
+      const filesToProcess: File[] = []
       for (const file of files) {
+        const key = `${folderPath || ''}:${file.name}`
+        if (existingKeys.has(key)) {
+          continue
+        }
+        filesToProcess.push(file)
+      }
+
+      if (!filesToProcess.length) {
+        return result
+      }
+
+      let processedInChunk = 0
+      for (const file of filesToProcess) {
         try {
-          await this.importFile(file, folderPath)
+          await this.importFile(file, folderPath, false)
           result.imported++
+          processedInChunk++
+
+          if (isBackground) {
+            // Background chill mode: pause 80ms per file so CPU load remains near 0%
+            await new Promise(resolve => setTimeout(resolve, 80))
+          } else if (processedInChunk % 2 === 0) {
+            // Manual import mode: yield 16ms every 2 files
+            await new Promise(resolve => setTimeout(resolve, 16))
+          }
         } catch (e) {
           result.failed.push({ name: file.name, reason: e instanceof Error ? e.message : 'library.importUnsupportedFile' })
         }
       }
+
+      if (result.imported > 0) {
+        this.persist()
+      }
       return result
+    },
+    async rescanFoldersOnStartup(folders: string[]): Promise<number> {
+      if (!folders.length || !supportsFileSystemAccess()) return 0
+      let totalImported = 0
+      for (const folderName of folders) {
+        try {
+          const result = await rescanSongFilesFromFolder(folderName, false)
+          if (result && result.files.length) {
+            const importRes = await this.importFiles(result.files, result.name, true)
+            totalImported += importRes.imported
+          }
+        } catch (e) {
+          console.warn(`[Library Store] Startup rescan for folder "${folderName}" failed:`, e)
+        }
+      }
+      return totalImported
     },
     updateAfterPlay(id: string, score: number) { const song = this.songs.find(s => s.id === id); if (!song) return; song.playCount++; song.lastPlayed = Date.now(); song.recent = true; song.bestScore = Math.max(song.bestScore, score); this.persist() },
     setSearch(query: string) {
@@ -228,11 +283,7 @@ export const useLibraryStore = defineStore('library', {
       this.sortKey = key
       this.sortDirection = key === 'title' ? 'asc' : 'desc'
     },
-    setDefaultSortFromSettings(recentlyImportedFirst: boolean) {
-      if (this.sortTouched) return
-      this.sortKey = recentlyImportedFirst ? 'importedAt' : 'title'
-      this.sortDirection = recentlyImportedFirst ? 'desc' : 'asc'
-    },
+
     renameSong(id: string, rawTitle: string) {
       const title = rawTitle.trim()
       const song = this.songs.find(s => s.id === id)

@@ -51,8 +51,19 @@ async function initApp() {
   ])
 
   toastStore.showSuccess(t('common.loaded'))
-
   app.use(router).mount('#app')
+
+  if (settingsStore.songsRescanOnStartup && settingsStore.folders.length > 0) {
+    setTimeout(() => {
+      libraryStore.rescanFoldersOnStartup(settingsStore.folders).then(importedCount => {
+        if (importedCount > 0) {
+          toastStore.showSuccess(t('library.folderImportSuccess', { name: t('library.allFolders'), count: importedCount }))
+        }
+      }).catch(err => {
+        console.warn('[Main] Rescan on startup failed:', err)
+      })
+    }, 3000)
+  }
 }
 
 initApp()

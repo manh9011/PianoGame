@@ -53,15 +53,12 @@ async function removeFolder(folder: string) {
       </SettingsRow>
     </SettingsSection>
 
-    <SettingsSection :title="t('settings.libraryBehavior')" :note="t('settings.libraryBehaviorNote')">
+    <SettingsSection :title="t('settings.libraryBehavior')">
       <SettingsRow :title="t('settings.rescanOnStartup')" :description="t('settings.rescanOnStartupDescription')">
         <SettingsToggle :model-value="settings.songsRescanOnStartup" @change="settings.patchSettings({ songsRescanOnStartup: $event })" />
       </SettingsRow>
       <SettingsRow :title="t('settings.rememberLastFolder')" :description="t('settings.rememberLastFolderDescription')">
         <SettingsToggle :model-value="settings.songsRememberLastFolder" @change="settings.patchSettings({ songsRememberLastFolder: $event })" />
-      </SettingsRow>
-      <SettingsRow :title="t('settings.recentlyImportedFirst')" :description="t('settings.recentlyImportedFirstDescription')">
-        <SettingsToggle :model-value="settings.songsSortByRecentlyImported" @change="settings.patchSettings({ songsSortByRecentlyImported: $event })" />
       </SettingsRow>
     </SettingsSection>
   </div>

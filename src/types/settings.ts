@@ -57,7 +57,6 @@ export interface UserSettings {
   songsRescanOnStartup: boolean
   songsRememberLastFolder: boolean
   lastSelectedFolder?: string
-  songsSortByRecentlyImported: boolean
   keyboardRangeMode: KeyboardRangeMode
   recordVideoSize: RecordVideoSize
   recordVideoOrientation: RecordVideoOrientation
