@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePlayerStore } from '../../../stores/playerStore'
@@ -341,13 +341,14 @@ function isSounded(mode: TrackMode) {
   padding: 0 4px;
   border: none;
   background: transparent;
-  color: var(--color-text-primary);
+  color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   font-size: 1.6rem;
   transition: transform 0.1s ease, color 0.1s ease;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9), 0 1px 8px rgba(0, 0, 0, 0.6);
 }
 
 .track-play-btn:hover {
@@ -405,15 +406,17 @@ function isSounded(mode: TrackMode) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: #f8fafc;
+  color: #ffffff;
   font-size: 1.02rem;
   font-weight: 700;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9), 0 1px 8px rgba(0, 0, 0, 0.6);
 }
 
 .track-meta {
   margin-top: 2px;
-  color: rgba(255, 255, 255, 0.76);
+  color: rgba(255, 255, 255, 0.9);
   font-size: 0.8rem;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9), 0 1px 5px rgba(0, 0, 0, 0.6);
 }
 
 .track-controls {
@@ -439,10 +442,11 @@ function isSounded(mode: TrackMode) {
   border: 0;
   border-radius: 0;
   background: transparent;
-  color: #f4f4f5;
+  color: #ffffff;
   cursor: pointer;
   box-shadow: none;
   border-right: 1px solid rgba(0, 0, 0, 0.25);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9), 0 1px 5px rgba(0, 0, 0, 0.6);
 }
 
 .control-btn:last-child {
