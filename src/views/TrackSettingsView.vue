@@ -158,7 +158,7 @@ useShortcuts({
 
 .track-panel-shell {
   width: 100%;
-  max-width: 900px;
+  max-width: 1360px;
 }
 
 .footer-text {

@@ -13,6 +13,14 @@ function updateThemeMetaColor(theme: 'dark' | 'light') {
   if (meta) meta.setAttribute('content', theme === 'light' ? '#f6f7fb' : '#202020')
 }
 
+function updateViewportMeta(compact: boolean) {
+  const meta = document.querySelector('meta[name="viewport"]')
+  if (meta) {
+    const width = compact ? 1920 : 1440
+    meta.setAttribute('content', `width=${width}, viewport-fit=cover, user-scalable=no`)
+  }
+}
+
 export const useSettingsStore = defineStore('settings', {
   state: () => ({
     ...defaultSettings,
@@ -28,6 +36,7 @@ export const useSettingsStore = defineStore('settings', {
         Object.assign(this.$state, settings, { initialized: true, loading: false })
         document.documentElement.dataset.theme = this.theme
         updateThemeMetaColor(this.theme)
+        updateViewportMeta(this.advancedCompactMode)
         setI18nLocale(this.locale)
       } catch (error) {
         console.error('[Settings Store] Lỗi khi hydrate:', error)
@@ -42,6 +51,7 @@ export const useSettingsStore = defineStore('settings', {
     patchSettings(settings: Partial<UserSettings>) {
       Object.assign(this.$state, settings)
       if (settings.locale) setI18nLocale(settings.locale)
+      if (settings.advancedCompactMode !== undefined) updateViewportMeta(settings.advancedCompactMode)
       this.persist()
     },
     setSpeed(v: number) { this.defaultSpeed = clampSpeed(v); this.persist() },
@@ -95,6 +105,7 @@ export const useSettingsStore = defineStore('settings', {
           (this as any)[key] = defaultSettings[key]
         }
       }
+      updateViewportMeta(this.advancedCompactMode)
       this.persist()
     },
   },
