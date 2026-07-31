@@ -43,6 +43,7 @@ export const ar = {
   transcription: {
     helpTitle: 'كيفية استخدام النسخ',
     helpMessage: 'هذه الميزة حاليًا في مرحلة الاختبار التجريبي. يمكنك تحميل ملف صوتي WAV أو MP3 لتحويله إلى MIDI مجانًا. تعمل هذه الوظيفة بالكامل على جهاز الكمبيوتر الشخصي الخاص بك دون إرسال الموسيقى إلى خادم؛ قد يكون التحويل أسرع إذا كان لديك بطاقة رسومات وتستخدم متصفحًا يدعم WebGPU.',
+    downloadTauriToast: `Downloaded to your system's Downloads folder.`,
   },
   freePlay: {
     title: "عزف حر",

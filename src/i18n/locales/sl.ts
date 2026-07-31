@@ -43,6 +43,7 @@ export const sl = {
   transcription: {
     helpTitle: 'Kako uporabljati transkripcijo',
     helpMessage: 'Ta funkcija je trenutno v fazi beta testiranja. Brezplačno lahko naložite zvočno datoteko WAV ali MP3 za pretvorbo v MIDI. Funkcija se v celoti izvaja na vašem osebnem računalniku, ne da bi glasbo poslali na strežnik; pretvorba je lahko hitrejša, če imate grafično kartico in uporabljate brskalnik, ki podpira WebGPU.',
+    downloadTauriToast: `Downloaded to your system's Downloads folder.`,
   },
   freePlay: {
     title: "Prosto igranje",

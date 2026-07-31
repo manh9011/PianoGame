@@ -43,6 +43,7 @@ export const ko = {
   transcription: {
     helpTitle: '트랜스크립션 사용 방법',
     helpMessage: '이 기능은 현재 베타 테스트 중입니다. WAV 또는 MP3 오디오 파일을 업로드하여 무료로 MIDI로 변환할 수 있습니다. 이 기능은 서버로 음악을 보내지 않고 개인 컴퓨터에서 완전히 실행됩니다. 그래픽 카드가 있고 WebGPU를 지원하는 브라우저를 사용하면 변환 속도가 더 빠를 수 있습니다.',
+    downloadTauriToast: `Downloaded to your system's Downloads folder.`,
   },
   freePlay: {
     title: "자유 연주",

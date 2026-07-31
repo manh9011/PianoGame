@@ -43,6 +43,7 @@ export const vi = {
   transcription: {
     helpTitle: "Cách sử dụng Tách âm thanh",
     helpMessage: 'Tính năng này hiện đang trong giai đoạn thử nghiệm beta. Bạn có thể tải lên tệp âm thanh WAV hoặc MP3 để chuyển đổi sang MIDI hoàn toàn miễn phí. Chức năng này chạy hoàn toàn trên máy tính cá nhân của bạn mà không gửi âm nhạc đến máy chủ; quá trình chuyển đổi có thể diễn ra nhanh hơn nếu bạn có card đồ họa và sử dụng trình duyệt hỗ trợ WebGPU.',
+    downloadTauriToast: "Đã tải xuống vào thư mục Downloads của hệ thống.",
   },
   freePlay: {
     title: "Chơi tự do",

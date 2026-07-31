@@ -43,6 +43,7 @@ export const ca = {
   transcription: {
     helpTitle: 'Com utilitzar la transcripció',
     helpMessage: 'Aquesta funció es troba actualment en fase de prova beta. Pots penjar un fitxer d\'àudio WAV o MP3 per convertir-lo a MIDI de manera gratuïta. La funció s\'executa completament a l\'ordinador personal sense enviar la música a cap servidor; la conversió pot ser més ràpida si teniu una targeta gràfica i utilitzeu un navegador compatible amb WebGPU.',
+    downloadTauriToast: `Downloaded to your system's Downloads folder.`,
   },
   freePlay: {
     title: "Toc lliure",

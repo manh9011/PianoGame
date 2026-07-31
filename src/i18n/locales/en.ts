@@ -42,6 +42,7 @@ export const en = {
   transcription: {
     helpTitle: 'How to use Transcription',
     helpMessage: 'This feature is currently in beta testing. You can upload a WAV or MP3 audio file to convert it to MIDI for free. The function runs entirely on your personal computer without sending the music to a server; conversion may be faster if you have a graphics card and use a browser that supports WebGPU.',
+    downloadTauriToast: "Downloaded to your system's Downloads folder.",
   },
   freePlay: {
     title: 'Free Play',
