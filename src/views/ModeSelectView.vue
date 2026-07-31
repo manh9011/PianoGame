@@ -68,6 +68,11 @@ const selectedBestGameplay = computed(() => formatScore(selectedAchievementScore
 const breakdownAttempts = computed(() => topAchievementAttempts(selectedScoreEntries.value))
 const needsTrackConfig = computed(() => player.session?.needsTrackConfiguration ?? false)
 const currentTrackSelectionKey = computed(() => trackSelectionKeyForTracks(player.session?.tracks))
+const isMusicXml = computed(() => {
+  const song = player.song
+  if (!song) return false
+  return song.sourceType === 'musicxml' || song.sourceType === 'hybrid' || song.hasMusicXmlSource
+})
 const chartEntries = computed<ModeScoreEntry[]>(() => selectedScoreEntries.value.slice().sort((a, b) => a.playedAt - b.playedAt))
 type ScoreRowItem = ModeScoreEntry & { playIndex: number; isLatest: boolean };
 
@@ -401,6 +406,8 @@ useShortcuts({
       <div class="song-heading">
         <span class="top-score" :style="achievementColorStyle(selectedAchievementScore, maxPoints(handSelection))">{{ selectedBestGameplay }}</span>
         <span class="song-title">{{ player.song?.title }}</span>
+        <span v-if="isMusicXml" class="source-badge musicxml">MusicXML</span>
+        <span v-else class="source-badge midi">MIDI</span>
       </div>
       <BaseButton variant="primary" class="header-btn" @click="startPlay">{{ t('modeSelect.continue') }}</BaseButton>
     </header>
@@ -639,6 +646,25 @@ useShortcuts({
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.source-badge {
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+
+.source-badge.musicxml {
+  background-color: #2196f3;
+}
+
+.source-badge.midi {
+  background-color: #f44336;
 }
 
 .setup-modes {

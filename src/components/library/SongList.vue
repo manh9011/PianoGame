@@ -16,6 +16,7 @@ import BaseTable, { type TableColumn } from '../ui/BaseTable.vue'
 const columns: TableColumn[] = [
   { key: 'score', width: '3.68rem', align: 'center' },
   { key: 'title', width: 'auto' },
+  { key: 'source', width: '5.5rem', align: 'center' },
   { key: 'importedAt', width: '10.0rem' },
   { key: 'lastPlayed', width: '10.0rem' },
   { key: 'duration', width: '6.0rem', align: 'center' },
@@ -414,6 +415,11 @@ function clearDifficulty() {
         </span>
       </template>
 
+      <template #cell-source="{ item: song }">
+        <span v-if="song.sourceType === 'musicxml' || song.sourceType === 'hybrid' || song.hasMusicXmlSource || song.musicXmlData || song.compressedMusicXmlData" class="source-badge musicxml">MusicXML</span>
+        <span v-else class="source-badge midi">MIDI</span>
+      </template>
+
       <template #cell-importedAt="{ item: song }">
         <span class="song-imported-at muted">{{ formatImportedAt(song.importedAt) }}</span>
       </template>
@@ -627,6 +633,19 @@ function clearDifficulty() {
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
+
+.source-badge {
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.source-badge.musicxml { background-color: #2196f3; }
+.source-badge.midi { background-color: #f44336; }
 
 .song-title-cell,
 .song-imported-at,

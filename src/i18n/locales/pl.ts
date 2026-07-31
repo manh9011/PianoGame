@@ -894,6 +894,7 @@ export const pl = {
       playCount: "Liczba odtworzeń",
       rating: "Ocena",
       difficulty: "Trudność",
+      source: 'Format',
     },
   },
 } satisfies LocaleMessages

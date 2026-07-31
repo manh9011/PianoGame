@@ -894,6 +894,7 @@ export const ru = {
       playCount: "Количество проигрываний",
       rating: "Рейтинг",
       difficulty: "Сложность",
+      source: 'Format',
     },
   },
 } satisfies LocaleMessages

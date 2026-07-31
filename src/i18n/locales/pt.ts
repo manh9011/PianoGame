@@ -894,6 +894,7 @@ export const pt = {
       playCount: "Quantidade de reproduções",
       rating: "Avaliação",
       difficulty: "Dificuldade",
+      source: 'Format',
     },
   },
 } satisfies LocaleMessages

@@ -27,5 +27,5 @@ export interface SongMetadata {
   folderPath?: string
 }
 
-export type SongSortKey = 'bestScore' | 'playCount' | 'lastPlayed' | 'importedAt' | 'title' | 'duration' | 'rating' | 'difficulty'
+export type SongSortKey = 'bestScore' | 'playCount' | 'lastPlayed' | 'importedAt' | 'title' | 'duration' | 'rating' | 'difficulty' | 'source'
 export type SortDirection = 'asc' | 'desc'

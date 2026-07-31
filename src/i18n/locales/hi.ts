@@ -894,6 +894,7 @@ export const hi = {
       playCount: "चलाने की संख्या",
       rating: "रेटिंग",
       difficulty: "कठिनाई",
+      source: 'Format',
     },
   },
 } satisfies LocaleMessages

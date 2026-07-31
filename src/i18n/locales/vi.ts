@@ -894,6 +894,7 @@ export const vi = {
       playCount: "Lượt chơi",
       rating: "Đánh giá",
       difficulty: "Độ khó",
+      source: 'Định dạng',
     },
   },
 } satisfies LocaleMessages

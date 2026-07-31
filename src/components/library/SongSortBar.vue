@@ -8,6 +8,7 @@ const library = useLibraryStore()
 const keys: { key: SongSortKey; labelKey: string }[] = [
   { key: 'bestScore', labelKey: 'library.sort.points' },
   { key: 'title', labelKey: 'library.sort.title' },
+  { key: 'source', labelKey: 'library.sort.source' },
   { key: 'importedAt', labelKey: 'library.sort.importedAt' },
   { key: 'lastPlayed', labelKey: 'library.sort.lastPlayed' },
   { key: 'duration', labelKey: 'library.sort.duration' },
@@ -19,14 +20,8 @@ const keys: { key: SongSortKey; labelKey: string }[] = [
 
 <template>
   <nav class="sort-bar" :aria-label="t('library.sort.aria')">
-    <button
-      v-for="item in keys"
-      :key="item.key"
-      type="button"
-      class="sort-cell"
-      :class="{ active: library.sortKey === item.key }"
-      @click="library.setSort(item.key)"
-    >
+    <button v-for="item in keys" :key="item.key" type="button" class="sort-cell"
+      :class="{ active: library.sortKey === item.key }" @click="library.setSort(item.key)">
       <span class="sort-label">{{ t(item.labelKey) }}</span>
       <span v-if="library.sortKey === item.key" class="sort-direction" aria-hidden="true">
         <i :class="library.sortDirection === 'asc' ? 'fa-solid fa-arrow-up' : 'fa-solid fa-arrow-down'" />
@@ -93,4 +88,3 @@ const keys: { key: SongSortKey; labelKey: string }[] = [
   }
 }
 </style>
-

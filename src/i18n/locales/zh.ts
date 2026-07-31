@@ -894,6 +894,7 @@ export const zh = {
       playCount: "播放次数",
       rating: "评分",
       difficulty: "难度",
+      source: 'Format',
     },
   },
 } satisfies LocaleMessages

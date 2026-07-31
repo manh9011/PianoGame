@@ -894,6 +894,7 @@ export const ja = {
       playCount: "再生回数",
       rating: "評価",
       difficulty: "難易度",
+      source: 'Format',
     },
   },
 } satisfies LocaleMessages

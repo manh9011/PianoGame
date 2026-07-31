@@ -894,6 +894,7 @@ export const ar = {
       playCount: "عدد مرات التشغيل",
       rating: "التقييم",
       difficulty: "الصعوبة",
+      source: 'Format',
     },
   },
 } satisfies LocaleMessages

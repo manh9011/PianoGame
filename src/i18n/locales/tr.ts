@@ -894,6 +894,7 @@ export const tr = {
       playCount: "Çalma sayısı",
       rating: "Puan",
       difficulty: "Zorluk",
+      source: 'Format',
     },
   },
 } satisfies LocaleMessages

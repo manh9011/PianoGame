@@ -894,6 +894,7 @@ export const fr = {
       playCount: "Nombre de lectures",
       rating: "Note",
       difficulty: "Difficulté",
+      source: 'Format',
     },
   },
 } satisfies LocaleMessages

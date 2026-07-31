@@ -98,6 +98,8 @@ export const useLibraryStore = defineStore('library', {
     searchQuery: '',
     selectedFolder: 'all' as string,
     selectedSongId: null as string | null,
+    sourceMusicXmlVisible: true,
+    sourceMidiVisible: true,
     previewClock: null as MidiPlayerClock | null,
     previewSession: null as PlaySession | null,
     previewPlayer: new AutoNotePlayer(),
@@ -116,6 +118,17 @@ export const useLibraryStore = defineStore('library', {
       } else if (state.selectedFolder && state.selectedFolder !== 'all') {
         result = result.filter(song => song.folderPath === state.selectedFolder)
       }
+
+      result = result.filter(song => {
+        const isMusicXml = song.sourceType === 'musicxml' || song.sourceType === 'hybrid' || song.hasMusicXmlSource || !!song.musicXmlData || !!song.compressedMusicXmlData
+        const isMidi = !isMusicXml
+        
+        if (state.sourceMusicXmlVisible && state.sourceMidiVisible) return true
+        if (state.sourceMusicXmlVisible && !state.sourceMidiVisible) return isMusicXml
+        if (!state.sourceMusicXmlVisible && state.sourceMidiVisible) return isMidi
+        return false
+      })
+
       const query = state.searchQuery.trim().toLowerCase()
       if (!query) return result
       return result.filter(song => [
@@ -290,6 +303,20 @@ export const useLibraryStore = defineStore('library', {
     },
     setSelectedFolder(folder: string) {
       this.selectedFolder = folder
+      if (this.selectedSongId && !this.sortedSongs.some(song => song.id === this.selectedSongId)) {
+        this.selectedSongId = this.sortedSongs[0]?.id ?? null
+      }
+    },
+    toggleSourceMusicXml() {
+      if (this.sourceMusicXmlVisible && !this.sourceMidiVisible) return
+      this.sourceMusicXmlVisible = !this.sourceMusicXmlVisible
+      if (this.selectedSongId && !this.sortedSongs.some(song => song.id === this.selectedSongId)) {
+        this.selectedSongId = this.sortedSongs[0]?.id ?? null
+      }
+    },
+    toggleSourceMidi() {
+      if (!this.sourceMusicXmlVisible && this.sourceMidiVisible) return
+      this.sourceMidiVisible = !this.sourceMidiVisible
       if (this.selectedSongId && !this.sortedSongs.some(song => song.id === this.selectedSongId)) {
         this.selectedSongId = this.sortedSongs[0]?.id ?? null
       }

@@ -887,6 +887,7 @@ export const en = {
       playCount: 'Play Count',
       rating: 'Rating',
       difficulty: 'Difficulty',
+      source: 'Format',
     },
   },
 } as const

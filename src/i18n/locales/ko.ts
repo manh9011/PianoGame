@@ -894,6 +894,7 @@ export const ko = {
       playCount: "재생 횟수",
       rating: "평점",
       difficulty: "난이도",
+      source: 'Format',
     },
   },
 } satisfies LocaleMessages

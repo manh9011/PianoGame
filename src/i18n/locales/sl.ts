@@ -894,6 +894,7 @@ export const sl = {
       playCount: "Število predvajanj",
       rating: "Ocena",
       difficulty: "Težavnost",
+      source: 'Format',
     },
   },
 } satisfies LocaleMessages

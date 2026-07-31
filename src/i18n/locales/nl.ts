@@ -894,6 +894,7 @@ export const nl = {
       playCount: "Aantal keer gespeeld",
       rating: "Beoordeling",
       difficulty: "Moeilijkheid",
+      source: 'Format',
     },
   },
 } satisfies LocaleMessages

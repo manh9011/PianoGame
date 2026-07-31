@@ -310,8 +310,11 @@ onBeforeUnmount(() => {
 
       <template #center>
         <div class="library-playback">
-          <BaseButton variant="icon" :disabled="!selectedSong" :aria-label="t('library.togglePreview')" :title="t('library.togglePreview')" :aria-pressed="settings.libraryAutoPreviewEnabled" @click="togglePreview">
-            <i v-if="library.previewSongId === selectedSong?.id && library.previewRunning" class="fa-solid fa-pause" aria-hidden="true" />
+          <BaseButton variant="icon" :disabled="!selectedSong" :aria-label="t('library.togglePreview')"
+            :title="t('library.togglePreview')" :aria-pressed="settings.libraryAutoPreviewEnabled"
+            @click="togglePreview">
+            <i v-if="library.previewSongId === selectedSong?.id && library.previewRunning" class="fa-solid fa-pause"
+              aria-hidden="true" />
             <i v-else class="fa-solid fa-play" aria-hidden="true" />
           </BaseButton>
 
@@ -323,14 +326,9 @@ onBeforeUnmount(() => {
           </div>
 
           <div class="download-menu" @click.stop>
-            <BaseButton
-              variant="icon"
-              :disabled="!selectedSong || !!musicXmlDownloadingSongId"
-              :aria-label="t('library.downloadSong')"
-              :aria-expanded="downloadMenuOpen"
-              aria-haspopup="menu"
-              @click="toggleDownloadMenu"
-            >
+            <BaseButton variant="icon" :disabled="!selectedSong || !!musicXmlDownloadingSongId"
+              :aria-label="t('library.downloadSong')" :aria-expanded="downloadMenuOpen" aria-haspopup="menu"
+              @click="toggleDownloadMenu">
               <i v-if="musicXmlDownloadingSongId" class="fa-solid fa-spinner fa-spin" aria-hidden="true" />
               <i v-else class="fa-solid fa-download" aria-hidden="true" />
             </BaseButton>
@@ -344,22 +342,26 @@ onBeforeUnmount(() => {
                 <span>{{ t('library.downloadMusicXml') }}</span>
                 <span class="download-extension">.musicxml</span>
               </button>
-              <button type="button" role="menuitem" :disabled="!!musicXmlDownloadingSongId" @click="downloadCompressedMusicXml">
+              <button type="button" role="menuitem" :disabled="!!musicXmlDownloadingSongId"
+                @click="downloadCompressedMusicXml">
                 <span>{{ t('library.downloadMxl') }}</span>
                 <span class="download-extension">.mxl</span>
               </button>
             </div>
           </div>
-          
-          <BaseButton variant="icon" :disabled="!selectedSong" :aria-label="t('record.record')" :title="t('record.record')" @click="openRecord">
+
+          <BaseButton variant="icon" :disabled="!selectedSong" :aria-label="t('record.record')"
+            :title="t('record.record')" @click="openRecord">
             <i class="fa-solid fa-video" aria-hidden="true" />
           </BaseButton>
 
-          <BaseButton variant="icon" :disabled="!selectedSong" :aria-label="t('library.editInFreePlay')" :title="t('library.editInFreePlay')" @click="editInFreePlay">
+          <BaseButton variant="icon" :disabled="!selectedSong" :aria-label="t('library.editInFreePlay')"
+            :title="t('library.editInFreePlay')" @click="editInFreePlay">
             <i class="fa-solid fa-pen-to-square" aria-hidden="true" />
           </BaseButton>
 
-          <BaseButton variant="icon" :disabled="!selectedSong" :aria-label="t('library.deleteSong')" :title="t('library.deleteSong')" @click="deleteSong">
+          <BaseButton variant="icon" :disabled="!selectedSong" :aria-label="t('library.deleteSong')"
+            :title="t('library.deleteSong')" @click="deleteSong">
             <i class="fa-regular fa-trash-can" aria-hidden="true" />
           </BaseButton>
         </div>
@@ -367,7 +369,8 @@ onBeforeUnmount(() => {
 
       <template #right>
         <div class="header-actions">
-          <BaseButton variant="primary" class="continue-button" :disabled="!selectedSong" @click="continuePlay">{{ t('common.continue') }}</BaseButton>
+          <BaseButton variant="primary" class="continue-button" :disabled="!selectedSong" @click="continuePlay">{{
+            t('common.continue') }}</BaseButton>
         </div>
       </template>
     </BaseToolbar>
@@ -376,20 +379,20 @@ onBeforeUnmount(() => {
       <template #left>
         <FolderToggleBar />
       </template>
+      <template #center>
+        <div class="source-toggles">
+          <button class="source-toggle musicxml" :class="{ active: library.sourceMusicXmlVisible }"
+            @click="library.sourceMidiVisible ? library.toggleSourceMusicXml() : null">MusicXML</button>
+          <button class="source-toggle midi" :class="{ active: library.sourceMidiVisible }"
+            @click="library.sourceMusicXmlVisible ? library.toggleSourceMidi() : null">MIDI</button>
+        </div>
+      </template>
       <template #right>
         <div class="search-field">
-          <BaseInput
-            :model-value="library.searchQuery"
-            :placeholder="t('common.search')"
-            @update:model-value="library.setSearch($event as string)"
-          />
-          <BaseButton
-            v-if="library.searchQuery"
-            variant="icon"
-            class="search-clear-button"
-            :aria-label="t('common.clear')"
-            @click="library.setSearch('')"
-          >
+          <BaseInput :model-value="library.searchQuery" :placeholder="t('common.search')"
+            @update:model-value="library.setSearch($event as string)" />
+          <BaseButton v-if="library.searchQuery" variant="icon" class="search-clear-button"
+            :aria-label="t('common.clear')" @click="library.setSearch('')">
             <i class="fa-solid fa-xmark" aria-hidden="true" />
           </BaseButton>
         </div>
@@ -397,7 +400,8 @@ onBeforeUnmount(() => {
     </BaseToolbar>
 
     <section class="library-main">
-      <SongList :songs="library.sortedSongs" :selected-id="selectedSong?.id" @select="handleSelectSong" @play="continuePlay" />
+      <SongList :songs="library.sortedSongs" :selected-id="selectedSong?.id" @select="handleSelectSong"
+        @play="continuePlay" />
     </section>
 
     <BaseToolbar variant="footer" class="library-footer">
@@ -561,13 +565,67 @@ onBeforeUnmount(() => {
 }
 
 .library-tools :deep(.base-toolbar-center) {
-  display: none;
+  display: flex;
+  justify-content: center;
 }
 
 .library-tools :deep(.base-toolbar-right) {
-  flex: 0 0 18rem;
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
+  gap: 0.5rem;
+}
+
+.source-toggles {
+  display: flex;
+  align-items: center;
+  height: 38px;
+  padding: 3px 4px;
+  background: var(--color-bg-input, rgba(0, 0, 0, 0.35));
+  border: 1px solid var(--color-border-input, rgba(255, 255, 255, 0.16));
+  border-radius: 8px;
+  box-sizing: border-box;
+  gap: 4px;
+}
+
+.source-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  padding: 0 0.75rem;
+  border-radius: 5px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.source-toggle:hover:not(.active) {
+  color: var(--color-text-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.source-toggle.active.musicxml {
+  background: #2196f3;
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.source-toggle.active.midi {
+  background: #f44336;
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.library-tools :deep(.base-toolbar-right) {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .search-field {
@@ -715,5 +773,3 @@ onBeforeUnmount(() => {
   }
 }
 </style>
-
-

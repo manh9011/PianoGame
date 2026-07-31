@@ -129,9 +129,16 @@ export async function loadSongData(songId: string): Promise<string | undefined> 
 
 export function sortSongs(songs: SongMetadata[], key: SongSortKey, direction: SortDirection) {
   return [...songs].sort((a, b) => {
-    const result = key === 'title'
-      ? a.title.localeCompare(b.title)
-      : Number(a[key] ?? 0) - Number(b[key] ?? 0)
+    let result = 0
+    if (key === 'title') {
+      result = a.title.localeCompare(b.title)
+    } else if (key === 'source') {
+      const aType = a.sourceType === 'musicxml' || a.sourceType === 'hybrid' || a.hasMusicXmlSource ? 'musicxml' : 'midi'
+      const bType = b.sourceType === 'musicxml' || b.sourceType === 'hybrid' || b.hasMusicXmlSource ? 'musicxml' : 'midi'
+      result = aType.localeCompare(bType)
+    } else {
+      result = Number(a[key] ?? 0) - Number(b[key] ?? 0)
+    }
     const directed = direction === 'asc' ? result : -result
     return directed || a.title.localeCompare(b.title)
   })

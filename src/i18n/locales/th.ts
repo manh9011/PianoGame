@@ -894,6 +894,7 @@ export const th = {
       playCount: "จำนวนครั้งที่เล่น",
       rating: "คะแนน",
       difficulty: "ความยาก",
+      source: 'Format',
     },
   },
 } satisfies LocaleMessages
