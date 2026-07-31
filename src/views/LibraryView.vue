@@ -213,12 +213,25 @@ async function downloadCompressedMusicXml() {
   }
 }
 
+function formatDuration(durationUs: number) {
+  if (!Number.isFinite(durationUs) || durationUs <= 0) return '0:00'
+  const totalSeconds = Math.round(durationUs / 1_000_000)
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`
+}
+
 async function deleteSong() {
   const song = selectedSong.value
   if (!song) return
   if (settings.advancedConfirmBeforeDestructiveAction) {
     const confirmed = await confirm({
-      message: t('library.deleteConfirm', { title: song.title }),
+      title: t('library.deleteConfirmTitle'),
+      message: t('library.deleteConfirmMessage', {
+        title: song.title,
+        duration: formatDuration(song.duration),
+        playCount: song.playCount ?? 0,
+      }),
       confirmLabel: t('common.delete'),
       cancelLabel: t('common.cancel'),
       tone: 'danger',

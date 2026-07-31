@@ -13,17 +13,17 @@ const emit = defineEmits<{
 }>()
 
 const links = [
-  { name: 'Youtube', url: 'https://youtube.com/@MLX-Piano' },
-  { name: 'Facebook', url: 'https://facebook.com/mlx.piano' },
-  { name: 'GitHub', url: 'https://github.com/manh9011' },
+  { name: 'Youtube', url: 'https://youtube.com/@MLX-Piano', domain: 'youtube.com' },
+  { name: 'Facebook', url: 'https://facebook.com/mlx.piano', domain: 'facebook.com' },
+  { name: 'GitHub', url: 'https://github.com/manh9011', domain: 'github.com' },
 
-  { name: 'Musescore', url: 'https://manh9011.qzz.io' },
-  { name: 'Itch.IO', url: 'https://manh9011.itch.io' },
-  { name: 'Buy Me A Coffee', url: 'https://www.buymeacoffee.com/manh9011' },
+  { name: 'Musescore', url: 'https://manh9011.qzz.io', domain: 'musescore.com' },
+  { name: 'Itch.IO', url: 'https://manh9011.itch.io', domain: 'itch.io' },
+  { name: 'Buy Me A Coffee', url: 'https://www.buymeacoffee.com/manh9011', domain: 'buymeacoffee.com' },
 
-  { name: 'MyMusic5', url: 'https://mymusic5.com/manh9011' },
-  { name: 'KoKoMusic', url: 'https://www.kokomu.jp/artist/manh9011' },
-  { name: 'Mapiainist', url: 'https://www.mapianist.com/profile/1405145' },
+  { name: 'MyMusic5', url: 'https://mymusic5.com/manh9011', domain: 'mymusic5.com' },
+  { name: 'KoKoMusic', url: 'https://www.kokomu.jp/artist/manh9011', domain: 'kokomu.jp' },
+  { name: 'Mapiainist', url: 'https://www.mapianist.com/profile/1405145', domain: 'mapianist.com' },
 ]
 
 function openLink(url: string) {
@@ -48,7 +48,8 @@ function openLink(url: string) {
           <div class="links-grid">
             <BaseButton v-for="link in links" :key="link.name" variant="secondary" class="link-button"
               @click="openLink(link.url)">
-              {{ link.name }}
+              <img :src="`https://www.google.com/s2/favicons?domain=${link.domain}&sz=64`" class="favicon" alt="" />
+              <span>{{ link.name }}</span>
             </BaseButton>
           </div>
         </main>
@@ -130,5 +131,12 @@ function openLink(url: string) {
 
 .link-button {
   width: 100%;
+}
+
+.favicon {
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
+  object-fit: contain;
 }
 </style>

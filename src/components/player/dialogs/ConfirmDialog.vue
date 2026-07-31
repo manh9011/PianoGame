@@ -40,6 +40,7 @@ watch(
         <button ref="cancelButtonRef" type="button" class="confirm-dialog__cancel" @click="confirmStore.cancel()">
           {{ cancelLabel }}
         </button>
+        <h3 v-if="confirmStore.title" class="confirm-dialog__title">{{ confirmStore.title }}</h3>
       </div>
       <p id="confirm-dialog-message" class="confirm-dialog__message">{{ confirmStore.message }}</p>
       <button type="submit" :class="confirmButtonClass">
@@ -61,6 +62,23 @@ watch(
 .confirm-dialog__topbar {
   display: flex;
   justify-content: flex-start;
+  align-items: center;
+  position: relative;
+}
+
+.confirm-dialog__title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 60%;
 }
 
 .confirm-dialog__cancel {

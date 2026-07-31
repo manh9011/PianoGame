@@ -32,8 +32,8 @@
   --color-btn-secondary-bg: #5D5D5D;
   --color-btn-secondary-hover: #7a7a7a;
   --color-btn-secondary-text: #d0d0d0;
-  --color-btn-danger-bg: #c55a5a;
-  --color-btn-danger-hover: #d56a6a;
+  --color-btn-danger-bg: #992323;
+  --color-btn-danger-hover: #b82b2b;
   --color-btn-danger-text: #ffffff;
 
   /* === BORDER === */
@@ -133,8 +133,8 @@
   --color-btn-secondary-bg: #d8d8d8;
   --color-btn-secondary-hover: #c8c8c8;
   --color-btn-secondary-text: #2c2c2c;
-  --color-btn-danger-bg: #d56a6a;
-  --color-btn-danger-hover: #c55a5a;
+  --color-btn-danger-bg: #992323;
+  --color-btn-danger-hover: #b82b2b;
   --color-btn-danger-text: #ffffff;
 
   /* === BORDER === */
