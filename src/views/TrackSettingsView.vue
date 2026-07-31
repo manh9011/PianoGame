@@ -2,6 +2,8 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
+import { isTauri } from '@tauri-apps/api/core'
+import { openUrl } from '@tauri-apps/plugin-opener'
 import { usePlayerStore } from '../stores/playerStore'
 import { useLibraryStore } from '../stores/libraryStore'
 import { useSettingsStore } from '../stores/settingsStore'
@@ -169,9 +171,13 @@ onBeforeUnmount(() => {
 
 import { useShortcuts } from '../composables/useShortcuts'
 
-function openHelpGuide() {
+async function openHelpGuide() {
   const url = 'https://synthesia.app/support/guide/SongSetup'
-  window.open(url, '_blank', 'noopener,noreferrer')
+  if (isTauri()) {
+    await openUrl(url)
+  } else {
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }
 }
 
 useShortcuts({

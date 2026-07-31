@@ -16,6 +16,7 @@
     "dependencies": {
         "@fortawesome/fontawesome-free": "^7.3.0",
         "@tauri-apps/api": "^2.11.0",
+        "@tauri-apps/plugin-opener": "^2.5.4",
         "@tauri-apps/plugin-shell": "^2.3.5",
         "@tonejs/midi": "^2.0.28",
         "@vercel/analytics": "^2.0.1",

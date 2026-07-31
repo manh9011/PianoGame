@@ -2,7 +2,7 @@
 import { useI18n } from 'vue-i18n'
 import BaseButton from '../ui/BaseButton.vue'
 import { isTauri } from '@tauri-apps/api/core'
-import { open } from '@tauri-apps/plugin-shell'
+import { openUrl } from '@tauri-apps/plugin-opener'
 
 const { t } = useI18n()
 
@@ -30,7 +30,7 @@ const links = [
 
 async function openLink(url: string) {
   if (isTauri()) {
-    await open(url)
+    await openUrl(url)
   } else {
     window.open(url, '_blank')
   }

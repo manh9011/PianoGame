@@ -29,7 +29,8 @@ function showHelp() {
       </BaseButton>
     </header>
     <main class="content">
-      <iframe src="https://transkun-web.vercel.app/" frameborder="0" class="transkun-iframe"></iframe>
+      <iframe src="https://transkun-web.vercel.app/" frameborder="0"
+        sandbox="allow-scripts allow-same-origin allow-downloads" class="transkun-iframe"></iframe>
     </main>
   </div>
 </template>
