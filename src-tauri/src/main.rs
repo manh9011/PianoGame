@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-  pianogame_lib::run();
+    pianogame_lib::run();
 }

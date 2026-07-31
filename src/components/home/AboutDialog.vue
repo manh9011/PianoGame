@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import BaseButton from '../ui/BaseButton.vue'
+import { isTauri } from '@tauri-apps/api/core'
+import { open } from '@tauri-apps/plugin-shell'
 
 const { t } = useI18n()
 
@@ -26,8 +28,12 @@ const links = [
   { name: 'Mapiainist', url: 'https://www.mapianist.com/profile/1405145', domain: 'mapianist.com' },
 ]
 
-function openLink(url: string) {
-  window.open(url, '_blank')
+async function openLink(url: string) {
+  if (isTauri()) {
+    await open(url)
+  } else {
+    window.open(url, '_blank')
+  }
 }
 </script>
 

@@ -165,53 +165,6 @@ jobs:
           prerelease: ${{ contains(env.RELEASE_TAG, '-') }}
           args: ${{ matrix.args }}
 
-      - name: Initialize Android project if needed
-        if: matrix.kind == 'android' && hashFiles('src-tauri/gen/android/**') == ''
-        run: npm run tauri:android:init
-
-      - name: Patch Android manifest and icons
-        if: matrix.kind == 'android'
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          manifest_path="src-tauri/gen/android/app/src/main/AndroidManifest.xml"
-          res_dir="src-tauri/gen/android/app/src/main/res"
-
-          if [ ! -f "$manifest_path" ]; then
-            echo "AndroidManifest.xml not found at $manifest_path" >&2
-            exit 1
-          fi
-
-          mkdir -p "$res_dir"
-          cp -R src-tauri/icons/android/. "$res_dir/"
-          python <<'PY'
-          from pathlib import Path
-          import re
-
-          manifest = Path('src-tauri/gen/android/app/src/main/AndroidManifest.xml')
-          text = manifest.read_text(encoding='utf-8')
-
-          if re.search(r'android:icon="[^"]+"', text):
-              text = re.sub(r'android:icon="[^"]+"', 'android:icon="@mipmap/ic_launcher"', text, count=1)
-          else:
-              text = text.replace('<application', '<application\n        android:icon="@mipmap/ic_launcher"', 1)
-
-          if re.search(r'android:roundIcon="[^"]+"', text):
-              text = re.sub(r'android:roundIcon="[^"]+"', 'android:roundIcon="@mipmap/ic_launcher_round"', text, count=1)
-          else:
-              text = text.replace('<application', '<application\n        android:roundIcon="@mipmap/ic_launcher_round"', 1)
-
-
-          if re.search(r'android:screenOrientation="[^"]+"', text):
-              text = re.sub(r'android:screenOrientation="[^"]+"', 'android:screenOrientation="landscape"', text, count=1)
-          else:
-              text = text.replace('<activity', '<activity\n            android:screenOrientation="landscape"', 1)
-
-          manifest.write_text(text, encoding='utf-8')
-          PY
-
-
       - name: Build Android APK
         if: matrix.kind == 'android'
         run: npm run tauri:android:build
