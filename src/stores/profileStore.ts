@@ -175,6 +175,13 @@ export const useProfileStore = defineStore('profiles', {
       }
       this.persist()
     },
+    clearTrackSettings(songId: string) {
+      const p = this.activeProfile
+      if (p.trackSettingsBySongId && p.trackSettingsBySongId[songId]) {
+        delete p.trackSettingsBySongId[songId]
+        this.persist()
+      }
+    },
     currentTrackSelectionKey(songId: string) {
       return trackSelectionKeyForTracks(this.trackSettingsFor(songId)?.tracks)
     },

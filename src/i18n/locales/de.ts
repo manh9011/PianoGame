@@ -370,6 +370,10 @@ export const de = {
     copySettingsByDragging: "Kopiere Einstellungen, indem du sie ziehst.",
     autoColor: "Automatische Farbe",
     custom: "Benutzerdefiniert",
+    resetConfirmTitle: 'Spureinstellungen zurücksetzen',
+    resetConfirmMessage: 'Möchten Sie wirklich alle Instrumente, Farben und Konfigurationen der Spuren auf die MIDI-Datei-Standardwerte zurücksetzen?',
+    resetConfirmYes: 'Zurücksetzen',
+    applyToAll: 'Alle',
   },
   dialogs: {
     keyboardRangeInstruction: "Ziehe im Bereich der fallenden Noten, um die Tastatur zu verschieben. Passe den Zoom unten an.",

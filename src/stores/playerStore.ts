@@ -517,12 +517,13 @@ export const usePlayerStore = defineStore('player', {
         const info = midi.tracks.find(track => track.trackId === trackId)
         const trackNotes = notes.filter(note => note.trackId === trackId)
         const hands = [...new Set(trackNotes.map(note => note.hand).filter(hand => hand === 'left' || hand === 'right'))]
-        const role = info?.isPercussion ? 'background' : hands.length === 1 ? hands[0] : hands.length > 1 ? 'background' : undefined
+        const isPercussion = Boolean(info?.isPercussion || info?.channel === 9)
+        const role = isPercussion ? 'background' : hands.length === 1 ? hands[0] : hands.length > 1 ? 'background' : undefined
         return {
           trackId,
           instrumentProgram: info?.instrumentProgram,
           role,
-          percussion: info?.isPercussion,
+          percussion: isPercussion,
         }
       }))
       const tempoMap = buildTempoMap(midi)

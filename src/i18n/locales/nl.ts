@@ -370,6 +370,10 @@ export const nl = {
     copySettingsByDragging: "Kopieer instellingen door ze te slepen.",
     autoColor: "Automatische kleur",
     custom: "Aangepast",
+    resetConfirmTitle: 'Spoorinstellingen resetten',
+    resetConfirmMessage: 'Weet je zeker dat je alle instrumenten, kleuren en configuraties van de sporen wilt resetten naar de standaardwaarden van het MIDI-bestand?',
+    resetConfirmYes: 'Resetten',
+    applyToAll: 'Allen',
   },
   dialogs: {
     keyboardRangeInstruction: "Sleep in het gebied met vallende noten om het toetsenbord te verschuiven. Pas hieronder de zoom aan.",

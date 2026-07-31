@@ -370,6 +370,10 @@ export const tr = {
     copySettingsByDragging: "Ayarları sürükleyerek kopyalayın.",
     autoColor: "Otomatik renk",
     custom: "Özel",
+    resetConfirmTitle: 'Parça ayarlarını sıfırla',
+    resetConfirmMessage: 'Tüm parçaların enstrümanlarını, renklerini ve yapılandırmalarını MIDI dosyası varsayılanlarına sıfırlamak istediğinizden emin misiniz?',
+    resetConfirmYes: 'Sıfırla',
+    applyToAll: 'Tümü',
   },
   dialogs: {
     keyboardRangeInstruction: "Klavyeyi kaydırmak için düşen nota alanında sürükleyin. Yakınlaştırmayı aşağıdan ayarlayın.",

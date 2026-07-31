@@ -370,6 +370,10 @@ export const hi = {
     copySettingsByDragging: "खींचकर सेटिंग्स कॉपी करें।",
     autoColor: "स्वचालित रंग",
     custom: "कस्टम",
+    resetConfirmTitle: 'ट्रैक सेटिंग रीसेट करें',
+    resetConfirmMessage: 'क्या आप वाकई सभी ट्रैक के वाद्य यंत्र, रंग और कॉन्फ़िगरेशन को MIDI फ़ाइल के डिफ़ॉल्ट पर रीसेट करना चाहते हैं?',
+    resetConfirmYes: 'रीसेट',
+    applyToAll: 'सभी',
   },
   dialogs: {
     keyboardRangeInstruction: "कीबोर्ड को पैन करने के लिए गिरते नोट क्षेत्र में खींचें। नीचे ज़ूम समायोजित करें।",

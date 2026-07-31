@@ -370,6 +370,10 @@ export const vi = {
     copySettingsByDragging: "Sao chép cài đặt bằng cách kéo thả.",
     autoColor: "Tự động tô màu",
     custom: "Tùy chỉnh",
+    resetConfirmTitle: 'Đặt lại thiết lập track',
+    resetConfirmMessage: 'Bạn có chắc chắn muốn đặt lại nhạc cụ, màu sắc và cấu hình của toàn bộ track về mặc định của file MIDI không?',
+    resetConfirmYes: 'Đặt lại',
+    applyToAll: 'Tất cả',
   },
   dialogs: {
     keyboardRangeInstruction: "Kéo trong vùng nốt rơi để dịch chuyển bàn phím. Điều chỉnh mức thu phóng bên dưới.",

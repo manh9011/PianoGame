@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { GM_INSTRUMENT_GROUPS, getInstrumentEmoji } from '../../../modules/audio/gmInstrumentCatalog'
 
@@ -135,22 +135,34 @@ function close() {
 }
 
 .family-item {
-  min-height: 32px;
+  min-height: 28px;
+  height: 29px;
   padding: 0 10px;
   border: 0;
-  border-bottom: 1px solid #242424;
-  background: var(--color-bg-card);
-  color: var(--color-text-primary);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.65);
   text-align: left;
-  font-size: 0.9rem;
+  font-size: 0.83rem;
   cursor: pointer;
   border-radius: 0;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
 }
 
-.family-item:hover,
+.family-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
 .family-item.active {
-  background: var(--color-bg-elevated);
-  color: var(--color-text-inverse);
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  font-weight: 700;
+  border-left: 3px solid #fce94f;
+  padding-left: 7px;
 }
 
 .instrument-list {

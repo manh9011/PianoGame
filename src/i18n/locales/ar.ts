@@ -370,6 +370,10 @@ export const ar = {
     copySettingsByDragging: "انسخ الإعدادات عن طريق سحبها.",
     autoColor: "لون تلقائي",
     custom: "مخصص",
+    resetConfirmTitle: 'إعادة ضبط إعدادات المسارات',
+    resetConfirmMessage: 'هل أنت متأكد أنك تريد إعادة ضبط جميع الآلات والألوان والإعدادات إلى الإعدادات الافتراضية لملف MIDI؟',
+    resetConfirmYes: 'إعادة ضبط',
+    applyToAll: 'الكل',
   },
   dialogs: {
     keyboardRangeInstruction: "اسحب في منطقة النغمات الهابطة لتحريك لوحة المفاتيح. اضبط التكبير أدناه.",

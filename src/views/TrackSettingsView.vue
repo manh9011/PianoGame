@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { usePlayerStore } from '../stores/playerStore'
 import { useLibraryStore } from '../stores/libraryStore'
 import { useSettingsStore } from '../stores/settingsStore'
+import { useProfileStore } from '../stores/profileStore'
+import { useConfirmDialog } from '../composables/useConfirmDialog'
 import TrackConfigPanel from '../components/player/track-config/TrackConfigPanel.vue'
 import BaseToolbar from '../components/ui/BaseToolbar.vue'
 import BaseButton from '../components/ui/BaseButton.vue'
@@ -15,6 +17,8 @@ const { t } = useI18n()
 const library = useLibraryStore()
 const player = usePlayerStore()
 const settings = useSettingsStore()
+const profileStore = useProfileStore()
+const confirm = useConfirmDialog()
 
 function back() {
   player.stopTrackPreview()
@@ -49,8 +53,83 @@ async function ensureSongLoaded() {
   }
 }
 
-function reset() {
+async function reset() {
+  const confirmed = await confirm.confirm({
+    title: t('trackSettings.resetConfirmTitle'),
+    message: t('trackSettings.resetConfirmMessage'),
+    confirmLabel: t('trackSettings.resetConfirmYes'),
+    cancelLabel: t('common.cancel'),
+  })
+  if (!confirmed) return
   player.stopTrackPreview()
+  if (player.song) {
+    profileStore.clearTrackSettings(player.song.id)
+    await player.loadSong(player.song, settings.defaultSpeed, settings.showDuration, settings.octaveShift)
+  }
+}
+
+export type DragType = 'instrument' | 'role' | 'color' | 'mode'
+
+const isDragging = ref(false)
+const dragType = ref<DragType | null>(null)
+const dragValue = ref<any>(null)
+const draggedTrackId = ref<number | null>(null)
+
+function handleDragStart(type: DragType, value: any, trackId: number) {
+  isDragging.value = true
+  dragType.value = type
+  dragValue.value = value
+  draggedTrackId.value = trackId
+}
+
+function handleDragEnd() {
+  isDragging.value = false
+  dragType.value = null
+  dragValue.value = null
+  draggedTrackId.value = null
+}
+
+function handleDropAll(event: DragEvent) {
+  event.preventDefault()
+  if (!dragType.value || dragValue.value === null || dragValue.value === undefined) return
+  const type = dragType.value
+  const val = dragValue.value
+
+  player.session?.tracks.forEach(track => {
+    if (track.trackId !== draggedTrackId.value) {
+      if (type === 'instrument') {
+        player.setTrackInstrument(track.trackId, Number(val))
+      } else if (type === 'role') {
+        player.setTrackRole(track.trackId, val)
+      } else if (type === 'color') {
+        player.setTrackColor(track.trackId, val)
+      } else if (type === 'mode') {
+        player.setTrackMode(track.trackId, val)
+      }
+    }
+  })
+  handleDragEnd()
+}
+
+function handleDropReset(event: DragEvent) {
+  event.preventDefault()
+  if (draggedTrackId.value === null || !dragType.value) return
+  const trackId = draggedTrackId.value
+  const type = dragType.value
+  const track = player.session?.tracks.find(t => t.trackId === trackId)
+
+  if (track) {
+    if (type === 'instrument' && track.defaultInstrumentProgram !== undefined) {
+      player.setTrackInstrument(trackId, track.defaultInstrumentProgram)
+    } else if (type === 'role' && track.defaultRole !== undefined) {
+      player.setTrackRole(trackId, track.defaultRole)
+    } else if (type === 'color' && track.defaultColor !== undefined) {
+      player.setTrackColor(trackId, track.defaultColor)
+    } else if (type === 'mode' && track.defaultMode !== undefined) {
+      player.setTrackMode(trackId, track.defaultMode)
+    }
+  }
+  handleDragEnd()
 }
 
 function autoColor() {
@@ -90,6 +169,11 @@ onBeforeUnmount(() => {
 
 import { useShortcuts } from '../composables/useShortcuts'
 
+function openHelpGuide() {
+  const url = 'https://synthesia.app/support/guide/SongSetup'
+  window.open(url, '_blank', 'noopener,noreferrer')
+}
+
 useShortcuts({
   menuBack: back,
 })
@@ -100,28 +184,42 @@ useShortcuts({
     <BaseToolbar variant="header" class="track-header">
       <template #left>
         <BaseButton variant="secondary" @click="back">{{ t('common.back') }}</BaseButton>
-        <BaseButton variant="secondary">{{ t('play.help') }}</BaseButton>
       </template>
       <template #center>
         <h1 class="track-title">{{ t('trackSettings.title') }}</h1>
+      </template>
+      <template #right>
+        <BaseButton variant="secondary" @click="openHelpGuide">{{ t('play.help') }}</BaseButton>
       </template>
     </BaseToolbar>
 
     <main class="tracks-container">
       <div class="track-panel-shell">
-        <TrackConfigPanel variant="standalone" :allow-role-edit="true" />
+        <TrackConfigPanel variant="standalone" :allow-role-edit="true" 
+          @drag-start="handleDragStart" 
+          @drag-end="handleDragEnd" />
       </div>
     </main>
 
-    <BaseToolbar variant="footer" class="track-footer">
+    <BaseToolbar variant="footer" class="track-footer" :class="{ 'dragging-active': isDragging }">
       <template #left>
-        <BaseButton variant="secondary" @click="reset">
+        <BaseButton variant="secondary" @click="reset"
+          @dragover.prevent
+          @dragenter.prevent
+          @drop="handleDropReset"
+          :class="{ 'drop-zone': isDragging }">
           <i class="fas fa-bolt"></i>
           {{ t('trackSettings.reset') }}
         </BaseButton>
       </template>
       <template #center>
-        <span class="footer-text">{{ t('trackSettings.copySettingsByDragging') }}</span>
+        <BaseButton v-if="isDragging" variant="secondary" class="drop-zone drop-zone-center"
+          @dragover.prevent
+          @dragenter.prevent
+          @drop="handleDropAll">
+          {{ t('trackSettings.applyToAll') }}
+        </BaseButton>
+        <span v-else class="footer-text">{{ t('trackSettings.copySettingsByDragging') }}</span>
       </template>
       <template #right>
         <BaseButton variant="secondary" class="auto-color" @click="autoColor">{{ t('trackSettings.autoColor') }}</BaseButton>
@@ -174,6 +272,22 @@ useShortcuts({
   .footer-text {
     text-align: left;
   }
+}
+
+.drop-zone {
+  box-shadow: 0 0 12px rgba(252, 233, 79, 0.6) !important;
+  border: 1px solid #fce94f !important;
+  transition: all 0.2s ease;
+}
+
+.drop-zone:hover, .drop-zone:dragover {
+  background: rgba(252, 233, 79, 0.2) !important;
+  transform: scale(1.05);
+}
+
+.drop-zone-center {
+  padding: 0.4rem 1.5rem;
+  font-weight: 700;
 }
 </style>
 

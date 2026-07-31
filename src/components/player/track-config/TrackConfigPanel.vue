@@ -18,6 +18,13 @@ const props = withDefaults(defineProps<Props>(), {
   variant: 'dialog',
 })
 
+export type DragType = 'instrument' | 'role' | 'color' | 'mode'
+
+const emit = defineEmits<{
+  (e: 'drag-start', type: DragType, value: any, trackId: number): void
+  (e: 'drag-end'): void
+}>()
+
 interface TrackData {
   trackId: number
   instrumentProgram: number
@@ -39,6 +46,7 @@ const showColorPicker = ref(false)
 const showInstrumentDialog = ref(false)
 const showRoleDialog = ref(false)
 const selectedTrackId = ref<number | null>(null)
+const draggedOverTrackId = ref<number | null>(null)
 const nestedPopupStyle = ref({ top: '0px', left: '0px' })
 const nestedArrowStyle = ref<{ top: string; left?: string; right?: string }>({ top: '0px', right: '-7px' })
 const nestedArrowPlacement = ref<'left' | 'right'>('right')
@@ -188,6 +196,115 @@ function toggleSound(trackId: number) {
 function isSounded(mode: TrackMode) {
   return isTrackSounded(mode)
 }
+
+function createCustomGhost(event: DragEvent, text: string, iconHtml: string, color: string) {
+  if (!event.dataTransfer) return
+
+  const ghost = document.createElement('div')
+  ghost.style.position = 'fixed'
+  ghost.style.top = '-1000px'
+  ghost.style.left = '-1000px'
+  ghost.style.padding = '8px 14px'
+  ghost.style.borderRadius = '10px'
+  ghost.style.background = color || '#2e3436'
+  ghost.style.color = '#ffffff'
+  ghost.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.45)'
+  ghost.style.display = 'flex'
+  ghost.style.alignItems = 'center'
+  ghost.style.gap = '8px'
+  ghost.style.fontFamily = 'sans-serif'
+  ghost.style.fontSize = '0.9rem'
+  ghost.style.fontWeight = '600'
+  ghost.style.border = '1px solid rgba(255, 255, 255, 0.3)'
+  ghost.style.textShadow = '0 1px 3px rgba(0, 0, 0, 0.8)'
+  ghost.style.pointerEvents = 'none'
+
+  ghost.innerHTML = `${iconHtml}<span>${text}</span>`
+  document.body.appendChild(ghost)
+
+  event.dataTransfer.setDragImage(ghost, 20, 20)
+
+  setTimeout(() => {
+    ghost.remove()
+  }, 0)
+}
+
+function onDragStart(event: DragEvent, type: DragType, value: any, track: TrackData) {
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'copy'
+    const payload = JSON.stringify({ type, value, trackId: track.trackId })
+    event.dataTransfer.setData('application/json', payload)
+    event.dataTransfer.setData('text/plain', payload)
+
+    let text = ''
+    let iconHtml = ''
+    if (type === 'instrument') {
+      text = track.instrumentName
+      iconHtml = `<span style="font-size: 1.1rem; line-height: 1;">${track.instrumentEmoji}</span>`
+    } else if (type === 'role') {
+      text = t(roleLabelKeys[track.predominantHand])
+      const iconClass = track.predominantHand === 'background' ? 'fas fa-cog' : 'fas fa-hand-paper'
+      const flipped = track.predominantHand === 'left' ? 'display: inline-block; transform: scaleX(-1);' : ''
+      iconHtml = `<i class="${iconClass}" style="${flipped}"></i>`
+    } else if (type === 'color') {
+      text = colorName(track.color)
+      iconHtml = `<i class="fas fa-keyboard"></i>`
+    } else if (type === 'mode') {
+      const sounded = isSounded(track.mode)
+      text = sounded ? t('trackSettings.sounded') : t('trackSettings.muted')
+      iconHtml = `<i class="${sounded ? 'fas fa-volume-up' : 'fas fa-times'}"></i>`
+    }
+
+    createCustomGhost(event, text, iconHtml, track.color)
+  }
+  emit('drag-start', type, value, track.trackId)
+}
+
+function onDragEnd() {
+  draggedOverTrackId.value = null
+  emit('drag-end')
+}
+
+let dragTimeout: number | undefined
+
+function handleDragOver(trackId: number) {
+  clearTimeout(dragTimeout)
+  draggedOverTrackId.value = trackId
+}
+
+function handleDragLeave(trackId: number) {
+  if (draggedOverTrackId.value === trackId) {
+    dragTimeout = window.setTimeout(() => {
+      draggedOverTrackId.value = null
+    }, 50)
+  }
+}
+
+function handleDrop(event: DragEvent, targetTrackId: number) {
+  event.preventDefault()
+  draggedOverTrackId.value = null
+  const jsonStr = event.dataTransfer?.getData('application/json') || event.dataTransfer?.getData('text/plain')
+  if (!jsonStr) return
+  try {
+    const data = JSON.parse(jsonStr)
+    if (!data || !data.type) return
+    const { type, value } = data
+    if (type === 'instrument') {
+      player.setTrackInstrument(targetTrackId, Number(value))
+    } else if (type === 'role') {
+      player.setTrackRole(targetTrackId, value)
+    } else if (type === 'color') {
+      player.setTrackColor(targetTrackId, value)
+    } else if (type === 'mode') {
+      player.setTrackMode(targetTrackId, value)
+    }
+  } catch (e) {
+    const program = parseInt(jsonStr, 10)
+    if (!isNaN(program)) {
+      player.setTrackInstrument(targetTrackId, program)
+    }
+  }
+}
 </script>
 
 <template>
@@ -200,11 +317,18 @@ function isSounded(mode: TrackMode) {
 
     <div :class="variant === 'standalone' ? 'track-grid' : 'track-list'">
       <section v-for="track in tracksData" :key="track.trackId" class="track-card"
-        :style="{ '--track-color': track.color }">
+        :class="{ 'drag-over': draggedOverTrackId === track.trackId }"
+        :style="{ '--track-color': track.color }"
+        @dragover.prevent="handleDragOver(track.trackId)"
+        @dragleave.prevent="handleDragLeave(track.trackId)"
+        @drop="(event) => handleDrop(event, track.trackId)">
         <div class="track-accent"></div>
 
         <div class="track-card-header">
           <button class="track-icon" :title="t('trackSettings.selectInstrument')"
+            draggable="true"
+            @dragstart="(event) => onDragStart(event, 'instrument', track.instrumentProgram, track)"
+            @dragend="onDragEnd"
             @click="(event) => openInstrumentDialog(event, track.trackId)">
             <span class="track-emoji-wrap">
               <span class="track-emoji" :style="emojiStyle">{{ track.instrumentEmoji }}</span>
@@ -224,17 +348,28 @@ function isSounded(mode: TrackMode) {
 
         <div class="track-controls">
           <button class="control-btn" :class="{ disabled: !allowRoleEdit }" type="button" :disabled="!allowRoleEdit"
+            draggable="true"
+            @dragstart="(event) => onDragStart(event, 'role', track.role, track)"
+            @dragend="onDragEnd"
             @click="(event) => openRoleDialog(event, track.trackId)">
             <i
               :class="[track.predominantHand === 'background' ? 'fas fa-cog' : 'fas fa-hand-paper', { flipped: track.predominantHand === 'left' }]" />
             <span>{{ t(roleLabelKeys[track.predominantHand]) }}</span>
           </button>
-          <button class="control-btn" type="button" @click="(event) => openColorPicker(event, track.trackId)">
+          <button class="control-btn" type="button"
+            draggable="true"
+            @dragstart="(event) => onDragStart(event, 'color', track.color, track)"
+            @dragend="onDragEnd"
+            @click="(event) => openColorPicker(event, track.trackId)">
             <span class="keyboard-icon"><i class="fas fa-keyboard"></i></span>
             <span>{{ colorName(track.color) }}</span>
           </button>
           <button class="control-btn" :class="{ muted: !isSounded(track.mode), danger: !isSounded(track.mode) }"
-            type="button" @click="toggleSound(track.trackId)">
+            type="button"
+            draggable="true"
+            @dragstart="(event) => onDragStart(event, 'mode', track.mode, track)"
+            @dragend="onDragEnd"
+            @click="toggleSound(track.trackId)">
             <i :class="isSounded(track.mode) ? 'fas fa-volume-up' : 'fas fa-times'" />
             <span>{{ isSounded(track.mode) ? t('trackSettings.sounded') : t('trackSettings.muted') }}</span>
           </button>
@@ -316,6 +451,15 @@ function isSounded(mode: TrackMode) {
     0 2px 0 rgba(255, 255, 255, 0.18) inset,
     0 -1px 0 rgba(0, 0, 0, 0.26) inset,
     0 10px 18px rgba(0, 0, 0, 0.22);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.track-card.drag-over {
+  transform: scale(1.05);
+  box-shadow: 
+    0 0 0 4px #fce94f,
+    0 15px 25px rgba(0, 0, 0, 0.35);
+  z-index: 10;
 }
 
 .track-accent {
@@ -362,16 +506,24 @@ function isSounded(mode: TrackMode) {
   padding: 0;
   border: 0;
   border-radius: 8px;
-  background: rgba(0, 0, 0, 0.18);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset;
+  background: rgba(0, 0, 0, 0.2);
+  box-shadow: 
+    inset 0 3px 5px rgba(0, 0, 0, 0.35),
+    inset 0 1px 2px rgba(0, 0, 0, 0.5),
+    0 1px 0 rgba(255, 255, 255, 0.25);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.1s ease;
 }
 
 .track-icon:hover {
-  background: rgba(0, 0, 0, 0.28);
+  background: rgba(0, 0, 0, 0.3);
+  box-shadow: 
+    inset 0 4px 6px rgba(0, 0, 0, 0.45),
+    inset 0 1px 2px rgba(0, 0, 0, 0.6),
+    0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 .track-emoji-wrap {

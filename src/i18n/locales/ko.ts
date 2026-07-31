@@ -370,6 +370,10 @@ export const ko = {
     copySettingsByDragging: "드래그하여 설정을 복사하세요.",
     autoColor: "자동 색상",
     custom: "사용자 지정",
+    resetConfirmTitle: '트랙 설정 초기화',
+    resetConfirmMessage: '모든 트랙의 악기, 색상 및 설정을 MIDI 파일 기본값으로 초기화하시겠습니까?',
+    resetConfirmYes: '초기화',
+    applyToAll: '전체',
   },
   dialogs: {
     keyboardRangeInstruction: "떨어지는 노트 영역에서 드래그해 키보드를 이동하세요. 아래에서 확대/축소를 조정합니다.",

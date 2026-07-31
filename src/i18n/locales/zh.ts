@@ -370,6 +370,10 @@ export const zh = {
     copySettingsByDragging: "拖拽即可复制设置。",
     autoColor: "自动配色",
     custom: "自定义",
+    resetConfirmTitle: '重置轨道设置',
+    resetConfirmMessage: '确定要将所有轨道的乐器、颜色和配置重置为 MIDI 文件的默认值吗？',
+    resetConfirmYes: '重置',
+    applyToAll: '全部',
   },
   dialogs: {
     keyboardRangeInstruction: "在下落音符区域拖动以平移键盘。可在下方调整缩放。",

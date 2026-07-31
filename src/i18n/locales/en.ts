@@ -369,6 +369,10 @@ export const en = {
     copySettingsByDragging: 'Copy settings by dragging them.',
     autoColor: 'Auto Color',
     custom: 'Custom',
+    resetConfirmTitle: 'Reset Track Settings',
+    resetConfirmMessage: 'Are you sure you want to reset all track instruments, colors, and configurations to the MIDI file defaults?',
+    resetConfirmYes: 'Reset',
+    applyToAll: 'All',
   },
   dialogs: {
     keyboardRangeInstruction: 'Drag in the falling note area to pan the keyboard. Adjust the zoom below.',

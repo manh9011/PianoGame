@@ -13,6 +13,10 @@ export interface TrackProperties {
   handAssignment?: HandAssignment
   role?: TrackRole
   instrumentProgram: number
+  defaultInstrumentProgram?: number
+  defaultRole?: TrackRole
+  defaultColor?: string
+  defaultMode?: TrackMode
 }
 export interface TrackPropertyDefaults { trackId: number; instrumentProgram?: number; role?: TrackRole; percussion?: boolean }
 export const TRACK_MODES: TrackMode[] = ['playedAutomatically', 'youPlay', 'playedButHidden', 'notPlayed']
@@ -83,15 +87,23 @@ export function createDefaultTrackProperties(trackIdsOrDefaults: Array<number | 
     const defaults = typeof entry === 'number' ? { trackId: entry } : entry
     const percussion = defaults.percussion ?? percussionTracks.has(defaults.trackId)
     const role = defaults.role ?? (percussion ? 'background' : undefined)
+    const defaultColor = defaultTrackColor(role, i)
+    const defaultMode: TrackMode = percussion ? 'playedButHidden' : roleToTrackMode(role, 'listen')
+    const rawProgram = defaults.instrumentProgram
+    const defaultProgram = (percussion && (!rawProgram || rawProgram === 0)) ? 118 : (rawProgram ?? DEFAULT_INSTRUMENT_PROGRAM)
     return {
       trackId: defaults.trackId,
-      mode: percussion ? 'playedButHidden' : roleToTrackMode(role, 'listen'),
-      color: defaultTrackColor(role, i),
+      mode: defaultMode,
+      color: defaultColor,
       hitColor: '#ffffff',
       blackColor: '#2e3436',
       handAssignment: roleToHandAssignment(role),
       role,
-      instrumentProgram: defaults.instrumentProgram ?? DEFAULT_INSTRUMENT_PROGRAM,
+      instrumentProgram: defaultProgram,
+      defaultInstrumentProgram: defaultProgram,
+      defaultRole: role,
+      defaultColor: defaultColor,
+      defaultMode: defaultMode,
     }
   })
 }

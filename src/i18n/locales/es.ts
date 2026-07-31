@@ -370,6 +370,10 @@ export const es = {
     copySettingsByDragging: "Copia los ajustes arrastrándolos.",
     autoColor: "Color automático",
     custom: "Personalizado",
+    resetConfirmTitle: 'Restablecer configuración de pistas',
+    resetConfirmMessage: '¿Estás seguro de que quieres restablecer todos los instrumentos, colores y configuraciones de las pistas a los valores predeterminados del archivo MIDI?',
+    resetConfirmYes: 'Restablecer',
+    applyToAll: 'Todos',
   },
   dialogs: {
     keyboardRangeInstruction: "Arrastra en el área de notas descendentes para desplazar el teclado. Ajusta el zoom abajo.",

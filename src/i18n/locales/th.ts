@@ -370,6 +370,10 @@ export const th = {
     copySettingsByDragging: "คัดลอกการตั้งค่าด้วยการลาก",
     autoColor: "สีอัตโนมัติ",
     custom: "กำหนดเอง",
+    resetConfirmTitle: 'รีเซ็ตการตั้งค่าแทร็ก',
+    resetConfirmMessage: 'คุณแน่ใจหรือไม่ว่าต้องการรีเซ็ตเครื่องดนตรี สี และการตั้งค่าของแทร็กทั้งหมดกลับเป็นค่าเริ่มต้นของไฟล์ MIDI?',
+    resetConfirmYes: 'รีเซ็ต',
+    applyToAll: 'ทั้งหมด',
   },
   dialogs: {
     keyboardRangeInstruction: "ลากในพื้นที่โน้ตที่ตกลงมาเพื่อเลื่อนคีย์บอร์ด ปรับการซูมด้านล่าง",

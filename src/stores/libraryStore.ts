@@ -377,7 +377,14 @@ export const useLibraryStore = defineStore('library', {
       const { notes } = assignHands(translateNotes(midi))
       const controlChanges = translateControlChanges(midi)
       const trackIds = [...new Set(notes.map(note => note.trackId))]
-      const tracks = createDefaultTrackProperties(trackIds)
+      const tracks = createDefaultTrackProperties(trackIds.map(trackId => {
+        const info = midi.tracks.find(t => t.trackId === trackId)
+        return {
+          trackId,
+          instrumentProgram: info?.instrumentProgram,
+          percussion: Boolean(info?.isPercussion || info?.channel === 9),
+        }
+      }))
       const duration = pulseToMicroseconds(midi.durationPulse, midi.header.ticksPerQuarter, buildTempoMap(midi))
       const session = createPlaySession(notes, controlChanges, tracks, { speed, showDuration, octaveShift })
       session.mode = 'listen'

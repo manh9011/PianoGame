@@ -370,6 +370,10 @@ export const sl = {
     copySettingsByDragging: "Kopirajte nastavitve z vlečenjem.",
     autoColor: "Samodejna barva",
     custom: "Po meri",
+    resetConfirmTitle: 'Ponastavi nastavitve sledi',
+    resetConfirmMessage: 'Ali ste preprčani, da želite ponastaviti vse instrumente, barve in nastavitve sledi na privzete vrednosti datoteke MIDI?',
+    resetConfirmYes: 'Ponastavi',
+    applyToAll: 'Vse',
   },
   dialogs: {
     keyboardRangeInstruction: "Povlecite v območju padajočih not, da premaknete tipkovnico. Spodaj prilagodite povečavo.",

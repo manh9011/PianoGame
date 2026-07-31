@@ -370,6 +370,10 @@ export const ca = {
     copySettingsByDragging: "Copia els paràmetres arrossegant-los.",
     autoColor: "Color automàtic",
     custom: "Personalitzat",
+    resetConfirmTitle: 'Restablir configuració de pistes',
+    resetConfirmMessage: 'Esteu segur que voleu restablir tots els instruments, colors i configuracions de les pistes als valors predeterminats del fitxer MIDI?',
+    resetConfirmYes: 'Restablir',
+    applyToAll: 'Tots',
   },
   dialogs: {
     keyboardRangeInstruction: "Arrossega a l’àrea de notes descendents per desplaçar el teclat. Ajusta el zoom a sota.",

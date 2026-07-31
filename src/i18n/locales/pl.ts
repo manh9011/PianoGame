@@ -370,6 +370,10 @@ export const pl = {
     copySettingsByDragging: "Kopiuj ustawienia, przeciągając je.",
     autoColor: "Automatyczny kolor",
     custom: "Niestandardowy",
+    resetConfirmTitle: 'Resetuj ustawienia ścieżek',
+    resetConfirmMessage: 'Czy na pewno chcesz zresetować wszystkie instrumenty, kolory i konfiguracje ścieżek do domyślnych wartości pliku MIDI?',
+    resetConfirmYes: 'Resetuj',
+    applyToAll: 'Wszystkie',
   },
   dialogs: {
     keyboardRangeInstruction: "Przeciągaj w obszarze spadających nut, aby przesuwać klawiaturę. Dostosuj powiększenie poniżej.",

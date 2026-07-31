@@ -370,6 +370,10 @@ export const ru = {
     copySettingsByDragging: "Перетащите, чтобы скопировать настройки.",
     autoColor: "Автоцвет",
     custom: "Пользовательский",
+    resetConfirmTitle: 'Сбросить настройки дорожек',
+    resetConfirmMessage: 'Вы уверены, что хотите сбросить все инструменты, цвета и настройки дорожек до значений по умолчанию из MIDI-файла?',
+    resetConfirmYes: 'Сбросить',
+    applyToAll: 'Все',
   },
   dialogs: {
     keyboardRangeInstruction: "Перетащите в области падающих нот, чтобы сдвинуть клавиатуру. Ниже настройте масштаб.",

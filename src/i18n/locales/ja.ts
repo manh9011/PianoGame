@@ -370,6 +370,10 @@ export const ja = {
     copySettingsByDragging: "ドラッグして設定をコピーします。",
     autoColor: "自動カラー",
     custom: "カスタム",
+    resetConfirmTitle: 'トラック設定をリセット',
+    resetConfirmMessage: 'すべてのトラックの楽器、色、設定をMIDIファイルのデフォルトにリセットしてもよろしいですか？',
+    resetConfirmYes: 'リセット',
+    applyToAll: 'すべて',
   },
   dialogs: {
     keyboardRangeInstruction: "落下ノートエリアをドラッグしてキーボードを移動します。下でズームを調整してください。",

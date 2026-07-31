@@ -370,6 +370,10 @@ export const it = {
     copySettingsByDragging: "Copia le impostazioni trascinandole.",
     autoColor: "Colore automatico",
     custom: "Personalizzato",
+    resetConfirmTitle: 'Ripristina impostazioni tracce',
+    resetConfirmMessage: 'Sei sicuro di voler ripristinare tutti gli strumenti, i colori e le configurazioni delle tracce ai valori predefiniti del file MIDI?',
+    resetConfirmYes: 'Ripristina',
+    applyToAll: 'Tutti',
   },
   dialogs: {
     keyboardRangeInstruction: "Trascina nell'area delle note in caduta per spostare la tastiera. Regola lo zoom qui sotto.",
