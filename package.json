@@ -1,4 +1,7 @@
 {
+    "name": "PianoGame",
+    "version": "v0.1.5",
+    "copyright": "©2026 manh9011",
     "scripts": {
         "dev": "vite",
         "build": "vue-tsc -b && vite build",

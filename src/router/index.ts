@@ -10,6 +10,7 @@ const router = createRouter({
     { path: '/play/:hash/:modeId', name: 'play', component: () => import('../views/PlayView.vue') },
     { path: '/record/:hash', name: 'record', component: () => import('../views/RecordView.vue') },
     { path: '/free-play', name: 'free-play', component: () => import('../views/FreePlayView.vue') },
+    { path: '/transcription', name: 'transcription', component: () => import('../views/TranscriptionView.vue') },
     {
       path: '/settings',
       name: 'settings',

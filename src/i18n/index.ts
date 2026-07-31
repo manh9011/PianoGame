@@ -22,26 +22,26 @@ import { tr } from './locales/tr'
 export const SUPPORTED_LOCALES = ['vi', 'en', 'zh', 'hi', 'es', 'ar', 'fr', 'ja', 'pt', 'ko', 'ca', 'de', 'it', 'nl', 'pl', 'ru', 'sl', 'th', 'tr'] as const
 export type SupportedLocale = typeof SUPPORTED_LOCALES[number]
 
-export const localeOptions: { code: SupportedLocale; nativeName: string; englishName: string; dir: 'ltr' | 'rtl'; flagCode: string }[] = [
-  { code: 'vi', nativeName: 'Tiếng Việt', englishName: 'Vietnamese', dir: 'ltr', flagCode: 'vn' },
-  { code: 'en', nativeName: 'English', englishName: 'English', dir: 'ltr', flagCode: 'gb' },
-  { code: 'zh', nativeName: '中文', englishName: 'Chinese', dir: 'ltr', flagCode: 'cn' },
-  { code: 'hi', nativeName: 'हिन्दी', englishName: 'Hindi', dir: 'ltr', flagCode: 'in' },
-  { code: 'es', nativeName: 'Español', englishName: 'Spanish', dir: 'ltr', flagCode: 'es' },
-  { code: 'ar', nativeName: 'العربية', englishName: 'Arabic', dir: 'rtl', flagCode: 'sa' },
-  { code: 'fr', nativeName: 'Français', englishName: 'French', dir: 'ltr', flagCode: 'fr' },
-  { code: 'ja', nativeName: '日本語', englishName: 'Japanese', dir: 'ltr', flagCode: 'jp' },
-  { code: 'pt', nativeName: 'Português', englishName: 'Portuguese', dir: 'ltr', flagCode: 'pt' },
-  { code: 'ko', nativeName: '한국어', englishName: 'Korean', dir: 'ltr', flagCode: 'kr' },
-  { code: 'ca', nativeName: 'Català', englishName: 'Catalan', dir: 'ltr', flagCode: 'es-ct' },
-  { code: 'de', nativeName: 'Deutsch', englishName: 'German', dir: 'ltr', flagCode: 'de' },
-  { code: 'it', nativeName: 'Italiano', englishName: 'Italian', dir: 'ltr', flagCode: 'it' },
-  { code: 'nl', nativeName: 'Nederlands', englishName: 'Dutch', dir: 'ltr', flagCode: 'nl' },
-  { code: 'pl', nativeName: 'Polski', englishName: 'Polish', dir: 'ltr', flagCode: 'pl' },
-  { code: 'ru', nativeName: 'Русский язык', englishName: 'Russian', dir: 'ltr', flagCode: 'ru' },
-  { code: 'sl', nativeName: 'Slovenščina', englishName: 'Slovenian', dir: 'ltr', flagCode: 'si' },
-  { code: 'th', nativeName: 'ภาษาไทย', englishName: 'Thai', dir: 'ltr', flagCode: 'th' },
-  { code: 'tr', nativeName: 'Türkçe', englishName: 'Turkish', dir: 'ltr', flagCode: 'tr' },
+const localeOptionsBase: { code: SupportedLocale; englishName: string; dir: 'ltr' | 'rtl'; flagCode: string }[] = [
+  { code: 'vi', englishName: 'Vietnamese', dir: 'ltr', flagCode: 'vn' },
+  { code: 'en', englishName: 'English', dir: 'ltr', flagCode: 'gb' },
+  { code: 'zh', englishName: 'Chinese', dir: 'ltr', flagCode: 'cn' },
+  { code: 'hi', englishName: 'Hindi', dir: 'ltr', flagCode: 'in' },
+  { code: 'es', englishName: 'Spanish', dir: 'ltr', flagCode: 'es' },
+  { code: 'ar', englishName: 'Arabic', dir: 'rtl', flagCode: 'sa' },
+  { code: 'fr', englishName: 'French', dir: 'ltr', flagCode: 'fr' },
+  { code: 'ja', englishName: 'Japanese', dir: 'ltr', flagCode: 'jp' },
+  { code: 'pt', englishName: 'Portuguese', dir: 'ltr', flagCode: 'pt' },
+  { code: 'ko', englishName: 'Korean', dir: 'ltr', flagCode: 'kr' },
+  { code: 'ca', englishName: 'Catalan', dir: 'ltr', flagCode: 'es-ct' },
+  { code: 'de', englishName: 'German', dir: 'ltr', flagCode: 'de' },
+  { code: 'it', englishName: 'Italian', dir: 'ltr', flagCode: 'it' },
+  { code: 'nl', englishName: 'Dutch', dir: 'ltr', flagCode: 'nl' },
+  { code: 'pl', englishName: 'Polish', dir: 'ltr', flagCode: 'pl' },
+  { code: 'ru', englishName: 'Russian', dir: 'ltr', flagCode: 'ru' },
+  { code: 'sl', englishName: 'Slovenian', dir: 'ltr', flagCode: 'si' },
+  { code: 'th', englishName: 'Thai', dir: 'ltr', flagCode: 'th' },
+  { code: 'tr', englishName: 'Turkish', dir: 'ltr', flagCode: 'tr' },
 ]
 
 export const messages: Record<SupportedLocale, LocaleMessages> = {
@@ -65,6 +65,11 @@ export const messages: Record<SupportedLocale, LocaleMessages> = {
   th,
   tr,
 }
+
+export const localeOptions: { code: SupportedLocale; nativeName: string; englishName: string; dir: 'ltr' | 'rtl'; flagCode: string }[] = localeOptionsBase.map(opt => ({
+  ...opt,
+  nativeName: messages[opt.code].language.nativeName as unknown as string
+}))
 
 export function isSupportedLocale(value: unknown): value is SupportedLocale {
   return typeof value === 'string' && SUPPORTED_LOCALES.includes(value as SupportedLocale)

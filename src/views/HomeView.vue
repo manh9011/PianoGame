@@ -9,8 +9,9 @@ import { useSettingsStore } from '../stores/settingsStore'
 import LanguageDropup from '../components/home/LanguageDropup.vue'
 import ProfileManager from '../components/home/ProfileManager.vue'
 import BaseButton from '../components/ui/BaseButton.vue'
+import AboutDialog from '../components/home/AboutDialog.vue'
 import { formatRelativeTime } from '../i18n/formatters'
-
+import { name as appName, version as appVersion, copyright as appCopyright } from '../../package.json'
 const router = useRouter()
 const { t } = useI18n()
 const app = useAppStore()
@@ -19,6 +20,7 @@ const profile = useProfileStore()
 const settings = useSettingsStore()
 
 const showProfileManager = ref(false)
+const showAboutDialog = ref(false)
 
 const recentSongs = computed(() =>
   profile.activeProfile.recentSongIds
@@ -54,7 +56,7 @@ function closeProfileManager() {
     <header class="home-header">
       <div class="header-left">
         <div class="app-icon">🎹</div>
-        <h1 class="app-name">{{ t('app.name') }}</h1>
+        <h1 class="app-name">{{ appName }}</h1>
       </div>
       <div class="header-right">
         <BaseButton variant="secondary" class="username-button" :aria-label="t('home.profileMenu')" @click="toggleProfileManager">
@@ -71,6 +73,7 @@ function closeProfileManager() {
           </div>
         </Teleport>
       </div>
+      <AboutDialog :show="showAboutDialog" @close="showAboutDialog = false" />
     </header>
 
     <!-- Main Content -->
@@ -83,8 +86,14 @@ function closeProfileManager() {
         <BaseButton variant="primary" class="menu-button" @click="router.push('/free-play')">
           {{ t('home.freePlay') }}
         </BaseButton>
+        <BaseButton variant="primary" class="menu-button transcription-btn" @click="router.push('/transcription')">
+          {{ t('home.transcription') }}<sup class="beta-badge">BETA</sup>
+        </BaseButton>
         <BaseButton variant="secondary" class="menu-button" @click="router.push('/settings')">
           {{ t('common.settings') }}
+        </BaseButton>
+        <BaseButton variant="secondary" class="menu-button" @click="showAboutDialog = true">
+          {{ t('home.about') }}
         </BaseButton>
         <BaseButton v-if="app.isTauriApp" variant="secondary" class="menu-button" @click="app.exitApp">
           {{ t('home.exit') }}
@@ -122,8 +131,8 @@ function closeProfileManager() {
         <div class="footer-info">{{ t('common.output') }}: {{ settings.midiOutputId || t('common.builtInSynthesizer') }}</div>
       </div>
       <div class="footer-right">
-        <div class="version">{{ t('app.version') }}</div>
-        <div class="copyright">{{ t('app.copyright') }}</div>
+        <div class="version">{{ appVersion }}</div>
+        <div class="copyright">{{ appCopyright }}</div>
       </div>
     </footer>
   </div>
@@ -228,6 +237,22 @@ function closeProfileManager() {
   width: 100%;
   padding: 18px 24px;
   font-size: 1.1rem;
+}
+
+.transcription-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
+.beta-badge {
+  font-size: 0.65rem;
+  background: var(--color-primary);
+  color: white;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-weight: bold;
 }
 
 /* Right Panel */
