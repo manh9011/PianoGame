@@ -1,4 +1,4 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { localeOptions, type SupportedLocale } from '../../i18n'
@@ -11,12 +11,8 @@ const root = ref<HTMLElement | null>(null)
 
 const selectedLocale = computed(() => localeOptions.find(option => option.code === settings.locale) ?? localeOptions[1])
 
-function flagEmoji(flagCode: string) {
-  const code = flagCode === 'es-ct' ? 'es' : flagCode
-  if (!/^[a-z]{2}$/i.test(code)) return '🏳️'
-  return [...code.toUpperCase()]
-    .map(char => String.fromCodePoint(127397 + char.charCodeAt(0)))
-    .join('')
+function getFlagUrl(flagCode: string) {
+  return `/flags/${flagCode}.png`
 }
 
 function toggle() {
@@ -56,7 +52,7 @@ onBeforeUnmount(() => {
       :aria-expanded="open"
       @click.stop="toggle"
     >
-      <span class="language-flag" aria-hidden="true">{{ flagEmoji(selectedLocale.flagCode) }}</span>
+      <img class="language-flag" aria-hidden="true" :src="getFlagUrl(selectedLocale.flagCode)" alt="" />
       <span>{{ selectedLocale.nativeName }}</span>
       <i class="fa-solid fa-chevron-up" aria-hidden="true" />
     </button>
@@ -73,7 +69,7 @@ onBeforeUnmount(() => {
         :dir="option.dir"
         @click="selectLocale(option.code)"
       >
-        <span class="language-flag" aria-hidden="true">{{ flagEmoji(option.flagCode) }}</span>
+        <img class="language-flag" aria-hidden="true" :src="getFlagUrl(option.flagCode)" alt="" />
         <span class="language-name">{{ option.nativeName }}</span>
         <span class="language-english">{{ option.englishName }}</span>
         <i v-if="option.code === settings.locale" class="fa-solid fa-check" aria-hidden="true" />
@@ -149,10 +145,11 @@ onBeforeUnmount(() => {
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
-  width: 1.2rem;
-  line-height: 1;
-  font-family: 'Noto Color Emoji', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
-  font-size: 1rem;
+  width: 1.25rem;
+  height: auto;
+  border-radius: 2px;
+  object-fit: contain;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .language-option .language-flag {

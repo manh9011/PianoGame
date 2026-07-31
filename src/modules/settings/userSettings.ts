@@ -28,7 +28,7 @@ export const defaultSettings: UserSettings = {
   showKeySignatureBookmarks: true,
   showMidiMarkers: true,
   defaultSpeed: 100,
-  showDuration: 3.25,
+  showDuration: 3,
   octaveShift: 0,
   libraryAutoPreviewEnabled: false,
   metronomeVolume: 0,

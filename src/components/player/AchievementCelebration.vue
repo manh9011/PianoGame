@@ -16,7 +16,7 @@ let timeoutId: number | null = null
 let startedAt = 0
 const midiPlayer = new MidiAssetPlayer()
 const MIN_VISIBLE_MS = 2400
-const achievementUrl = `${import.meta.env.BASE_URL}achievement.mid`
+const achievementUrl = `${import.meta.env.BASE_URL}sounds/achievement.mid`
 
 function easeOutCubic(t: number) {
   return 1 - Math.pow(1 - t, 3)
@@ -147,8 +147,14 @@ small {
   height: 82dvh;
 }
 
-.confetti.left { left: 0; }
-.confetti.right { right: 0; transform: scaleX(-1); }
+.confetti.left {
+  left: 0;
+}
+
+.confetti.right {
+  right: 0;
+  transform: scaleX(-1);
+}
 
 .confetti span {
   position: absolute;
@@ -160,7 +166,7 @@ small {
   background: hsl(var(--hue), 94%, 62%);
   box-shadow: 0 0 12px hsla(var(--hue), 94%, 62%, 0.58);
   transform: rotate(var(--rot-start));
-  animation: confetti-burst 2.25s cubic-bezier(.16,.84,.34,1) both;
+  animation: confetti-burst 2.25s cubic-bezier(.16, .84, .34, 1) both;
   animation-delay: var(--delay);
 }
 
@@ -185,11 +191,16 @@ small {
     opacity: 0;
     transform: translate(0, 0) rotate(var(--rot-start)) scale(0.45);
   }
+
   6% {
     opacity: 1;
     transform: translate(var(--mid-x), var(--mid-y)) rotate(var(--rot-mid)) scale(var(--scale-pop));
   }
-  82% { opacity: 1; }
+
+  82% {
+    opacity: 1;
+  }
+
   100% {
     opacity: 0;
     transform: translate(var(--dx), var(--dy)) rotate(var(--rot-end)) scale(var(--scale-end));
@@ -197,9 +208,24 @@ small {
 }
 
 @keyframes card-glow {
-  0% { opacity: 0; transform: translateX(-50%) scale(0.86); }
-  14% { opacity: 1; transform: translateX(-50%) scale(1.06); }
-  70% { opacity: 1; filter: brightness(1.15); }
-  100% { opacity: 0; transform: translateX(-50%) scale(1); }
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.86);
+  }
+
+  14% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1.06);
+  }
+
+  70% {
+    opacity: 1;
+    filter: brightness(1.15);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(-50%) scale(1);
+  }
 }
 </style>

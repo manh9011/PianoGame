@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePlayerStore } from '../../../stores/playerStore'
 import { isTrackSounded, type TrackMode, type TrackRole } from '../../../modules/game/trackProperties'
-import { getEmojiFontFamily, getInstrumentByProgram, getInstrumentEmoji } from '../../../modules/audio/gmInstrumentCatalog'
+import { getInstrumentByProgram, getInstrumentImageUrl } from '../../../modules/audio/gmInstrumentCatalog'
 import ColorPickerDialog from '../dialogs/ColorPickerDialog.vue'
 import TrackInstrumentDialog from '../dialogs/TrackInstrumentDialog.vue'
 import TrackRoleDialog from '../dialogs/TrackRoleDialog.vue'
@@ -29,7 +29,7 @@ interface TrackData {
   trackId: number
   instrumentProgram: number
   instrumentName: string
-  instrumentEmoji: string
+  instrumentImageUrl: string
   noteCount: number
   channel: number
   color: string
@@ -40,7 +40,6 @@ interface TrackData {
 
 const { t } = useI18n()
 const player = usePlayerStore()
-const emojiStyle = { fontFamily: getEmojiFontFamily() }
 
 const showColorPicker = ref(false)
 const showInstrumentDialog = ref(false)
@@ -76,7 +75,7 @@ const tracksData = computed<TrackData[]>(() => {
       trackId: track.trackId,
       instrumentProgram: instrument.program,
       instrumentName: instrument.name,
-      instrumentEmoji: getInstrumentEmoji(instrument),
+      instrumentImageUrl: getInstrumentImageUrl(instrument.program),
       noteCount: trackNotes.length,
       channel: trackNotes[0]?.channel ?? 0,
       color: track.color,
@@ -240,7 +239,7 @@ function onDragStart(event: DragEvent, type: DragType, value: any, track: TrackD
     let iconHtml = ''
     if (type === 'instrument') {
       text = track.instrumentName
-      iconHtml = `<span style="font-size: 1.1rem; line-height: 1;">${track.instrumentEmoji}</span>`
+      iconHtml = `<img src="${track.instrumentImageUrl}" style="width: 24px; height: 24px; vertical-align: middle; object-fit: contain;" />`
     } else if (type === 'role') {
       text = t(roleLabelKeys[track.predominantHand])
       const iconClass = track.predominantHand === 'background' ? 'fas fa-cog' : 'fas fa-hand-paper'
@@ -331,7 +330,7 @@ function handleDrop(event: DragEvent, targetTrackId: number) {
             @dragend="onDragEnd"
             @click="(event) => openInstrumentDialog(event, track.trackId)">
             <span class="track-emoji-wrap">
-              <span class="track-emoji" :style="emojiStyle">{{ track.instrumentEmoji }}</span>
+              <img class="track-emoji" :src="track.instrumentImageUrl" :alt="track.instrumentName" />
             </span>
           </button>
           <div class="track-info">
@@ -506,11 +505,11 @@ function handleDrop(event: DragEvent, targetTrackId: number) {
   padding: 0;
   border: 0;
   border-radius: 8px;
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(255, 255, 255, 0.5);
   box-shadow: 
-    inset 0 3px 5px rgba(0, 0, 0, 0.35),
-    inset 0 1px 2px rgba(0, 0, 0, 0.5),
-    0 1px 0 rgba(255, 255, 255, 0.25);
+    inset 0 3px 6px rgba(0, 0, 0, 0.3),
+    inset 0 1px 3px rgba(0, 0, 0, 0.4),
+    0 1px 0 rgba(255, 255, 255, 0.15);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -519,11 +518,11 @@ function handleDrop(event: DragEvent, targetTrackId: number) {
 }
 
 .track-icon:hover {
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(255, 255, 255, 0.75);
   box-shadow: 
-    inset 0 4px 6px rgba(0, 0, 0, 0.45),
-    inset 0 1px 2px rgba(0, 0, 0, 0.6),
-    0 1px 0 rgba(255, 255, 255, 0.25);
+    inset 0 3px 6px rgba(0, 0, 0, 0.35),
+    inset 0 1px 3px rgba(0, 0, 0, 0.5),
+    0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
 .track-emoji-wrap {
@@ -537,15 +536,10 @@ function handleDrop(event: DragEvent, targetTrackId: number) {
 }
 
 .track-emoji {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.2em;
-  height: 1.2em;
-  font-size: 1.45rem;
-  line-height: 1;
-  text-align: center;
-  transform: translate(-1px, 0);
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  transform: scale(1.35);
   pointer-events: none;
   user-select: none;
 }

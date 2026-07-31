@@ -2,7 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useConfirmDialog } from '../../../composables/useConfirmDialog'
-import { getEmojiFontFamily, getInstrumentByProgram, getInstrumentEmoji } from '../../../modules/audio/gmInstrumentCatalog'
+import { getInstrumentByProgram, getInstrumentImageUrl } from '../../../modules/audio/gmInstrumentCatalog'
 import { TRACK_SETTINGS_PALETTE } from '../../../modules/game/trackProperties'
 import { clampPitch, editorBeatUs } from '../../../modules/freePlay/editor/freePlayTrackEditorGeometry'
 import { canPlaceTrackEditorNotes, mutateTrackEditorNotes } from '../../../modules/freePlay/editor/freePlayTrackEditorMutations'
@@ -1025,7 +1025,7 @@ onBeforeUnmount(() => {
                   :aria-label="t('freePlay.selectTrackInstrument')"
                   @click.stop="openTrackInstrument(track, $event)"
                 >
-                  <span class="track-instrument-emoji" :style="{ fontFamily: getEmojiFontFamily() }">{{ getInstrumentEmoji(getInstrumentByProgram(track.instrumentProgram)) }}</span>
+                  <img class="track-instrument-emoji" :src="getInstrumentImageUrl(track.instrumentProgram)" alt="Instrument" />
                 </button>
                 <div class="track-card-content">
                   <input
@@ -1483,9 +1483,11 @@ onBeforeUnmount(() => {
   padding: 0.32rem;
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 4px;
-  background:
-    radial-gradient(circle at 50% 38%, rgba(255, 255, 255, 0.16), transparent 46%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.16));
+  background: rgba(255, 255, 255, 0.5);
+  box-shadow: 
+    inset 0 3px 6px rgba(0, 0, 0, 0.3),
+    inset 0 1px 3px rgba(0, 0, 0, 0.4),
+    0 1px 0 rgba(255, 255, 255, 0.1);
   color: var(--color-text-primary);
   cursor: pointer;
 }
@@ -1498,9 +1500,10 @@ onBeforeUnmount(() => {
 }
 
 .track-instrument-emoji {
-  font-size: 1.95rem;
-  line-height: 1;
-  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.45));
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  transform: scale(1.35);
   pointer-events: none;
 }
 

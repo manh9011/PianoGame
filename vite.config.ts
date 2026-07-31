@@ -8,7 +8,17 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
-      includeAssets: ['favicon.ico', 'achievement.mid', 'assets/*.svg'],
+      includeAssets: [
+        'assets/*.woff2',
+        'assets/*.js',
+        'assets/*.css',
+        'flags/*.png',
+        'instruments/*.png',
+        'keys/*.svg',
+        'soundfonts/*/*.js',
+        'sounds/*.mid',
+        'favicon.ico'
+      ],
       manifest: {
         name: 'Piano Game',
         short_name: 'Piano Game',

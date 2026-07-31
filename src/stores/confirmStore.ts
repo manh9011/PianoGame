@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { useSettingsStore } from './settingsStore'
 
 export type ConfirmDialogTone = 'primary' | 'danger'
 
@@ -32,6 +33,11 @@ export const useConfirmStore = defineStore('confirm', {
   }),
   actions: {
     open(options: ConfirmDialogOptions) {
+      const settingsStore = useSettingsStore()
+      if (!settingsStore.advancedConfirmBeforeDestructiveAction) {
+        return Promise.resolve(true)
+      }
+
       if (activeResolve) activeResolve(false)
 
       this.title = options.title ?? ''

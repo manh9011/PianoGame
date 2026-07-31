@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { GM_INSTRUMENT_GROUPS, getInstrumentEmoji } from '../../../modules/audio/gmInstrumentCatalog'
+import { GM_INSTRUMENT_GROUPS, getInstrumentImageUrl } from '../../../modules/audio/gmInstrumentCatalog'
 
 const props = defineProps<{
   show: boolean
@@ -62,7 +62,7 @@ function close() {
             @click="selectInstrument(instrument.program)"
           >
             <span class="instrument-icon">
-              <span class="instrument-emoji">{{ getInstrumentEmoji(instrument) }}</span>
+              <img class="instrument-emoji" :src="getInstrumentImageUrl(instrument.program)" :alt="instrument.name" />
             </span>
             <span class="instrument-label">{{ instrument.name }}</span>
             <i v-if="instrument.program === currentProgram" class="fas fa-check selected-check"></i>
@@ -184,9 +184,10 @@ function close() {
   border-bottom: 0;
   background: var(--color-bg-secondary);
   color: var(--color-text-primary);
-  cursor: pointer;
   text-align: left;
   border-radius: 0;
+  position: relative;
+  z-index: 1;
 }
 
 .instrument-item:first-child {
@@ -201,6 +202,7 @@ function close() {
 .instrument-item:hover,
 .instrument-item.selected {
   background: #454545;
+  z-index: 10;
 }
 
 .instrument-icon {
@@ -210,29 +212,32 @@ function close() {
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  background: linear-gradient(145deg, #222, #505050);
+  background: #f0f0f0;
+  box-shadow: 
+    inset 0 3px 6px rgba(0, 0, 0, 0.3),
+    inset 0 1px 3px rgba(0, 0, 0, 0.4),
+    0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .instrument-emoji {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.2em;
-  height: 1.2em;
-  font-family: 'Noto Color Emoji', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
-  font-size: 1.35rem;
-  line-height: 1;
-  text-align: center;
-  transform: translate(-1px, 0);
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  transform: scale(1.35);
+  transition: transform 0.2s ease, filter 0.2s ease;
 }
 
-.instrument-item:hover .instrument-emoji,
-.instrument-item.selected .instrument-emoji {
-  transform: translate(-1px, 0) scale(1.02);
+.instrument-item:hover .instrument-emoji {
+  transform: scale(2.2);
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.9)) drop-shadow(0 0 15px rgba(255, 255, 255, 0.6)) brightness(1.2);
 }
 
 .instrument-item.selected .instrument-icon {
-  background: linear-gradient(145deg, #2b2b2b, #595959);
+  background: #ffffff;
+  box-shadow: 
+    inset 0 3px 6px rgba(0, 0, 0, 0.35),
+    inset 0 1px 3px rgba(0, 0, 0, 0.5),
+    0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
 .instrument-label {

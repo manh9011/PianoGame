@@ -45,15 +45,13 @@ const labelModes: Array<{ value: LabelMode; labelKey: string }> = [
 
     <SettingsSection :title="t('settings.playControls')">
       <SettingsRow :title="t('settings.defaultSpeed')" :description="t('settings.defaultSpeedDescription')">
-        <BaseInput class="settings-control compact" type="number" min="0" max="400" step="10" :model-value="settings.defaultSpeed" @update:model-value="settings.setSpeed(Number($event))" />
-        <span class="unit">%</span>
+        <BaseSlider class="compact" :min="50" :max="200" :step="10" :model-value="settings.defaultSpeed" @update:model-value="settings.setSpeed($event)" style="flex: 1" show-value :format-value="(v) => v + '%'" />
       </SettingsRow>
       <SettingsRow :title="t('settings.showDuration')" :description="t('settings.showDurationDescription')">
-        <BaseInput class="settings-control compact" type="number" min="0.25" max="10" step="0.25" :model-value="settings.showDuration" @update:model-value="settings.setShowDuration(Number($event))" />
-        <span class="unit">s</span>
+        <BaseSlider class="compact" :min="0" :max="10" :step="1" :model-value="settings.showDuration" @update:model-value="settings.setShowDuration($event)" style="flex: 1" show-value :format-value="(v) => v + 's'" />
       </SettingsRow>
       <SettingsRow :title="t('settings.inputOctaveShift')" :description="t('settings.inputOctaveShiftDescription')">
-        <BaseInput class="settings-control compact" type="number" min="-4" max="4" step="1" :model-value="settings.octaveShift" @update:model-value="settings.patchSettings({ octaveShift: Number($event) })" />
+        <BaseSlider class="compact" :min="0" :max="44" :step="1" :model-value="settings.octaveShift" @update:model-value="settings.patchSettings({ octaveShift: Number($event) })" style="flex: 1" show-value />
       </SettingsRow>
       <SettingsRow :title="t('settings.keyboardRange')" :description="t('settings.keyboardRangeDescription')">
         <BaseSelect class="settings-control" :model-value="settings.keyboardRangeMode" @update:model-value="settings.setKeyboardRangeMode($event as KeyboardRangeMode)">
@@ -84,7 +82,7 @@ const labelModes: Array<{ value: LabelMode; labelKey: string }> = [
         </BaseSelect>
       </SettingsRow>
       <SettingsRow :title="t('settings.keyLabelSize')" :description="t('settings.keyLabelSizeDescription')">
-        <BaseInput class="settings-control compact" type="number" min="-10" max="25" step="1" :model-value="settings.keyLabelSize" @update:model-value="settings.setKeyLabelSize(Number($event))" />
+        <BaseSlider class="compact" :min="-10" :max="25" :step="1" :model-value="settings.keyLabelSize" @update:model-value="settings.setKeyLabelSize($event)" style="flex: 1" show-value />
       </SettingsRow>
       <SettingsRow :title="t('settings.fallingNoteLabels')" :description="t('settings.fallingNoteLabelsDescription')">
         <SettingsToggle :model-value="settings.showNoteLabels" @change="settings.setShowNoteLabels($event)" />
@@ -95,7 +93,7 @@ const labelModes: Array<{ value: LabelMode; labelKey: string }> = [
         </BaseSelect>
       </SettingsRow>
       <SettingsRow :title="t('settings.noteLabelSize')" :description="t('settings.noteLabelSizeDescription')">
-        <BaseInput class="settings-control compact" type="number" min="-10" max="25" step="1" :model-value="settings.noteLabelSize" @update:model-value="settings.setNoteLabelSize(Number($event))" />
+        <BaseSlider class="compact" :min="-10" :max="25" :step="1" :model-value="settings.noteLabelSize" @update:model-value="settings.setNoteLabelSize($event)" style="flex: 1" show-value />
       </SettingsRow>
       <SettingsRow :title="t('settings.coloredFingerHints')" :description="t('settings.coloredFingerHintsDescription')">
         <SettingsToggle :model-value="settings.showColoredFingerHints" @change="settings.setShowColoredFingerHints($event)" />
@@ -118,10 +116,8 @@ const labelModes: Array<{ value: LabelMode; labelKey: string }> = [
 
 <style scoped>
 .unit {
-  min-width: 2.4rem;
   color: var(--color-text-secondary);
   font-size: 0.78rem;
-  text-align: end;
 }
 </style>
 

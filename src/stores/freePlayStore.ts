@@ -80,7 +80,7 @@ export const FREE_PLAY_DEFAULT_TRACK_COLOR = TRACK_SETTINGS_PALETTE[0] ?? '#729f
 
 export const FREE_PLAY_KEY_SIGNATURES = FREE_PLAY_KEY_SIGNATURE_DEFINITIONS.map(signature => ({
   ...signature,
-  src: `/assets/${encodeURIComponent(signature.fileName)}`,
+  src: `/keys/${encodeURIComponent(signature.fileName)}`,
 }))
 
 export const FREE_PLAY_TIME_SIGNATURES: FreePlayTimeSignature[] = [

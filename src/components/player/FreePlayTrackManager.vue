@@ -1,8 +1,8 @@
-﻿<script setup lang="ts">
+<script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useConfirmDialog } from '../../composables/useConfirmDialog'
-import { getEmojiFontFamily, getInstrumentByProgram, getInstrumentEmoji } from '../../modules/audio/gmInstrumentCatalog'
+import { getInstrumentByProgram, getInstrumentImageUrl } from '../../modules/audio/gmInstrumentCatalog'
 import { MAX_FREE_PLAY_TRACKS, useFreePlayStore, type FreePlayTrack } from '../../stores/freePlayStore'
 import TrackInstrumentDialog from './dialogs/TrackInstrumentDialog.vue'
 import ColorPickerDialog from './dialogs/ColorPickerDialog.vue'
@@ -144,7 +144,7 @@ function toggleLoop(track: FreePlayTrack, event: MouseEvent) {
             :aria-label="t('freePlay.selectTrackInstrument')"
             @click="openInstrument(track, $event)"
           >
-            <span class="instrument-emoji">{{ getInstrumentEmoji(instrument(track)) }}</span>
+            <img class="instrument-emoji" :src="getInstrumentImageUrl(instrument(track).program)" :alt="instrument(track).name" />
           </button>
           <button
             class="track-tool color-button"
@@ -289,14 +289,19 @@ function toggleLoop(track: FreePlayTrack, event: MouseEvent) {
 .instrument-button {
   width: 44px;
   height: 44px;
-  background: transparent;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 6px;
+  box-shadow: 
+    inset 0 3px 6px rgba(0, 0, 0, 0.3),
+    inset 0 1px 3px rgba(0, 0, 0, 0.4),
+    0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .instrument-emoji {
-  font-family: v-bind('getEmojiFontFamily()');
-  font-size: 2rem;
-  line-height: 1;
-  filter: drop-shadow(0 2px 1px rgba(0, 0, 0, 0.45));
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  transform: scale(1.35);
 }
 
 .color-button {
