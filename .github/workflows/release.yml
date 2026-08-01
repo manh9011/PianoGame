@@ -42,9 +42,33 @@ jobs:
             kind: desktop
             platform: ubuntu-latest
             args: --bundles appimage,deb,rpm
-          - name: Android APK
+          - name: Android APK (arm64-v8a)
             kind: android
             platform: ubuntu-latest
+            target: aarch64
+            rust_target: aarch64-linux-android
+            android_abi: arm64-v8a
+            args: ''
+          - name: Android APK (armeabi-v7a)
+            kind: android
+            platform: ubuntu-latest
+            target: armv7
+            rust_target: armv7-linux-androideabi
+            android_abi: armeabi-v7a
+            args: ''
+          - name: Android APK (x86_64)
+            kind: android
+            platform: ubuntu-latest
+            target: x86_64
+            rust_target: x86_64-linux-android
+            android_abi: x86_64
+            args: ''
+          - name: Android APK (x86)
+            kind: android
+            platform: ubuntu-latest
+            target: i686
+            rust_target: i686-linux-android
+            android_abi: x86
             args: ''
 
     env:
@@ -95,7 +119,7 @@ jobs:
         if: matrix.kind == 'android'
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: aarch64-linux-android,x86_64-linux-android
+          targets: ${{ matrix.rust_target }}
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
@@ -167,7 +191,7 @@ jobs:
 
       - name: Build Android APK
         if: matrix.kind == 'android'
-        run: npm run tauri:android:build
+        run: npm run tauri -- android build --apk --target ${{ matrix.target }} --ci
 
       - name: Sign Android release APKs
         if: matrix.kind == 'android'
@@ -210,14 +234,8 @@ jobs:
           fi
 
           mkdir -p release-assets
-          index=1
           for apk in "${release_apks[@]}"; do
-            abi="apk-${index}"
-            if [[ "$apk" == *aarch64* || "$apk" == *arm64* ]]; then
-              abi="arm64-v8a"
-            elif [[ "$apk" == *x86_64* ]]; then
-              abi="x86_64"
-            fi
+            abi="${{ matrix.android_abi }}"
 
             aligned_apk="${RUNNER_TEMP}/PianoGame-${RELEASE_TAG}-android-${abi}-release-aligned.apk"
             signed_apk="release-assets/PianoGame-${RELEASE_TAG}-android-${abi}-release-signed.apk"
@@ -231,7 +249,6 @@ jobs:
               --out "$signed_apk" \
               "$aligned_apk"
             "${ANDROID_HOME}/build-tools/${ANDROID_BUILD_TOOLS}/apksigner" verify --verbose "$signed_apk"
-            index=$((index + 1))
           done
 
           ls -la release-assets
@@ -240,7 +257,7 @@ jobs:
         if: matrix.kind == 'android'
         uses: actions/upload-artifact@v4
         with:
-          name: PianoGame-${{ env.RELEASE_TAG }}-android-release-signed
+          name: PianoGame-${{ env.RELEASE_TAG }}-android-${{ matrix.android_abi }}-release-signed
           path: release-assets/*.apk
           if-no-files-found: error
 
