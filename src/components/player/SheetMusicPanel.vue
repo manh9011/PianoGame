@@ -116,20 +116,26 @@ function updatePlaybackWindow() {
   const onsetToleranceMs = 3
   const timedElements: Array<{ id: string; element: Element; onset: number }> = []
   for (const id of currentElements.notes) {
-    const element = document.getElementById(id)
+    const baseId = id.replace(/-rend\d+$/, '')
+    const element = document.getElementById(baseId)
     if (!element) continue
 
     let onset = -1
     try {
       onset = Number(toolkit.getTimeForElement(id))
+      // Fallback to baseId if the toolkit doesn't have the expanded ID
+      if (onset < 0) onset = Number(toolkit.getTimeForElement(baseId))
     } catch {
       onset = -1
     }
+    
+    // If we only got the first pass onset (e.g. 10000) while current is 50000, it's still <= currentMs + tol
     if (!Number.isFinite(onset) || onset < 0 || onset > currentMs + onsetToleranceMs) continue
 
     timedElements.push({ id, element, onset })
     element.classList.add('sheet-playing-note')
-    activeNoteIds.push(id)
+    // We add baseId so we can clear the class later
+    activeNoteIds.push(baseId)
   }
 
   const validOnsets = timedElements.map(item => item.onset)
@@ -139,7 +145,6 @@ function updatePlaybackWindow() {
   }
 
   const latestOnset = Math.max(...validOnsets)
-  if (latestOnset + onsetToleranceMs < lastAnchorOnsetMs) return
 
   const anchorItems = timedElements.filter(item => item.onset >= 0 && Math.abs(item.onset - latestOnset) <= onsetToleranceMs)
   if (!anchorItems.length) return
@@ -150,7 +155,11 @@ function updatePlaybackWindow() {
   const right = Math.max(...noteRects.map(rect => rect.right))
   const candidateX = (left + right) / 2 - stageRect.left
 
-  if (latestOnset > lastAnchorOnsetMs + onsetToleranceMs) {
+  if (candidateX < currentPlayheadX - 50) {
+    // Large jump backwards means a repeat occurred
+    currentPlayheadX = candidateX
+    lastAnchorOnsetMs = latestOnset
+  } else if (latestOnset > lastAnchorOnsetMs + onsetToleranceMs) {
     lastAnchorOnsetMs = latestOnset
     currentPlayheadX = Math.max(currentPlayheadX, candidateX)
   } else {
