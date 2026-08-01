@@ -176,6 +176,9 @@ export const hi = {
     trackEditorDiscardTitle: "नोट संपादन छोड़ें?",
     trackEditorDiscardMessage: "फ्री प्ले MIDI संपादक में किए गए बदलाव खो जाएँगे.",
     trackEditorDiscardConfirm: "बदलाव छोड़ें",
+    practice: "Practice",
+    practiceDialogTitle: "Save Song",
+    practiceDialogPlaceholder: "My New Recording",
   },
   relativeTime: {
     secondsAgo: "अभी-अभी",

@@ -176,6 +176,9 @@ export const ar = {
     trackEditorDiscardTitle: "تجاهل تعديلات النغمات؟",
     trackEditorDiscardMessage: "ستفقد تغييراتك في محرر MIDI للعزف الحر.",
     trackEditorDiscardConfirm: "تجاهل التغييرات",
+    practice: "Practice",
+    practiceDialogTitle: "Save Song",
+    practiceDialogPlaceholder: "My New Recording",
   },
   relativeTime: {
     secondsAgo: "الآن",

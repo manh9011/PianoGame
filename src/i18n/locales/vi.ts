@@ -176,6 +176,9 @@ export const vi = {
     trackEditorDiscardTitle: "Bỏ các chỉnh sửa nốt?",
     trackEditorDiscardMessage: "Các thay đổi trong trình sửa MIDI Chơi tự do sẽ bị mất.",
     trackEditorDiscardConfirm: "Bỏ thay đổi",
+    practice: "Luyện tập",
+    practiceDialogTitle: "Lưu bài hát",
+    practiceDialogPlaceholder: "Bản ghi mới của tôi",
   },
   relativeTime: {
     secondsAgo: "Vừa xong",

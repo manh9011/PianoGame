@@ -176,6 +176,9 @@ export const zh = {
     trackEditorDiscardTitle: "放弃音符编辑？",
     trackEditorDiscardMessage: "自由演奏 MIDI 编辑器中的更改将会丢失。",
     trackEditorDiscardConfirm: "放弃更改",
+    practice: "Practice",
+    practiceDialogTitle: "Save Song",
+    practiceDialogPlaceholder: "My New Recording",
   },
   relativeTime: {
     secondsAgo: "刚刚",

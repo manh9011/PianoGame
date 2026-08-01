@@ -176,6 +176,9 @@ export const nl = {
     trackEditorDiscardTitle: "Nootbewerkingen weggooien?",
     trackEditorDiscardMessage: "Je wijzigingen in de Free Play MIDI-editor gaan verloren.",
     trackEditorDiscardConfirm: "Wijzigingen weggooien",
+    practice: "Practice",
+    practiceDialogTitle: "Save Song",
+    practiceDialogPlaceholder: "My New Recording",
   },
   relativeTime: {
     secondsAgo: "Zojuist",

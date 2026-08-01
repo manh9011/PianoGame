@@ -176,6 +176,9 @@ export const ca = {
     trackEditorDiscardTitle: "Vols descartar les edicions de notes?",
     trackEditorDiscardMessage: "Els canvis de l’editor MIDI de joc lliure es perdran.",
     trackEditorDiscardConfirm: "Descarta els canvis",
+    practice: "Practice",
+    practiceDialogTitle: "Save Song",
+    practiceDialogPlaceholder: "My New Recording",
   },
   relativeTime: {
     secondsAgo: "Ara mateix",

@@ -176,6 +176,9 @@ export const ko = {
     trackEditorDiscardTitle: "음표 편집을 버릴까요?",
     trackEditorDiscardMessage: "프리 플레이 MIDI 편집기의 변경 사항이 사라집니다.",
     trackEditorDiscardConfirm: "변경 사항 버리기",
+    practice: "Practice",
+    practiceDialogTitle: "Save Song",
+    practiceDialogPlaceholder: "My New Recording",
   },
   relativeTime: {
     secondsAgo: "방금",

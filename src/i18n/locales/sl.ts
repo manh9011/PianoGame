@@ -176,6 +176,9 @@ export const sl = {
     trackEditorDiscardTitle: "Zavrzi urejanje not?",
     trackEditorDiscardMessage: "Spremembe v MIDI urejevalniku prostega igranja bodo izgubljene.",
     trackEditorDiscardConfirm: "Zavrzi spremembe",
+    practice: "Practice",
+    practiceDialogTitle: "Save Song",
+    practiceDialogPlaceholder: "My New Recording",
   },
   relativeTime: {
     secondsAgo: "Pravkar",

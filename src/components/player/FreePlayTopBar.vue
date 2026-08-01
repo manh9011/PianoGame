@@ -23,6 +23,7 @@ const emit = defineEmits<{
   stopRecording: []
   exportMidi: []
   importMidi: []
+  openPractice: []
   openTrackEditor: []
   deleteRecording: []
   openSettings: [event: MouseEvent]
@@ -70,6 +71,16 @@ function toggleRecording() {
           @click="emit('importMidi')"
         >
           <i class="fas fa-file-import"></i>
+        </BaseButton>
+        <BaseButton
+          v-if="freePlay.hasRecording"
+          variant="icon"
+          class="practice-button"
+          :title="t('freePlay.practice')"
+          :aria-label="t('freePlay.practice')"
+          @click="emit('openPractice')"
+        >
+          <i class="fas fa-graduation-cap"></i>
         </BaseButton>
         <BaseButton
           variant="icon"
@@ -188,6 +199,11 @@ function toggleRecording() {
 .export-button {
   color: #bfdbfe;
   background: rgba(14, 116, 144, 0.7);
+}
+
+.practice-button {
+  color: #a7f3d0;
+  background: rgba(6, 95, 70, 0.7);
 }
 
 .edit-button {

@@ -176,6 +176,9 @@ export const ja = {
     trackEditorDiscardTitle: "ノート編集を破棄しますか？",
     trackEditorDiscardMessage: "フリープレイ MIDI エディターでの変更は失われます。",
     trackEditorDiscardConfirm: "変更を破棄",
+    practice: "Practice",
+    practiceDialogTitle: "Save Song",
+    practiceDialogPlaceholder: "My New Recording",
   },
   relativeTime: {
     secondsAgo: "たった今",

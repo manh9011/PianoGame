@@ -15,6 +15,7 @@ import FreePlayTopBar from '../components/player/FreePlayTopBar.vue'
 import FreePlayTrackManager from '../components/player/FreePlayTrackManager.vue'
 import FreePlayPianoRoll from '../components/player/FreePlayPianoRoll.vue'
 import PianoKeyboard from '../components/player/PianoKeyboard.vue'
+import FreePlayPracticeDialog from '../components/player/dialogs/FreePlayPracticeDialog.vue'
 import FreePlaySettingsDialog from '../components/player/dialogs/FreePlaySettingsDialog.vue'
 import FreePlayMetronomeDialog from '../components/player/dialogs/FreePlayMetronomeDialog.vue'
 import KeyboardRangeDialog from '../components/player/dialogs/KeyboardRangeDialog.vue'
@@ -45,6 +46,7 @@ const freePlayLayoutRef = ref<HTMLElement>()
 const keyboardHeight = ref(150)
 const blackKeyHeight = ref(95)
 const isFullscreen = ref(false)
+const showPracticeDialog = ref(false)
 const showSettingsDialog = ref(false)
 const showMetronomeDialog = ref(false)
 const showKeyboardRangeDialog = ref(false)
@@ -124,6 +126,7 @@ function calculateBottomPopupPosition(element: HTMLElement, popupWidth: number, 
 }
 
 function closeDialogs() {
+  showPracticeDialog.value = false
   showSettingsDialog.value = false
   showMetronomeDialog.value = false
   showKeyboardRangeDialog.value = false
@@ -276,6 +279,27 @@ function exportMidi() {
     bytes.set(data)
     triggerDownload(new Blob([bytes.buffer as ArrayBuffer], { type: 'audio/midi' }), t('freePlay.midiFileName'))
     toast.showSuccess(t('freePlay.exportSuccess'))
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    toast.showError(t('freePlay.exportFailed', { message }))
+  }
+}
+
+async function onPracticeConfirm(songName: string) {
+  if (!freePlay.hasRecording) return
+  try {
+    const data = createFreePlayMidi(freePlay.tracks, freePlay.bpm)
+    const bytes = new Uint8Array(data.length)
+    bytes.set(data)
+    const file = new File([bytes.buffer as ArrayBuffer], `${songName}.mid`, { type: 'audio/midi' })
+    
+    // Import to libraryStore
+    const { useLibraryStore } = await import('../stores/libraryStore')
+    const library = useLibraryStore()
+    const song = await library.importFile(file)
+    
+    toast.showSuccess(t('freePlay.importSuccess'))
+    router.push({ name: 'mode-select', params: { hash: song.hash } })
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     toast.showError(t('freePlay.exportFailed', { message }))
@@ -507,6 +531,7 @@ watch(() => route.query.librarySongId, value => {
       @stop-recording="stopRecording"
       @export-midi="exportMidi"
       @import-midi="importMidiFile"
+      @open-practice="showPracticeDialog = true"
       @open-track-editor="openTrackEditor"
       @delete-recording="deleteRecording"
       @open-settings="openSettings"
@@ -522,6 +547,12 @@ watch(() => route.query.librarySongId, value => {
     <section class="keyboard-shell">
       <PianoKeyboard />
     </section>
+
+    <FreePlayPracticeDialog
+      :show="showPracticeDialog"
+      @close="showPracticeDialog = false"
+      @confirm="onPracticeConfirm"
+    />
 
     <FreePlaySettingsDialog
       :show="showSettingsDialog"

@@ -176,6 +176,9 @@ export const tr = {
     trackEditorDiscardTitle: "Nota düzenlemeleri atılsın mı?",
     trackEditorDiscardMessage: "Free Play MIDI düzenleyicideki değişikliklerin kaybolacak.",
     trackEditorDiscardConfirm: "Değişiklikleri at",
+    practice: "Practice",
+    practiceDialogTitle: "Save Song",
+    practiceDialogPlaceholder: "My New Recording",
   },
   relativeTime: {
     secondsAgo: "Az önce",

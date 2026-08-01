@@ -176,6 +176,9 @@ export const th = {
     trackEditorDiscardTitle: "ทิ้งการแก้ไขโน้ตหรือไม่?",
     trackEditorDiscardMessage: "การเปลี่ยนแปลงในตัวแก้ไข MIDI ของ Free Play จะสูญหาย",
     trackEditorDiscardConfirm: "ทิ้งการเปลี่ยนแปลง",
+    practice: "Practice",
+    practiceDialogTitle: "Save Song",
+    practiceDialogPlaceholder: "My New Recording",
   },
   relativeTime: {
     secondsAgo: "เมื่อสักครู่",

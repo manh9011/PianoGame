@@ -176,6 +176,9 @@ export const ru = {
     trackEditorDiscardTitle: "Отменить правки нот?",
     trackEditorDiscardMessage: "Изменения в MIDI-редакторе Free Play будут потеряны.",
     trackEditorDiscardConfirm: "Отменить изменения",
+    practice: "Practice",
+    practiceDialogTitle: "Save Song",
+    practiceDialogPlaceholder: "My New Recording",
   },
   relativeTime: {
     secondsAgo: "Только что",

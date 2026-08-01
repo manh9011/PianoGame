@@ -176,6 +176,9 @@ export const de = {
     trackEditorDiscardTitle: "Notenänderungen verwerfen?",
     trackEditorDiscardMessage: "Deine Änderungen im Free-Play-MIDI-Editor gehen verloren.",
     trackEditorDiscardConfirm: "Änderungen verwerfen",
+    practice: "Practice",
+    practiceDialogTitle: "Save Song",
+    practiceDialogPlaceholder: "My New Recording",
   },
   relativeTime: {
     secondsAgo: "Gerade eben",
