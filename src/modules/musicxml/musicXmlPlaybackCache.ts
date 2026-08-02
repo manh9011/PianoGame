@@ -51,11 +51,10 @@ export function isMusicXmlText(text: string) {
   return sample.includes('<score-partwise') || sample.includes('<score-timewise') || sample.includes('musicxml')
 }
 
-export async function createMidiCacheFromMusicXml(musicXml: string) {
+export async function createMidiCacheFromMusicXml(musicXml: string): Promise<ArrayBuffer> {
   if (!isMusicXmlText(musicXml)) throw new SheetMusicError('sheetMusic.errors.invalidMusicXml', 'invalidMusicXml')
 
   const settings = await loadSettings()
-  let useFallback = false
 
   if (settings.advancedConverterMusicXmlToMidi === 'webmscore') {
     try {
@@ -70,28 +69,22 @@ export async function createMidiCacheFromMusicXml(musicXml: string) {
       return midiCopy.buffer as ArrayBuffer
     } catch (webmscoreError) {
       console.warn('[MusicXML] webmscore fallback to Verovio due to error:', webmscoreError)
-      useFallback = true
     }
-  } else {
-    useFallback = true
   }
 
-  if (useFallback) {
-    try {
-      const verovio = await loadVerovio()
-      const toolkit = new verovio.toolkit()
-      toolkit.loadData(musicXml)
-      return decodeRenderedMidi(toolkit.renderToMIDI())
-    } catch (error) {
-      if (error instanceof SheetMusicError) throw error
-      throw new SheetMusicError(error instanceof Error ? error.message : 'sheetMusic.errors.musicXmlToMidiFailed', 'musicXmlToMidiFailed')
-    }
+  try {
+    const verovio = await loadVerovio()
+    const toolkit = new verovio.toolkit()
+    toolkit.loadData(musicXml)
+    return decodeRenderedMidi(toolkit.renderToMIDI())
+  } catch (error) {
+    if (error instanceof SheetMusicError) throw error
+    throw new SheetMusicError(error instanceof Error ? error.message : 'sheetMusic.errors.musicXmlToMidiFailed', 'musicXmlToMidiFailed')
   }
 }
 
-export async function createMidiCacheFromCompressedMusicXml(buffer: ArrayBuffer) {
+export async function createMidiCacheFromCompressedMusicXml(buffer: ArrayBuffer): Promise<ArrayBuffer> {
   const settings = await loadSettings()
-  let useFallback = false
 
   if (settings.advancedConverterMusicXmlToMidi === 'webmscore') {
     try {
@@ -106,21 +99,16 @@ export async function createMidiCacheFromCompressedMusicXml(buffer: ArrayBuffer)
       return midiCopy.buffer as ArrayBuffer
     } catch (webmscoreError) {
       console.warn('[MusicXML] webmscore fallback to Verovio due to error:', webmscoreError)
-      useFallback = true
     }
-  } else {
-    useFallback = true
   }
 
-  if (useFallback) {
-    try {
-      const verovio = await loadVerovio()
-      const toolkit = new verovio.toolkit()
-      toolkit.loadZipDataBase64(bufferToBase64(buffer))
-      return decodeRenderedMidi(toolkit.renderToMIDI())
-    } catch (error) {
-      if (error instanceof SheetMusicError) throw error
-      throw new SheetMusicError(error instanceof Error ? error.message : 'sheetMusic.errors.musicXmlToMidiFailed', 'musicXmlToMidiFailed')
-    }
+  try {
+    const verovio = await loadVerovio()
+    const toolkit = new verovio.toolkit()
+    toolkit.loadZipDataBase64(bufferToBase64(buffer))
+    return decodeRenderedMidi(toolkit.renderToMIDI())
+  } catch (error) {
+    if (error instanceof SheetMusicError) throw error
+    throw new SheetMusicError(error instanceof Error ? error.message : 'sheetMusic.errors.musicXmlToMidiFailed', 'musicXmlToMidiFailed')
   }
 }
