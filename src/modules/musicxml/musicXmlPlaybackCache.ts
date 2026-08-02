@@ -1,5 +1,6 @@
 import { loadVerovio } from '../sheet/verovioLoader'
 import { SheetMusicError } from '../sheet/sheetTypes'
+import WebMscore from 'webmscore'
 
 function binaryStringToBuffer(value: string) {
   const bytes = new Uint8Array(value.length)
@@ -53,10 +54,23 @@ export async function createMidiCacheFromMusicXml(musicXml: string) {
   if (!isMusicXmlText(musicXml)) throw new SheetMusicError('sheetMusic.errors.invalidMusicXml', 'invalidMusicXml')
 
   try {
-    const verovio = await loadVerovio()
-    const toolkit = new verovio.toolkit()
-    toolkit.loadData(musicXml)
-    return decodeRenderedMidi(toolkit.renderToMIDI())
+    try {
+      await WebMscore.ready
+      const musicXmlBytes = new TextEncoder().encode(musicXml)
+      const musicXmlCopy = new Uint8Array(musicXmlBytes.length) // Pass a copy so the original buffer is not transferred/detached
+      musicXmlCopy.set(musicXmlBytes)
+      const score = await WebMscore.load('xml', musicXmlCopy, [], false)
+      const midiBytes = await score.saveMidi()
+      const midiCopy = new Uint8Array(midiBytes)
+      score.destroy()
+      return midiCopy.buffer as ArrayBuffer
+    } catch (webmscoreError) {
+      console.warn('[MusicXML] webmscore fallback to Verovio due to error:', webmscoreError)
+      const verovio = await loadVerovio()
+      const toolkit = new verovio.toolkit()
+      toolkit.loadData(musicXml)
+      return decodeRenderedMidi(toolkit.renderToMIDI())
+    }
   } catch (error) {
     if (error instanceof SheetMusicError) throw error
     throw new SheetMusicError(error instanceof Error ? error.message : 'sheetMusic.errors.musicXmlToMidiFailed', 'musicXmlToMidiFailed')
@@ -65,10 +79,23 @@ export async function createMidiCacheFromMusicXml(musicXml: string) {
 
 export async function createMidiCacheFromCompressedMusicXml(buffer: ArrayBuffer) {
   try {
-    const verovio = await loadVerovio()
-    const toolkit = new verovio.toolkit()
-    toolkit.loadZipDataBase64(bufferToBase64(buffer))
-    return decodeRenderedMidi(toolkit.renderToMIDI())
+    try {
+      await WebMscore.ready
+      // Pass a copy so the original buffer is not transferred/detached by WebMscore
+      const bufferCopy = new Uint8Array(buffer.byteLength)
+      bufferCopy.set(new Uint8Array(buffer))
+      const score = await WebMscore.load('mxl', bufferCopy, [], false)
+      const midiBytes = await score.saveMidi()
+      const midiCopy = new Uint8Array(midiBytes)
+      score.destroy()
+      return midiCopy.buffer as ArrayBuffer
+    } catch (webmscoreError) {
+      console.warn('[MusicXML] webmscore fallback to Verovio due to error:', webmscoreError)
+      const verovio = await loadVerovio()
+      const toolkit = new verovio.toolkit()
+      toolkit.loadZipDataBase64(bufferToBase64(buffer))
+      return decodeRenderedMidi(toolkit.renderToMIDI())
+    }
   } catch (error) {
     if (error instanceof SheetMusicError) throw error
     throw new SheetMusicError(error instanceof Error ? error.message : 'sheetMusic.errors.musicXmlToMidiFailed', 'musicXmlToMidiFailed')
