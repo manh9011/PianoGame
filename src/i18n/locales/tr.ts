@@ -540,6 +540,9 @@ export const tr = {
     },
   },
   settings: {
+    converter: 'Converter',
+    midiToMusicXml: 'MIDI to MusicXML',
+    musicXmlToMidi: 'MusicXML to MIDI',
     title: "Ayarlar",
     navigation: "Ayarlar gezintisi",
     musicDevices: "Müzik aygıtları",

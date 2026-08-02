@@ -3,6 +3,7 @@ import { useI18n } from 'vue-i18n'
 import SettingsRow from '../../components/settings/ui/SettingsRow.vue'
 import SettingsSection from '../../components/settings/ui/SettingsSection.vue'
 import SettingsToggle from '../../components/settings/ui/SettingsToggle.vue'
+import BaseSelect from '../../components/ui/BaseSelect.vue'
 import { useSettingsStore } from '../../stores/settingsStore'
 import { useConfirmDialog } from '../../composables/useConfirmDialog'
 
@@ -70,6 +71,23 @@ async function resetAdvanced() {
       <SettingsRow :title="t('settings.midiForceUniqueTrackChannels')">
         <SettingsToggle :model-value="settings.advancedMidiForceUniqueTrackChannels"
           @change="settings.patchSettings({ advancedMidiForceUniqueTrackChannels: $event })" />
+      </SettingsRow>
+    </SettingsSection>
+
+    <SettingsSection :title="t('settings.converter')">
+      <SettingsRow :title="t('settings.midiToMusicXml')">
+        <BaseSelect class="settings-control" :model-value="settings.advancedConverterMidiToMusicXml"
+          @update:model-value="settings.patchSettings({ advancedConverterMidiToMusicXml: $event as 'music21' | 'webmscore' })">
+          <option value="music21">music21</option>
+          <option value="webmscore">webmscore</option>
+        </BaseSelect>
+      </SettingsRow>
+      <SettingsRow :title="t('settings.musicXmlToMidi')">
+        <BaseSelect class="settings-control" :model-value="settings.advancedConverterMusicXmlToMidi"
+          @update:model-value="settings.patchSettings({ advancedConverterMusicXmlToMidi: $event as 'verovio' | 'webmscore' })">
+          <option value="verovio">verovio</option>
+          <option value="webmscore">webmscore</option>
+        </BaseSelect>
       </SettingsRow>
     </SettingsSection>
 

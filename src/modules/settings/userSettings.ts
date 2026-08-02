@@ -59,6 +59,8 @@ export const defaultSettings: UserSettings = {
   advancedMidiPedal: true,
   advancedMidiZeroVolumeKeyLights: true,
   advancedMidiForceUniqueTrackChannels: true,
+  advancedConverterMidiToMusicXml: 'music21',
+  advancedConverterMusicXmlToMidi: 'webmscore',
 }
 
 function normalizeShortcuts(userShortcuts?: Record<string, Record<string, string[]>>): Record<string, Record<string, string[]>> {
@@ -85,7 +87,7 @@ export async function loadSettings(): Promise<UserSettings> {
     return normalizeSettings(record?.value)
   } catch (error) {
     console.error('[Settings] Lỗi khi load từ IndexedDB, fallback về localStorage:', error)
-    const raw = localStorage.getItem(STORAGE_KEYS.settings)
+    const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.settings) : null
     return raw ? normalizeSettings(JSON.parse(raw)) : normalizeSettings()
   }
 }

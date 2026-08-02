@@ -540,6 +540,9 @@ export const zh = {
     },
   },
   settings: {
+    converter: 'Converter',
+    midiToMusicXml: 'MIDI to MusicXML',
+    musicXmlToMidi: 'MusicXML to MIDI',
     title: "设置",
     navigation: "设置导航",
     musicDevices: "音乐设备",

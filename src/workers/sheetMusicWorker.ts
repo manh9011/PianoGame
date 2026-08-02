@@ -7,6 +7,7 @@ import { mergeShardMusicXml } from '../modules/sheet/musicXmlMerge'
 import { SheetMusicError, toSheetMusicError } from '../modules/sheet/sheetTypes'
 import type { SheetErrorCode, SheetGenerationStage, SheetMusicArtifact, SheetMessageValues, SheetProgressCode } from '../modules/sheet/sheetTypes'
 import WebMscore from 'webmscore'
+import { loadSettings } from '../modules/settings/userSettings'
 
 declare const self: DedicatedWorkerGlobalScope
 
@@ -141,26 +142,36 @@ async function handleGenerate(request: SheetWorkerRequest) {
     }
   }
 
-  try {
-    await WebMscore.ready
-    const bytesCopy = new Uint8Array(buffer.byteLength)
-    bytesCopy.set(new Uint8Array(buffer))
-    const score = await WebMscore.load('midi', bytesCopy, [], false)
-    const musicXml = await score.saveXml()
-    score.destroy()
-    
-    const artifact: SheetMusicArtifact = {
-      cacheKey,
-      musicXml,
-      warnings: [],
-      stats: artifactStats,
+  const settings = await loadSettings()
+  let useFallback = false
+
+  if (settings.advancedConverterMidiToMusicXml === 'webmscore') {
+    try {
+      await WebMscore.ready
+      const bytesCopy = new Uint8Array(buffer.byteLength)
+      bytesCopy.set(new Uint8Array(buffer))
+      const score = await WebMscore.load('midi', bytesCopy, [], false)
+      const musicXml = await score.saveXml()
+      score.destroy()
+      
+      const artifact: SheetMusicArtifact = {
+        cacheKey,
+        musicXml,
+        warnings: [],
+        stats: artifactStats,
+      }
+      const result: SheetWorkerResult = { type: 'result', requestId, artifact }
+      self.postMessage(result)
+      return
+    } catch (webmscoreError) {
+      console.warn('[SheetWorker] webmscore fallback to music21 due to error:', webmscoreError)
+      useFallback = true
     }
-    const result: SheetWorkerResult = { type: 'result', requestId, artifact }
-    self.postMessage(result)
-    return
-  } catch (webmscoreError) {
-    console.warn('[SheetWorker] webmscore fallback to music21 due to error:', webmscoreError)
+  } else {
+    useFallback = true
+  }
     
+  if (useFallback) {
     // Fallback logic
     const shards = plans.map(plan => serializeVoiceShard(source, plan))
     const pyodide = await ensurePyodide(requestId)

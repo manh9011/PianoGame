@@ -540,6 +540,9 @@ export const pt = {
     },
   },
   settings: {
+    converter: 'Converter',
+    midiToMusicXml: 'MIDI to MusicXML',
+    musicXmlToMidi: 'MusicXML to MIDI',
     title: "Configurações",
     navigation: "Navegação das configurações",
     musicDevices: "Dispositivos musicais",

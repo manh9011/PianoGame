@@ -540,6 +540,9 @@ export const ja = {
     },
   },
   settings: {
+    converter: 'Converter',
+    midiToMusicXml: 'MIDI to MusicXML',
+    musicXmlToMidi: 'MusicXML to MIDI',
     title: "設定",
     navigation: "設定ナビゲーション",
     musicDevices: "音楽デバイス",

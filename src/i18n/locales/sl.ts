@@ -540,6 +540,9 @@ export const sl = {
     },
   },
   settings: {
+    converter: 'Converter',
+    midiToMusicXml: 'MIDI to MusicXML',
+    musicXmlToMidi: 'MusicXML to MIDI',
     title: "Nastavitve",
     navigation: "Navigacija nastavitev",
     musicDevices: "Glasbene naprave",

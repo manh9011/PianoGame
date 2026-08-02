@@ -540,6 +540,9 @@ export const th = {
     },
   },
   settings: {
+    converter: 'Converter',
+    midiToMusicXml: 'MIDI to MusicXML',
+    musicXmlToMidi: 'MusicXML to MIDI',
     title: "การตั้งค่า",
     navigation: "การนำทางการตั้งค่า",
     musicDevices: "อุปกรณ์ดนตรี",

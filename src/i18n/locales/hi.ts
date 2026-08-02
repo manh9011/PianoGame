@@ -540,6 +540,9 @@ export const hi = {
     },
   },
   settings: {
+    converter: 'Converter',
+    midiToMusicXml: 'MIDI to MusicXML',
+    musicXmlToMidi: 'MusicXML to MIDI',
     title: "सेटिंग्स",
     navigation: "सेटिंग्स नेविगेशन",
     musicDevices: "संगीत डिवाइस",

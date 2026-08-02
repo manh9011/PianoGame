@@ -540,6 +540,9 @@ export const ar = {
     },
   },
   settings: {
+    converter: 'Converter',
+    midiToMusicXml: 'MIDI to MusicXML',
+    musicXmlToMidi: 'MusicXML to MIDI',
     title: "الإعدادات",
     navigation: "تنقل الإعدادات",
     musicDevices: "أجهزة الموسيقى",

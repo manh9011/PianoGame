@@ -540,6 +540,9 @@ export const vi = {
     },
   },
   settings: {
+    converter: 'Bộ chuyển đổi (Converter)',
+    midiToMusicXml: 'Từ MIDI sang MusicXML',
+    musicXmlToMidi: 'Từ MusicXML sang MIDI',
     title: "Cài đặt",
     navigation: "Điều hướng cài đặt",
     musicDevices: "Thiết bị nhạc",

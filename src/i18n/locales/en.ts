@@ -533,6 +533,9 @@ export const en = {
     },
   },
   settings: {
+    converter: 'Converter',
+    midiToMusicXml: 'MIDI to MusicXML',
+    musicXmlToMidi: 'MusicXML to MIDI',
     title: 'Settings',
     navigation: 'Settings navigation',
     musicDevices: 'Music Devices',

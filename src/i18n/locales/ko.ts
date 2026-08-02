@@ -540,6 +540,9 @@ export const ko = {
     },
   },
   settings: {
+    converter: 'Converter',
+    midiToMusicXml: 'MIDI to MusicXML',
+    musicXmlToMidi: 'MusicXML to MIDI',
     title: "설정",
     navigation: "설정 탐색",
     musicDevices: "음악 장치",
