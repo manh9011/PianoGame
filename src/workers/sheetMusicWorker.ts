@@ -6,6 +6,7 @@ import { serializeVoiceShard } from '../modules/sheet/midiShardSerializer'
 import { mergeShardMusicXml } from '../modules/sheet/musicXmlMerge'
 import { SheetMusicError, toSheetMusicError } from '../modules/sheet/sheetTypes'
 import type { SheetErrorCode, SheetGenerationStage, SheetMusicArtifact, SheetMessageValues, SheetProgressCode } from '../modules/sheet/sheetTypes'
+import WebMscore from 'webmscore'
 
 declare const self: DedicatedWorkerGlobalScope
 
@@ -120,37 +121,69 @@ async function convertShard(pyodide: PyodideRuntime, path: string, bytes: Uint8A
 
 async function handleGenerate(request: SheetWorkerRequest) {
   const { requestId, cacheKey, buffer } = request
-  const pyodide = await ensurePyodide(requestId)
 
   postProgress(requestId, 'building-model', 'sheetMusic.progress.analyzingMidi', 'analyzingMidi')
   const source = filterSheetSourceTracks(createSheetSource(buffer), request.includedTrackIds)
   const plans = createVoicePlans(source)
-  const shards = plans.map(plan => serializeVoiceShard(source, plan))
-  if (!shards.length) throw new SheetMusicError('sheetMusic.errors.noVoices', 'noVoices')
+  if (!plans.length) throw new SheetMusicError('sheetMusic.errors.noVoices', 'noVoices')
 
-  postProgress(requestId, 'converting', 'sheetMusic.progress.convertingVoiceShards', 'convertingVoiceShards', { count: shards.length })
-  const shardXmls = []
-  for (let index = 0; index < shards.length; index++) {
-    const shard = shards[index]
-    postProgress(requestId, 'converting', 'sheetMusic.progress.convertingVoiceShard', 'convertingVoiceShard', { current: index + 1, total: shards.length })
-    const musicXml = await convertShard(pyodide, `/tmp/pianogame-shard-${requestId}-${index}.mid`, shard.midiBytes)
-    shardXmls.push({ shard, musicXml })
+  const artifactStats = {
+    staffCount: new Set(plans.map(plan => plan.staff)).size,
+    voiceCount: plans.length,
+    noteCount: plans.reduce((sum, plan) => sum + plan.events.reduce((eventSum, event) => eventSum + event.pitches.length, 0), 0),
   }
 
-  const musicXml = mergeShardMusicXml(shardXmls)
-  const artifact: SheetMusicArtifact = {
-    cacheKey,
-    musicXml,
-    warnings: [],
-    stats: {
-      staffCount: new Set(shards.map(shard => shard.staff)).size,
-      voiceCount: shards.length,
-      noteCount: plans.reduce((sum, plan) => sum + plan.events.reduce((eventSum, event) => eventSum + event.pitches.length, 0), 0),
-    },
+  // Polyfill `document` for webmscore if it's missing in WebWorker
+  if (typeof (self as any).document === 'undefined') {
+    ;(self as any).document = {
+      baseURI: self.location?.href || '',
+      createElement: () => ({}),
+    }
   }
 
-  const result: SheetWorkerResult = { type: 'result', requestId, artifact }
-  self.postMessage(result)
+  try {
+    await WebMscore.ready
+    const bytesCopy = new Uint8Array(buffer.byteLength)
+    bytesCopy.set(new Uint8Array(buffer))
+    const score = await WebMscore.load('midi', bytesCopy, [], false)
+    const musicXml = await score.saveXml()
+    score.destroy()
+    
+    const artifact: SheetMusicArtifact = {
+      cacheKey,
+      musicXml,
+      warnings: [],
+      stats: artifactStats,
+    }
+    const result: SheetWorkerResult = { type: 'result', requestId, artifact }
+    self.postMessage(result)
+    return
+  } catch (webmscoreError) {
+    console.warn('[SheetWorker] webmscore fallback to music21 due to error:', webmscoreError)
+    
+    // Fallback logic
+    const shards = plans.map(plan => serializeVoiceShard(source, plan))
+    const pyodide = await ensurePyodide(requestId)
+    postProgress(requestId, 'converting', 'sheetMusic.progress.convertingVoiceShards', 'convertingVoiceShards', { count: shards.length })
+    
+    const shardXmls: { shard: any; musicXml: string }[] = []
+    for (let index = 0; index < shards.length; index++) {
+      const shard = shards[index]
+      postProgress(requestId, 'converting', 'sheetMusic.progress.convertingVoiceShard', 'convertingVoiceShard', { current: index + 1, total: shards.length })
+      const musicXml = await convertShard(pyodide, `/tmp/pianogame-shard-${requestId}-${index}.mid`, shard.midiBytes)
+      shardXmls.push({ shard, musicXml })
+    }
+
+    const musicXml = mergeShardMusicXml(shardXmls)
+    const artifact: SheetMusicArtifact = {
+      cacheKey,
+      musicXml,
+      warnings: [],
+      stats: artifactStats,
+    }
+    const result: SheetWorkerResult = { type: 'result', requestId, artifact }
+    self.postMessage(result)
+  }
 }
 
 self.onmessage = event => {
