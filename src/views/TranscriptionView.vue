@@ -201,8 +201,7 @@ function onDownloadClick() {
       <div class="transcription-card">
         <header class="card-header">
           <p class="subtitle">
-            Transcribe piano to MIDI right in your browser — mel front end, transformer,
-            and semi-CRF Viterbi decoder run locally with zero server uploads.
+            {{ t('transcription.subtitle') }}
           </p>
         </header>
 
@@ -210,36 +209,42 @@ function onDownloadClick() {
           <label class="dropzone-label">
             <input type="file" accept=".wav,.mp3,.ogg,.flac,.m4a,audio/*" @change="onFileChange" :disabled="isBusy" />
             <template v-if="!file">
-              <strong>Choose or drag & drop a WAV / MP3 file</strong>
-              <span>Solo piano recordings yield the best results</span>
+              <strong>{{ t('transcription.dropzoneChoose') }}</strong>
+              <span>{{ t('transcription.dropzoneHint') }}</span>
             </template>
             <template v-else>
               <strong>{{ file.name }}</strong>
-              <span>{{ (file.size / 1024 / 1024).toFixed(2) }} MB — click to select another file</span>
+              <span>{{ t('transcription.dropzoneSelected', { size: (file.size / 1024 / 1024).toFixed(2) }) }}</span>
             </template>
           </label>
         </section>
 
         <div class="advanced-toggle">
           <button class="link-button" @click="showAdvanced = !showAdvanced" type="button">
-            {{ showAdvanced ? 'Hide' : 'Advanced options (model source)' }}
+            {{ showAdvanced ? t('transcription.hideAdvanced') : t('transcription.showAdvanced') }}
           </button>
         </div>
         <div v-if="showAdvanced" class="advanced-panel">
-          <label class="field-label" for="model-base">Model Base URL (contains transkun.onnx, params.json, ...)</label>
+          <label class="field-label" for="model-base">{{ t('transcription.modelBaseUrl') }}</label>
           <BaseInput id="model-base" v-model="modelBase" :disabled="isBusy" />
           <p class="hint">
-            Defaults to Hugging Face repository
+            {{ t('transcription.modelHintPart1') }}
             <a href="https://huggingface.co/TuesdayCrowd/transkun-onnx" target="_blank"
               rel="noopener">TuesdayCrowd/transkun-onnx</a>.
-            To use local pre-downloaded files, place them in <code>public/models/transkun/</code> and change to
-            <code>/models/transkun/</code>.
+            <i18n-t keypath="transcription.modelHintPart2" tag="span">
+              <template #path1>
+                <code>public/models/transkun/</code>
+              </template>
+              <template #path2>
+                <code>/models/transkun/</code>
+              </template>
+            </i18n-t>
           </p>
         </div>
 
         <BaseButton class="primary-button" variant="primary" :disabled="!file || isBusy" @click="runTranscription">
-          <span v-if="!isBusy">Transcribe to MIDI</span>
-          <span v-else>Processing…</span>
+          <span v-if="!isBusy">{{ t('transcription.transcribeBtn') }}</span>
+          <span v-else>{{ t('transcription.processingBtn') }}</span>
         </BaseButton>
 
         <section v-if="isBusy || logLines.length" class="progress-block">
@@ -247,14 +252,13 @@ function onDownloadClick() {
             <div class="piano-progress-fill" :style="{ width: progressPercent + '%' }"></div>
           </div>
           <p v-if="stageLabel" class="stage-label">
-            {{ stageLabel }} — segment {{ segDone }}/{{ segTotal }} ({{ progressPercent }}%) — {{
-              elapsedSeconds.toFixed(1) }}s
+            {{ t('transcription.segmentProgress', { stage: stageLabel, done: segDone, total: segTotal, percent: progressPercent, time: elapsedSeconds.toFixed(1) }) }}
           </p>
           <pre class="log">{{ logLines.join('\n') }}</pre>
         </section>
 
         <section v-if="status === 'error'" class="error-block">
-          <strong>An error occurred.</strong>
+          <strong>{{ t('transcription.errorOccurred') }}</strong>
           <p>{{ errorMessage }}</p>
         </section>
 
@@ -262,27 +266,25 @@ function onDownloadClick() {
           <div class="result-stats">
             <div class="stat-item">
               <span class="stat-value">{{ noteCount }}</span>
-              <span class="stat-label">notes</span>
+              <span class="stat-label">{{ t('transcription.statNotes') }}</span>
             </div>
             <div class="stat-item">
               <span class="stat-value">{{ durationSeconds.toFixed(1) }}s</span>
-              <span class="stat-label">audio duration</span>
+              <span class="stat-label">{{ t('transcription.statAudioDuration') }}</span>
             </div>
             <div class="stat-item">
               <span class="stat-value">{{ elapsedSeconds.toFixed(1) }}s</span>
-              <span class="stat-label">processing time</span>
+              <span class="stat-label">{{ t('transcription.statProcessingTime') }}</span>
             </div>
           </div>
           <a v-if="midiUrl" class="download-button" :href="midiUrl" :download="midiFilename" @click="onDownloadClick">
-            Download {{ midiFilename }}
+            {{ t('transcription.downloadMidi', { filename: midiFilename }) }}
           </a>
         </section>
 
         <footer class="card-footer">
           <p>
-            Original model: Yujia Yan, Frank Cwitkowitz, Zhiyao Duan — Transkun (Neural Semi-CRF, MIT).
-            ONNX export + decoding docs: TuesdayCrowd/transkun-onnx. All inference runs locally via
-            WebAssembly in your browser.
+            {{ t('transcription.footerText') }}
           </p>
         </footer>
       </div>
