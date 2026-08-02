@@ -206,6 +206,8 @@ export const sl = {
     daysAgo: "pred {count} dnevom | pred {count} dnevi",
   },
   play: {
+    zoomOut: "Pomanjšaj",
+    zoomIn: "Povečaj",
     backToModes: "Nazaj na izbiro načina",
     helpToggle: "Prikaži/skrij prekrivni prikaz pomoči za bližnjice",
     benchmarkToggle: "Vklopi/izklopi prikaz FPS primerjalnega testa",

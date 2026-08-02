@@ -206,6 +206,8 @@ export const de = {
     daysAgo: "vor {count} Tag | vor {count} Tagen",
   },
   play: {
+    zoomOut: "Verkleinern",
+    zoomIn: "Vergrößern",
     backToModes: "Zurück zur Modusauswahl",
     helpToggle: "Hilfe zu Tastenkürzeln ein-/ausblenden",
     benchmarkToggle: "FPS-Benchmark ein-/ausblenden",

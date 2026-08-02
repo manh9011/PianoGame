@@ -206,6 +206,8 @@ export const ru = {
     daysAgo: "{count} день назад | {count} дней назад",
   },
   play: {
+    zoomOut: "Уменьшить",
+    zoomIn: "Увеличить",
     backToModes: "Назад к выбору режима",
     helpToggle: "Показать/скрыть подсказки горячих клавиш",
     benchmarkToggle: "Включить/выключить отображение FPS-бенчмарка",

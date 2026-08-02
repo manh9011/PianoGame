@@ -206,6 +206,8 @@ export const th = {
     daysAgo: "{count} วันที่แล้ว | {count} วันที่แล้ว",
   },
   play: {
+    zoomOut: "ซูมออก",
+    zoomIn: "ซูมเข้า",
     backToModes: "กลับไปเลือกโหมด",
     helpToggle: "แสดง/ซ่อนหน้าต่างช่วยเหลือปุ่มลัด",
     benchmarkToggle: "เปิด/ปิดการแสดงผลเบนช์มาร์ก FPS",

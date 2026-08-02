@@ -206,6 +206,8 @@ export const tr = {
     daysAgo: "{count} gün önce | {count} gün önce",
   },
   play: {
+    zoomOut: "Uzaklaştır",
+    zoomIn: "Yakınlaştır",
     backToModes: "Mod seçimine dön",
     helpToggle: "Kısayol yardım katmanını göster/gizle",
     benchmarkToggle: "FPS benchmark göstergesini aç/kapat",

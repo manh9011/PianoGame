@@ -206,6 +206,8 @@ export const ca = {
     daysAgo: "fa {count} dia | fa {count} dies",
   },
   play: {
+    zoomOut: "Allunya",
+    zoomIn: "Apropa",
     backToModes: "Torna a la selecció de mode",
     helpToggle: "Mostra o amaga l’ajuda de dreceres",
     benchmarkToggle: "Commuta la visualització del benchmark d’FPS",

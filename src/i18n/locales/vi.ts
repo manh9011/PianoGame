@@ -206,6 +206,8 @@ export const vi = {
     daysAgo: "{count} ngày trước | {count} ngày trước",
   },
   play: {
+    zoomOut: "Thu nhỏ",
+    zoomIn: "Phóng to",
     backToModes: "Quay lại chọn chế độ",
     helpToggle: "Hiện/ẩn lớp trợ giúp phím tắt",
     benchmarkToggle: "Bật/tắt hiển thị đo FPS",

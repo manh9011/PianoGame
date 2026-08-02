@@ -206,6 +206,8 @@ export const nl = {
     daysAgo: "{count} dag geleden | {count} dagen geleden",
   },
   play: {
+    zoomOut: "Uitzoomen",
+    zoomIn: "Inzoomen",
     backToModes: "Terug naar modusselectie",
     helpToggle: "Sneltoetshelp tonen/verbergen",
     benchmarkToggle: "FPS-benchmark aan/uit zetten",

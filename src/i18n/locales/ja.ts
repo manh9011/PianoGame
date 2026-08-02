@@ -206,6 +206,8 @@ export const ja = {
     daysAgo: "{count} 日前 | {count} 日前",
   },
   play: {
+    zoomOut: "縮小",
+    zoomIn: "拡大",
     backToModes: "モード選択に戻る",
     helpToggle: "ショートカットヘルプのオーバーレイを表示/非表示",
     benchmarkToggle: "FPS ベンチマーク表示を切り替え",

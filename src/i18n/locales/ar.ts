@@ -206,6 +206,8 @@ export const ar = {
     daysAgo: "قبل {count} يوم",
   },
   play: {
+    zoomOut: "تصغير",
+    zoomIn: "تكبير",
     backToModes: "العودة إلى اختيار الوضع",
     helpToggle: "إظهار/إخفاء طبقة مساعدة الاختصارات",
     benchmarkToggle: "تبديل عرض قياس FPS",

@@ -206,6 +206,8 @@ export const zh = {
     daysAgo: "{count} 天前",
   },
   play: {
+    zoomOut: "缩小",
+    zoomIn: "放大",
     backToModes: "返回模式选择",
     helpToggle: "显示/隐藏快捷键帮助",
     benchmarkToggle: "切换 FPS 基准显示",

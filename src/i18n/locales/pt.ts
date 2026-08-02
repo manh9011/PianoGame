@@ -206,6 +206,8 @@ export const pt = {
     daysAgo: "há {count} dia | há {count} dias",
   },
   play: {
+    zoomOut: "Diminuir zoom",
+    zoomIn: "Aumentar zoom",
     backToModes: "Voltar à seleção de modo",
     helpToggle: "Mostrar ou ocultar a ajuda de atalhos",
     benchmarkToggle: "Alternar a exibição do benchmark de FPS",

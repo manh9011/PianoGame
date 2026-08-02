@@ -205,6 +205,8 @@ export const en = {
     daysAgo: '{count} day ago | {count} days ago',
   },
   play: {
+    zoomOut: 'Zoom out',
+    zoomIn: 'Zoom in',
     backToModes: 'Back to mode selection',
     helpToggle: 'Show/hide shortcut help overlay',
     benchmarkToggle: 'Toggle FPS benchmark display',

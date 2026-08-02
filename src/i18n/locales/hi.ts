@@ -206,6 +206,8 @@ export const hi = {
     daysAgo: "{count} दिन पहले | {count} दिन पहले",
   },
   play: {
+    zoomOut: "ज़ूम आउट",
+    zoomIn: "ज़ूम इन",
     backToModes: "मोड चयन पर वापस जाएँ",
     helpToggle: "शॉर्टकट सहायता ओवरले दिखाएँ/छिपाएँ",
     benchmarkToggle: "FPS बेंचमार्क डिस्प्ले चालू/बंद करें",

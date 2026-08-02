@@ -206,6 +206,8 @@ export const ko = {
     daysAgo: "{count}일 전 | {count}일 전",
   },
   play: {
+    zoomOut: "축소",
+    zoomIn: "확대",
     backToModes: "모드 선택으로 돌아가기",
     helpToggle: "단축키 도움말 오버레이 표시/숨기기",
     benchmarkToggle: "FPS 벤치마크 표시 전환",
