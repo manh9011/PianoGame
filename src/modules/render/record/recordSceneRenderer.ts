@@ -18,10 +18,15 @@ function visibleTrack(trackId: number, scene: RecordRenderScene) {
   return track?.color !== TRACK_INVISIBLE_COLOR && track?.mode !== 'playedButHidden' && track?.mode !== 'notPlayed'
 }
 
-function activeNotesAt(currentUs: number, scene: RecordRenderScene) {
+export interface ActiveRenderNote {
+  noteId: number
+  trackId: number
+}
+
+function activeNotesAt(currentUs: number, scene: RecordRenderScene): ActiveRenderNote[] {
   return scene.notes
     .filter(note => visibleTrack(note.trackId, scene) && note.startUs <= currentUs && note.endUs >= currentUs)
-    .map(note => note.noteId)
+    .map(note => ({ noteId: note.noteId, trackId: note.trackId }))
 }
 
 function currentKeySignatureAccidentals(currentUs: number, scene: RecordRenderScene) {
@@ -157,13 +162,13 @@ export interface RecordSceneRenderInput {
   scene: RecordRenderScene
   visuals: RecordRenderVisualOptions
   images?: RecordRenderImages
-  activeNoteIds?: number[]
+  activeNotes?: ActiveRenderNote[]
 }
 
-function renderRecordSceneLandscape({ ctx, width, height, currentUs, scene, visuals, images, activeNoteIds }: RecordSceneRenderInput) {
+function renderRecordSceneLandscape({ ctx, width, height, currentUs, scene, visuals, images, activeNotes }: RecordSceneRenderInput) {
   const keyboardHeight = visuals.showKeyboard ? (width / WHITE_KEY_COUNT) * WHITE_KEY_ASPECT_RATIO : 0
   const rollHeight = Math.max(1, height - keyboardHeight)
-  const activeNotes = activeNoteIds ?? activeNotesAt(currentUs, scene)
+  const currentActiveNotes = activeNotes ?? activeNotesAt(currentUs, scene)
   const keySignatureAccidentals = currentKeySignatureAccidentals(currentUs, scene)
 
   drawSceneBackground(ctx, width, height, visuals, images)
@@ -197,7 +202,7 @@ function renderRecordSceneLandscape({ ctx, width, height, currentUs, scene, visu
       height: keyboardHeight,
       scene,
       visuals,
-      activeNoteIds: activeNotes,
+      activeNotes: currentActiveNotes,
       keySignatureAccidentals,
     })
 
@@ -225,7 +230,7 @@ function renderRecordSceneLandscape({ ctx, width, height, currentUs, scene, visu
   drawIntroOverlay(ctx, width, height, currentUs, scene.title)
 }
 
-function renderRecordScenePortrait({ ctx, width, height, currentUs, scene, visuals, images, activeNoteIds: inputActiveNoteIds }: RecordSceneRenderInput) {
+function renderRecordScenePortrait({ ctx, width, height, currentUs, scene, visuals, images, activeNotes: inputActiveNotes }: RecordSceneRenderInput) {
   // 1. Full 9:16 frame dark background
   ctx.fillStyle = '#303030'
   ctx.fillRect(0, 0, width, height)
@@ -244,7 +249,7 @@ function renderRecordScenePortrait({ ctx, width, height, currentUs, scene, visua
   const contentWidth = width
   const contentHeight = width * 3 / 4
   const contentY = (height - contentHeight) / 2
-  const activeNotes = inputActiveNoteIds ?? activeNotesAt(currentUs, scene)
+  const currentActiveNotes = inputActiveNotes ?? activeNotesAt(currentUs, scene)
   const keySignatureAccidentals = currentKeySignatureAccidentals(currentUs, scene)
 
   ctx.save()
@@ -296,7 +301,7 @@ function renderRecordScenePortrait({ ctx, width, height, currentUs, scene, visua
       height: keyboardHeight,
       scene,
       visuals,
-      activeNoteIds: activeNotes,
+      activeNotes: currentActiveNotes,
       keySignatureAccidentals,
     })
 

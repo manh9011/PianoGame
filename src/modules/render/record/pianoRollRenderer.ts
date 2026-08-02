@@ -297,10 +297,11 @@ function renderBackground(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderi
   ctx.fillRect(0, 0, width, height)
 }
 
-function renderLogo(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, width: number, _height: number, visuals: RecordRenderVisualOptions, images?: RecordRenderImages) {
+function renderLogo(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, width: number, height: number, visuals: RecordRenderVisualOptions, images?: RecordRenderImages) {
   if (!visuals.logoEnabled || !images?.logo) return
-  const size = 40
-  const margin = 18
+  const minDim = Math.min(width, height)
+  const size = Math.max(40, Math.round(minDim * 0.065))
+  const margin = Math.max(18, Math.round(minDim * 0.02))
   ctx.save()
   ctx.globalAlpha = 0.88
   drawImageCover(ctx, images.logo, width - size - margin, margin, size, size)

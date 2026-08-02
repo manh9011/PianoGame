@@ -16,7 +16,7 @@ export interface PianoKeyboardRenderInput {
   height: number
   scene: RecordRenderScene
   visuals: RecordRenderVisualOptions
-  activeNoteIds?: number[]
+  activeNotes?: { noteId: number, trackId: number }[]
   keySignatureAccidentals?: number
 }
 
@@ -77,19 +77,18 @@ function keyRect(key: PianoKey, width: number, height: number): KeyRect {
   }
 }
 
-function noteActive(noteId: number, activeNoteIds: number[]) {
-  return activeNoteIds.includes(noteId)
+function noteActive(noteId: number, activeNotes: { noteId: number, trackId: number }[]) {
+  return activeNotes.some(n => n.noteId === noteId)
 }
 
 function isKeyDisabled(noteId: number, scene: RecordRenderScene) {
   return !isNoteInRange(noteId, scene.keyboardRange)
 }
 
-function activeColor(noteId: number, activeNoteIds: number[], scene: RecordRenderScene) {
-  if (!noteActive(noteId, activeNoteIds)) return '#888a85'
-  const noteTrack = scene.notes.find(note => note.noteId === noteId)
-  if (!noteTrack) return '#888a85'
-  return scene.tracks.find(track => track.trackId === noteTrack.trackId)?.color ?? '#888a85'
+function activeColor(noteId: number, activeNotes: { noteId: number, trackId: number }[], scene: RecordRenderScene) {
+  const activeNote = activeNotes.find(n => n.noteId === noteId)
+  if (!activeNote) return '#888a85'
+  return scene.tracks.find(track => track.trackId === activeNote.trackId)?.color ?? '#888a85'
 }
 
 function keyboardLabel(mode: LabelMode | 'none', noteId: number, keySignatureAccidentals: number) {
@@ -133,10 +132,10 @@ function drawWhiteKey(
   rect: KeyRect,
   scene: RecordRenderScene,
   visuals: RecordRenderVisualOptions,
-  activeNoteIds: number[],
+  activeNotes: { noteId: number, trackId: number }[],
   keySignatureAccidentals: number,
 ) {
-  const isActive = noteActive(rect.key.noteId, activeNoteIds)
+  const isActive = noteActive(rect.key.noteId, activeNotes)
   const isDisabled = isKeyDisabled(rect.key.noteId, scene)
   const drawActive = isActive && !isDisabled
   const drawX = rect.x + 0.25
@@ -146,7 +145,7 @@ function drawWhiteKey(
   const fill = ctx.createLinearGradient(drawX, drawY, drawX + drawWidth, drawY)
 
   if (drawActive) {
-    const color = activeColor(rect.key.noteId, activeNoteIds, scene)
+    const color = activeColor(rect.key.noteId, activeNotes, scene)
     fill.addColorStop(0, color)
     fill.addColorStop(1, color)
   } else if (isDisabled) {
@@ -194,13 +193,13 @@ function drawBlackKey(
   rect: KeyRect,
   scene: RecordRenderScene,
   visuals: RecordRenderVisualOptions,
-  activeNoteIds: number[],
+  activeNotes: { noteId: number, trackId: number }[],
   keySignatureAccidentals: number,
 ) {
-  const isActive = noteActive(rect.key.noteId, activeNoteIds)
+  const isActive = noteActive(rect.key.noteId, activeNotes)
   const isDisabled = isKeyDisabled(rect.key.noteId, scene)
   const drawDown = isActive && !isDisabled
-  const accent = activeColor(rect.key.noteId, activeNoteIds, scene)
+  const accent = activeColor(rect.key.noteId, activeNotes, scene)
   const slotX = Math.round(rect.x) + 0.5
   const slotY = Math.round(rect.y) + 0.5
   const slotW = Math.max(10, Math.round(rect.width) - 1)
@@ -296,13 +295,13 @@ export function renderPianoKeyboard({
   height,
   scene,
   visuals,
-  activeNoteIds = [],
+  activeNotes = [],
   keySignatureAccidentals = 0,
 }: PianoKeyboardRenderInput) {
   ctx.clearRect(0, 0, width, height)
 
   for (const key of whiteKeys) {
-    drawWhiteKey(ctx, keyRect(key, width, height), scene, visuals, activeNoteIds, keySignatureAccidentals)
+    drawWhiteKey(ctx, keyRect(key, width, height), scene, visuals, activeNotes, keySignatureAccidentals)
   }
 
   for (const key of blackKeys) {
@@ -318,6 +317,6 @@ export function renderPianoKeyboard({
 
   drawHitLine(ctx, width)
   for (const key of blackKeys) {
-    drawBlackKey(ctx, keyRect(key, width, height), scene, visuals, activeNoteIds, keySignatureAccidentals)
+    drawBlackKey(ctx, keyRect(key, width, height), scene, visuals, activeNotes, keySignatureAccidentals)
   }
 }

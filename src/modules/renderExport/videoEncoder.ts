@@ -30,13 +30,13 @@ async function waitForQueueDrain(encoder: VideoEncoder, targetSize: number, vide
 }
 
 function safeOutputResolution(width: number, height: number) {
-  const maxPixels = 1280 * 720
+  const maxPixels = 3840 * 2160 // Allow up to 4K
   const pixels = width * height
-  if (pixels <= maxPixels) return { width, height }
+  if (pixels <= maxPixels) return { width: Math.round(width) & ~1, height: Math.round(height) & ~1 }
   const scale = Math.sqrt(maxPixels / pixels)
   return {
-    width: Math.max(2, Math.round(width * scale)),
-    height: Math.max(2, Math.round(height * scale)),
+    width: Math.max(2, Math.round(width * scale) & ~1),
+    height: Math.max(2, Math.round(height * scale) & ~1),
   }
 }
 
@@ -46,7 +46,7 @@ function safeFrameRate(preset: string) {
 
 function safeBitrate(width: number, height: number, fps: number) {
   const pixelsPerSecond = width * height * fps
-  return Math.max(1_500_000, Math.min(4_000_000, Math.round(pixelsPerSecond * 0.08)))
+  return Math.max(1_500_000, Math.min(45_000_000, Math.round(pixelsPerSecond * 0.12)))
 }
 
 function compactRenderStartUs(request: RenderExportRequest) {
@@ -129,7 +129,7 @@ function compactFileName(request: RenderExportRequest) {
 }
 
 function compactVideoCodec(kind: 'mp4' | 'webm') {
-  return kind === 'mp4' ? 'avc1.42001f' : 'vp8'
+  return kind === 'mp4' ? 'avc1.420034' : 'vp8'
 }
 
 function compactAudioCodec(kind: 'mp4' | 'webm') {
