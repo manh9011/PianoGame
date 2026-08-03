@@ -25,6 +25,7 @@ const emit = defineEmits<{
   startRecording: []
   stopRecording: []
   togglePlayback: []
+  rewind: []
   exportMidi: []
   importMidi: []
   openPractice: []
@@ -115,6 +116,16 @@ function zoomIn() {
     </template>
 
     <template #center>
+      <BaseButton
+        variant="icon"
+        class="rewind-toggle"
+        :disabled="freePlay.status === 'recording' || !freePlay.hasRecording || freePlay.viewUs === 0"
+        :title="t('freePlay.rewindToStart', 'Về đầu bài')"
+        :aria-label="t('freePlay.rewindToStart', 'Về đầu bài')"
+        @click="emit('rewind')"
+      >
+        <i class="fas fa-backward-step"></i>
+      </BaseButton>
       <BaseButton
         variant="icon"
         class="play-toggle"

@@ -262,8 +262,16 @@ function stopNormalPlaybackVoices() {
 function tickNormalPlayback() {
   const elapsedUs = Math.round((performance.now() - playbackStartedAtMs) * 1000)
   const durationUs = playbackStartUs + elapsedUs
-  freePlay.seekTo(durationUs)
   
+  if (durationUs >= freePlay.recordingDurationUs) {
+    freePlay.seekTo(0)
+    if (freePlay.isPlaying) {
+      togglePlayback()
+    }
+    return
+  }
+  
+  freePlay.seekTo(durationUs)
   const active = new Set<string>()
   for (const track of freePlay.tracks) {
     if (!track.notes.length) continue
@@ -606,6 +614,7 @@ watch(() => route.query.librarySongId, value => {
       @start-recording="startRecording"
       @stop-recording="stopRecording"
       @toggle-playback="togglePlayback"
+      @rewind="freePlay.seekTo(0)"
       @export-midi="exportMidi"
       @import-midi="importMidiFile"
       @open-practice="showPracticeDialog = true"

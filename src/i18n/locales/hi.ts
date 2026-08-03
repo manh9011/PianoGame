@@ -65,6 +65,9 @@ export const hi = {
     downloadTauriToast: `Downloaded to your system's Downloads folder.`,
   },
   freePlay: {
+    rewindToStart: "Rewind to start",
+    stopPlayback: "Stop",
+    startPlayback: "Play",
     title: "मुक्त वादन",
     backToHome: "होम पर वापस जाएँ",
     record: "रिकॉर्ड करें",

@@ -65,6 +65,9 @@ export const zh = {
     downloadTauriToast: `Downloaded to your system's Downloads folder.`,
   },
   freePlay: {
+    rewindToStart: "Rewind to start",
+    stopPlayback: "Stop",
+    startPlayback: "Play",
     title: "自由演奏",
     backToHome: "返回首页",
     record: "录制",

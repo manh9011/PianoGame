@@ -65,6 +65,9 @@ export const ko = {
     downloadTauriToast: `Downloaded to your system's Downloads folder.`,
   },
   freePlay: {
+    rewindToStart: "Rewind to start",
+    stopPlayback: "Stop",
+    startPlayback: "Play",
     title: "자유 연주",
     backToHome: "홈으로 돌아가기",
     record: "녹음",

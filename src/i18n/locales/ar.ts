@@ -65,6 +65,9 @@ export const ar = {
     downloadTauriToast: `Downloaded to your system's Downloads folder.`,
   },
   freePlay: {
+    rewindToStart: "Rewind to start",
+    stopPlayback: "Stop",
+    startPlayback: "Play",
     title: "عزف حر",
     backToHome: "العودة إلى الصفحة الرئيسية",
     record: "تسجيل",

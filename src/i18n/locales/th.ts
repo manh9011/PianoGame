@@ -65,6 +65,9 @@ export const th = {
     downloadTauriToast: `Downloaded to your system's Downloads folder.`,
   },
   freePlay: {
+    rewindToStart: "Rewind to start",
+    stopPlayback: "Stop",
+    startPlayback: "Play",
     title: "เล่นอิสระ",
     backToHome: "กลับไปหน้าแรก",
     record: "บันทึก",

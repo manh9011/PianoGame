@@ -65,6 +65,9 @@ export const vi = {
     downloadTauriToast: "Đã tải xuống vào thư mục Downloads của hệ thống.",
   },
   freePlay: {
+    rewindToStart: "Về đầu bài",
+    stopPlayback: "Dừng phát",
+    startPlayback: "Phát thử",
     title: "Chơi tự do",
     backToHome: "Quay lại trang chủ",
     record: "Ghi",
