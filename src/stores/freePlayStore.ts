@@ -262,6 +262,7 @@ function nowUs(startMs: number) {
 export const useFreePlayStore = defineStore('freePlay', {
   state: () => ({
     status: 'idle' as FreePlayStatus,
+    isPlaying: false,
     recordStartMs: 0,
     recordStopMs: 0,
     activeNotesByPitch: new Map<number, ActiveCapture[]>(),
@@ -270,6 +271,7 @@ export const useFreePlayStore = defineStore('freePlay', {
     trackVersion: 0,
     loading: false,
     initialized: false,
+    viewUs: null as number | null,
     ...defaultFreePlayPreferences,
   }),
   getters: {
@@ -406,6 +408,7 @@ export const useFreePlayStore = defineStore('freePlay', {
       this.recordStopMs = 0
       this.recordingTrackId = null
       this.activeNotesByPitch.clear()
+      this.viewUs = null
       this.touchTracks()
       this.persist()
     },
@@ -432,6 +435,7 @@ export const useFreePlayStore = defineStore('freePlay', {
       this.recordStopMs = 0
       this.recordingTrackId = null
       this.activeNotesByPitch.clear()
+      this.viewUs = null
       this.touchTracks()
       this.persist()
       return { truncatedTrackCount: imported.truncatedTrackCount }
@@ -469,6 +473,7 @@ export const useFreePlayStore = defineStore('freePlay', {
       this.recordingTrackId = null
       this.activeNotesByPitch.clear()
       this.status = this.hasRecording ? 'recorded' : 'idle'
+      this.viewUs = null
       this.touchTracks()
       this.persist()
     },
@@ -512,6 +517,7 @@ export const useFreePlayStore = defineStore('freePlay', {
       this.recordStartMs = performance.now()
       this.recordStopMs = 0
       this.status = 'recording'
+      this.viewUs = null
       this.touchTracks()
       this.persist()
     },
@@ -616,5 +622,14 @@ export const useFreePlayStore = defineStore('freePlay', {
       })
       this.touchTracks()
     },
+    seekTo(us: number) {
+      this.viewUs = us
+    },
+    clearSeek() {
+      this.viewUs = null
+    },
+    setPlaying(playing: boolean) {
+      this.isPlaying = playing
+    }
   },
 })

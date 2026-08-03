@@ -14,6 +14,7 @@ const settings = useSettingsStore()
 
 const props = defineProps<{
   isFullscreen: boolean
+  isPlaying?: boolean
   settingsOpen?: boolean
   metronomeOpen?: boolean
   keyboardRangeOpen?: boolean
@@ -23,6 +24,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   startRecording: []
   stopRecording: []
+  togglePlayback: []
   exportMidi: []
   importMidi: []
   openPractice: []
@@ -115,6 +117,17 @@ function zoomIn() {
     <template #center>
       <BaseButton
         variant="icon"
+        class="play-toggle"
+        :class="{ 'playing': props.isPlaying }"
+        :disabled="freePlay.status === 'recording' || !freePlay.hasRecording"
+        :title="props.isPlaying ? t('freePlay.stopPlayback', 'Dừng phát') : t('freePlay.startPlayback', 'Phát thử')"
+        :aria-label="props.isPlaying ? t('freePlay.stopPlayback', 'Dừng phát') : t('freePlay.startPlayback', 'Phát thử')"
+        @click="emit('togglePlayback')"
+      >
+        <i :class="props.isPlaying ? 'fas fa-stop' : 'fas fa-play'"></i>
+      </BaseButton>
+      <BaseButton
+        variant="icon"
         class="record-toggle"
         :class="{ 'recording': freePlay.status === 'recording' }"
         :title="recordButtonTitle"
@@ -176,6 +189,16 @@ function zoomIn() {
   color: #ffffff;
   background: rgba(239, 68, 68, 0.78);
   border-color: rgba(248, 113, 113, 0.9);
+}
+
+.play-toggle {
+  color: #4ade80;
+}
+
+.play-toggle.playing {
+  color: #ffffff;
+  background: rgba(34, 197, 94, 0.78);
+  border-color: rgba(74, 222, 128, 0.9);
 }
 
 .record-time {

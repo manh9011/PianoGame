@@ -12,6 +12,7 @@ import { WHITE_KEY_COUNT } from '../modules/render/pianoGeometry'
 import { createFreePlayMidi } from '../modules/midi/freePlayMidiExport'
 import { getInstrumentByProgram } from '../modules/audio/gmInstrumentCatalog'
 import FreePlayTopBar from '../components/player/FreePlayTopBar.vue'
+import FreePlayProgressBar from '../components/player/FreePlayProgressBar.vue'
 import FreePlayTrackManager from '../components/player/FreePlayTrackManager.vue'
 import FreePlayPianoRoll from '../components/player/FreePlayPianoRoll.vue'
 import PianoKeyboard from '../components/player/PianoKeyboard.vue'
@@ -41,6 +42,12 @@ let unsubscribeNoteInput: (() => void) | undefined
 let resizeObserver: ResizeObserver | null = null
 let timerId: number | null = null
 const backingActiveVoiceIds = new Set<string>()
+
+let playbackTimerId: number | null = null
+let playbackStartedAtMs = 0
+let playbackStartUs = 0
+const playbackActiveVoiceIds = new Set<string>()
+const timelineEndUs = computed(() => Math.max(0, ...freePlay.tracks.flatMap(track => track.notes.map(note => note.endUs))))
 
 const freePlayLayoutRef = ref<HTMLElement>()
 const keyboardHeight = ref(150)
@@ -247,8 +254,75 @@ function tickBackingPlayback(durationUs: number) {
   }
 }
 
+function stopNormalPlaybackVoices() {
+  for (const voiceId of playbackActiveVoiceIds) player.inputSynth.noteOff(voiceId)
+  playbackActiveVoiceIds.clear()
+}
+
+function tickNormalPlayback() {
+  const elapsedUs = Math.round((performance.now() - playbackStartedAtMs) * 1000)
+  const durationUs = playbackStartUs + elapsedUs
+  freePlay.seekTo(durationUs)
+  
+  const active = new Set<string>()
+  for (const track of freePlay.tracks) {
+    if (!track.notes.length) continue
+    const loopDurationUs = getFreePlayTrackLoopDurationUs(track, freePlay.bpm, freePlay.timeSignature)
+    if (loopDurationUs <= 0) continue
+    const loopIndex = track.loop ? Math.floor(durationUs / loopDurationUs) : 0
+    const localUs = track.loop ? durationUs % loopDurationUs : durationUs
+    if (!track.loop && durationUs > loopDurationUs) continue
+    const soundfontId = getInstrumentByProgram(track.instrumentProgram).soundfontId
+    for (const note of track.notes) {
+      if (note.startUs > localUs || note.endUs <= localUs) continue
+      const voiceId = `free-play-playback:${track.id}:${note.id}:${loopIndex}`
+      active.add(voiceId)
+      if (playbackActiveVoiceIds.has(voiceId)) continue
+      playbackActiveVoiceIds.add(voiceId)
+      void player.inputSynth.noteOn(voiceId, note.noteId, note.velocity, soundfontId)
+    }
+  }
+
+  for (const voiceId of [...playbackActiveVoiceIds]) {
+    if (active.has(voiceId)) continue
+    player.inputSynth.noteOff(voiceId)
+    playbackActiveVoiceIds.delete(voiceId)
+  }
+
+  if (durationUs >= timelineEndUs.value) {
+    stopPlayback()
+  }
+}
+
+function startPlayback() {
+  if (freePlay.status === 'recording' || !freePlay.hasRecording) return
+  closeDialogs()
+  stopBackingPlayback()
+  stopNormalPlaybackVoices()
+  freePlay.setPlaying(true)
+  playbackStartUs = freePlay.viewUs ?? 0
+  playbackStartedAtMs = performance.now()
+  tickNormalPlayback()
+  playbackTimerId = window.setInterval(tickNormalPlayback, 30)
+}
+
+function stopPlayback() {
+  if (playbackTimerId !== null) {
+    window.clearInterval(playbackTimerId)
+    playbackTimerId = null
+  }
+  freePlay.setPlaying(false)
+  stopNormalPlaybackVoices()
+}
+
+function togglePlayback() {
+  if (freePlay.isPlaying) stopPlayback()
+  else startPlayback()
+}
+
 function startRecording() {
   closeDialogs()
+  stopPlayback()
   stopBackingPlayback()
   syncMonitorTrack()
   freePlay.startRecording()
@@ -480,6 +554,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   if (freePlay.status === 'recording') freePlay.stopRecording()
+  stopPlayback()
   stopBackingPlayback()
   bindInput(midiAccess, '', () => {})
   unsubscribeNoteInput?.()
@@ -523,12 +598,14 @@ watch(() => route.query.librarySongId, value => {
   >
     <FreePlayTopBar
       :is-fullscreen="isFullscreen"
+      :is-playing="freePlay.isPlaying"
       :settings-open="showSettingsDialog"
       :metronome-open="showMetronomeDialog"
       :keyboard-range-open="showKeyboardRangeDialog"
       :labels-open="showLabelsDialog"
       @start-recording="startRecording"
       @stop-recording="stopRecording"
+      @toggle-playback="togglePlayback"
       @export-midi="exportMidi"
       @import-midi="importMidiFile"
       @open-practice="showPracticeDialog = true"
@@ -540,6 +617,7 @@ watch(() => route.query.librarySongId, value => {
       @open-labels="openLabels"
       @toggle-fullscreen="toggleFullscreen"
     />
+    <FreePlayProgressBar />
     <section class="free-play-stage">
       <FreePlayPianoRoll />
       <FreePlayTrackManager />
@@ -597,7 +675,7 @@ watch(() => route.query.librarySongId, value => {
 .free-play-layout {
   height: 100dvh;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) var(--keyboard-height);
+  grid-template-rows: auto auto minmax(0, 1fr) var(--keyboard-height);
   background: var(--color-bg-tertiary);
   overflow: hidden;
 }

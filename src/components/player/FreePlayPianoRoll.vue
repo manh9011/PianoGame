@@ -7,6 +7,7 @@ import { useSettingsStore } from '../../stores/settingsStore'
 import { createPianoKeys, WHITE_KEY_COUNT } from '../../modules/render/pianoGeometry'
 import { getNoteLabel } from '../../modules/render/pianoLabels'
 import { drawRollHitLine, ROLL_HIT_LINE_HEIGHT } from '../../modules/render/hitLineRenderer'
+import { createImpactParticleRenderer, getImpactRepeatThrottleMs } from '../../modules/render/impactParticlesRenderer'
 import { isNoteInRange } from '../../modules/render/keyboardRange'
 
 const PIANO_ROLL_BACKGROUND = '#303030'
@@ -20,6 +21,8 @@ const freePlay = useFreePlayStore()
 const player = usePlayerStore()
 const settings = useSettingsStore()
 const canvasRef = ref<HTMLCanvasElement | null>(null)
+const impactParticles = createImpactParticleRenderer()
+const activeImpacts = new Map<string, number>()
 let resizeObserver: ResizeObserver | null = null
 let rafId: number | null = null
 let logicalWidth = 0
@@ -43,7 +46,7 @@ function currentUs() {
   if (freePlay.status === 'recording' && freePlay.recordStartMs) {
     return Math.max(0, Math.round((performance.now() - freePlay.recordStartMs) * 1000))
   }
-  return freePlay.recordingDurationUs
+  return freePlay.viewUs ?? freePlay.recordingDurationUs
 }
 
 function visibleNotes(nowUs: number, viewStartUs: number): DrawableNote[] {
@@ -155,6 +158,22 @@ function drawGrid(ctx: CanvasRenderingContext2D) {
     ctx.moveTo(0, y)
     ctx.lineTo(logicalWidth, y)
     ctx.stroke()
+
+    if (measureLine) {
+      const measureIndex = Math.floor(beatIndex / signature.numerator)
+      ctx.save()
+      ctx.font = '500 13px sans-serif'
+      ctx.textAlign = 'left'
+      ctx.textBaseline = 'alphabetic'
+      ctx.lineWidth = 3
+      ctx.lineJoin = 'round'
+      ctx.miterLimit = 2
+      ctx.strokeStyle = 'rgba(0,0,0,0.62)'
+      ctx.fillStyle = 'rgba(255,255,255,0.82)'
+      ctx.strokeText(String(measureIndex + 1), 4, y - 4)
+      ctx.fillText(String(measureIndex + 1), 4, y - 4)
+      ctx.restore()
+    }
   }
   ctx.restore()
 }
@@ -276,6 +295,7 @@ function draw() {
   drawCurrentKey(ctx)
   drawRollHitLine(ctx, logicalWidth, logicalHeight, freePlay.status !== 'recording')
   drawEmptyHint(ctx)
+  impactParticles.draw(ctx)
 }
 
 function resizeCanvas() {
@@ -291,20 +311,55 @@ function resizeCanvas() {
   draw()
 }
 
-function animationFrame() {
-  const now = performance.now()
-  if (settings.advancedReduceAnimations && now - lastFrameMs < 33.0) {
-    if (freePlay.status === 'recording') {
-      rafId = requestAnimationFrame(animationFrame)
-    } else {
-      rafId = null
-    }
+function triggerImpacts(notes: DrawableNote[], nowMs: number) {
+  const now = currentUs()
+  const canSpawn = freePlay.status === 'recording' || freePlay.isPlaying
+  if (!canSpawn) return 
+  
+  for (const note of notes) {
+    if (now < note.startUs || now > note.endUs) continue
+    
+    const key = note.id
+    const lastSpawnMs = activeImpacts.get(key)
+    const throttleMs = getImpactRepeatThrottleMs(settings.advancedReduceAnimations)
+    if (lastSpawnMs !== undefined && nowMs - lastSpawnMs < throttleMs) continue
+
+    activeImpacts.set(key, nowMs)
+    const col = noteColumn(note.noteId)
+    impactParticles.spawn({
+      id: note.id,
+      noteId: note.noteId,
+      color: noteColor(note),
+      x: col.x,
+      width: col.width
+    }, logicalHeight - ROLL_HIT_LINE_HEIGHT)
+  }
+}
+
+function isAnimating() {
+  return freePlay.status === 'recording' || freePlay.isPlaying || impactParticles.liveCount() > 0 || impactParticles.floatingCount() > 0
+}
+
+function animationFrame(timeMs?: number) {
+  const now = timeMs ?? performance.now()
+  const dt = Math.min(60, Math.max(0, now - lastFrameMs))
+  
+  if (settings.advancedReduceAnimations && dt < 33.0) {
+    if (isAnimating()) rafId = requestAnimationFrame(animationFrame)
+    else rafId = null
     return
   }
   lastFrameMs = now
 
+  impactParticles.update(dt)
+
+  const currentNowUs = currentUs()
+  const windowUs = Math.max(250_000, settings.showDuration * 1_000_000)
+  triggerImpacts(visibleNotes(currentNowUs, currentNowUs - windowUs), now)
+
   draw()
-  if (freePlay.status === 'recording') {
+  
+  if (isAnimating()) {
     rafId = requestAnimationFrame(animationFrame)
   } else {
     rafId = null
@@ -312,14 +367,59 @@ function animationFrame() {
 }
 
 function requestDraw() {
-  if (freePlay.status === 'recording') {
+  if (isAnimating()) {
     if (rafId === null) rafId = requestAnimationFrame(animationFrame)
     return
   }
-  draw()
+  if (rafId === null) {
+    lastFrameMs = performance.now()
+    rafId = requestAnimationFrame(animationFrame)
+  }
 }
 
-watch(() => [freePlay.status, freePlay.notes.length, freePlay.clockTick, freePlay.trackVersion, freePlay.selectedTrackId, freePlay.bpm, freePlay.timeSignature, freePlay.keySignature, freePlay.keySignatureMode, freePlay.showKeySignature, settings.showGrid, settings.showNoteLabels, settings.noteLabelMode, settings.noteLabelSize, settings.showDuration], requestDraw)
+let isDragging = false
+let lastDragY = 0
+
+function handleWheel(event: WheelEvent) {
+  if (freePlay.status === 'recording') return
+  const windowUs = Math.max(250_000, settings.showDuration * 1_000_000)
+  const usPerPixel = windowUs / rollHeight()
+  const deltaUs = event.deltaY * usPerPixel
+  const current = currentUs()
+  const nextUs = Math.max(0, current + deltaUs)
+  freePlay.seekTo(nextUs)
+}
+
+function handlePointerDown(event: PointerEvent) {
+  if (freePlay.status === 'recording') return
+  isDragging = true
+  lastDragY = event.clientY
+  const canvas = canvasRef.value
+  if (canvas) canvas.setPointerCapture(event.pointerId)
+}
+
+function handlePointerMove(event: PointerEvent) {
+  if (!isDragging || freePlay.status === 'recording') return
+  const windowUs = Math.max(250_000, settings.showDuration * 1_000_000)
+  const usPerPixel = windowUs / rollHeight()
+  const deltaY = event.clientY - lastDragY
+  lastDragY = event.clientY
+  
+  const deltaUs = -deltaY * usPerPixel
+  const current = currentUs()
+  const nextUs = Math.max(0, current + deltaUs)
+  freePlay.seekTo(nextUs)
+}
+
+function handlePointerUp(event: PointerEvent) {
+  isDragging = false
+  const canvas = canvasRef.value
+  if (canvas && canvas.hasPointerCapture(event.pointerId)) {
+    canvas.releasePointerCapture(event.pointerId)
+  }
+}
+
+watch(() => [freePlay.status, freePlay.viewUs, freePlay.notes.length, freePlay.clockTick, freePlay.trackVersion, freePlay.selectedTrackId, freePlay.bpm, freePlay.timeSignature, freePlay.keySignature, freePlay.keySignatureMode, freePlay.showKeySignature, settings.showGrid, settings.showNoteLabels, settings.noteLabelMode, settings.noteLabelSize, settings.showDuration], requestDraw)
 watch(() => player.session?.keyboardRange ? `${player.session.keyboardRange.lowNote}:${player.session.keyboardRange.highNote}` : '', requestDraw)
 
 onMounted(() => {
@@ -339,7 +439,15 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="free-play-roll">
-    <canvas ref="canvasRef" class="free-play-roll-canvas"></canvas>
+    <canvas 
+      ref="canvasRef" 
+      class="free-play-roll-canvas"
+      @wheel.prevent="handleWheel"
+      @pointerdown="handlePointerDown"
+      @pointermove="handlePointerMove"
+      @pointerup="handlePointerUp"
+      @pointercancel="handlePointerUp"
+    ></canvas>
   </div>
 </template>
 
