@@ -344,6 +344,10 @@ watch(() => player.song?.id, () => {
   record.clearExportState()
 })
 
+watch(() => settings.showDuration, duration => {
+  if (player.session) player.session.showDuration = duration
+})
+
 onBeforeUnmount(() => {
   closeMenus()
   player.stopPlayback()
