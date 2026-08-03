@@ -3,12 +3,14 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useFreePlayStore } from '../../stores/freePlayStore'
+import { useSettingsStore } from '../../stores/settingsStore'
 import BaseToolbar from '../ui/BaseToolbar.vue'
 import BaseButton from '../ui/BaseButton.vue'
 
 const router = useRouter()
 const { t } = useI18n()
 const freePlay = useFreePlayStore()
+const settings = useSettingsStore()
 
 const props = defineProps<{
   isFullscreen: boolean
@@ -51,6 +53,18 @@ function back() {
 function toggleRecording() {
   if (freePlay.status === 'recording') emit('stopRecording')
   else emit('startRecording')
+}
+
+const currentZoomPercent = computed(() => Math.round(3.25 / settings.showDuration * 100))
+
+function zoomOut() {
+  const newPercent = Math.max(50, currentZoomPercent.value - 10)
+  settings.setShowDuration(3.25 / (newPercent / 100))
+}
+
+function zoomIn() {
+  const newPercent = Math.min(200, currentZoomPercent.value + 10)
+  settings.setShowDuration(3.25 / (newPercent / 100))
 }
 </script>
 
@@ -121,6 +135,18 @@ function toggleRecording() {
           <i class="fas fa-plus"></i>
         </BaseButton>
       </div>
+      <div class="tempo-control">
+        <BaseButton variant="icon" :title="t('play.zoomOut', 'Thu nhỏ')" :aria-label="t('play.zoomOut', 'Thu nhỏ')" @click="zoomOut">
+          <i class="fas fa-search-minus"></i>
+        </BaseButton>
+        <div class="zoom-display">
+          <div class="zoom-percent">{{ currentZoomPercent }}%</div>
+          <div class="zoom-label">Zoom</div>
+        </div>
+        <BaseButton variant="icon" :title="t('play.zoomIn', 'Phóng to')" :aria-label="t('play.zoomIn', 'Phóng to')" @click="zoomIn">
+          <i class="fas fa-search-plus"></i>
+        </BaseButton>
+      </div>
       <BaseButton variant="icon" :active="metronomeOpen" :title="t('play.metronome')" :aria-label="t('play.metronome')" @click="(event) => emit('openMetronome', event)"><i class="fas fa-drum"></i></BaseButton>
     </template>
 
@@ -184,6 +210,31 @@ function toggleRecording() {
   color: var(--color-text-primary);
   font-weight: 600;
   text-align: center;
+}
+
+.zoom-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 4.5rem;
+  height: 36px;
+  padding: 0 0.6rem;
+  border-radius: 4px;
+  background: var(--color-bg-subtle);
+  line-height: 1.2;
+}
+
+.zoom-percent {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.zoom-label {
+  font-size: 0.7rem;
+  color: var(--color-text-secondary);
+  margin-top: 0.05rem;
 }
 
 :deep(.base-toolbar-left .base-btn) {
