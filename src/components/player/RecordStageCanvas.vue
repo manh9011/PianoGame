@@ -46,44 +46,38 @@ const exportVisuals = computed<RecordRenderVisualOptions>(() => ({
 }))
 
 const exportScene = computed(() => player.session ? createRecordRenderScene(player.session, player.song?.title ?? '') : null)
-const images = ref<RecordRenderImages>({})
+const images = ref<RecordRenderImages>({
+  background: null,
+  logo: null
+})
 
 let resizeObserver: ResizeObserver | null = null
-let backgroundObjectUrl = ''
-let logoObjectUrl = ''
 let assetLoadToken = 0
 let rafId: number | null = null
 let pixelRatio = 1
 
-function revokeAssetUrl(type: 'background' | 'logo') {
-  if (type === 'background') {
-    if (backgroundObjectUrl) URL.revokeObjectURL(backgroundObjectUrl)
-    backgroundObjectUrl = ''
-    images.value = { ...images.value, background: undefined }
+async function loadAssetPreview(type: 'background' | 'logo', assetId: string, token: number) {
+  if (!assetId) {
+    if (images.value[type]) {
+      images.value[type]?.close()
+      images.value = { ...images.value, [type]: null }
+    }
     return
   }
-  if (logoObjectUrl) URL.revokeObjectURL(logoObjectUrl)
-  logoObjectUrl = ''
-  images.value = { ...images.value, logo: undefined }
-}
-
-async function loadAssetPreview(type: 'background' | 'logo', assetId: string, token: number) {
-  revokeAssetUrl(type)
-  if (!assetId) return
+  
   const blob = await loadRenderAssetBlob(assetId)
   if (token !== assetLoadToken || !blob) return
-  const url = URL.createObjectURL(blob)
   
-  if (type === 'background') backgroundObjectUrl = url
-  else logoObjectUrl = url
-
-  const img = new Image()
-  img.onload = () => {
-    if (token === assetLoadToken) {
-      images.value = { ...images.value, [type]: img }
-    }
+  const bitmap = await createImageBitmap(blob)
+  if (token !== assetLoadToken) {
+    bitmap.close()
+    return
   }
-  img.src = url
+
+  if (images.value[type]) {
+    images.value[type]?.close()
+  }
+  images.value = { ...images.value, [type]: bitmap }
 }
 
 function refreshAssetPreviews() {
@@ -168,8 +162,9 @@ onBeforeUnmount(() => {
   resizeObserver?.disconnect()
   resizeObserver = null
   assetLoadToken += 1
-  revokeAssetUrl('background')
-  revokeAssetUrl('logo')
+  if (images.value.background) images.value.background.close()
+  if (images.value.logo) images.value.logo.close()
+  images.value = { background: null, logo: null }
 })
 </script>
 
