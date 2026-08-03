@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { usePlayerStore } from '../../stores/playerStore'
 import { useSettingsStore } from '../../stores/settingsStore'
+import { useFreePlayStore, getFreePlayTrackLoopDurationUs } from '../../stores/freePlayStore'
 import { createPianoKeys, WHITE_KEY_COUNT, type PianoKey } from '../../modules/render/pianoGeometry'
 import { getKeyboardLabel, getVirtualPianoNoteIdFromKey } from '../../modules/render/pianoLabels'
 import { HAND_COLORS } from '../../modules/game/handAssignment'
@@ -21,6 +22,7 @@ const whiteKeys = keys.filter(k => !k.black)
 const blackKeys = keys.filter(k => k.black)
 const player = usePlayerStore()
 const settings = useSettingsStore()
+const freePlay = useFreePlayStore()
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const pointerNotes = new Map<number, number>()
 const pressedComputerKeys = new Set<string>()
@@ -87,14 +89,56 @@ function isVisibleTrackId(trackId: number | undefined) {
   return !track || track.color !== TRACK_INVISIBLE_COLOR
 }
 
+let cachedFreePlayFrameTime = -1
+const cachedFreePlayNotes = new Map<number, SessionNote[]>()
+
+function prepareFreePlayNotes(nowMs: number) {
+  if (player.session?.mode !== 'listen') return
+  if (nowMs === cachedFreePlayFrameTime) return
+  cachedFreePlayFrameTime = nowMs
+  cachedFreePlayNotes.clear()
+  
+  const nowUs = freePlay.status === 'recording' && freePlay.recordStartMs
+    ? Math.max(0, Math.round((performance.now() - freePlay.recordStartMs) * 1000))
+    : (freePlay.viewUs ?? freePlay.recordingDurationUs)
+    
+  for (const track of freePlay.tracks) {
+    if (!track.notes.length) continue
+    const loopDurationUs = getFreePlayTrackLoopDurationUs(track, freePlay.bpm, freePlay.timeSignature)
+    if (loopDurationUs <= 0) continue
+    const localUs = track.loop ? nowUs % loopDurationUs : nowUs
+    if (!track.loop && nowUs > loopDurationUs) continue
+    
+    for (const note of track.notes) {
+      if (note.startUs > localUs || note.endUs <= localUs) continue
+      const list = cachedFreePlayNotes.get(note.noteId) ?? []
+      if (!list.length) cachedFreePlayNotes.set(note.noteId, list)
+      list.push({ trackId: track.id, hand: 'unknown', color: track.color } as unknown as SessionNote)
+    }
+  }
+}
+
+function freePlayTimelineNotesAt(noteId: number): SessionNote[] {
+  return cachedFreePlayNotes.get(noteId) ?? []
+}
+
 function visibleTimelineNotesAt(noteId: number) {
   const session = player.session
-  if (!props.previewActiveFromTimeline || !session) return []
-  return session.notes.filter(note => {
-    if (note.noteId !== noteId) return false
-    if (note.start > session.currentUs || note.end < session.currentUs) return false
-    return isVisibleTrackId(note.trackId)
-  })
+  if (!session) return []
+  const list: SessionNote[] = []
+  
+  if (props.previewActiveFromTimeline) {
+    list.push(...session.notes.filter(note => {
+      if (note.noteId !== noteId) return false
+      if (note.start > session.currentUs || note.end < session.currentUs) return false
+      return isVisibleTrackId(note.trackId)
+    }))
+  }
+  
+  if (session.mode === 'listen') {
+    list.push(...freePlayTimelineNotesAt(noteId))
+  }
+  return list
 }
 
 function timelineNoteFor(noteId: number) {
@@ -123,6 +167,8 @@ function notePressCount(noteId: number) {
 }
 
 function updatePressFlashes(nowMs: number) {
+  prepareFreePlayNotes(nowMs)
+  
   const session = player.session
   if (pressFlashSession !== session) {
     pressFlashSession = session
@@ -172,12 +218,13 @@ function pressFlashStrength(noteId: number, nowMs: number) {
 function activeColor(noteId: number) {
   const session = player.session
   if (!session) return HAND_COLORS.unknown
-  const timelineNote = timelineNoteFor(noteId)
+  const timelineNote = timelineNoteFor(noteId) as { trackId: number; hand: Hand; color?: string } | null
+  if (timelineNote?.color) return timelineNote.color
   const trackId = session.autoActiveNoteTrackIds.get(noteId) ?? session.activeNoteTrackIds.get(noteId) ?? timelineNote?.trackId
   const track = session.tracks.find(t => t.trackId === trackId)
   if (track) return track.color
   const hand = session.autoActiveNoteHands.get(noteId) ?? session.activeNoteHands.get(noteId) ?? timelineNote?.hand ?? 'unknown'
-  return HAND_COLORS[hand]
+  return HAND_COLORS[hand as Hand]
 }
 
 function notesByPitch() {
@@ -866,9 +913,15 @@ function drawFrame() {
 function keyboardVisualKey() {
   const session = player.session
   if (!session) return ''
+  
+  const freePlayKey = session.mode === 'listen' 
+    ? Math.round(freePlay.viewUs ?? freePlay.recordingDurationUs)
+    : ''
+
   return [
     session.keyboardVisualVersion,
     props.previewActiveFromTimeline ? Math.round(session.currentUs) : '',
+    freePlayKey,
     settings.keyLabelMode === 'finger-hint' ? session.fingeringVersion : 0,
     session.keyboardRange ? `${session.keyboardRange.lowNote}:${session.keyboardRange.highNote}` : '',
   ].join('|')
