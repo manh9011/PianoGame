@@ -329,7 +329,7 @@ function triggerImpacts(notes: DrawableNote[], nowMs: number) {
     impactParticles.spawn({
       id: note.id,
       noteId: note.noteId,
-      color: noteColor(note),
+      trackId: note.trackId,
       x: col.x,
       width: col.width
     }, logicalHeight - ROLL_HIT_LINE_HEIGHT)
