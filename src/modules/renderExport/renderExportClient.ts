@@ -46,7 +46,7 @@ function cloneScene(scene: RecordRenderScene): RecordRenderScene {
       lowNote: scene.keyboardRange.lowNote,
       highNote: scene.keyboardRange.highNote,
     },
-    showDuration: scene.showDuration,
+    zoomPercent: scene.zoomPercent,
     speed: scene.speed,
     title: scene.title,
   }

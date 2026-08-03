@@ -157,6 +157,48 @@ function calculatePopupPosition(element: HTMLElement, popupWidth: number, popupH
   }
 }
 
+let initialPinchDistance = 0
+let initialPinchZoom = 0
+
+function handleTouchStart(e: TouchEvent) {
+  if (e.touches.length === 2) {
+    const t1 = e.touches[0]
+    const t2 = e.touches[1]
+    initialPinchDistance = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY)
+    initialPinchZoom = settings.zoomPercent
+  }
+}
+
+function handleTouchMove(e: TouchEvent) {
+  if (e.touches.length === 2) {
+    if (e.cancelable) e.preventDefault()
+    const t1 = e.touches[0]
+    const t2 = e.touches[1]
+    const currentDistance = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY)
+    const scale = currentDistance / initialPinchDistance
+    let newPercent = initialPinchZoom * scale
+    newPercent = Math.max(50, Math.min(200, newPercent))
+    settings.setZoomPercent(newPercent)
+  }
+}
+
+function handleTouchEnd(e: TouchEvent) {
+  if (e.touches.length < 2) {
+    initialPinchDistance = 0
+  }
+}
+
+function handleWheel(e: WheelEvent) {
+  if (e.ctrlKey) {
+    e.preventDefault()
+    const currentZoom = settings.zoomPercent
+    const scaleDelta = e.deltaY * -0.2
+    let newPercent = currentZoom + scaleDelta
+    newPercent = Math.max(50, Math.min(200, newPercent))
+    settings.setZoomPercent(newPercent)
+  }
+}
+
 function updateKeyboardHeight() {
   if (!playLayoutRef.value) return
   const containerWidth = playLayoutRef.value.offsetWidth
@@ -466,14 +508,12 @@ useShortcuts({
     }
   },
   stretchFallingNoteDisplay: () => {
-    const currentZoom = Math.round(3.25 / settings.showDuration * 100)
-    const newPercent = Math.min(200, currentZoom + 10)
-    settings.setShowDuration(3.25 / (newPercent / 100))
+    const newPercent = Math.min(200, settings.zoomPercent + 10)
+    settings.setZoomPercent(newPercent)
   },
   compressFallingNoteDisplay: () => {
-    const currentZoom = Math.round(3.25 / settings.showDuration * 100)
-    const newPercent = Math.max(50, currentZoom - 10)
-    settings.setShowDuration(3.25 / (newPercent / 100))
+    const newPercent = Math.max(50, settings.zoomPercent - 10)
+    settings.setZoomPercent(newPercent)
   },
 
   // Bookmarks
@@ -563,7 +603,7 @@ onMounted(async () => {
   }
 
   if (!player.song || (player.song.playbackHash ?? player.song.hash) !== hash) {
-    await player.loadSong(song, settings.defaultSpeed, settings.showDuration, settings.octaveShift)
+    await player.loadSong(song, settings.defaultSpeed, settings.leadInDuration, settings.zoomPercent, settings.octaveShift)
     songTitleIntroStarted.value = false
   }
 
@@ -615,8 +655,8 @@ watch(() => settings.keyboardRangeMode, () => {
   player.refreshKeyboardRange()
 })
 
-watch(() => settings.showDuration, duration => {
-  if (player.session) player.session.showDuration = duration
+watch(() => settings.zoomPercent, zoomPercent => {
+  if (player.session) player.session.zoomPercent = zoomPercent
 })
 
 watch(() => settings.showSheetMusic, show => {
@@ -711,7 +751,7 @@ watch(() => player.stats, stats => {
     />
     <TrackProgressBar :loop-setup-active="showLoopControl" :finger-mode-active="showFingerDialog" />
     <SheetMusicPanel v-if="settings.showSheetMusic" @ready="handleSheetReady" />
-    <section class="play-stage">
+    <section class="play-stage" @wheel="handleWheel" @touchstart="handleTouchStart" @touchmove="handleTouchMove" @touchend="handleTouchEnd" @touchcancel="handleTouchEnd">
       <section class="kbd-area">
         <PianoRoll
           :bookmark-mode="showBookmarksDialog"

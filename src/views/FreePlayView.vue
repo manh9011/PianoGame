@@ -204,6 +204,48 @@ function openLabels(event: MouseEvent) {
   showLabelsDialog.value = true
 }
 
+let initialPinchDistance = 0
+let initialPinchZoom = 0
+
+function handleTouchStart(e: TouchEvent) {
+  if (e.touches.length === 2) {
+    const t1 = e.touches[0]
+    const t2 = e.touches[1]
+    initialPinchDistance = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY)
+    initialPinchZoom = settings.zoomPercent
+  }
+}
+
+function handleTouchMove(e: TouchEvent) {
+  if (e.touches.length === 2) {
+    if (e.cancelable) e.preventDefault()
+    const t1 = e.touches[0]
+    const t2 = e.touches[1]
+    const currentDistance = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY)
+    const scale = currentDistance / initialPinchDistance
+    let newPercent = initialPinchZoom * scale
+    newPercent = Math.max(50, Math.min(200, newPercent))
+    settings.setZoomPercent(newPercent)
+  }
+}
+
+function handleTouchEnd(e: TouchEvent) {
+  if (e.touches.length < 2) {
+    initialPinchDistance = 0
+  }
+}
+
+function handleWheel(e: WheelEvent) {
+  if (e.ctrlKey) {
+    e.preventDefault()
+    const currentZoom = settings.zoomPercent
+    const scaleDelta = e.deltaY * -0.2
+    let newPercent = currentZoom + scaleDelta
+    newPercent = Math.max(50, Math.min(200, newPercent))
+    settings.setZoomPercent(newPercent)
+  }
+}
+
 function updateKeyboardHeight() {
   if (!freePlayLayoutRef.value) return
   const containerWidth = freePlayLayoutRef.value.offsetWidth
@@ -538,7 +580,7 @@ useShortcuts({
 })
 
 onMounted(async () => {
-  player.loadFreePlaySession(settings.defaultSpeed, settings.showDuration, settings.octaveShift, {
+  player.loadFreePlaySession(settings.defaultSpeed, settings.leadInDuration, settings.zoomPercent, settings.octaveShift, {
     trackId: freePlay.selectedTrack.id,
     instrumentProgram: freePlay.selectedTrack.instrumentProgram,
     color: freePlay.selectedTrack.color,
@@ -627,7 +669,7 @@ watch(() => route.query.librarySongId, value => {
       @toggle-fullscreen="toggleFullscreen"
     />
     <FreePlayProgressBar />
-    <section class="free-play-stage">
+    <section class="free-play-stage" @wheel="handleWheel" @touchstart="handleTouchStart" @touchmove="handleTouchMove" @touchend="handleTouchEnd" @touchcancel="handleTouchEnd">
       <FreePlayPianoRoll />
       <FreePlayTrackManager />
     </section>

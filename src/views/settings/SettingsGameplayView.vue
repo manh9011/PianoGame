@@ -47,8 +47,11 @@ const labelModes: Array<{ value: LabelMode; labelKey: string }> = [
       <SettingsRow :title="t('settings.defaultSpeed')" :description="t('settings.defaultSpeedDescription')">
         <BaseSlider class="compact" :min="50" :max="200" :step="10" :model-value="settings.defaultSpeed" @update:model-value="settings.setSpeed($event)" style="flex: 1" show-value :format-value="(v) => v + '%'" />
       </SettingsRow>
-      <SettingsRow :title="t('settings.showDuration')" :description="t('settings.showDurationDescription')">
-        <BaseSlider class="compact" :min="0" :max="10" :step="1" :model-value="settings.showDuration" @update:model-value="settings.setShowDuration($event)" style="flex: 1" show-value :format-value="(v) => v + 's'" />
+      <SettingsRow :title="t('settings.leadInDuration')" :description="t('settings.leadInDurationDescription')">
+        <BaseSlider class="compact" :min="0" :max="10" :step="0.5" :model-value="settings.leadInDuration" @update:model-value="settings.setLeadInDuration($event)" style="flex: 1" show-value :format-value="(v) => v + 's'" />
+      </SettingsRow>
+      <SettingsRow :title="t('settings.zoomPercent')" :description="t('settings.zoomPercentDescription')">
+        <BaseSlider class="compact" :min="50" :max="200" :step="5" :model-value="settings.zoomPercent" @update:model-value="settings.setZoomPercent($event)" style="flex: 1" show-value :format-value="(v) => v + '%'" />
       </SettingsRow>
       <SettingsRow :title="t('settings.inputOctaveShift')" :description="t('settings.inputOctaveShiftDescription')">
         <BaseSlider class="compact" :min="0" :max="44" :step="1" :model-value="settings.octaveShift" @update:model-value="settings.patchSettings({ octaveShift: Number($event) })" style="flex: 1" show-value />

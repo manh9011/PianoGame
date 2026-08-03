@@ -15,7 +15,7 @@ const recent = computed(() => profile.activeProfile.recentSongIds.map(id => libr
 async function play(songId: string) {
   const song = library.songs.find(s => s.id === songId)
   if (!song) return
-  await player.loadSong(song, settings.defaultSpeed, settings.showDuration, settings.octaveShift)
+  await player.loadSong(song, settings.defaultSpeed, settings.leadInDuration, settings.zoomPercent, settings.octaveShift)
   router.push('/play')
 }
 </script>

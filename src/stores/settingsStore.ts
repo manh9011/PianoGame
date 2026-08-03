@@ -3,7 +3,7 @@ import type { SupportedLocale } from '../i18n'
 import { setI18nLocale } from '../i18n'
 import type { LabelMode, KeyboardRangeMode, RecordVideoOrientation, RecordVideoSize, UserSettings } from '../types/settings'
 import { loadSettings, saveSettings, defaultSettings } from '../modules/settings/userSettings'
-import { clampShowDuration, clampSpeed } from '../modules/game/playSession'
+import { clampLeadInDuration, clampZoomPercent, clampSpeed } from '../modules/game/playSession'
 import { persistQueue } from '../modules/storage/indexedDb'
 
 import { DEFAULT_SHORTCUTS, type ShortcutCategory, type ShortcutsConfig } from '../modules/settings/defaultShortcuts'
@@ -55,7 +55,8 @@ export const useSettingsStore = defineStore('settings', {
       this.persist()
     },
     setSpeed(v: number) { this.defaultSpeed = clampSpeed(v); this.persist() },
-    setShowDuration(v: number) { this.showDuration = clampShowDuration(v); this.persist() },
+    setLeadInDuration(v: number) { this.leadInDuration = clampLeadInDuration(v); this.persist() },
+    setZoomPercent(v: number) { this.zoomPercent = clampZoomPercent(v); this.persist() },
     setMetronomeVolume(v: number) { this.metronomeVolume = Math.max(0, Math.min(100, Math.round(v / 5) * 5)); this.persist() },
     setMetronomeDoubleSpeed(v: boolean) { this.metronomeDoubleSpeed = v; this.persist() },
     setMetronomeEmphasizeFirstBeat(v: boolean) { this.metronomeEmphasizeFirstBeat = v; this.persist() },

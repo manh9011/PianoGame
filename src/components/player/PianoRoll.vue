@@ -227,6 +227,9 @@ function visibleBookmarks(session: NonNullable<typeof player.session>) {
   addActivePlaybackCounter('render', 'bookmarksScanned', scanned)
   return result
 }
+function sessionWindowUs(session: NonNullable<typeof player.session>) {
+  return (3.25 / (session.zoomPercent / 100)) * 1_000_000
+}
 function currentKeySignature(session: NonNullable<typeof player.session>) {
   let current = null
   let scanned = 0
@@ -249,7 +252,7 @@ function currentKeySignatureAccidentals(session: NonNullable<typeof player.sessi
   return currentKeySignature(session)?.accidentals ?? 0
 }
 function drawBookmarks(ctx: CanvasRenderingContext2D, session: NonNullable<typeof player.session>) {
-  const windowUs = session.showDuration * 1_000_000
+  const windowUs = sessionWindowUs(session)
   let lastLabelY = Number.NEGATIVE_INFINITY
   let visibleCount = 0
   for (const bookmark of visibleBookmarks(session)) {
@@ -301,7 +304,7 @@ function drawBookmarkLabel(ctx: CanvasRenderingContext2D, bookmark: SessionBookm
 }
 function drawUserBookmarks(ctx: CanvasRenderingContext2D, session: NonNullable<typeof player.session>) {
   if (!settings.showMyBookmarks) return
-  const windowUs = session.showDuration * 1_000_000
+  const windowUs = sessionWindowUs(session)
   let lastLabelY = Number.NEGATIVE_INFINITY
   let scanned = 0
   let visibleCount = 0
@@ -418,7 +421,7 @@ function drawGrid(ctx: CanvasRenderingContext2D, session: NonNullable<typeof pla
     ctx.stroke()
   }
 
-  const windowUs = session.showDuration * 1_000_000
+  const windowUs = sessionWindowUs(session)
   let scanned = 0
   let visibleCount = 0
   for (let index = 0; index < session.measureGridUs.length; index += 1) {
@@ -456,7 +459,7 @@ function drawLoopRegion(ctx: CanvasRenderingContext2D, session: NonNullable<type
   const loopState = session.loopState
   if (!player.loopRegionConfigured) return
 
-  const windowUs = session.showDuration * 1_000_000
+  const windowUs = sessionWindowUs(session)
   const viewStartUs = session.currentUs
   const viewEndUs = session.currentUs + windowUs
 
@@ -687,7 +690,7 @@ function draw(dt: number, nowMs: number, frameProfile: PlaybackProfilerContext |
   measurePlaybackSpan(frameProfile, 'frame.drawUserBookmarks', () => drawUserBookmarks(ctx, session))
   measurePlaybackSpan(frameProfile, 'frame.drawCurrentKey', () => drawCurrentKey(ctx, session))
 
-  const notes = measurePlaybackSpan(frameProfile, 'frame.layoutNotes', () => layoutNotes(session.notes, session.currentUs, session.showDuration, logicalWidth, logicalHeight))
+  const notes = measurePlaybackSpan(frameProfile, 'frame.layoutNotes', () => layoutNotes(session.notes, session.currentUs, 3.25 / (session.zoomPercent / 100), logicalWidth, logicalHeight))
   setPlaybackGauge(frameProfile, 'laidOutNotes', notes.length)
   measurePlaybackSpan(frameProfile, 'frame.updateEffects', () => updateEffects(dt))
 
@@ -791,7 +794,7 @@ function handleTouchMove(event: TouchEvent) {
 
   // Kéo lên (deltaY < 0) -> tua thuận (tăng currentUs)
   // Kéo xuống (deltaY > 0) -> tua ngược (giảm currentUs)
-  const windowUs = player.session.showDuration * 1_000_000
+  const windowUs = sessionWindowUs(player.session)
   const usPerPixel = windowUs / logicalHeight * SCROLL_SENSITIVITY
   const deltaUs = deltaY * usPerPixel
 
@@ -815,7 +818,7 @@ function getCanvasCoordinates(event: MouseEvent) {
 }
 
 function yToTimeUs(y: number, session: NonNullable<typeof player.session>) {
-  const windowUs = session.showDuration * 1_000_000
+  const windowUs = sessionWindowUs(session)
   return session.currentUs + (1 - y / logicalHeight) * windowUs
 }
 
@@ -823,7 +826,7 @@ function getHoveredLoopEdge(y: number, session: NonNullable<typeof player.sessio
   const loopState = session.loopState
   if (!props.loopSetupActive || !player.loopRegionConfigured) return null
 
-  const windowUs = session.showDuration * 1_000_000
+  const windowUs = sessionWindowUs(session)
   const loopStartY = logicalHeight - ((loopState.startUs - session.currentUs) / windowUs) * logicalHeight
   const loopEndY = logicalHeight - ((loopState.endUs - session.currentUs) / windowUs) * logicalHeight
 
@@ -887,7 +890,7 @@ function handleWheel(event: WheelEvent) {
 
   event.preventDefault()
 
-  const windowUs = session.showDuration * 1_000_000
+  const windowUs = sessionWindowUs(session)
   const scrollUs = (-event.deltaY / 100) * (windowUs * 0.1)
 
   player.seekToUs(session.currentUs + scrollUs)
@@ -917,7 +920,7 @@ function handleFingerNoteClick(event: MouseEvent) {
   if (!session) return false
   const coords = getCanvasCoordinates(event)
   if (!coords) return false
-  const notes = layoutNotes(session.notes, session.currentUs, session.showDuration, logicalWidth, logicalHeight)
+  const notes = layoutNotes(session.notes, session.currentUs, 3.25 / (session.zoomPercent / 100), logicalWidth, logicalHeight)
     .filter(note => visible(note))
   for (let index = notes.length - 1; index >= 0; index -= 1) {
     const note = notes[index]
@@ -977,7 +980,7 @@ function handleMouseMove(event: MouseEvent) {
 
   const deltaY = event.clientY - touchStartY
 
-  const windowUs = player.session.showDuration * 1_000_000
+  const windowUs = sessionWindowUs(player.session)
   const usPerPixel = windowUs / logicalHeight * SCROLL_SENSITIVITY
   const deltaUs = deltaY * usPerPixel
 

@@ -239,7 +239,7 @@ onMounted(async () => {
   }
 
   if (!player.song || (player.song.playbackHash ?? player.song.hash) !== hash) {
-    await player.loadSong(song, settings.defaultSpeed, settings.showDuration, settings.octaveShift)
+    await player.loadSong(song, settings.defaultSpeed, settings.leadInDuration, settings.zoomPercent, settings.octaveShift)
   }
 
   profiles.markRecent(song.id)

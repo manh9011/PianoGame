@@ -235,7 +235,7 @@ async function ensureSongLoaded() {
   }
 
   if (!player.song || (player.song.playbackHash ?? player.song.hash) !== hash) {
-    await player.loadSong(song, settings.defaultSpeed, settings.showDuration, settings.octaveShift)
+    await player.loadSong(song, settings.defaultSpeed, settings.leadInDuration, settings.zoomPercent, settings.octaveShift)
   }
 
   await player.prepareAudio(settings.midiOutputId)
@@ -344,8 +344,8 @@ watch(() => player.song?.id, () => {
   record.clearExportState()
 })
 
-watch(() => settings.showDuration, duration => {
-  if (player.session) player.session.showDuration = duration
+watch(() => settings.zoomPercent, zoomPercent => {
+  if (player.session) player.session.zoomPercent = zoomPercent
 })
 
 onBeforeUnmount(() => {

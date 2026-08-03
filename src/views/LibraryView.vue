@@ -74,7 +74,7 @@ useShortcuts({
 
 function startPreview(song: SongMetadata | null) {
   if (!song) return
-  library.startPreview(song, settings.midiOutputId, settings.defaultSpeed, settings.showDuration, settings.octaveShift)
+  library.startPreview(song, settings.midiOutputId, settings.defaultSpeed, settings.leadInDuration, settings.zoomPercent, settings.octaveShift)
 }
 
 function handleSelectSong(song: SongMetadata) {

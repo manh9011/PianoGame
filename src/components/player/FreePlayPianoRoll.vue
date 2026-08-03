@@ -141,7 +141,7 @@ function drawGrid(ctx: CanvasRenderingContext2D) {
     ctx.stroke()
   }
 
-  const windowUs = Math.max(250_000, settings.showDuration * 1_000_000)
+  const windowUs = Math.max(250_000, (3.25 / (settings.zoomPercent / 100)) * 1_000_000)
   const now = currentUs()
   const viewStart = now - windowUs
   const signature = parseFreePlayTimeSignature(freePlay.timeSignature)
@@ -230,7 +230,7 @@ function drawNoteLabel(ctx: CanvasRenderingContext2D, note: DrawableNote, x: num
 }
 
 function drawNotes(ctx: CanvasRenderingContext2D) {
-  const windowUs = Math.max(250_000, settings.showDuration * 1_000_000)
+  const windowUs = Math.max(250_000, (3.25 / (settings.zoomPercent / 100)) * 1_000_000)
   const now = currentUs()
   const viewStart = now - windowUs
   const range = keyboardRange.value
@@ -354,7 +354,7 @@ function animationFrame(timeMs?: number) {
   impactParticles.update(dt)
 
   const currentNowUs = currentUs()
-  const windowUs = Math.max(250_000, settings.showDuration * 1_000_000)
+  const windowUs = Math.max(250_000, (3.25 / (settings.zoomPercent / 100)) * 1_000_000)
   triggerImpacts(visibleNotes(currentNowUs, currentNowUs - windowUs), now)
 
   draw()
@@ -382,7 +382,7 @@ let lastDragY = 0
 
 function handleWheel(event: WheelEvent) {
   if (freePlay.status === 'recording') return
-  const windowUs = Math.max(250_000, settings.showDuration * 1_000_000)
+  const windowUs = Math.max(250_000, (3.25 / (settings.zoomPercent / 100)) * 1_000_000)
   const usPerPixel = windowUs / rollHeight()
   const deltaUs = event.deltaY * usPerPixel
   const current = currentUs()
@@ -400,7 +400,7 @@ function handlePointerDown(event: PointerEvent) {
 
 function handlePointerMove(event: PointerEvent) {
   if (!isDragging || freePlay.status === 'recording') return
-  const windowUs = Math.max(250_000, settings.showDuration * 1_000_000)
+  const windowUs = Math.max(250_000, (3.25 / (settings.zoomPercent / 100)) * 1_000_000)
   const usPerPixel = windowUs / rollHeight()
   const deltaY = event.clientY - lastDragY
   lastDragY = event.clientY
@@ -419,7 +419,7 @@ function handlePointerUp(event: PointerEvent) {
   }
 }
 
-watch(() => [freePlay.status, freePlay.viewUs, freePlay.notes.length, freePlay.clockTick, freePlay.trackVersion, freePlay.selectedTrackId, freePlay.bpm, freePlay.timeSignature, freePlay.keySignature, freePlay.keySignatureMode, freePlay.showKeySignature, settings.showGrid, settings.showNoteLabels, settings.noteLabelMode, settings.noteLabelSize, settings.showDuration], requestDraw)
+watch(() => [freePlay.status, freePlay.viewUs, freePlay.notes.length, freePlay.clockTick, freePlay.trackVersion, freePlay.selectedTrackId, freePlay.bpm, freePlay.timeSignature, freePlay.keySignature, freePlay.keySignatureMode, freePlay.showKeySignature, settings.showGrid, settings.showNoteLabels, settings.noteLabelMode, settings.noteLabelSize, settings.zoomPercent], requestDraw)
 watch(() => player.session?.keyboardRange ? `${player.session.keyboardRange.lowNote}:${player.session.keyboardRange.highNote}` : '', requestDraw)
 
 onMounted(() => {

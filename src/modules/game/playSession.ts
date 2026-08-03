@@ -24,7 +24,7 @@ export interface LoopState {
   restartAfterErrors: number
 }
 export interface PlayModeConfig { mode: PlayMode; scoringEnabled: boolean; pauseAllowed: boolean; speedChangeAllowed: boolean; stopOnWrongNote: boolean; fixedSpeed?: number }
-export interface PlaySessionOptions { mode?: PlayMode; handSelection?: HandSelection; speed: number; showDuration: number; octaveShift: number; tempoMap?: TempoPoint[]; measureGridUs?: number[]; metronomeBeatGrid?: MetronomeBeat[]; bookmarks?: SessionBookmark[]; keySignatures?: SessionKeySignature[]; durationUs?: number }
+export interface PlaySessionOptions { mode?: PlayMode; handSelection?: HandSelection; speed: number; leadInDuration: number; zoomPercent: number; octaveShift: number; tempoMap?: TempoPoint[]; measureGridUs?: number[]; metronomeBeatGrid?: MetronomeBeat[]; bookmarks?: SessionBookmark[]; keySignatures?: SessionKeySignature[]; durationUs?: number }
 export interface ConfigureSessionOptions { mode: PlayMode; handSelection: HandSelection; speed: number }
 
 export interface PlaySession {
@@ -38,7 +38,8 @@ export interface PlaySession {
   needsTrackConfiguration: boolean
   speed: number
   paused: boolean
-  showDuration: number
+  leadInDuration: number
+  zoomPercent: number
   octaveShift: number
   tempoMap: TempoPoint[]
   measureGridUs: number[]
@@ -110,7 +111,8 @@ export function createPlaySession(notes: SessionNote[], controlChanges: Translat
     needsTrackConfiguration: options.needsTrackConfiguration ?? false,
     speed,
     paused: true,
-    showDuration: clampShowDuration(options.showDuration),
+    leadInDuration: clampLeadInDuration(options.leadInDuration),
+    zoomPercent: clampZoomPercent(options.zoomPercent),
     octaveShift: options.octaveShift,
     tempoMap: options.tempoMap ?? [],
     measureGridUs: options.measureGridUs ?? [],
@@ -131,7 +133,7 @@ export function createPlaySession(notes: SessionNote[], controlChanges: Translat
     fingeringVersion: 0,
     score: createScoreState(),
     backgroundScores: createBackgroundScores(options.handSelection ?? 'both', modeConfig.scoringEnabled),
-    currentUs: -5_500_000,
+    currentUs: -(clampLeadInDuration(options.leadInDuration) * 1_000_000),
     finished: false,
     failed: false,
     melodyWaitNoteId: undefined,
@@ -175,5 +177,6 @@ export function applySessionOptions(session: PlaySession, options: ConfigureSess
   session.tracks.forEach(track => { track.mode = resolveTrackModeForSession(track, options.mode) })
 }
 
-export function clampSpeed(v: number) { return Math.max(0, Math.min(400, Math.round(v / 10) * 10)) }
-export function clampShowDuration(v: number) { return Math.max(0.25, Math.min(10, v)) }
+export function clampSpeed(v: number) { return Math.max(10, Math.min(400, Math.round(v))) }
+export function clampLeadInDuration(v: number) { return Math.max(0, Math.min(10, Number(v.toFixed(2)))) }
+export function clampZoomPercent(v: number) { return Math.max(50, Math.min(200, Math.round(v))) }

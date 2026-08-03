@@ -51,7 +51,7 @@ async function ensureSongLoaded() {
   }
 
   if (!player.song || (player.song.playbackHash ?? player.song.hash) !== hash) {
-    await player.loadSong(song, settings.defaultSpeed, settings.showDuration, settings.octaveShift)
+    await player.loadSong(song, settings.defaultSpeed, settings.leadInDuration, settings.zoomPercent, settings.octaveShift)
   }
 }
 
@@ -66,7 +66,7 @@ async function reset() {
   player.stopTrackPreview()
   if (player.song) {
     profileStore.clearTrackSettings(player.song.id)
-    await player.loadSong(player.song, settings.defaultSpeed, settings.showDuration, settings.octaveShift)
+    await player.loadSong(player.song, settings.defaultSpeed, settings.leadInDuration, settings.zoomPercent, settings.octaveShift)
   }
 }
 

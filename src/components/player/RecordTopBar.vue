@@ -81,16 +81,16 @@ function decreaseSpeed() {
   player.setSpeed(newSpeed)
 }
 
-const currentZoomPercent = computed(() => Math.round(3.25 / settings.showDuration * 100))
+const currentZoomPercent = computed(() => settings.zoomPercent)
 
 function zoomOut() {
   const newPercent = Math.max(50, currentZoomPercent.value - 10)
-  settings.setShowDuration(3.25 / (newPercent / 100))
+  settings.setZoomPercent(newPercent)
 }
 
 function zoomIn() {
   const newPercent = Math.min(200, currentZoomPercent.value + 10)
-  settings.setShowDuration(3.25 / (newPercent / 100))
+  settings.setZoomPercent(newPercent)
 }
 
 function handleDocumentPointerDown(event: PointerEvent) {

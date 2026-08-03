@@ -6,7 +6,7 @@ import { translateControlChanges, translateNotes } from '../modules/midi/midiNot
 import type { MidiBookmarkSource } from '../modules/midi/midiTypes'
 import { buildTempoMap, pulseToMicroseconds } from '../modules/midi/midiTempo'
 import { createDefaultTrackProperties, isTrackRoleComplete, resolveTrackModeForSession, roleToHandAssignment, TRACK_ROLE_COLORS, type TrackMode, type TrackProperties, type TrackRole } from '../modules/game/trackProperties'
-import { PLAY_MODE_CONFIGS, clampShowDuration, clampSpeed, createBackgroundScores, createPlaySession, type BackgroundScoreHand, type ConfigureSessionOptions, type FailureReason, type LoopState, type PlaySession, type SessionNote } from '../modules/game/playSession'
+import { PLAY_MODE_CONFIGS, clampLeadInDuration, clampZoomPercent, clampSpeed, createBackgroundScores, createPlaySession, type BackgroundScoreHand, type ConfigureSessionOptions, type FailureReason, type LoopState, type PlaySession, type SessionNote } from '../modules/game/playSession'
 import { getKeyboardRange } from '../modules/render/keyboardRange'
 import { getKeySignatureAccidentals } from '../modules/render/pianoLabels'
 import { MidiPlayerClock } from '../modules/midi/midiPlayerClock'
@@ -476,7 +476,7 @@ export const usePlayerStore = defineStore('player', {
       noteInputListeners.add(listener)
       return () => noteInputListeners.delete(listener)
     },
-    loadFreePlaySession(speed = 100, showDuration = 3.25, octaveShift = 0, monitorTrack: Partial<Pick<TrackProperties, 'trackId' | 'instrumentProgram' | 'color'>> = {}) {
+    loadFreePlaySession(speed = 100, leadInDuration = 3, zoomPercent = 100, octaveShift = 0, monitorTrack: Partial<Pick<TrackProperties, 'trackId' | 'instrumentProgram' | 'color'>> = {}) {
       this.clock?.stop()
       this.stopTrackPreview()
       this.autoPlayer.allNotesOff(this.session)
@@ -488,7 +488,8 @@ export const usePlayerStore = defineStore('player', {
         mode: 'listen',
         handSelection: 'both',
         speed,
-        showDuration,
+        leadInDuration,
+        zoomPercent,
         octaveShift,
         durationUs: 0,
       })
@@ -506,7 +507,7 @@ export const usePlayerStore = defineStore('player', {
       this.unblockPlaybackOutput(true)
       this.resetLoopAttemptHistory()
     },
-    async loadSong(song: SongMetadata, speed = 100, showDuration = 3.25, octaveShift = 0) {
+    async loadSong(song: SongMetadata, speed = 100, leadInDuration = 3, zoomPercent = 100, octaveShift = 0) {
       const data = song.data ?? song.midiData ?? await loadSongMidiData(song.id)
       if (!data) throw new Error('Bài hát không có dữ liệu MIDI')
       const midi = parseMidi(base64ToBuffer(data))
@@ -533,7 +534,7 @@ export const usePlayerStore = defineStore('player', {
       const bookmarks = createSessionBookmarks(midi, tempoMap)
       const keySignatures = createSessionKeySignatures(midi, tempoMap)
       this.song = song
-      this.session = createPlaySession(notes, controlChanges, tracks, { speed, showDuration, octaveShift, tempoMap, measureGridUs, metronomeBeatGrid, bookmarks, keySignatures, needsTrackConfiguration: needsManualAssignment && tracks.some(track => !isTrackRoleComplete(track)), durationUs: duration })
+      this.session = createPlaySession(notes, controlChanges, tracks, { speed, leadInDuration, zoomPercent, octaveShift, tempoMap, measureGridUs, metronomeBeatGrid, bookmarks, keySignatures, needsTrackConfiguration: needsManualAssignment && tracks.some(track => !isTrackRoleComplete(track)), durationUs: duration })
       restoreSavedTrackSettings(song.id, this.session)
       resetBackgroundScores(this.session)
       this.refreshKeyboardRange()
@@ -677,7 +678,7 @@ export const usePlayerStore = defineStore('player', {
         } finally {
           endSimulationTick(tickProfile)
         }
-      })
+      }, { leadInUs: (this.session?.leadInDuration ?? 5.5) * 1_000_000 })
       this.applyLoopBoundsToClock()
     },
     configureSession(options: ConfigureSessionOptions) {
@@ -943,7 +944,7 @@ export const usePlayerStore = defineStore('player', {
         errorEventCount: session.score.errorEvents.length,
       })
     },
-    setShowDuration(v: number) { if (this.session) this.session.showDuration = clampShowDuration(v) },
+    setZoomPercent(v: number) { if (this.session) this.session.zoomPercent = clampZoomPercent(v) },
     addUserBookmark(timeUs: number, label?: string) {
       const session = this.session
       if (!session) return
@@ -1323,7 +1324,8 @@ export const usePlayerStore = defineStore('player', {
         mode: 'listen',
         handSelection: 'both',
         speed: session.speed,
-        showDuration: session.showDuration,
+        leadInDuration: session.leadInDuration,
+        zoomPercent: session.zoomPercent,
         octaveShift: session.octaveShift,
         durationUs: lastEndUs,
       })

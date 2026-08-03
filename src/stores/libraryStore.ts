@@ -389,7 +389,7 @@ export const useLibraryStore = defineStore('library', {
     async evaluateMissingSongDifficulties(onProgress?: (progress: DifficultyEvaluationProgress) => void) {
       return this.evaluateSongDifficulties(this.songs.filter(needsDifficultyEvaluation).map(song => song.id), onProgress)
     },
-    async startPreview(song: SongMetadata, outputId: string, speed: number, showDuration: number, octaveShift: number) {
+    async startPreview(song: SongMetadata, outputId: string, speed: number, leadInDuration: number, zoomPercent: number, octaveShift: number) {
       const requestId = this.previewRequestId + 1
       this.previewRequestId = requestId
       const isCurrentRequest = () => this.previewRequestId === requestId
@@ -413,7 +413,7 @@ export const useLibraryStore = defineStore('library', {
         }
       }))
       const duration = pulseToMicroseconds(midi.durationPulse, midi.header.ticksPerQuarter, buildTempoMap(midi))
-      const session = createPlaySession(notes, controlChanges, tracks, { speed, showDuration, octaveShift })
+      const session = createPlaySession(notes, controlChanges, tracks, { speed, leadInDuration, zoomPercent, octaveShift })
       session.mode = 'listen'
       session.modeConfig = PLAY_MODE_CONFIGS.listen
       session.handSelection = 'both'
@@ -442,12 +442,12 @@ export const useLibraryStore = defineStore('library', {
         this.previewRunning = state.running && !state.finished
         this.previewPlayer.tick(previewSession)
         if (state.finished) this.stopPreview()
-      })
+      }, { leadInUs: leadInDuration * 1_000_000 })
       this.previewClock.seek(0)
       this.previewClock.start()
       this.previewRunning = true
     },
-    async togglePreview(song: SongMetadata | null, outputId: string, speed: number, showDuration: number, octaveShift: number) {
+    async togglePreview(song: SongMetadata | null, outputId: string, speed: number, leadInDuration: number, zoomPercent: number, octaveShift: number) {
       if (!song) return
       if (this.previewSongId === song.id && this.previewClock) {
         if (this.previewRunning) this.pausePreview()
@@ -458,7 +458,7 @@ export const useLibraryStore = defineStore('library', {
         }
         return
       }
-      await this.startPreview(song, outputId, speed, showDuration, octaveShift)
+      await this.startPreview(song, outputId, speed, leadInDuration, zoomPercent, octaveShift)
     },
     pausePreview() {
       this.previewClock?.pause()

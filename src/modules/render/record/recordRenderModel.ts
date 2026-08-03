@@ -31,7 +31,7 @@ export interface RecordRenderScene {
   keySignatures: SessionKeySignature[]
   durationUs: number
   keyboardRange: KeyboardRange
-  showDuration: number
+  zoomPercent: number
   speed: number
   title: string
 }
@@ -105,7 +105,7 @@ export function createRecordRenderScene(session: PlaySession, title: string): Re
     keySignatures: session.keySignatures.map(signature => ({ ...signature })),
     durationUs: session.loopState.durationUs,
     keyboardRange: session.keyboardRange ?? { lowNote: 21, highNote: 108 },
-    showDuration: session.showDuration,
+    zoomPercent: session.zoomPercent,
     speed: session.speed,
     title,
   }

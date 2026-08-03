@@ -118,7 +118,7 @@ function drawGrid(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContex
     ctx.stroke()
   }
 
-  const windowUs = scene.showDuration * 1_000_000
+  const windowUs = (3.25 / (scene.zoomPercent / 100)) * 1_000_000
   for (let index = 0; index < scene.measureGridUs.length; index += 1) {
     const us = scene.measureGridUs[index]
     if (us < currentUs || us > currentUs + windowUs) continue
@@ -286,7 +286,7 @@ function layoutVisibleNotes(width: number, height: number, currentUs: number, sc
       state: 'waiting' as const,
     })),
     currentUs,
-    scene.showDuration,
+    3.25 / (scene.zoomPercent / 100),
     width,
     height,
   ).filter(note => noteVisible(note, scene))

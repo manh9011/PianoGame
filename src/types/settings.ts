@@ -47,7 +47,8 @@ export interface UserSettings {
   showKeySignatureBookmarks: boolean
   showMidiMarkers: boolean
   defaultSpeed: number
-  showDuration: number
+  leadInDuration: number
+  zoomPercent: number
   octaveShift: number
   libraryAutoPreviewEnabled: boolean
   metronomeVolume: number
