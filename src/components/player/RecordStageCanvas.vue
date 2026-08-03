@@ -10,10 +10,11 @@ import { renderRecordScene } from '../../modules/render/record/recordSceneRender
 
 const player = usePlayerStore()
 const settings = useSettingsStore()
-const stageRef = ref<HTMLElement | null>(null)
+const wrapperRef = ref<HTMLElement | null>(null)
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const frameWidth = ref(0)
 const frameHeight = ref(0)
+const previewZoom = ref(1)
 
 const currentUs = computed(() => player.session?.currentUs ?? -LEAD_IN_US)
 const videoDimensions = computed(() => resolveRecordVideoDimensions(settings.recordVideoSize, settings.recordVideoOrientation))
@@ -22,8 +23,8 @@ const previewAspectRatio = computed(() => {
 })
 
 const frameStyle = computed(() => ({
-  width: frameWidth.value ? `${frameWidth.value}px` : '100%',
-  height: frameHeight.value ? `${frameHeight.value}px` : '100%',
+  width: frameWidth.value ? `${frameWidth.value * previewZoom.value}px` : '100%',
+  height: frameHeight.value ? `${frameHeight.value * previewZoom.value}px` : '100%',
 }))
 
 const exportVisuals = computed<RecordRenderVisualOptions>(() => ({
@@ -92,9 +93,9 @@ function refreshAssetPreviews() {
 }
 
 function updatePreviewLayout() {
-  if (!stageRef.value || !canvasRef.value) return
-  const availableWidth = stageRef.value.clientWidth
-  const availableHeight = stageRef.value.clientHeight
+  if (!wrapperRef.value || !canvasRef.value) return
+  const availableWidth = wrapperRef.value.clientWidth
+  const availableHeight = wrapperRef.value.clientHeight
   if (!availableWidth || !availableHeight) return
   const aspectRatio = previewAspectRatio.value
   const byWidthHeight = availableWidth / aspectRatio
@@ -136,13 +137,25 @@ function drawFrame() {
   })
 }
 
+function zoomIn() {
+  previewZoom.value = Math.min(2, previewZoom.value + 0.25)
+}
+
+function zoomOut() {
+  previewZoom.value = Math.max(0.5, previewZoom.value - 0.25)
+}
+
+function resetZoom() {
+  previewZoom.value = 1
+}
+
 onMounted(async () => {
   refreshAssetPreviews()
   await nextTick()
   updatePreviewLayout()
-  if (typeof ResizeObserver !== 'undefined' && stageRef.value) {
+  if (typeof ResizeObserver !== 'undefined' && wrapperRef.value) {
     resizeObserver = new ResizeObserver(updatePreviewLayout)
-    resizeObserver.observe(stageRef.value)
+    resizeObserver.observe(wrapperRef.value)
   }
   rafId = requestAnimationFrame(drawFrame)
 })
@@ -161,26 +174,46 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <section ref="stageRef" class="record-stage-layout">
-    <div class="record-stage-frame" :style="frameStyle">
-      <canvas ref="canvasRef" class="record-stage-canvas"></canvas>
+  <div ref="wrapperRef" class="record-stage-wrapper">
+    <section class="record-stage-layout">
+      <div class="record-stage-frame" :style="frameStyle">
+        <canvas ref="canvasRef" class="record-stage-canvas"></canvas>
+      </div>
+    </section>
+
+    <div class="preview-fabs">
+      <button class="preview-fab" @click="zoomIn" :disabled="previewZoom >= 2" title="Zoom In (Max 200%)">
+        <i class="fas fa-search-plus"></i>
+      </button>
+      <button class="preview-fab" @click="resetZoom" :disabled="previewZoom === 1" title="Fit to Screen">
+        <i class="fas fa-compress"></i>
+      </button>
+      <button class="preview-fab" @click="zoomOut" :disabled="previewZoom <= 0.5" title="Zoom Out (Min 50%)">
+        <i class="fas fa-search-minus"></i>
+      </button>
+      <div class="preview-zoom-label">{{ Math.round(previewZoom * 100) }}%</div>
     </div>
-  </section>
+  </div>
 </template>
 
 <style scoped>
-.record-stage-layout {
+.record-stage-wrapper {
+  position: relative;
+  width: 100%;
   height: 100%;
-  min-height: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  background: #202226;
   overflow: hidden;
 }
 
+.record-stage-layout {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  overflow: auto;
+  background: #202226;
+}
+
 .record-stage-frame {
+  margin: auto;
   flex: 0 0 auto;
   position: relative;
   background: #000;
@@ -192,5 +225,56 @@ onBeforeUnmount(() => {
   width: 100%;
   height: 100%;
   display: block;
+}
+
+.preview-fabs {
+  position: absolute;
+  right: 24px;
+  bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 10;
+  align-items: center;
+}
+
+.preview-fab {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--color-bg-tooltip, #303030);
+  border: 1px solid var(--color-border-default, #444);
+  color: var(--color-text-primary, #fff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s ease;
+}
+
+.preview-fab:hover:not(:disabled) {
+  background: var(--color-bg-hover, #404040);
+  transform: scale(1.05);
+}
+
+.preview-fab:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.preview-fab:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.preview-zoom-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary, #fff);
+  background: rgba(0, 0, 0, 0.6);
+  padding: 4px 8px;
+  border-radius: 12px;
+  user-select: none;
 }
 </style>
