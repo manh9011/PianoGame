@@ -37,6 +37,7 @@ export const sl = {
     noRecentSongs: "Ni nedavnih skladb",
     profileMenu: "Odpri meni profila",
     transcription: 'Transkripcija',
+    chordVisualizer: 'Vizualizator Akordov',
     about: 'O aplikaciji',
     aboutSummary: 'Sem Manh Luong Xuan (manh9011) – VNPT IT programer, neodvisni razvijalec in tehnološki navdušenec, navdušen nad kodiranjem in ustvarjanjem, ki ga poganja umetna inteligenca. Izdelujem spletne aplikacije, orodja za avtomatizacijo in programsko opremo, povezano z glasbo, da raziskujem nove tehnologije in rešujem resnične probleme. Moj cilj je združiti programsko inženirstvo, umetno inteligenco in kreativno razmišljanje ter ustvariti navdihujoče digitalne izkušnje.',
   },

@@ -11,6 +11,7 @@ const router = createRouter({
     { path: '/record/:hash', name: 'record', component: () => import('../views/RecordView.vue') },
     { path: '/free-play', name: 'free-play', component: () => import('../views/FreePlayView.vue') },
     { path: '/transcription', name: 'transcription', component: () => import('../views/TranscriptionView.vue') },
+    { path: '/chord-visualizer', name: 'chord-visualizer', component: () => import('../views/ChordVisualizerView.vue') },
     {
       path: '/settings',
       name: 'settings',

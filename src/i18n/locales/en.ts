@@ -36,6 +36,7 @@ export const en = {
     noRecentSongs: 'No recent songs',
     profileMenu: 'Open profile menu',
     transcription: 'Transcription',
+    chordVisualizer: 'Chord Visualizer',
     about: 'About',
     aboutSummary: 'I’m Manh Luong Xuan (manh9011)—a VNPT IT programmer, independent developer, and technology enthusiast passionate about coding and AI-driven creation. I build web applications, automation tools, and music-related software to explore new technologies and solve real-world problems. My goal is to combine software engineering, artificial intelligence, and creative thinking to produce inspiring digital experiences.',
   },

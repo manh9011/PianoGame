@@ -37,6 +37,7 @@ export const zh = {
     noRecentSongs: "没有最近播放的歌曲",
     profileMenu: "打开个人资料菜单",
     transcription: '录音转录',
+    chordVisualizer: '和弦可视化',
     about: '关于',
     aboutSummary: '我是 Manh Luong Xuan (manh9011)——一名 VNPT IT 程序员、独立开发者以及热衷于编程和 AI 创作的技术爱好者。我构建 Web 应用程序、自动化工具以及与音乐相关的软件，以探索新技术并解决实际问题。我的目标是将软件工程、人工智能和创造性思维结合起来，创造出鼓舞人心的数字体验。',
   },

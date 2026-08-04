@@ -37,6 +37,7 @@ export const ca = {
     noRecentSongs: "No hi ha cançons recents",
     profileMenu: "Obre el menú del perfil",
     transcription: 'Transcripció',
+    chordVisualizer: 'Visualitzador d\'acords',
     about: 'Sobre nosaltres',
     aboutSummary: 'Sóc Manh Luong Xuan (manh9011): un programador informàtic de VNPT, desenvolupador independent i entusiasta de la tecnologia apassionat per la codificació i la creació impulsada per IA. Construeixo aplicacions web, eines d\'automatització i programari relacionat amb la música per explorar noves tecnologies i resoldre problemes del món real. El meu objectiu és combinar l\'enginyeria de programari, la intel·ligència artificial i el pensament creatiu per produir experiències digitals inspiradores.',
   },

@@ -89,6 +89,9 @@ function closeProfileManager() {
         <BaseButton variant="primary" class="menu-button transcription-btn" @click="router.push('/transcription')">
           {{ t('home.transcription') }}<sup class="beta-badge">BETA</sup>
         </BaseButton>
+        <BaseButton variant="primary" class="menu-button transcription-btn" @click="router.push('/chord-visualizer')">
+          {{ t('home.chordVisualizer') }}<sup class="beta-badge">BETA</sup>
+        </BaseButton>
         <BaseButton variant="secondary" class="menu-button" @click="router.push('/settings')">
           {{ t('common.settings') }}
         </BaseButton>

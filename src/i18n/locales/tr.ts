@@ -37,6 +37,7 @@ export const tr = {
     noRecentSongs: "Son şarkı yok",
     profileMenu: "Profil menüsünü aç",
     transcription: 'Transkripsiyon',
+    chordVisualizer: 'Akor Görselleştirici',
     about: 'Hakkında',
     aboutSummary: 'Ben Manh Luong Xuan (manh9011) — VNPT Bilişim Programcısı, bağımsız geliştirici ve kodlama ile yapay zeka destekli üretime tutkulu bir teknoloji meraklısıyım. Yeni teknolojileri keşfetmek ve gerçek dünyadaki sorunları çözmek için web uygulamaları, otomasyon araçları ve müzikle ilgili yazılımlar geliştiriyorum. Hedefim, ilham verici dijital deneyimler üretmek için yazılım mühendisliğini, yapay zekayı ve yaratıcı düşünmeyi bir araya getirmektir.',
   },
