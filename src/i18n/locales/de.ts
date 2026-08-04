@@ -63,7 +63,7 @@ export const de = {
 
     helpTitle: 'So verwenden Sie die Transkription',
     helpMessage: 'Diese Funktion befindet sich derzeit im Betatest. Sie können eine WAV- oder MP3-Audiodatei hochladen, um sie kostenlos in MIDI zu konvertieren. Die Funktion läuft vollständig auf Ihrem PC ab, ohne dass die Musik an einen Server gesendet wird; die Konvertierung ist möglicherweise schneller, wenn Sie über eine Grafikkarte verfügen und einen WebGPU-kompatiblen Browser verwenden.',
-    downloadTauriToast: `Downloaded to your system's Downloads folder.`,
+    downloadTauriToast: 'In den Downloads-Ordner Ihres Systems heruntergeladen.',
   },
   freePlay: {
     rewindToStart: "Zum Anfang zurückspulen",

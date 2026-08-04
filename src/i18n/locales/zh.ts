@@ -63,7 +63,7 @@ export const zh = {
 
     helpTitle: '如何使用转录功能',
     helpMessage: '此功能目前处于 Beta 测试阶段。您可以上传 WAV 或 MP3 音频文件，免费将其转换为 MIDI。该功能完全在您的个人计算机上运行，不会将音乐发送到服务器；如果您有显卡并使用支持 WebGPU 的浏览器，转换速度可能会更快。',
-    downloadTauriToast: `Downloaded to your system's Downloads folder.`,
+    downloadTauriToast: '已下载到您系统的 Downloads 文件夹。',
   },
   freePlay: {
     rewindToStart: "倒带到开始",

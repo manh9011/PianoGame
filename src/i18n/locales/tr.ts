@@ -63,7 +63,7 @@ export const tr = {
 
     helpTitle: 'Transkripsiyon nasıl kullanılır',
     helpMessage: 'Bu özellik şu anda beta testi aşamasındadır. Ücretsiz olarak MIDI\'ye dönüştürmek için bir WAV veya MP3 ses dosyası yükleyebilirsiniz. Bu işlev, müziği bir sunucuya göndermeden tamamen kişisel bilgisayarınızda çalışır; bir grafik kartınız varsa ve WebGPU\'yu destekleyen bir tarayıcı kullanıyorsanız dönüştürme işlemi daha hızlı olabilir.',
-    downloadTauriToast: `Downloaded to your system's Downloads folder.`,
+    downloadTauriToast: 'Sisteminizin Downloads klasörüne indirildi.',
   },
   freePlay: {
     rewindToStart: "Başa sar",

@@ -3,7 +3,7 @@ import { createPianoKeys, WHITE_KEY_COUNT, type PianoKey } from '../pianoGeometr
 import { isNoteInRange } from '../keyboardRange'
 import { drawKeyboardHitLine, keyboardWhiteKeyTopOffset } from '../hitLineRenderer'
 import type { LabelMode } from '../../../types/settings'
-import type { RecordRenderScene, RecordRenderVisualOptions } from './recordRenderModel'
+import type { RecordRenderImages, RecordRenderScene, RecordRenderVisualOptions } from './recordRenderModel'
 
 const keys = createPianoKeys()
 const whiteKeys = keys.filter(key => !key.black)
@@ -18,6 +18,7 @@ export interface PianoKeyboardRenderInput {
   visuals: RecordRenderVisualOptions
   activeNotes?: { noteId: number, trackId: number }[]
   keySignatureAccidentals?: number
+  images?: RecordRenderImages
 }
 
 interface KeyRect { key: PianoKey; x: number; y: number; width: number; height: number }
@@ -195,6 +196,7 @@ function drawBlackKey(
   visuals: RecordRenderVisualOptions,
   activeNotes: { noteId: number, trackId: number }[],
   keySignatureAccidentals: number,
+  images?: RecordRenderImages,
 ) {
   const isActive = noteActive(rect.key.noteId, activeNotes)
   const isDisabled = isKeyDisabled(rect.key.noteId, scene)
@@ -207,79 +209,38 @@ function drawBlackKey(
   const gapX = Math.max(2, Math.round(slotW * 0.09))
   const gapBottom = Math.max(2, Math.round(slotH * 0.025))
   const pressOffset = drawDown ? 1.3 : 0
-  const bx = slotX + gapX
+  const bx = slotX + gapX - 0.5
   const by = slotY + pressOffset
-  const bw = slotW - gapX * 2
-  const bh = slotH - pressOffset - gapBottom
-  const lipH = Math.max(7, Math.round(bh * 0.13))
-  const topH = bh - lipH
+  const bw = slotW - gapX * 2 + 1
+  const bh = slotH - pressOffset - gapBottom + 2
 
   ctx.save()
   ctx.shadowColor = drawDown ? 'rgba(0,0,0,0.15)' : isDisabled ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.45)'
   ctx.shadowBlur = drawDown ? 1 : isDisabled ? 1 : 4
   ctx.shadowOffsetY = drawDown ? 1 : isDisabled ? 0.5 : 2
-  pathRoundedRect(ctx, bx, by, bw, bh, 3)
-  const body = ctx.createLinearGradient(bx, by, bx, by + bh)
-  if (drawDown) {
-    body.addColorStop(0, shadeColor(accent, 22))
-    body.addColorStop(0.3, accent)
-    body.addColorStop(0.88, shadeColor(accent, -8))
-    body.addColorStop(1, shadeColor(accent, -24))
-  } else if (isDisabled) {
-    body.addColorStop(0, '#020202')
-    body.addColorStop(0.3, '#090909')
-    body.addColorStop(0.88, '#151515')
-    body.addColorStop(1, '#0b0b0b')
-  } else {
-    body.addColorStop(0, '#050505')
-    body.addColorStop(0.3, '#1d1d1d')
-    body.addColorStop(0.88, '#343434')
-    body.addColorStop(1, '#1d1d1d')
+
+  const img = drawDown ? images?.blackKeyPressed : images?.blackKeyRaised
+  if (img) {
+    ctx.drawImage(img, bx, by, bw, bh)
   }
-  ctx.fillStyle = body
-  ctx.fill()
+
   ctx.shadowColor = 'transparent'
 
-  if (!drawDown) {
-    ctx.lineWidth = 1
-    ctx.strokeStyle = '#000'
-    ctx.stroke()
-  }
-
-  const leftHi = ctx.createLinearGradient(bx, 0, bx + bw * 0.22, 0)
-  leftHi.addColorStop(0, drawDown ? 'rgba(255,255,255,0.08)' : isDisabled ? 'rgba(255,255,255,0.035)' : 'rgba(255,255,255,0.13)')
-  leftHi.addColorStop(1, 'rgba(255,255,255,0)')
-  pathRoundedRect(ctx, bx + 0.8, by + 1.5, Math.max(1.5, bw * 0.16), Math.max(0, topH - 2.5), 2)
-  ctx.fillStyle = leftHi
-  ctx.fill()
-
-  const lipPressOffset = drawDown ? Math.max(1.5, lipH * 0.22) : 0
-  const lipY = Math.min(by + bh - lipH + lipPressOffset, by + bh - lipH * 0.72)
-  const visibleLipH = Math.max(4, by + bh - lipY)
-  pathBlackKeyLip(ctx, bx + 0.8, lipY, bw - 1.6, visibleLipH)
-  const lip = ctx.createLinearGradient(bx, lipY, bx, lipY + visibleLipH)
   if (drawDown) {
-    lip.addColorStop(0, shadeColor(accent, 4))
-    lip.addColorStop(0.35, shadeColor(accent, -16))
-    lip.addColorStop(1, shadeColor(accent, -42))
+    ctx.globalCompositeOperation = 'multiply'
+    ctx.fillStyle = accent
+    ctx.beginPath()
+    pathRoundedRect(ctx, bx, by, bw, bh, 3)
+    ctx.clip()
+    ctx.fill()
+    ctx.globalCompositeOperation = 'source-over'
   } else if (isDisabled) {
-    lip.addColorStop(0, 'rgba(50,50,50,0.38)')
-    lip.addColorStop(0.35, '#141414')
-    lip.addColorStop(1, '#080808')
-  } else {
-    lip.addColorStop(0, 'rgba(95,95,95,0.45)')
-    lip.addColorStop(0.35, '#2b2b2b')
-    lip.addColorStop(1, '#202020')
+    ctx.fillStyle = 'rgba(0,0,0,0.5)'
+    ctx.beginPath()
+    pathRoundedRect(ctx, bx, by, bw, bh, 3)
+    ctx.clip()
+    ctx.fill()
   }
-  ctx.fillStyle = lip
-  ctx.fill()
-
-  ctx.beginPath()
-  ctx.moveTo(bx + 3, lipY + 0.7)
-  ctx.lineTo(bx + bw - 3, lipY + 0.7)
-  ctx.lineWidth = 1
-  ctx.strokeStyle = drawDown ? 'rgba(255,255,255,0.08)' : isDisabled ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.14)'
-  ctx.stroke()
 
   if (visuals.showKeyLabels) drawLabel(ctx, rect, visuals.keyLabelMode, visuals.keyLabelSize, keySignatureAccidentals, drawDown)
   ctx.restore()
@@ -297,6 +258,7 @@ export function renderPianoKeyboard({
   visuals,
   activeNotes = [],
   keySignatureAccidentals = 0,
+  images,
 }: PianoKeyboardRenderInput) {
   ctx.clearRect(0, 0, width, height)
 
@@ -317,6 +279,6 @@ export function renderPianoKeyboard({
 
   drawHitLine(ctx, width)
   for (const key of blackKeys) {
-    drawBlackKey(ctx, keyRect(key, width, height), scene, visuals, activeNotes, keySignatureAccidentals)
+    drawBlackKey(ctx, keyRect(key, width, height), scene, visuals, activeNotes, keySignatureAccidentals, images)
   }
 }

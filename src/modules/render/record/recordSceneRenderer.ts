@@ -204,6 +204,7 @@ function renderRecordSceneLandscape({ ctx, width, height, currentUs, scene, visu
       visuals,
       activeNotes: currentActiveNotes,
       keySignatureAccidentals,
+      images,
     })
 
     ctx.save()
@@ -303,6 +304,7 @@ function renderRecordScenePortrait({ ctx, width, height, currentUs, scene, visua
       visuals,
       activeNotes: currentActiveNotes,
       keySignatureAccidentals,
+      images,
     })
 
     ctx.save()

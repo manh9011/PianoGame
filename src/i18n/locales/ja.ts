@@ -63,7 +63,7 @@ export const ja = {
 
     helpTitle: 'トランスクリプションの使い方',
     helpMessage: 'この機能は現在ベータテスト中です。WAVまたはMP3のオーディオファイルをアップロードして、無料でMIDIに変換できます。この機能は音楽をサーバーに送信することなく、完全にパーソナルコンピュータ上で実行されます。グラフィックカードがあり、WebGPUをサポートするブラウザを使用している場合、変換が速くなる可能性があります。',
-    downloadTauriToast: `Downloaded to your system's Downloads folder.`,
+    downloadTauriToast: 'システムの Downloads フォルダにダウンロードされました。',
   },
   freePlay: {
     rewindToStart: "最初に戻る",

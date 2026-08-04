@@ -57,6 +57,8 @@ export interface RecordRenderVisualOptions {
 export interface RecordRenderImages {
   background: ImageBitmap | null
   logo: ImageBitmap | null
+  blackKeyRaised: ImageBitmap | null
+  blackKeyPressed: ImageBitmap | null
 }
 
 export interface RecordVideoDimensions {

@@ -63,7 +63,7 @@ export const nl = {
 
     helpTitle: 'Hoe transcriptie te gebruiken',
     helpMessage: 'Deze functie bevindt zich momenteel in de bètatestfase. Je kunt gratis een WAV- of MP3-audiobestand uploaden om dit naar MIDI te converteren. De functie draait volledig op je eigen computer zonder de muziek naar een server te sturen; de conversie kan sneller verlopen als je een grafische kaart hebt en een browser gebruikt die WebGPU ondersteunt.',
-    downloadTauriToast: `Downloaded to your system's Downloads folder.`,
+    downloadTauriToast: 'Gedownload naar de map Downloads van uw systeem.',
   },
   freePlay: {
     rewindToStart: "Terugspoelen naar begin",

@@ -63,7 +63,7 @@ export const it = {
 
     helpTitle: 'Come utilizzare la trascrizione',
     helpMessage: 'Questa funzione è attualmente in fase di beta test. Puoi caricare un file audio WAV o MP3 per convertirlo in MIDI gratuitamente. La funzione viene eseguita interamente sul tuo personal computer senza inviare la musica a un server; la conversione potrebbe essere più veloce se hai una scheda grafica e usi un browser che supporta WebGPU.',
-    downloadTauriToast: `Downloaded to your system's Downloads folder.`,
+    downloadTauriToast: 'Scaricato nella cartella Downloads del tuo sistema.',
   },
   freePlay: {
     rewindToStart: "Riavvolgi dall\'inizio",

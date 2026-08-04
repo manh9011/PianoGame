@@ -15,6 +15,7 @@ export default defineConfig({
         'flags/*.png',
         'instruments/*.png',
         'keys/*.svg',
+        'keys/*.png',
         'soundfonts/*/*.js',
         'sounds/*.mid',
         'favicon.ico'

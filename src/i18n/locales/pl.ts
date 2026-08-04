@@ -63,7 +63,7 @@ export const pl = {
 
     helpTitle: 'Jak korzystać z transkrypcji',
     helpMessage: 'Ta funkcja jest obecnie w fazie testów beta. Możesz bezpłatnie przesłać plik audio WAV lub MP3, aby przekonwertować go na MIDI. Funkcja działa w całości na twoim komputerze osobistym bez wysyłania muzyki na serwer; konwersja może być szybsza, jeśli masz kartę graficzną i korzystasz z przeglądarki obsługującej WebGPU.',
-    downloadTauriToast: `Downloaded to your system's Downloads folder.`,
+    downloadTauriToast: 'Pobrano do folderu Downloads w twoim systemie.',
   },
   freePlay: {
     rewindToStart: "Przewiń na początek",

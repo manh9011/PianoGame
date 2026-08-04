@@ -63,7 +63,7 @@ export const th = {
 
     helpTitle: 'วิธีใช้การถอดเสียง',
     helpMessage: 'คุณลักษณะนี้กำลังอยู่ในช่วงทดสอบเบต้า คุณสามารถอัปโหลดไฟล์เสียง WAV หรือ MP3 เพื่อแปลงเป็น MIDI ได้ฟรี ฟังก์ชันนี้ทำงานบนคอมพิวเตอร์ส่วนบุคคลของคุณทั้งหมดโดยไม่ต้องส่งเพลงไปยังเซิร์ฟเวอร์ การแปลงอาจเร็วขึ้นหากคุณมีการ์ดจอและใช้เบราว์เซอร์ที่รองรับ WebGPU',
-    downloadTauriToast: `Downloaded to your system's Downloads folder.`,
+    downloadTauriToast: 'ดาวน์โหลดไปยังโฟลเดอร์ Downloads ของระบบแล้ว',
   },
   freePlay: {
     rewindToStart: "ย้อนกลับไปที่จุดเริ่มต้น",

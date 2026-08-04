@@ -65,6 +65,8 @@ function compactDurationUs(request: RenderExportRequest) {
 function disposeImages(images: RecordRenderImages) {
   images.background?.close?.()
   images.logo?.close?.()
+  images.blackKeyRaised?.close?.()
+  images.blackKeyPressed?.close?.()
 }
 
 function periodicYield(frameIndex: number) {
@@ -909,10 +911,24 @@ async function supportedAudioConfig(kind: 'mp4' | 'webm', sampleRate: number, bi
   return support.config ?? { codec, numberOfChannels: 2, sampleRate, bitrate }
 }
 
+async function loadBuiltinAsset(path: string) {
+  try {
+    const baseUrl = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`
+    const response = await fetch(`${baseUrl}${path}`)
+    if (!response.ok) return null
+    const blob = await response.blob()
+    return await createImageBitmap(blob)
+  } catch {
+    return null
+  }
+}
+
 async function prepareImages(request: RenderExportRequest) {
   return {
     background: await imageBitmapFromAsset(request.background),
     logo: await imageBitmapFromAsset(request.logo),
+    blackKeyRaised: await loadBuiltinAsset('keys/black-key-raised.png'),
+    blackKeyPressed: await loadBuiltinAsset('keys/black-key-pressed.png'),
   }
 }
 

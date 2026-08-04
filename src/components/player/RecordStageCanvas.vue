@@ -48,7 +48,9 @@ const exportVisuals = computed<RecordRenderVisualOptions>(() => ({
 const exportScene = computed(() => player.session ? createRecordRenderScene(player.session, player.song?.title ?? '') : null)
 const images = ref<RecordRenderImages>({
   background: null,
-  logo: null
+  logo: null,
+  blackKeyRaised: null,
+  blackKeyPressed: null,
 })
 
 let resizeObserver: ResizeObserver | null = null
@@ -143,7 +145,26 @@ function resetZoom() {
   previewZoom.value = 1
 }
 
+async function loadBuiltinAsset(path: string) {
+  try {
+    const baseUrl = import.meta.env.BASE_URL.endsWith('/') ? import.meta.env.BASE_URL : `${import.meta.env.BASE_URL}/`
+    const response = await fetch(`${baseUrl}${path}`)
+    if (!response.ok) return null
+    const blob = await response.blob()
+    return await createImageBitmap(blob)
+  } catch {
+    return null
+  }
+}
+
 onMounted(async () => {
+  const [raised, pressed] = await Promise.all([
+    loadBuiltinAsset('keys/black-key-raised.png'),
+    loadBuiltinAsset('keys/black-key-pressed.png')
+  ])
+  images.value.blackKeyRaised = raised
+  images.value.blackKeyPressed = pressed
+
   refreshAssetPreviews()
   await nextTick()
   updatePreviewLayout()
@@ -164,7 +185,9 @@ onBeforeUnmount(() => {
   assetLoadToken += 1
   if (images.value.background) images.value.background.close()
   if (images.value.logo) images.value.logo.close()
-  images.value = { background: null, logo: null }
+  if (images.value.blackKeyRaised) images.value.blackKeyRaised.close()
+  if (images.value.blackKeyPressed) images.value.blackKeyPressed.close()
+  images.value = { background: null, logo: null, blackKeyRaised: null, blackKeyPressed: null }
 })
 </script>
 

@@ -12,6 +12,12 @@ import { CanvasSpriteCache, createSpriteCanvas } from '../../modules/render/canv
 import { drawKeyboardHitLine, keyboardWhiteKeyTopOffset } from '../../modules/render/hitLineRenderer'
 import type { Hand, SessionNote } from '../../modules/game/playSession'
 
+const blackKeyRaisedImage = new Image()
+blackKeyRaisedImage.src = `${import.meta.env.BASE_URL}keys/black-key-raised.png`
+
+const blackKeyPressedImage = new Image()
+blackKeyPressedImage.src = `${import.meta.env.BASE_URL}keys/black-key-pressed.png`
+
 const props = defineProps<{
   transparentBackground?: boolean
   previewActiveFromTimeline?: boolean
@@ -434,8 +440,6 @@ function drawBlackKey(ctx: CanvasRenderingContext2D, rect: KeyRect, isDown = act
   // =========================
   // 1) SLOT NGOÀI
   // =========================
-  // x/y/width/height được coi là vùng tổng của phím đen.
-  // Ta fill đen nguyên vùng này trước để tạo rãnh thật.
   const slotX = Math.round(x) + 0.5
   const slotY = Math.round(y) + 0.5
   const slotW = Math.max(10, Math.round(width) - 1)
@@ -444,21 +448,17 @@ function drawBlackKey(ctx: CanvasRenderingContext2D, rect: KeyRect, isDown = act
   ctx.save()
 
   // =========================
-  // 2) BODY PHÍM THẬT
+  // 2) BODY PHÍM
   // =========================
   const gapX = Math.max(2, Math.round(slotW * 0.09))
   const gapBottom = Math.max(2, Math.round(slotH * 0.025))
 
-  // thân phím bị nhấn xuống nhẹ
   const pressOffset = drawDown ? 1.3 : 0
 
-  const bx = slotX + gapX
+  const bx = slotX + gapX - 0.5
   const by = slotY + pressOffset
-  const bw = slotW - gapX * 2
-  const bh = slotH - pressOffset - gapBottom
-
-  const lipH = Math.max(7, Math.round(bh * 0.13))
-  const topH = bh - lipH
+  const bw = slotW - gapX * 2 + 1
+  const bh = slotH - pressOffset - gapBottom + 2
 
   // Shadow ngoài thân phím
   ctx.shadowColor = drawDown ? 'rgba(0,0,0,0.15)' : isDisabled ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.45)'
@@ -466,111 +466,33 @@ function drawBlackKey(ctx: CanvasRenderingContext2D, rect: KeyRect, isDown = act
   ctx.shadowOffsetX = 0
   ctx.shadowOffsetY = drawDown ? 1 : isDisabled ? 0.5 : 2
 
-  pathRoundedRect(ctx, bx, by, bw, bh, 3)
-
-  const body = ctx.createLinearGradient(bx, by, bx, by + bh)
-
-  if (drawDown) {
-    body.addColorStop(0, shadeColor(accent, 22))
-    body.addColorStop(0.3, accent)
-    body.addColorStop(0.88, shadeColor(accent, -8))
-    body.addColorStop(1, shadeColor(accent, -24))
-  } else if (isDisabled) {
-    body.addColorStop(0, '#020202')
-    body.addColorStop(0.3, '#090909')
-    body.addColorStop(0.88, '#151515')
-    body.addColorStop(1, '#0b0b0b')
-  } else {
-    body.addColorStop(0, '#050505')
-    body.addColorStop(0.3, '#1d1d1d')
-    body.addColorStop(0.88, '#343434')
-    body.addColorStop(1, '#1d1d1d')
-  }
-
-  ctx.fillStyle = body
-  ctx.fill()
+  const img = drawDown ? blackKeyPressedImage : blackKeyRaisedImage
+  ctx.drawImage(img, bx, by, bw, bh)
 
   ctx.shadowColor = 'transparent'
   ctx.shadowBlur = 0
   ctx.shadowOffsetX = 0
   ctx.shadowOffsetY = 0
 
-  // Viền ngoài chỉ vẽ khi nhả.
-  // Khi active, không stroke đen để tránh bị rìa đen ôm sát thân.
-  if (!drawDown) {
-    ctx.lineWidth = 1
-    ctx.strokeStyle = '#000'
-    ctx.stroke()
-  }
-
-  // =========================
-  // 3) HIGHLIGHT TRÁI NHẸ
-  // =========================
-  // Không vẽ gloss giữa thân phím nữa.
-  const leftHi = ctx.createLinearGradient(bx, 0, bx + bw * 0.22, 0)
-  leftHi.addColorStop(
-    0,
-    drawDown ? 'rgba(255,255,255,0.08)' : isDisabled ? 'rgba(255,255,255,0.035)' : 'rgba(255,255,255,0.13)'
-  )
-  leftHi.addColorStop(1, 'rgba(255,255,255,0)')
-
-  pathRoundedRect(
-    ctx,
-    bx + 0.8,
-    by + 1.5,
-    Math.max(1.5, bw * 0.16),
-    Math.max(0, topH - 2.5),
-    2
-  )
-
-  ctx.fillStyle = leftHi
-  ctx.fill()
-
-  // =========================
-  // 4) GỜ DƯỚI
-  // =========================
-  // Khi nhấn, gờ tụt xuống thêm so với thân phím.
-  const lipPressOffset = drawDown ? Math.max(1.5, lipH * 0.22) : 0
-
-  const lipY = Math.min(
-    by + bh - lipH + lipPressOffset,
-    by + bh - lipH * 0.72
-  )
-
-  const visibleLipH = Math.max(4, by + bh - lipY)
-
-  pathBlackKeyLip(ctx, bx + 0.8, lipY, bw - 1.6, visibleLipH)
-
-  const lip = ctx.createLinearGradient(bx, lipY, bx, lipY + visibleLipH)
-
   if (drawDown) {
-    lip.addColorStop(0, shadeColor(accent, 4))
-    lip.addColorStop(0.35, shadeColor(accent, -16))
-    lip.addColorStop(1, shadeColor(accent, -42))
+    ctx.globalCompositeOperation = 'multiply'
+    ctx.fillStyle = accent
+    ctx.beginPath()
+    pathRoundedRect(ctx, bx, by, bw, bh, 3)
+    ctx.clip()
+    ctx.fill()
+    ctx.globalCompositeOperation = 'source-over'
   } else if (isDisabled) {
-    lip.addColorStop(0, 'rgba(50,50,50,0.38)')
-    lip.addColorStop(0.35, '#141414')
-    lip.addColorStop(1, '#080808')
-  } else {
-    lip.addColorStop(0, 'rgba(95,95,95,0.45)')
-    lip.addColorStop(0.35, '#2b2b2b')
-    lip.addColorStop(1, '#202020')
+    // Optional: make it darker if disabled
+    ctx.fillStyle = 'rgba(0,0,0,0.5)'
+    ctx.beginPath()
+    pathRoundedRect(ctx, bx, by, bw, bh, 3)
+    ctx.clip()
+    ctx.fill()
   }
-
-  ctx.fillStyle = lip
-  ctx.fill()
-
-  // Line sáng nhỏ trên mép gờ
-  ctx.beginPath()
-  ctx.moveTo(bx + 3, lipY + 0.7)
-  ctx.lineTo(bx + bw - 3, lipY + 0.7)
-  ctx.lineWidth = 1
-  ctx.strokeStyle = drawDown
-    ? 'rgba(255,255,255,0.08)'
-    : isDisabled ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.14)'
-  ctx.stroke()
 
   if (drawDown && pressFlash > 0) {
+    ctx.beginPath()
     pathRoundedRect(ctx, bx + 1, by + 1, Math.max(0, bw - 2), Math.max(0, bh - 2), 3)
     const flash = ctx.createLinearGradient(bx, by, bx, by + bh)
     flash.addColorStop(0, `rgba(255,255,255,${0.48 * pressFlash})`)
