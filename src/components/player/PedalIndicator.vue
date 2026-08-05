@@ -115,7 +115,7 @@ const softOn = computed(() => {
   bottom: 24px;
   right: 24px;
   pointer-events: none;
-  z-index: 100;
+  z-index: 5;
 }
 
 .pedal-track {
