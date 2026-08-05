@@ -547,6 +547,7 @@ export const tr = {
     converter: 'Dönüştürücü',
     midiToMusicXml: 'MIDI\'den MusicXML\'e',
     musicXmlToMidi: 'MusicXML\'den MIDI\'ye',
+    cloudServiceNotAvailableInCountry: 'Hizmet ülkenizde kullanılabilir değil',
     title: "Ayarlar",
     navigation: "Ayarlar gezintisi",
     musicDevices: "Müzik aygıtları",

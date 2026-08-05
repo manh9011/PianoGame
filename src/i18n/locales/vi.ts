@@ -547,6 +547,7 @@ export const vi = {
     converter: 'Bộ chuyển đổi (Converter)',
     midiToMusicXml: 'MIDI sang MusicXML',
     musicXmlToMidi: 'MusicXML sang MIDI',
+    cloudServiceNotAvailableInCountry: 'Dịch vụ không khả dụng ở quốc gia của bạn',
     title: "Cài đặt",
     navigation: "Điều hướng cài đặt",
     musicDevices: "Thiết bị nhạc",

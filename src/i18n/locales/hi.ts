@@ -547,6 +547,7 @@ export const hi = {
     converter: 'कनवर्टर',
     midiToMusicXml: 'MIDI से MusicXML',
     musicXmlToMidi: 'MusicXML से MIDI',
+    cloudServiceNotAvailableInCountry: 'आपके देश में सेवा उपलब्ध नहीं है',
     title: "सेटिंग्स",
     navigation: "सेटिंग्स नेविगेशन",
     musicDevices: "संगीत डिवाइस",

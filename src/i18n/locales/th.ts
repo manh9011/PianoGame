@@ -547,6 +547,7 @@ export const th = {
     converter: 'ตัวแปลง',
     midiToMusicXml: 'MIDI เป็น MusicXML',
     musicXmlToMidi: 'MusicXML เป็น MIDI',
+    cloudServiceNotAvailableInCountry: 'บริการไม่สามารถใช้งานได้ในประเทศของคุณ',
     title: "การตั้งค่า",
     navigation: "การนำทางการตั้งค่า",
     musicDevices: "อุปกรณ์ดนตรี",

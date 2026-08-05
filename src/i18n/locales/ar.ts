@@ -547,6 +547,7 @@ export const ar = {
     converter: 'محول',
     midiToMusicXml: 'MIDI إلى MusicXML',
     musicXmlToMidi: 'MusicXML إلى MIDI',
+    cloudServiceNotAvailableInCountry: 'الخدمة غير متوفرة في بلدك',
     title: "الإعدادات",
     navigation: "تنقل الإعدادات",
     musicDevices: "أجهزة الموسيقى",

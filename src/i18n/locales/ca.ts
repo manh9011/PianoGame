@@ -547,6 +547,7 @@ export const ca = {
     converter: 'Convertidor',
     midiToMusicXml: 'MIDI a MusicXML',
     musicXmlToMidi: 'MusicXML a MIDI',
+    cloudServiceNotAvailableInCountry: 'Servei no disponible al teu país',
     title: "Configuració",
     navigation: "Navegació de la configuració",
     musicDevices: "Dispositius musicals",

@@ -547,6 +547,7 @@ export const nl = {
     converter: 'Converter',
     midiToMusicXml: 'MIDI naar MusicXML',
     musicXmlToMidi: 'MusicXML naar MIDI',
+    cloudServiceNotAvailableInCountry: 'Dienst niet beschikbaar in uw land',
     title: "Instellingen",
     navigation: "Instellingennavigatie",
     musicDevices: "Muziekapparaten",

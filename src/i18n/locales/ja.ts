@@ -547,6 +547,7 @@ export const ja = {
     converter: 'コンバーター',
     midiToMusicXml: 'MIDIからMusicXMLへ',
     musicXmlToMidi: 'MusicXMLからMIDIへ',
+    cloudServiceNotAvailableInCountry: 'お住まいの国・地域ではサービスをご利用いただけません',
     title: "設定",
     navigation: "設定ナビゲーション",
     musicDevices: "音楽デバイス",

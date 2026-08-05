@@ -7,9 +7,28 @@ import BaseSelect from '../../components/ui/BaseSelect.vue'
 import { useSettingsStore } from '../../stores/settingsStore'
 import { useConfirmDialog } from '../../composables/useConfirmDialog'
 
+import { useToastStore } from '../../stores/toastStore'
+
 const { t } = useI18n()
 const settings = useSettingsStore()
+const toast = useToastStore()
 const { confirm } = useConfirmDialog()
+
+async function onMidiToMusicXmlChange(value: unknown) {
+  const target = value as 'music21' | 'music21-cloud' | 'webmscore'
+  if (target === 'music21-cloud') {
+    try {
+      const res = await fetch('https://pianogame.manh9011.qzz.io/health', { method: 'GET' })
+      if (res.status === 403) {
+        toast.showError(t('settings.cloudServiceNotAvailableInCountry'))
+        return
+      }
+    } catch (error) {
+      console.warn('[Settings] Health check to cloud service failed:', error)
+    }
+  }
+  settings.patchSettings({ advancedConverterMidiToMusicXml: target })
+}
 
 async function resetAdvanced() {
   const confirmed = await confirm({
@@ -77,8 +96,9 @@ async function resetAdvanced() {
     <SettingsSection :title="t('settings.converter')">
       <SettingsRow :title="t('settings.midiToMusicXml')">
         <BaseSelect class="settings-control" :model-value="settings.advancedConverterMidiToMusicXml"
-          @update:model-value="settings.patchSettings({ advancedConverterMidiToMusicXml: $event as 'music21' | 'webmscore' })">
+          @update:model-value="onMidiToMusicXmlChange">
           <option value="music21">music21</option>
+          <option value="music21-cloud">music21 (cloud)</option>
           <option value="webmscore">webmscore</option>
         </BaseSelect>
       </SettingsRow>
@@ -97,7 +117,8 @@ async function resetAdvanced() {
           @change="settings.patchSettings({ advancedEnableDebugOverlay: $event })" />
       </SettingsRow>
       <SettingsRow :title="t('settings.resetToDefaults')" :description="t('settings.resetToDefaultsDescription')">
-        <button class="settings-button danger" type="button" @click="resetAdvanced">{{ t('settings.resetToDefaults') }}</button>
+        <button class="settings-button danger" type="button" @click="resetAdvanced">{{ t('settings.resetToDefaults')
+          }}</button>
       </SettingsRow>
     </SettingsSection>
   </div>

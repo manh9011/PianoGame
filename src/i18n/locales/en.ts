@@ -540,6 +540,7 @@ export const en = {
     converter: 'Converter',
     midiToMusicXml: 'MIDI to MusicXML',
     musicXmlToMidi: 'MusicXML to MIDI',
+    cloudServiceNotAvailableInCountry: 'Service not available in your country',
     title: 'Settings',
     navigation: 'Settings navigation',
     musicDevices: 'Music Devices',

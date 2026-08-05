@@ -547,6 +547,7 @@ export const sl = {
     converter: 'Pretvornik',
     midiToMusicXml: 'MIDI v MusicXML',
     musicXmlToMidi: 'MusicXML v MIDI',
+    cloudServiceNotAvailableInCountry: 'Storitev v vaši državi ni na voljo',
     title: "Nastavitve",
     navigation: "Navigacija nastavitev",
     musicDevices: "Glasbene naprave",

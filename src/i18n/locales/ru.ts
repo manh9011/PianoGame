@@ -547,6 +547,7 @@ export const ru = {
     converter: 'Конвертер',
     midiToMusicXml: 'MIDI в MusicXML',
     musicXmlToMidi: 'MusicXML в MIDI',
+    cloudServiceNotAvailableInCountry: 'Служба недоступна в вашей стране',
     title: "Настройки",
     navigation: "Навигация настроек",
     musicDevices: "Музыкальные устройства",

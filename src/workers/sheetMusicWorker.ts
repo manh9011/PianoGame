@@ -167,6 +167,44 @@ async function handleGenerate(request: SheetWorkerRequest) {
       console.warn('[SheetWorker] webmscore fallback to music21 due to error:', webmscoreError)
       useFallback = true
     }
+  } else if (settings.advancedConverterMidiToMusicXml === 'music21-cloud') {
+    try {
+      const shards = plans.map(plan => serializeVoiceShard(source, plan))
+      postProgress(requestId, 'converting', 'sheetMusic.progress.convertingVoiceShards', 'convertingVoiceShards', { count: shards.length })
+
+      const shardXmls: { shard: any; musicXml: string }[] = []
+      for (let index = 0; index < shards.length; index++) {
+        const shard = shards[index]
+        postProgress(requestId, 'converting', 'sheetMusic.progress.convertingVoiceShard', 'convertingVoiceShard', { current: index + 1, total: shards.length })
+        
+        const response = await fetch('https://pianogame.manh9011.qzz.io/api/convert', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/octet-stream' },
+          body: shard.midiBytes as unknown as BodyInit,
+        })
+        
+        if (!response.ok) {
+          throw new Error(`Cloud converter HTTP ${response.status}: ${response.statusText}`)
+        }
+        
+        const musicXml = await response.text()
+        shardXmls.push({ shard, musicXml })
+      }
+
+      const musicXml = mergeShardMusicXml(shardXmls)
+      const artifact: SheetMusicArtifact = {
+        cacheKey,
+        musicXml,
+        warnings: [],
+        stats: artifactStats,
+      }
+      const result: SheetWorkerResult = { type: 'result', requestId, artifact }
+      self.postMessage(result)
+      return
+    } catch (cloudError) {
+      console.warn('[SheetWorker] music21-cloud failed, falling back to local Pyodide music21:', cloudError)
+      useFallback = true
+    }
   } else {
     useFallback = true
   }

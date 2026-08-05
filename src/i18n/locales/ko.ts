@@ -547,6 +547,7 @@ export const ko = {
     converter: '변환기',
     midiToMusicXml: 'MIDI를 MusicXML로',
     musicXmlToMidi: 'MusicXML을 MIDI로',
+    cloudServiceNotAvailableInCountry: '해당 국가 또는 지역에서는 서비스를 사용할 수 없습니다',
     title: "설정",
     navigation: "설정 탐색",
     musicDevices: "음악 장치",

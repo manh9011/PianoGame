@@ -547,6 +547,7 @@ export const zh = {
     converter: '转换器',
     midiToMusicXml: 'MIDI 转换为 MusicXML',
     musicXmlToMidi: 'MusicXML 转换为 MIDI',
+    cloudServiceNotAvailableInCountry: '服务在您所在的国家或地区不可用',
     title: "设置",
     navigation: "设置导航",
     musicDevices: "音乐设备",

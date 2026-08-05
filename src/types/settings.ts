@@ -79,6 +79,6 @@ export interface UserSettings {
   advancedMidiPedal: boolean
   advancedMidiZeroVolumeKeyLights: boolean
   advancedMidiForceUniqueTrackChannels: boolean
-  advancedConverterMidiToMusicXml: 'music21' | 'webmscore'
+  advancedConverterMidiToMusicXml: 'music21' | 'music21-cloud' | 'webmscore'
   advancedConverterMusicXmlToMidi: 'verovio' | 'webmscore'
 }
