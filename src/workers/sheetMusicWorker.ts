@@ -120,6 +120,51 @@ async function convertShard(pyodide: PyodideRuntime, path: string, bytes: Uint8A
   }
 }
 
+/** Giới hạn tối đa `limit` request cloud đồng thời để tránh 429 rate limit. */
+function makeConcurrencyLimiter(limit: number) {
+  let active = 0
+  const queue: (() => void)[] = []
+  return async function<T>(fn: () => Promise<T>): Promise<T> {
+    if (active >= limit) {
+      await new Promise<void>(resolve => queue.push(resolve))
+    }
+    active++
+    try {
+      return await fn()
+    } finally {
+      active--
+      if (queue.length > 0) queue.shift()!()
+    }
+  }
+}
+
+const CLOUD_CONVERT_URL = 'https://pianogame.manh9011.qzz.io/api/convert'
+const CLOUD_MAX_CONCURRENCY = 5
+const CLOUD_MAX_RETRIES = 3
+
+async function fetchConvertShard(bytes: Uint8Array): Promise<string> {
+  // Rate limit window của server là 10s, dùng làm fallback khi không có Retry-After header
+  const RATE_LIMIT_WINDOW_MS = 10_000
+  for (let attempt = 0; attempt <= CLOUD_MAX_RETRIES; attempt++) {
+    const response = await fetch(CLOUD_CONVERT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/octet-stream' },
+      body: bytes as unknown as BodyInit,
+    })
+    if (response.ok) {
+      return response.text()
+    }
+    if (response.status === 429 && attempt < CLOUD_MAX_RETRIES) {
+      const retryAfterHeader = Number(response.headers.get('Retry-After') ?? 0) * 1000
+      const waitMs = retryAfterHeader > 0 ? retryAfterHeader : RATE_LIMIT_WINDOW_MS
+      await new Promise(r => setTimeout(r, waitMs))
+      continue
+    }
+    throw new Error(`Cloud converter HTTP ${response.status}: ${response.statusText}`)
+  }
+  throw new Error('Cloud converter: max retries exceeded')
+}
+
 async function handleGenerate(request: SheetWorkerRequest) {
   const { requestId, cacheKey, buffer } = request
 
@@ -172,24 +217,18 @@ async function handleGenerate(request: SheetWorkerRequest) {
       const shards = plans.map(plan => serializeVoiceShard(source, plan))
       postProgress(requestId, 'converting', 'sheetMusic.progress.convertingVoiceShards', 'convertingVoiceShards', { count: shards.length })
 
-      const shardXmls: { shard: any; musicXml: string }[] = []
-      for (let index = 0; index < shards.length; index++) {
-        const shard = shards[index]
-        postProgress(requestId, 'converting', 'sheetMusic.progress.convertingVoiceShard', 'convertingVoiceShard', { current: index + 1, total: shards.length })
-        
-        const response = await fetch('https://pianogame.manh9011.qzz.io/api/convert', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/octet-stream' },
-          body: shard.midiBytes as unknown as BodyInit,
-        })
-        
-        if (!response.ok) {
-          throw new Error(`Cloud converter HTTP ${response.status}: ${response.statusText}`)
-        }
-        
-        const musicXml = await response.text()
-        shardXmls.push({ shard, musicXml })
-      }
+      const limit = makeConcurrencyLimiter(CLOUD_MAX_CONCURRENCY)
+      let completedCount = 0
+      const shardXmls = await Promise.all(
+        shards.map(shard =>
+          limit(async () => {
+            const musicXml = await fetchConvertShard(shard.midiBytes)
+            completedCount++
+            postProgress(requestId, 'converting', 'sheetMusic.progress.convertingVoiceShard', 'convertingVoiceShard', { current: completedCount, total: shards.length })
+            return { shard, musicXml }
+          })
+        )
+      )
 
       const musicXml = mergeShardMusicXml(shardXmls)
       const artifact: SheetMusicArtifact = {
