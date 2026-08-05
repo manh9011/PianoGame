@@ -14,9 +14,17 @@ import type { Hand, SessionNote } from '../../modules/game/playSession'
 
 const blackKeyRaisedImage = new Image()
 blackKeyRaisedImage.src = `${import.meta.env.BASE_URL}keys/black-key-raised.png`
+blackKeyRaisedImage.onload = () => {
+  invalidateKeyboardBaseLayer()
+  requestDraw()
+}
 
 const blackKeyPressedImage = new Image()
 blackKeyPressedImage.src = `${import.meta.env.BASE_URL}keys/black-key-pressed.png`
+blackKeyPressedImage.onload = () => {
+  invalidateKeyboardBaseLayer()
+  requestDraw()
+}
 
 const props = defineProps<{
   transparentBackground?: boolean
@@ -447,6 +455,11 @@ function drawBlackKey(ctx: CanvasRenderingContext2D, rect: KeyRect, isDown = act
 
   ctx.save()
 
+  // Always fill the slot background to erase any unpressed key image or shadow from cached base layers
+  pathRoundedRect(ctx, slotX, slotY, slotW, slotH, 3)
+  ctx.fillStyle = '#000000'
+  ctx.fill()
+
   // =========================
   // 2) BODY PHÍM
   // =========================
@@ -460,11 +473,11 @@ function drawBlackKey(ctx: CanvasRenderingContext2D, rect: KeyRect, isDown = act
   const bw = slotW - gapX * 2 + 1
   const bh = slotH - pressOffset - gapBottom + 2
 
-  // Shadow ngoài thân phím
-  ctx.shadowColor = drawDown ? 'rgba(0,0,0,0.15)' : isDisabled ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.45)'
-  ctx.shadowBlur = drawDown ? 1 : isDisabled ? 1 : 4
+  // Shadow ngoài thân phím (consistent blur to prevent groove jitter)
+  ctx.shadowColor = drawDown ? 'rgba(0,0,0,0.2)' : isDisabled ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.35)'
+  ctx.shadowBlur = 2
   ctx.shadowOffsetX = 0
-  ctx.shadowOffsetY = drawDown ? 1 : isDisabled ? 0.5 : 2
+  ctx.shadowOffsetY = drawDown ? 1 : isDisabled ? 0.5 : 1.5
 
   const img = drawDown ? blackKeyPressedImage : blackKeyRaisedImage
   ctx.drawImage(img, bx, by, bw, bh)

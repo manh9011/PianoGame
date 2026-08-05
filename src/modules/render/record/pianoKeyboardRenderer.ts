@@ -215,9 +215,16 @@ function drawBlackKey(
   const bh = slotH - pressOffset - gapBottom + 2
 
   ctx.save()
-  ctx.shadowColor = drawDown ? 'rgba(0,0,0,0.15)' : isDisabled ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.45)'
-  ctx.shadowBlur = drawDown ? 1 : isDisabled ? 1 : 4
-  ctx.shadowOffsetY = drawDown ? 1 : isDisabled ? 0.5 : 2
+
+  // Always fill slot background to prevent ghosting
+  pathRoundedRect(ctx, slotX, slotY, slotW, slotH, 3)
+  ctx.fillStyle = '#000000'
+  ctx.fill()
+
+  ctx.shadowColor = drawDown ? 'rgba(0,0,0,0.2)' : isDisabled ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.35)'
+  ctx.shadowBlur = 2
+  ctx.shadowOffsetX = 0
+  ctx.shadowOffsetY = drawDown ? 1 : isDisabled ? 0.5 : 1.5
 
   const img = drawDown ? images?.blackKeyPressed : images?.blackKeyRaised
   if (img) {
@@ -225,6 +232,9 @@ function drawBlackKey(
   }
 
   ctx.shadowColor = 'transparent'
+  ctx.shadowBlur = 0
+  ctx.shadowOffsetX = 0
+  ctx.shadowOffsetY = 0
 
   if (drawDown) {
     ctx.globalCompositeOperation = 'multiply'
