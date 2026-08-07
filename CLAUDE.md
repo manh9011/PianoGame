@@ -6,22 +6,22 @@ PianoGame là ứng dụng học và luyện tập piano đa nền tảng, lấy
 
 ## Tech Stack
 
-| Layer | Công nghệ |
-|---|---|
-| UI | Vue 3 (Composition API + `<script setup>`) |
-| Ngôn ngữ | TypeScript (strict) |
-| Build | Vite |
-| State | Pinia |
-| Router | Vue Router (hash history) |
-| i18n | vue-i18n (19 ngôn ngữ, RTL support) |
-| Desktop | Tauri v2 (Rust) |
-| PWA | vite-plugin-pwa (offline support) |
-| CSS | Thuần CSS + CSS variables (dark/light theme) |
-| Audio | Web Audio API, soundfont-player, SimpleSynth |
-| MIDI parse | @tonejs/midi |
-| Sheet music | Verovio (SVG), music21 (Python qua Pyodide WASM) |
-| Video export | mp4-muxer, webm-muxer (Web Workers) |
-| Storage | IndexedDB |
+| Layer        | Công nghệ                                        |
+| ------------ | ------------------------------------------------ |
+| UI           | Vue 3 (Composition API + `<script setup>`)       |
+| Ngôn ngữ     | TypeScript (strict)                              |
+| Build        | Vite                                             |
+| State        | Pinia                                            |
+| Router       | Vue Router (hash history)                        |
+| i18n         | vue-i18n (19 ngôn ngữ, RTL support)              |
+| Desktop      | Tauri v2 (Rust)                                  |
+| PWA          | vite-plugin-pwa (offline support)                |
+| CSS          | Thuần CSS + CSS variables (dark/light theme)     |
+| Audio        | Web Audio API, soundfont-player, SimpleSynth     |
+| MIDI parse   | @tonejs/midi                                     |
+| Sheet music  | Verovio (SVG), music21 (Python qua Pyodide WASM) |
+| Video export | mp4-muxer, webm-muxer (Web Workers)              |
+| Storage      | IndexedDB                                        |
 
 ## Cấu trúc thư mục
 
@@ -229,16 +229,16 @@ PianoGame/
 
 ## Routes chính
 
-| Route | View | Chức năng |
-|---|---|---|
-| `/` | HomeView.vue | Màn hình chính, recent songs, profile |
-| `/library` | LibraryView.vue | Thư viện bài hát, import MIDI/MusicXML |
-| `/mode-select/:hash?` | ModeSelectView.vue | Chọn chế độ chơi cho bài hát |
-| `/track-settings/:hash?` | TrackSettingsView.vue | Cấu hình track (tay, nhạc cụ, màu) |
-| `/play/:hash/:modeId` | PlayView.vue | ⭐ Màn chơi chính |
-| `/record/:hash` | RecordView.vue | Export video piano roll |
-| `/free-play` | FreePlayView.vue | Free play (thu âm + chỉnh sửa) |
-| `/settings/...` | SettingView.vue (nested) | Cài đặt (7 sub-views) |
+| Route                    | View                     | Chức năng                              |
+| ------------------------ | ------------------------ | -------------------------------------- |
+| `/`                      | HomeView.vue             | Màn hình chính, recent songs, profile  |
+| `/library`               | LibraryView.vue          | Thư viện bài hát, import MIDI/MusicXML |
+| `/mode-select/:hash?`    | ModeSelectView.vue       | Chọn chế độ chơi cho bài hát           |
+| `/track-settings/:hash?` | TrackSettingsView.vue    | Cấu hình track (tay, nhạc cụ, màu)     |
+| `/play/:hash/:modeId`    | PlayView.vue             | ⭐ Màn chơi chính                       |
+| `/record/:hash`          | RecordView.vue           | Export video piano roll                |
+| `/free-play`             | FreePlayView.vue         | Free play (thu âm + chỉnh sửa)         |
+| `/settings/...`          | SettingView.vue (nested) | Cài đặt (7 sub-views)                  |
 
 ## Kiến trúc xử lý chính
 
@@ -289,15 +289,15 @@ File MIDI → @tonejs/midi → RawMidiEvent[] → translateNotes → assignHands
 
 ## Scripts
 
-| Script | Mô tả |
-|---|---|
-| `npm run dev` | Dev server (port 1420) |
-| `npm run build` | Type check + Vite build |
-| `npm run typecheck` | vue-tsc type check |
-| `npm run preview` | Preview production build |
-| `npm run tauri:dev` | Tauri dev mode |
-| `npm run tauri:build` | Build Tauri desktop app |
-| `npm run tauri:android:build` | Build Android APK |
+| Script                        | Mô tả                    |
+| ----------------------------- | ------------------------ |
+| `npm run dev`                 | Dev server (port 1420)   |
+| `npm run build`               | Type check + Vite build  |
+| `npm run typecheck`           | vue-tsc type check       |
+| `npm run preview`             | Preview production build |
+| `npm run tauri:dev`           | Tauri dev mode           |
+| `npm run tauri:build`         | Build Tauri desktop app  |
+| `npm run tauri:android:build` | Build Android APK        |
 
 ## Các store và dependency graph
 
@@ -317,21 +317,21 @@ freePlayStore ←── orchestrate ──→ freePlayMidiImport, editor
 
 ## Dependencies chính
 
-| Package | Mục đích |
-|---|---|
-| vue 3 + vue-router | UI framework + routing |
-| pinia | State management |
-| vue-i18n | Đa ngôn ngữ (19 languages) |
-| @tonejs/midi | MIDI file parsing |
-| soundfont-player | Soundfont playback (FluidR3_GM) |
-| verovio (WASM) | Sheet music SVG rendering |
-| music21 (Pyodide) | MusicXML generation từ MIDI |
-| @tauri-apps/api + cli | Tauri v2 desktop bridge |
-| vite-plugin-pwa | PWA + service worker |
-| mp4-muxer + webm-muxer | Video muxing cho render export |
-| uPlot | Charts (mode select breakdown) |
-| @fortawesome/fontawesome-free | Icons |
-| @infolektuell/noto-color-emoji | Emoji font |
+| Package                        | Mục đích                        |
+| ------------------------------ | ------------------------------- |
+| vue 3 + vue-router             | UI framework + routing          |
+| pinia                          | State management                |
+| vue-i18n                       | Đa ngôn ngữ (19 languages)      |
+| @tonejs/midi                   | MIDI file parsing               |
+| soundfont-player               | Soundfont playback (FluidR3_GM) |
+| verovio (WASM)                 | Sheet music SVG rendering       |
+| music21 (Pyodide)              | MusicXML generation từ MIDI     |
+| @tauri-apps/api + cli          | Tauri v2 desktop bridge         |
+| vite-plugin-pwa                | PWA + service worker            |
+| mp4-muxer + webm-muxer         | Video muxing cho render export  |
+| uPlot                          | Charts (mode select breakdown)  |
+| @fortawesome/fontawesome-free  | Icons                           |
+| @infolektuell/noto-color-emoji | Emoji font                      |
 
 ## Lưu ý kiến trúc quan trọng
 
@@ -357,17 +357,18 @@ freePlayStore ←── orchestrate ──→ freePlayMidiImport, editor
 - Chỉ tạo file mới khi thực sự cần thiết.
 - Sau khi hoàn thành, kiểm tra và loại bỏ import, code hoặc file không còn được sử dụng.
 - Không thêm comment giải thích các đoạn code hiển nhiên; chỉ comment khi logic phức tạp hoặc khó hiểu.
+- **Bắt buộc**: Phải chạy typecheck (ví dụ: `npm run typecheck`) sau khi hoàn thành sửa code. Nếu có lỗi code, phải sửa sạch toàn bộ lỗi và lặp lại bước typecheck cho đến khi không còn lỗi nào.
 
 ## UI & Localization
 
 - Toàn bộ text hiển thị trên giao diện phải sử dụng hệ thống i18n.
 - Không được hard-code text trong component, template hoặc script.
-- Khi thêm text mới, phải bổ sung key vào tất cả các file locale trong `src/i18n/locales/`.
+- Khi thêm text mới, phải bổ sung key vào 19 file locale trong `src/i18n/locales/`.
 - Mọi bản dịch phải chính xác và tự nhiên theo từng ngôn ngữ; không được sao chép nguyên văn tiếng Anh sang các locale khác.
 
 ## Project Maintenance
 
-- Nếu có thay đổi lớn về kiến trúc dự án (thêm, xóa hoặc thay đổi cấu trúc thư mục chính trong `src` hoặc `src-tauri`) khiến tài liệu này không còn đúng, hãy đề xuất cập nhật `CLAUDE.md`.
+- Nếu có thay đổi lớn về kiến trúc dự án (thêm, xóa hoặc thay đổi cấu trúc thư mục chính trong `src` hoặc `src-tauri`) khiến tài liệu này không còn đúng, hãy đề xuất cập nhật `AGENTS.md` và `CLAUDE.md`.
 - Khi ghi file văn bản, giữ nguyên mã hóa UTF-8; không tự động escape Unicode thành dạng `\uXXXX` trừ khi định dạng file yêu cầu.
 
 ## Safety
