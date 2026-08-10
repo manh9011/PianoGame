@@ -266,6 +266,7 @@ export const useFreePlayStore = defineStore('freePlay', {
     recordStartMs: 0,
     recordStopMs: 0,
     activeNotesByPitch: new Map<number, ActiveCapture[]>(),
+    pressedMidiNotes: new Set<number>(),
     recordingTrackId: null as number | null,
     clockTick: 0,
     trackVersion: 0,
@@ -299,6 +300,9 @@ export const useFreePlayStore = defineStore('freePlay', {
     },
     activeCaptures(state) {
       return [...state.activeNotesByPitch.values()].flat()
+    },
+    pressedNoteIds(state): number[] {
+      return [...state.pressedMidiNotes]
     },
   },
   actions: {
@@ -408,6 +412,7 @@ export const useFreePlayStore = defineStore('freePlay', {
       this.recordStopMs = 0
       this.recordingTrackId = null
       this.activeNotesByPitch.clear()
+      this.pressedMidiNotes.clear()
       this.viewUs = null
       this.touchTracks()
       this.persist()
@@ -591,6 +596,11 @@ export const useFreePlayStore = defineStore('freePlay', {
       this.persist()
     },
     handleNoteInput(event: NoteInputEvent) {
+      if (event.on) {
+        this.pressedMidiNotes.add(event.noteId)
+      } else {
+        this.pressedMidiNotes.delete(event.noteId)
+      }
       if (this.status !== 'recording') return
       const track = this.tracks.find(track => track.id === this.recordingTrackId) ?? this.selectedTrack
       const atUs = nowUs(this.recordStartMs)

@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { FREE_PLAY_KEY_SIGNATURES, getFreePlayTrackLoopDurationUs, parseFreePlayTimeSignature, useFreePlayStore, type FreePlayRecordedNote } from '../../stores/freePlayStore'
 import { usePlayerStore } from '../../stores/playerStore'
 import { useSettingsStore } from '../../stores/settingsStore'
+import { detectBestChord } from '../../modules/game/chordDetection'
 import { createPianoKeys, WHITE_KEY_COUNT } from '../../modules/render/pianoGeometry'
 import { getNoteLabel } from '../../modules/render/pianoLabels'
 import { drawRollHitLine, ROLL_HIT_LINE_HEIGHT } from '../../modules/render/hitLineRenderer'
@@ -36,6 +37,13 @@ const currentKeyLabel = computed(() => {
   if (!freePlay.showKeySignature) return ''
   const names = t(selectedKeySignature.value.nameKey).split('/').map(part => part.trim())
   return freePlay.keySignatureMode === 'major' ? names[0] : names[1] ?? names[0]
+})
+
+const currentChordName = computed(() => {
+  if (!freePlay.showChordName) return ''
+  const notes = freePlay.pressedNoteIds
+  if (notes.length < 2) return ''
+  return detectBestChord(notes, freePlay.keySignature, freePlay.keySignatureMode)
 })
 
 interface DrawableNote extends FreePlayRecordedNote {
@@ -282,6 +290,26 @@ function drawCurrentKey(ctx: CanvasRenderingContext2D) {
   ctx.restore()
 }
 
+function drawCurrentChord(ctx: CanvasRenderingContext2D) {
+  const label = currentChordName.value
+  if (!label) return
+  const x = logicalWidth / 2
+  const y = 16
+
+  ctx.save()
+  ctx.font = '700 28px sans-serif'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'top'
+  ctx.lineWidth = 4
+  ctx.lineJoin = 'round'
+  ctx.miterLimit = 2
+  ctx.strokeStyle = 'rgba(0,0,0,0.72)'
+  ctx.fillStyle = 'rgba(255,255,255,0.94)'
+  ctx.strokeText(label, x, y)
+  ctx.fillText(label, x, y)
+  ctx.restore()
+}
+
 function draw() {
   const canvas = canvasRef.value
   const ctx = canvas?.getContext('2d')
@@ -292,6 +320,7 @@ function draw() {
   ctx.fillRect(0, 0, logicalWidth, logicalHeight)
   if (settings.showGrid) drawGrid(ctx)
   drawNotes(ctx)
+  drawCurrentChord(ctx)
   drawCurrentKey(ctx)
   drawRollHitLine(ctx, logicalWidth, logicalHeight, freePlay.status !== 'recording')
   drawEmptyHint(ctx)
@@ -419,7 +448,7 @@ function handlePointerUp(event: PointerEvent) {
   }
 }
 
-watch(() => [freePlay.status, freePlay.viewUs, freePlay.notes.length, freePlay.clockTick, freePlay.trackVersion, freePlay.selectedTrackId, freePlay.bpm, freePlay.timeSignature, freePlay.keySignature, freePlay.keySignatureMode, freePlay.showKeySignature, settings.showGrid, settings.showNoteLabels, settings.noteLabelMode, settings.noteLabelSize, settings.zoomPercent], requestDraw)
+watch(() => [freePlay.status, freePlay.viewUs, freePlay.notes.length, freePlay.clockTick, freePlay.trackVersion, freePlay.selectedTrackId, freePlay.bpm, freePlay.timeSignature, freePlay.keySignature, freePlay.keySignatureMode, freePlay.showKeySignature, freePlay.showChordName, settings.showGrid, settings.showNoteLabels, settings.noteLabelMode, settings.noteLabelSize, settings.zoomPercent], requestDraw)
 watch(() => player.session?.keyboardRange ? `${player.session.keyboardRange.lowNote}:${player.session.keyboardRange.highNote}` : '', requestDraw)
 
 onMounted(() => {

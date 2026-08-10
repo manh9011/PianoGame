@@ -611,6 +611,7 @@ onBeforeUnmount(() => {
   stopTimer()
   closeDialogs()
   player.inputSynth.allNotesOff()
+  freePlay.pressedMidiNotes.clear()
   document.removeEventListener('fullscreenchange', updateFullscreenState)
   window.removeEventListener('resize', updateFullscreenState)
   if (resizeObserver) resizeObserver.disconnect()
