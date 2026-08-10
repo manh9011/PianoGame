@@ -829,6 +829,9 @@ export const th = {
     videoSize: 'ขนาดวิดีโอ',
     videoOrientation: 'แนววิดีโอ',
     outputVolume: 'ระดับเสียงเอาต์พุต',
+    replaceAudio: 'แทนที่เสียง',
+    chooseAudio: 'เลือก',
+    noAudioSelected: 'ยังไม่ได้เลือกเสียง',
     videoSizes: {
       sd: 'SD',
       hd: 'HD',

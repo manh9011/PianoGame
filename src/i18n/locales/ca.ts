@@ -829,6 +829,9 @@ export const ca = {
     videoSize: 'Mida del vídeo',
     videoOrientation: 'Orientació del vídeo',
     outputVolume: 'Volum de sortida',
+    replaceAudio: 'Substitueix l\'àudio',
+    chooseAudio: 'Triar',
+    noAudioSelected: 'Sense àudio seleccionat',
     videoSizes: {
       sd: 'SD',
       hd: 'HD',

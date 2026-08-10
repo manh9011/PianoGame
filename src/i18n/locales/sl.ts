@@ -829,6 +829,9 @@ export const sl = {
     videoSize: 'Velikost videa',
     videoOrientation: 'Usmerjenost videa',
     outputVolume: 'Izhodna glasnost',
+    replaceAudio: 'Zamenjaj zvok',
+    chooseAudio: 'Izberi',
+    noAudioSelected: 'Noben zvok ni izbran',
     videoSizes: {
       sd: 'SD',
       hd: 'HD',

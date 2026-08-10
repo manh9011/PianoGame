@@ -829,6 +829,9 @@ export const de = {
     videoSize: 'Videogröße',
     videoOrientation: 'Videoausrichtung',
     outputVolume: 'Ausgabelautstärke',
+    replaceAudio: 'Audio ersetzen',
+    chooseAudio: 'Auswählen',
+    noAudioSelected: 'Kein Audio ausgewählt',
     videoSizes: {
       sd: 'SD',
       hd: 'HD',

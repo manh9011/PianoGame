@@ -829,6 +829,9 @@ export const zh = {
     videoSize: '视频尺寸',
     videoOrientation: '视频方向',
     outputVolume: '输出音量',
+    replaceAudio: '替换音频',
+    chooseAudio: '选择',
+    noAudioSelected: '未选择音频',
     videoSizes: {
       sd: 'SD',
       hd: 'HD',

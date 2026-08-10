@@ -829,6 +829,9 @@ export const ko = {
     videoSize: '비디오 크기',
     videoOrientation: '비디오 방향',
     outputVolume: '출력 음량',
+    replaceAudio: '오디오 교체',
+    chooseAudio: '선택',
+    noAudioSelected: '선택된 오디오 없음',
     videoSizes: {
       sd: 'SD',
       hd: 'HD',

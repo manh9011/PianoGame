@@ -1,9 +1,10 @@
 import { loadRenderAssetBlob } from '../storage/renderAssetStore'
 import type { RecordExportPreset } from '../../stores/recordStore'
 import type { RecordRenderScene, RecordRenderVisualOptions } from '../render/record/recordRenderModel'
-import { packOfflineAudio } from './offlineAudioRenderer'
+import { packOfflineAudio, renderStartUs, renderEndUs } from './offlineAudioRenderer'
 import { renderOfflineAudio } from './soundfontRenderer'
 import type {
+  RenderedAudioPayload,
   RenderAssetPayload,
   RenderExportProgressMessage,
   RenderExportRequest,
@@ -32,6 +33,7 @@ export interface RenderExportJobOptions {
   outputVolume: number
   backgroundAssetId?: string
   logoAssetId?: string
+  customAudioBlob?: Blob
   onProgress?: (message: RenderExportProgressMessage) => void
 }
 
@@ -74,6 +76,55 @@ function cloneVisuals(visuals: RecordRenderVisualOptions): RecordRenderVisualOpt
 
 function getWorker() {
   return new Worker(new URL('../../workers/renderExportWorker.ts', import.meta.url), { type: 'module' })
+}
+
+async function decodeCustomAudio(blob: Blob, request: Pick<RenderExportRequest, 'preset' | 'cropStartUs' | 'cropEndUs'>): Promise<RenderedAudioPayload> {
+  const arrayBuffer = await blob.arrayBuffer()
+  const audioContext = new AudioContext()
+  let audioBuffer: AudioBuffer
+  try {
+    audioBuffer = await audioContext.decodeAudioData(arrayBuffer)
+  } finally {
+    audioContext.close()
+  }
+
+  const startUs = renderStartUs({ ...request } as RenderExportRequest)
+  const endUs = renderEndUs({ ...request } as RenderExportRequest)
+  const durationUs = endUs - startUs
+  const durationSec = durationUs / 1_000_000
+  const sampleRate = audioBuffer.sampleRate
+  const totalFrames = Math.max(1, Math.ceil(durationSec * sampleRate))
+
+  const left = new Float32Array(totalFrames)
+  const right = new Float32Array(totalFrames)
+
+  const srcChannels = Math.min(audioBuffer.numberOfChannels, 2)
+  const srcLeft = audioBuffer.getChannelData(0)
+  const srcRight = srcChannels > 1 ? audioBuffer.getChannelData(1) : srcLeft
+
+  if (startUs < 0) {
+    const leadInSamples = Math.round((-startUs / 1_000_000) * sampleRate)
+    const audioStartSample = 0
+    const copyLen = Math.min(totalFrames - leadInSamples, srcLeft.length - audioStartSample)
+    if (copyLen > 0) {
+      left.set(srcLeft.subarray(audioStartSample, audioStartSample + copyLen), leadInSamples)
+      right.set(srcRight.subarray(audioStartSample, audioStartSample + copyLen), leadInSamples)
+    }
+  } else {
+    const srcStartSample = Math.round((startUs / 1_000_000) * sampleRate)
+    const copyLen = Math.min(totalFrames, Math.max(0, srcLeft.length - srcStartSample))
+    if (copyLen > 0) {
+      left.set(srcLeft.subarray(srcStartSample, srcStartSample + copyLen), 0)
+      right.set(srcRight.subarray(srcStartSample, srcStartSample + copyLen), 0)
+    }
+  }
+
+  return {
+    sampleRate,
+    length: totalFrames,
+    numberOfChannels: 2,
+    channels: [left.buffer, right.buffer],
+  }
 }
 
 function waitForWorkerReady(worker: Worker) {
@@ -185,23 +236,44 @@ export function renderExportJob(options: RenderExportJobOptions, signal?: AbortS
 
       if (aborted) return
 
-      options.onProgress?.({
-        type: 'progress',
-        requestId,
-        stage: 'audio',
-        percent: 12,
-        message: 'Rendering audio...',
-      })
-
-      request.audio = packOfflineAudio(await renderOfflineAudio(request, {
-        onProgress: progress => options.onProgress?.({
+      if (options.customAudioBlob) {
+        options.onProgress?.({
           type: 'progress',
           requestId,
           stage: 'audio',
-          percent: 12 + Math.round(progress * 36),
+          percent: 15,
+          message: 'Decoding audio...',
+        })
+        request.audio = await decodeCustomAudio(options.customAudioBlob, {
+          preset: options.preset,
+          cropStartUs: options.cropStartUs,
+          cropEndUs: options.cropEndUs,
+        })
+        options.onProgress?.({
+          type: 'progress',
+          requestId,
+          stage: 'audio',
+          percent: 48,
+          message: 'Decoding audio...',
+        })
+      } else {
+        options.onProgress?.({
+          type: 'progress',
+          requestId,
+          stage: 'audio',
+          percent: 12,
           message: 'Rendering audio...',
-        }),
-      }))
+        })
+        request.audio = packOfflineAudio(await renderOfflineAudio(request, {
+          onProgress: progress => options.onProgress?.({
+            type: 'progress',
+            requestId,
+            stage: 'audio',
+            percent: 12 + Math.round(progress * 36),
+            message: 'Rendering audio...',
+          }),
+        }))
+      }
 
       if (aborted) return
 

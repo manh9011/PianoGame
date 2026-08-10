@@ -35,6 +35,8 @@ const showTrackConfigDialog = ref(false)
 const showKeyboardRangeDialog = ref(false)
 const showLabelsDialog = ref(false)
 const showRenderMenu = ref(false)
+const customAudioBlob = ref<Blob | undefined>(undefined)
+const customAudioName = ref('')
 
 const settingsPopupStyle = ref({ top: '0px', left: '0px' })
 const settingsArrowStyle = ref<{ top: string; left?: string; right?: string }>({ top: '0px', right: '-7px' })
@@ -123,7 +125,7 @@ function openSettings(event: MouseEvent) {
   showLabelsDialog.value = false
   showRenderMenu.value = false
   const element = event.currentTarget as HTMLElement
-  const { popupStyle, arrowStyle, arrowPlacement } = calculatePopupPosition(element, 320, 260)
+  const { popupStyle, arrowStyle, arrowPlacement } = calculatePopupPosition(element, 320, 380)
   settingsPopupStyle.value = popupStyle
   settingsArrowStyle.value = arrowStyle
   settingsArrowPlacement.value = arrowPlacement
@@ -209,6 +211,16 @@ function toggleRenderMenu() {
   showVisualSettingsDialog.value = false
   showTrackConfigDialog.value = false
   showRenderMenu.value = !showRenderMenu.value
+}
+
+function handleSelectAudio(file: Blob, name: string) {
+  customAudioBlob.value = file
+  customAudioName.value = name
+}
+
+function handleClearAudio() {
+  customAudioBlob.value = undefined
+  customAudioName.value = ''
 }
 
 function syncRecordDuration() {
@@ -309,6 +321,7 @@ async function runRenderPreset(preset: RecordExportPreset) {
       outputVolume: settings.recordOutputVolume,
       backgroundAssetId: settings.recordBackgroundAssetId,
       logoAssetId: settings.recordLogoAssetId,
+      customAudioBlob: customAudioBlob.value,
       onProgress: handleWorkerProgress,
     }, record.abortController?.signal)
 
@@ -389,7 +402,10 @@ onBeforeUnmount(() => {
       :popup-style="settingsPopupStyle"
       :arrow-style="settingsArrowStyle"
       :arrow-placement="settingsArrowPlacement"
+      :audio-name="customAudioName"
       @close="showSettingsDialog = false"
+      @select-audio="handleSelectAudio"
+      @clear-audio="handleClearAudio"
     />
 
     <RecordVisualSettingsDialog

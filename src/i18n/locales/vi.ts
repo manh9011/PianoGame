@@ -829,6 +829,9 @@ export const vi = {
     videoSize: "Kích thước video",
     videoOrientation: "Hướng video",
     outputVolume: "Âm lượng xuất",
+    replaceAudio: "Thay thế âm thanh",
+    chooseAudio: "Chọn",
+    noAudioSelected: "Chưa chọn âm thanh",
     videoSizes: {
       sd: "SD",
       hd: "HD",

@@ -829,6 +829,9 @@ export const hi = {
     videoSize: 'वीडियो आकार',
     videoOrientation: 'वीडियो अभिमुखीकरण',
     outputVolume: 'आउटपुट वॉल्यूम',
+    replaceAudio: 'ऑडियो बदलें',
+    chooseAudio: 'चुनें',
+    noAudioSelected: 'कोई ऑडियो नहीं चुना गया',
     videoSizes: {
       sd: 'SD',
       hd: 'HD',

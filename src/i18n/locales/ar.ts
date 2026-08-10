@@ -829,6 +829,9 @@ export const ar = {
     videoSize: 'حجم الفيديو',
     videoOrientation: 'اتجاه الفيديو',
     outputVolume: 'مستوى صوت الإخراج',
+    replaceAudio: 'استبدال الصوت',
+    chooseAudio: 'اختيار',
+    noAudioSelected: 'لم يتم تحديد صوت',
     videoSizes: {
       sd: 'SD',
       hd: 'HD',

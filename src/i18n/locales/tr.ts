@@ -829,6 +829,9 @@ export const tr = {
     videoSize: 'Video boyutu',
     videoOrientation: 'Video yönü',
     outputVolume: 'Çıkış ses seviyesi',
+    replaceAudio: 'Sesi değiştir',
+    chooseAudio: 'Seç',
+    noAudioSelected: 'Ses seçilmedi',
     videoSizes: {
       sd: 'SD',
       hd: 'HD',

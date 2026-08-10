@@ -829,6 +829,9 @@ export const pt = {
     videoSize: 'Tamanho do vídeo',
     videoOrientation: 'Orientação do vídeo',
     outputVolume: 'Volume de saída',
+    replaceAudio: 'Substituir áudio',
+    chooseAudio: 'Escolher',
+    noAudioSelected: 'Nenhum áudio selecionado',
     videoSizes: {
       sd: 'SD',
       hd: 'HD',

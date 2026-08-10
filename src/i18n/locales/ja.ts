@@ -829,6 +829,9 @@ export const ja = {
     videoSize: '動画サイズ',
     videoOrientation: '動画の向き',
     outputVolume: '出力音量',
+    replaceAudio: '音声を置換',
+    chooseAudio: '選択',
+    noAudioSelected: '音声が選択されていません',
     videoSizes: {
       sd: 'SD',
       hd: 'HD',

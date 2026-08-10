@@ -829,6 +829,9 @@ export const ru = {
     videoSize: 'Размер видео',
     videoOrientation: 'Ориентация видео',
     outputVolume: 'Громкость вывода',
+    replaceAudio: 'Заменить аудио',
+    chooseAudio: 'Выбрать',
+    noAudioSelected: 'Аудио не выбрано',
     videoSizes: {
       sd: 'SD',
       hd: 'HD',
