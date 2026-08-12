@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onBeforeUnmount } from 'vue'
+import { ref, watch, computed, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BaseDialog from '../ui/BaseDialog.vue'
 import BaseButton from '../ui/BaseButton.vue'
@@ -24,6 +24,14 @@ function fmtDate(iso: string): string {
   if (!iso) return ''
   return formatDateTime(new Date(iso), locale.value as SupportedLocale)
 }
+
+// Numeric user_id → /user/<id>/... ; text user_id → /<id>/...
+const scoreUrl = computed(() => {
+  const { user_id, score_id } = props.score ?? {}
+  if (!user_id || !score_id) return ''
+  const userPath = /^\d+$/.test(user_id) ? `user/${user_id}` : user_id
+  return `https://musescore.com/${userPath}/scores/${score_id}`
+})
 
 const emit = defineEmits<{
   close: []
@@ -129,7 +137,7 @@ onBeforeUnmount(() => {
         <template #actions>
           <a
             class="sd-link-btn"
-            :href="`https://musescore.com/user/${score.user_id}/scores/${score.score_id}`"
+            :href="scoreUrl"
             target="_blank"
             rel="noopener noreferrer"
             :title="t('scoreLibrary.openOriginal')"
