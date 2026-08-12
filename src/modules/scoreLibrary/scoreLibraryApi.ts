@@ -51,6 +51,7 @@ export function listScores(params: {
   }
   if (params.sort) searchParams.set('sort', params.sort)
   if (params.order) searchParams.set('order', params.order)
+  searchParams.set('nocache', String(Date.now()))
 
   const qs = searchParams.toString()
   return request<ScoreListResponse>(`/api/scores${qs ? `?${qs}` : ''}`)
