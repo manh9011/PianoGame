@@ -996,6 +996,8 @@ export const sl = {
     importStatusProcessing: 'Obdelava',
     importStatusDone: 'Končano',
     importStatusFailed: 'Neuspešno',
+    importTaskDelete: 'Izbriši nalogo',
+    importTaskRetry: 'Poskusi znova',
     unableToLoadScores: 'Not ni bilo mogoče naložiti.',
     helpBrowsing: 'Brskanje',
     helpBrowsingText: 'Brskajte po karticah not s sličicami. Uporabite številčenje strani na dnu.',

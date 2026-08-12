@@ -65,15 +65,7 @@ async function pollTasks() {
     }
 
     tasks.value = [...tasks.value]
-
-    const persisted: StoredTask[] = tasks.value.map(t => ({
-      id: t.id,
-      url: t.url,
-      created_at: t.created_at,
-      updated_at: t.updated_at,
-      status: t.status,
-    }))
-    savePersistedTasks(persisted)
+    persistTasks()
   } catch {
     // polling error, retry next interval
   }
@@ -91,10 +83,18 @@ function stopPolling() {
   }
 }
 
-async function submitImport() {
-  const url = importUrl.value.trim()
-  if (!url) return
+function persistTasks() {
+  const persisted: StoredTask[] = tasks.value.map(t => ({
+    id: t.id,
+    url: t.url,
+    created_at: t.created_at,
+    updated_at: t.updated_at,
+    status: t.status,
+  }))
+  savePersistedTasks(persisted)
+}
 
+async function queueImport(url: string): Promise<boolean> {
   importSubmitting.value = true
   importError.value = null
 
@@ -113,20 +113,12 @@ async function submitImport() {
     }
     tasks.value.unshift(newJob)
     tasks.value = [...tasks.value]
-
-    const persisted = loadPersistedTasks()
-    persisted.unshift({
-      id: result.jobId,
-      url,
-      created_at: now,
-      updated_at: now,
-      status: 'processing',
-    })
-    savePersistedTasks(persisted)
+    persistTasks()
 
     importUrl.value = ''
     startPolling()
     pollTasks()
+    return true
   } catch (e) {
     if (e instanceof ApiError) {
       if (e.status === 409) {
@@ -139,9 +131,27 @@ async function submitImport() {
     } else {
       importError.value = t('scoreLibrary.importErrorNetwork')
     }
+    return false
   } finally {
     importSubmitting.value = false
   }
+}
+
+async function submitImport() {
+  const url = importUrl.value.trim()
+  if (!url) return
+  await queueImport(url)
+}
+
+function deleteTask(job: ImportJob) {
+  tasks.value = tasks.value.filter(t => t.id !== job.id)
+  persistTasks()
+}
+
+async function retryTask(job: ImportJob) {
+  if (importSubmitting.value) return
+  deleteTask(job)
+  await queueImport(job.url)
 }
 
 function initFromStorage() {
@@ -212,6 +222,8 @@ defineExpose({ resumePolling: initFromStorage })
           v-for="job in tasks"
           :key="job.id"
           :job="job"
+          @delete="deleteTask(job)"
+          @retry="retryTask(job)"
         />
       </div>
     </div>

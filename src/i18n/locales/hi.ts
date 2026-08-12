@@ -996,6 +996,8 @@ export const hi = {
     importStatusProcessing: 'प्रसंस्करण',
     importStatusDone: 'पूर्ण',
     importStatusFailed: 'विफल',
+    importTaskDelete: 'कार्य हटाएँ',
+    importTaskRetry: 'पुनः प्रयास करें',
     unableToLoadScores: 'स्कोर लोड करने में असमर्थ।',
     helpBrowsing: 'ब्राउज़िंग',
     helpBrowsingText: 'थंबनेल के साथ स्कोर कार्ड ब्राउज़ करें। पृष्ठ नेविगेशन के लिए नीचे पेजिनेशन का उपयोग करें।',

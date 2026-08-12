@@ -996,6 +996,8 @@ export const tr = {
     importStatusProcessing: 'İşleniyor',
     importStatusDone: 'Tamamlandı',
     importStatusFailed: 'Başarısız',
+    importTaskDelete: 'Görevi sil',
+    importTaskRetry: 'Yeniden dene',
     unableToLoadScores: 'Notalar yüklenemedi.',
     helpBrowsing: 'Göz Atma',
     helpBrowsingText: 'Küçük resimli nota kartlarına göz atın. Alttaki sayfa numaralarını kullanın.',

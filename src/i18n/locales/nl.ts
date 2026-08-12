@@ -996,6 +996,8 @@ export const nl = {
     importStatusProcessing: 'Verwerken',
     importStatusDone: 'Voltooid',
     importStatusFailed: 'Mislukt',
+    importTaskDelete: 'Taak verwijderen',
+    importTaskRetry: 'Opnieuw proberen',
     unableToLoadScores: 'Kan bladmuziek niet laden.',
     helpBrowsing: 'Bladeren',
     helpBrowsingText: 'Blader door bladmuziekkaarten met miniaturen. Gebruik paginanummers onderaan.',

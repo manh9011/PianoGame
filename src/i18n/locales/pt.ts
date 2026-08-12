@@ -996,6 +996,8 @@ export const pt = {
     importStatusProcessing: 'Processando',
     importStatusDone: 'Concluído',
     importStatusFailed: 'Falhou',
+    importTaskDelete: 'Excluir tarefa',
+    importTaskRetry: 'Tentar novamente',
     unableToLoadScores: 'Não foi possível carregar as partituras.',
     helpBrowsing: 'Navegação',
     helpBrowsingText: 'Navegue pelos cartões de partituras com miniaturas. Use a paginação abaixo.',

@@ -996,6 +996,8 @@ export const ar = {
     importStatusProcessing: 'قيد المعالجة',
     importStatusDone: 'مكتمل',
     importStatusFailed: 'فشل',
+    importTaskDelete: 'حذف المهمة',
+    importTaskRetry: 'إعادة المحاولة',
     unableToLoadScores: 'تعذر تحميل النوت. يرجى المحاولة مرة أخرى.',
     helpBrowsing: 'التصفح',
     helpBrowsingText: 'تصفح بطاقات النوت مع صور مصغرة. استخدم الترقيم في الأسفل للتنقل بين الصفحات.',

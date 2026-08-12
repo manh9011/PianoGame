@@ -996,6 +996,8 @@ export const vi = {
     importStatusProcessing: 'Đang xử lý',
     importStatusDone: 'Hoàn tất',
     importStatusFailed: 'Thất bại',
+    importTaskDelete: 'Xóa tác vụ',
+    importTaskRetry: 'Thử lại',
     unableToLoadScores: 'Không thể tải danh sách bản nhạc. Vui lòng thử lại.',
     helpBrowsing: 'Duyệt',
     helpBrowsingText: 'Duyệt các thẻ bản nhạc với hình thu nhỏ. Sử dụng phân trang ở cuối để điều hướng.',

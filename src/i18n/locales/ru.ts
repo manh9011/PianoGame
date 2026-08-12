@@ -996,6 +996,8 @@ export const ru = {
     importStatusProcessing: 'Обработка',
     importStatusDone: 'Готово',
     importStatusFailed: 'Ошибка',
+    importTaskDelete: 'Удалить задачу',
+    importTaskRetry: 'Повторить',
     unableToLoadScores: 'Не удалось загрузить ноты.',
     helpBrowsing: 'Просмотр',
     helpBrowsingText: 'Просматривайте карточки нот с миниатюрами. Используйте пагинацию внизу.',

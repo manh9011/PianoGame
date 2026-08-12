@@ -996,6 +996,8 @@ export const th = {
     importStatusProcessing: 'กำลังดำเนินการ',
     importStatusDone: 'เสร็จสิ้น',
     importStatusFailed: 'ล้มเหลว',
+    importTaskDelete: 'ลบงาน',
+    importTaskRetry: 'ลองอีกครั้ง',
     unableToLoadScores: 'ไม่สามารถโหลดโน้ตได้',
     helpBrowsing: 'เรียกดู',
     helpBrowsingText: 'เรียกดูการ์ดโน้ตพร้อมรูปขนาดย่อ ใช้เลขหน้าที่ด้านล่างเพื่อนำทาง',

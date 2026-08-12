@@ -996,6 +996,8 @@ export const de = {
     importStatusProcessing: 'In Bearbeitung',
     importStatusDone: 'Fertig',
     importStatusFailed: 'Fehlgeschlagen',
+    importTaskDelete: 'Aufgabe löschen',
+    importTaskRetry: 'Erneut versuchen',
     unableToLoadScores: 'Noten konnten nicht geladen werden.',
     helpBrowsing: 'Durchsuchen',
     helpBrowsingText: 'Durchsuchen Sie Notenkarten mit Vorschaubildern. Nutzen Sie die Seitenzahlen unten zum Navigieren.',

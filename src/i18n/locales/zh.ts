@@ -996,6 +996,8 @@ export const zh = {
     importStatusProcessing: '处理中',
     importStatusDone: '已完成',
     importStatusFailed: '失败',
+    importTaskDelete: '删除任务',
+    importTaskRetry: '重试',
     unableToLoadScores: '无法加载曲谱，请重试。',
     helpBrowsing: '浏览',
     helpBrowsingText: '浏览带缩略图的曲谱卡片。使用底部分页导航。',

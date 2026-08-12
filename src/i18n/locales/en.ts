@@ -989,6 +989,8 @@ export const en = {
     importStatusProcessing: 'Processing',
     importStatusDone: 'Done',
     importStatusFailed: 'Failed',
+    importTaskDelete: 'Delete task',
+    importTaskRetry: 'Retry',
     unableToLoadScores: 'Unable to load scores. Please try again.',
     helpBrowsing: 'Browsing',
     helpBrowsingText: 'Browse score cards with thumbnails. Use pagination at the bottom to navigate pages.',

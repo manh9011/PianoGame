@@ -996,6 +996,8 @@ export const pl = {
     importStatusProcessing: 'Przetwarzanie',
     importStatusDone: 'Ukończono',
     importStatusFailed: 'Niepowodzenie',
+    importTaskDelete: 'Usuń zadanie',
+    importTaskRetry: 'Spróbuj ponownie',
     unableToLoadScores: 'Nie można załadować nut.',
     helpBrowsing: 'Przeglądanie',
     helpBrowsingText: 'Przeglądaj karty nut z miniaturami. Użyj paginacji na dole.',

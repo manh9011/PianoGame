@@ -996,6 +996,8 @@ export const fr = {
     importStatusProcessing: 'En cours',
     importStatusDone: 'Terminé',
     importStatusFailed: 'Échoué',
+    importTaskDelete: 'Supprimer la tâche',
+    importTaskRetry: 'Réessayer',
     unableToLoadScores: 'Impossible de charger les partitions.',
     helpBrowsing: 'Navigation',
     helpBrowsingText: 'Parcourez les fiches de partitions avec miniatures. Utilisez la pagination en bas pour naviguer.',

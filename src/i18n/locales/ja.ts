@@ -996,6 +996,8 @@ export const ja = {
     importStatusProcessing: '処理中',
     importStatusDone: '完了',
     importStatusFailed: '失敗',
+    importTaskDelete: 'タスクを削除',
+    importTaskRetry: '再試行',
     unableToLoadScores: '楽譜を読み込めません。',
     helpBrowsing: '閲覧',
     helpBrowsingText: 'サムネイル付きの楽譜カードを閲覧します。下部のページ番号で移動します。',

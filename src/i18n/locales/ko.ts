@@ -996,6 +996,8 @@ export const ko = {
     importStatusProcessing: '처리 중',
     importStatusDone: '완료',
     importStatusFailed: '실패',
+    importTaskDelete: '작업 삭제',
+    importTaskRetry: '다시 시도',
     unableToLoadScores: '악보를 불러올 수 없습니다.',
     helpBrowsing: '탐색',
     helpBrowsingText: '썸네일이 있는 악보 카드를 탐색합니다. 하단 페이지 번호로 이동하세요.',

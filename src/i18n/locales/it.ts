@@ -996,6 +996,8 @@ export const it = {
     importStatusProcessing: 'In elaborazione',
     importStatusDone: 'Completato',
     importStatusFailed: 'Fallito',
+    importTaskDelete: 'Elimina attività',
+    importTaskRetry: 'Riprova',
     unableToLoadScores: 'Impossibile caricare gli spartiti.',
     helpBrowsing: 'Navigazione',
     helpBrowsingText: 'Sfoglia le schede degli spartiti con miniature. Usa la paginazione in basso per navigare.',

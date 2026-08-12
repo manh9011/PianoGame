@@ -996,6 +996,8 @@ export const ca = {
     importStatusProcessing: 'Processant',
     importStatusDone: 'Completat',
     importStatusFailed: 'Ha fallat',
+    importTaskDelete: 'Suprimeix la tasca',
+    importTaskRetry: 'Torna-ho a provar',
     unableToLoadScores: 'No s\'han pogut carregar les partitures.',
     helpBrowsing: 'Navegació',
     helpBrowsingText: 'Navega per les targetes de partitures amb miniatures. Utilitza la paginació al final per desplaçar-te.',
