@@ -182,7 +182,8 @@ onBeforeUnmount(() => {
   height: auto;
   object-fit: contain;
   border-radius: 6px;
-  background: var(--color-bg-secondary);
+  /* Sheet thumbnails: PNG có nền trong suốt, luôn đặt nền trắng */
+  background: #fff;
 }
 
 .sd-right {
