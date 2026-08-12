@@ -12,6 +12,7 @@ const router = createRouter({
     { path: '/free-play', name: 'free-play', component: () => import('../views/FreePlayView.vue') },
     { path: '/transcription', name: 'transcription', component: () => import('../views/TranscriptionView.vue') },
     { path: '/chord-visualizer', name: 'chord-visualizer', component: () => import('../views/ChordVisualizerView.vue') },
+    { path: '/score-library', name: 'score-library', component: () => import('../views/ScoreLibraryView.vue') },
     {
       path: '/settings',
       name: 'settings',

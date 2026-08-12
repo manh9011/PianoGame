@@ -365,6 +365,7 @@ freePlayStore ←── orchestrate ──→ freePlayMidiImport, editor
 - Không được hard-code text trong component, template hoặc script.
 - Khi thêm text mới, phải bổ sung key vào 19 file locale trong `src/i18n/locales/`.
 - Mọi bản dịch phải chính xác và tự nhiên theo từng ngôn ngữ; không được sao chép nguyên văn tiếng Anh sang các locale khác.
+- Cẩn trọng khi sử dụng lệnh để cập nhật i18n tránh để lỗi unicode, nghiêm cấm sử dụng Powershell hay Command Prompt để edit file.
 - Trước khi hoàn thành task, nếu có thay đổi bên trong bất kỳ file nào trong `src/i18n/locales/` hãy thực hiện so sánh toàn bộ các key thuộc locale khác với locale gốc `en.ts` đảm bảo không thừa hay thiếu bất kỳ key nào.
 
 ## Project Maintenance

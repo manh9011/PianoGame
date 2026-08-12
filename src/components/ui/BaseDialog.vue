@@ -40,13 +40,21 @@ function handleOverlayClick(event: MouseEvent) {
         :aria-labelledby="ariaLabelledby || undefined"
         :aria-describedby="ariaDescribedby || undefined"
       >
-        <header v-if="title" class="dialog-header">
-          <h3 :id="ariaLabelledby || undefined">{{ title }}</h3>
+        <header v-if="title || $slots['header-extra']" class="dialog-header">
+          <div class="dialog-title-group">
+            <h3 v-if="title" :id="ariaLabelledby || undefined">{{ title }}</h3>
+            <div v-if="$slots['header-extra']" class="header-extra">
+              <slot name="header-extra"></slot>
+            </div>
+          </div>
           <button v-if="showCloseButton" class="close-button" @click="emit('close')">✕</button>
         </header>
         <div class="dialog-content">
           <slot></slot>
         </div>
+        <footer v-if="$slots['footer']" class="dialog-footer">
+          <slot name="footer"></slot>
+        </footer>
       </div>
     </div>
   </Transition>
@@ -84,11 +92,36 @@ function handleOverlayClick(event: MouseEvent) {
   background: var(--color-bg-subtle);
 }
 
+.dialog-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
 .dialog-header h3 {
   margin: 0;
   color: var(--color-text-primary);
   font-size: 1.1rem;
   font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.header-extra {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.dialog-footer {
+  flex-shrink: 0;
+  border-top: 1px solid var(--color-border-default);
+  padding: 1rem 1.25rem;
+  background: var(--color-bg-subtle);
 }
 
 .close-button {
