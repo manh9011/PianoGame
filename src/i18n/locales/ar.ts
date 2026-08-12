@@ -939,6 +939,7 @@ export const ar = {
     tabLibrary: 'المكتبة',
     tabImport: 'استيراد',
     back: 'رجوع',
+    refresh: 'تحديث',
     help: 'مساعدة',
     helpTitle: 'مساعدة مكتبة النوت',
     searchTitlePlaceholder: 'بحث عن عنوان...',

@@ -932,6 +932,7 @@ export const en = {
     tabLibrary: 'Library',
     tabImport: 'Import',
     back: 'Back',
+    refresh: 'Refresh',
     help: 'Help',
     helpTitle: 'Score Library Help',
     searchTitlePlaceholder: 'Search title...',

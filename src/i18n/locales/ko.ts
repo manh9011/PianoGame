@@ -939,6 +939,7 @@ export const ko = {
     tabLibrary: '라이브러리',
     tabImport: '가져오기',
     back: '뒤로',
+    refresh: '새로고침',
     help: '도움말',
     helpTitle: '악보 라이브러리 도움말',
     searchTitlePlaceholder: '제목 검색...',

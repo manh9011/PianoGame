@@ -939,6 +939,7 @@ export const vi = {
     tabLibrary: 'Thư viện',
     tabImport: 'Nhập',
     back: 'Quay lại',
+    refresh: 'Làm mới',
     help: 'Trợ giúp',
     helpTitle: 'Hướng dẫn Score Library',
     searchTitlePlaceholder: 'Tìm kiếm tên...',

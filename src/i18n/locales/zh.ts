@@ -939,6 +939,7 @@ export const zh = {
     tabLibrary: '曲谱库',
     tabImport: '导入',
     back: '返回',
+    refresh: '刷新',
     help: '帮助',
     helpTitle: '曲谱库帮助',
     searchTitlePlaceholder: '搜索标题...',

@@ -939,6 +939,7 @@ export const tr = {
     tabLibrary: 'Kütüphane',
     tabImport: 'İçe Aktar',
     back: 'Geri',
+    refresh: 'Yenile',
     help: 'Yardım',
     helpTitle: 'Kütüphane Yardımı',
     searchTitlePlaceholder: 'Başlık ara...',

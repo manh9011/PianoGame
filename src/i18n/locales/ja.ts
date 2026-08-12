@@ -939,6 +939,7 @@ export const ja = {
     tabLibrary: 'ライブラリ',
     tabImport: 'インポート',
     back: '戻る',
+    refresh: '更新',
     help: 'ヘルプ',
     helpTitle: '楽譜ライブラリ ヘルプ',
     searchTitlePlaceholder: 'タイトル検索...',

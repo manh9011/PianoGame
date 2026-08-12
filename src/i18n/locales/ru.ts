@@ -939,6 +939,7 @@ export const ru = {
     tabLibrary: 'Библиотека',
     tabImport: 'Импорт',
     back: 'Назад',
+    refresh: 'Обновить',
     help: 'Помощь',
     helpTitle: 'Помощь библиотеки',
     searchTitlePlaceholder: 'Поиск названия...',

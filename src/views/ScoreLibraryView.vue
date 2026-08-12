@@ -261,6 +261,9 @@ onBeforeUnmount(() => {
         <BaseButton variant="secondary" size="md" @click="router.push('/')">
           ← {{ t('scoreLibrary.back') }}
         </BaseButton>
+        <BaseButton variant="secondary" size="md" :disabled="libraryLoading" @click="fetchScores">
+          ⟳ {{ t('scoreLibrary.refresh') }}
+        </BaseButton>
       </div>
       <div class="sl-top-center">
         <BaseTabs v-model="activeTab" :tabs="tabs" />
@@ -391,6 +394,7 @@ onBeforeUnmount(() => {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
+  gap: 8px;
 }
 
 .sl-top-center {

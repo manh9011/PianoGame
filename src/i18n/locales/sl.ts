@@ -939,6 +939,7 @@ export const sl = {
     tabLibrary: 'Knjižnica',
     tabImport: 'Uvoz',
     back: 'Nazaj',
+    refresh: 'Osveži',
     help: 'Pomoč',
     helpTitle: 'Pomoč za Knjižnico',
     searchTitlePlaceholder: 'Išči naslov...',

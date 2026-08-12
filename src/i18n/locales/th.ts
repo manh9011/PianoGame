@@ -939,6 +939,7 @@ export const th = {
     tabLibrary: 'คลัง',
     tabImport: 'นำเข้า',
     back: 'กลับ',
+    refresh: 'รีเฟรช',
     help: 'ช่วยเหลือ',
     helpTitle: 'ช่วยเหลือคลังโน้ต',
     searchTitlePlaceholder: 'ค้นหาชื่อ...',

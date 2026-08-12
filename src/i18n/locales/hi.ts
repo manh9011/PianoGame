@@ -939,6 +939,7 @@ export const hi = {
     tabLibrary: 'लाइब्रेरी',
     tabImport: 'आयात',
     back: 'वापस',
+    refresh: 'ताज़ा करें',
     help: 'सहायता',
     helpTitle: 'स्कोर लाइब्रेरी सहायता',
     searchTitlePlaceholder: 'शीर्षक खोजें...',

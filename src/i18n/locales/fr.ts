@@ -939,6 +939,7 @@ export const fr = {
     tabLibrary: 'Bibliothèque',
     tabImport: 'Importer',
     back: 'Retour',
+    refresh: 'Actualiser',
     help: 'Aide',
     helpTitle: 'Aide de la Bibliothèque',
     searchTitlePlaceholder: 'Rechercher un titre...',

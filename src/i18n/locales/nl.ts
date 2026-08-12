@@ -939,6 +939,7 @@ export const nl = {
     tabLibrary: 'Bibliotheek',
     tabImport: 'Importeren',
     back: 'Terug',
+    refresh: 'Vernieuwen',
     help: 'Help',
     helpTitle: 'Bladmuziek Help',
     searchTitlePlaceholder: 'Titel zoeken...',

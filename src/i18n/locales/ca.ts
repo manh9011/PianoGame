@@ -939,6 +939,7 @@ export const ca = {
     tabLibrary: 'Biblioteca',
     tabImport: 'Importar',
     back: 'Enrere',
+    refresh: 'Actualitza',
     help: 'Ajuda',
     helpTitle: 'Ajuda de la Biblioteca',
     searchTitlePlaceholder: 'Cercar títol...',
