@@ -93,7 +93,7 @@ function closeProfileManager() {
           {{ t('home.chordVisualizer') }}<sup class="beta-badge">BETA</sup>
         </BaseButton>
         <BaseButton variant="primary" class="menu-button transcription-btn" @click="router.push('/score-library')">
-          Score Library<sup class="beta-badge">BETA</sup>
+          {{ t('home.scoreLibrary') }}<sup class="beta-badge">BETA</sup>
         </BaseButton>
         <BaseButton variant="secondary" class="menu-button" @click="router.push('/settings')">
           {{ t('common.settings') }}

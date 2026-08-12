@@ -38,6 +38,7 @@ export const ko = {
     profileMenu: "프로필 메뉴 열기",
     transcription: '오디오 변환',
     chordVisualizer: '코드 시각화',
+    scoreLibrary: '악보 라이브러리',
     about: '정보',
     aboutSummary: '저는 Manh Luong Xuan(manh9011)입니다. VNPT IT 프로그래머, 독립 개발자이며 코딩과 AI 기반 창작에 열정적인 기술 애호가입니다. 웹 애플리케이션, 자동화 도구 및 음악 관련 소프트웨어를 구축하여 새로운 기술을 탐구하고 실제 문제를 해결합니다. 제 목표는 소프트웨어 엔지니어링, 인공 지능, 창의적 사고를 결합하여 영감을 주는 디지털 경험을 만드는 것입니다.',
   },

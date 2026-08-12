@@ -38,6 +38,7 @@ export const es = {
     profileMenu: "Abrir menú de perfil",
     transcription: 'Transcripción',
     chordVisualizer: 'Visualizador de Acordes',
+    scoreLibrary: 'Biblioteca de Partituras',
     about: 'Acerca de',
     aboutSummary: 'Soy Manh Luong Xuan (manh9011), un programador de TI de VNPT, desarrollador independiente y entusiasta de la tecnología apasionado por la codificación y la creación impulsada por IA. Desarrollo aplicaciones web, herramientas de automatización y software relacionado con la música para explorar nuevas tecnologías y resolver problemas del mundo real. Mi objetivo es combinar la ingeniería de software, la inteligencia artificial y el pensamiento creativo para producir experiencias digitales inspiradoras.',
   },

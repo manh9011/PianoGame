@@ -38,6 +38,7 @@ export const vi = {
     profileMenu: "Mở menu hồ sơ",
     transcription: "Tách âm thanh",
     chordVisualizer: 'Hiển thị Hợp âm',
+    scoreLibrary: 'Thư viện bản nhạc',
     about: "Giới thiệu",
     aboutSummary: "Tôi là Lương Xuân Mạnh (manh9011)—một lập trình viên CNTT của VNPT, nhà phát triển độc lập và một người đam mê công nghệ. Tôi thích kết hợp lập trình và trí tuệ nhân tạo để xây dựng các dự án cá nhân, nhằm tạo ra những sản phẩm sáng tạo và mang lại trải nghiệm số thú vị cho người dùng.",
   },

@@ -94,9 +94,6 @@ const searchModeOptions = computed(() => [
 </template>
 
 <style scoped>
-.lt-root {
-}
-
 .lt-row {
   display: flex;
   flex-wrap: wrap;
