@@ -7,6 +7,7 @@ interface Props {
   closeOnOverlay?: boolean
   ariaLabelledby?: string
   ariaDescribedby?: string
+  scrollable?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -16,6 +17,7 @@ const props = withDefaults(defineProps<Props>(), {
   closeOnOverlay: true,
   ariaLabelledby: '',
   ariaDescribedby: '',
+  scrollable: true,
 })
 
 const emit = defineEmits<{
@@ -49,7 +51,7 @@ function handleOverlayClick(event: MouseEvent) {
           </div>
           <button v-if="showCloseButton" class="close-button" @click="emit('close')">✕</button>
         </header>
-        <div class="dialog-content">
+        <div class="dialog-content" :class="{ 'no-scroll': !scrollable }">
           <slot></slot>
         </div>
         <footer v-if="$slots['footer']" class="dialog-footer">
@@ -150,6 +152,10 @@ function handleOverlayClick(event: MouseEvent) {
   flex-direction: column;
   overflow: auto;
   padding: 1.25rem;
+}
+
+.dialog-content.no-scroll {
+  overflow: hidden;
 }
 
 .dialog-enter-active,

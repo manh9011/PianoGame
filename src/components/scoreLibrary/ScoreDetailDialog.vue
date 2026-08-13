@@ -78,6 +78,7 @@ onBeforeUnmount(() => {
     :show="show"
     :title="score?.title ?? ''"
     width="900px"
+    :scrollable="false"
     @close="onClose"
   >
     <template v-if="score" #header-extra>
