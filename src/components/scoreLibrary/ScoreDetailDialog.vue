@@ -161,8 +161,9 @@ onBeforeUnmount(() => {
 .sd-body {
   display: flex;
   gap: 20px;
-  flex: 1;
-  min-height: 0;
+  /* Explicit height to bypass all Android WebView flexbox bugs */
+  height: calc(90vh - 180px);
+  height: calc(90dvh - 180px);
 }
 
 .sd-loading {

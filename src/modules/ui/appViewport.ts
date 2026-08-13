@@ -1,13 +1,13 @@
 const DEFAULT_TARGET_WIDTH = 1600
 const COMPACT_TARGET_WIDTH = 1920
-const FALLBACK_FULLSCREEN_TOP_INSET = 36
 
 let targetWidth = DEFAULT_TARGET_WIDTH
 
 function viewportSize() {
+  const visualHeight = window.visualViewport?.height ?? 0
   return {
     width: window.visualViewport?.width ?? window.innerWidth,
-    height: window.visualViewport?.height ?? window.innerHeight,
+    height: document.fullscreenElement ? Math.max(window.innerHeight, visualHeight) : (visualHeight || window.innerHeight),
   }
 }
 
@@ -17,19 +17,12 @@ function shouldScaleViewport(width: number) {
 
 function isTouchFullscreen() {
   if (!(navigator.maxTouchPoints > 0 || window.matchMedia('(pointer: coarse)').matches)) return false
-  return Boolean(document.fullscreenElement) ||
-    (Math.abs(window.innerWidth - screen.width) <= 1 && Math.abs(window.innerHeight - screen.height) <= 1)
+  return Boolean(document.fullscreenElement)
 }
 
 function fullscreenTopInset() {
   if (!isTouchFullscreen()) return 0
-  const viewportOffset = Math.max(0, window.visualViewport?.offsetTop ?? 0)
-  if (viewportOffset > 0) return viewportOffset
-
-  const screenInset = Math.max(0, window.screen.height - window.screen.availHeight)
-  if (screenInset > 0 && screenInset < 96) return screenInset
-
-  return FALLBACK_FULLSCREEN_TOP_INSET
+  return Math.max(0, window.visualViewport?.offsetTop ?? 0)
 }
 
 export function syncAppViewport() {
