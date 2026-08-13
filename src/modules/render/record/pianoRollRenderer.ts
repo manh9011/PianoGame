@@ -83,12 +83,12 @@ function trackForId(trackId: number, scene: RecordRenderScene) {
 
 function noteVisible(note: Pick<RecordRenderableNote, 'trackId'>, scene: RecordRenderScene) {
   const track = trackForId(note.trackId, scene)
-  return track?.color !== TRACK_INVISIBLE_COLOR && track?.mode !== 'playedButHidden' && track?.mode !== 'notPlayed'
+  return track?.color !== TRACK_INVISIBLE_COLOR && track?.mode !== 'playedButHidden'
 }
 
 function noteColor(note: Pick<RecordRenderableNote, 'trackId' | 'hand'> & { state?: 'waiting' | 'hit' | 'missed' }, scene: RecordRenderScene) {
   const track = trackForId(note.trackId, scene)
-  if (!track || track.mode === 'notPlayed') return FLAT_GRAY
+  if (!track) return FLAT_GRAY
   if (note.state === 'missed') return MISSED_NOTE_COLOR
   if (note.state === 'hit') return track.hitColor || HAND_HIT_COLORS[note.hand]
   return track.color || HAND_COLORS[note.hand]

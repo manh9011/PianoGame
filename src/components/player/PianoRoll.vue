@@ -86,14 +86,14 @@ function syncTrackRenderMeta(session: NonNullable<typeof player.session>) {
 
 function color(note: SessionNote) {
   const track = trackRenderMeta.get(note.trackId)
-  if (!track || track.mode === 'notPlayed') return FLAT_GRAY
+  if (!track) return FLAT_GRAY
   if (note.state === 'missed') return MISSED_NOTE_COLOR
   if (note.state === 'hit') return track.hitColor || HAND_HIT_COLORS[note.hand]
   return track.color || HAND_COLORS[note.hand]
 }
 function visible(note: SessionNote) {
   const track = trackRenderMeta.get(note.trackId)
-  return track?.color !== TRACK_INVISIBLE_COLOR && track?.mode !== 'playedButHidden' && track?.mode !== 'notPlayed'
+  return track?.color !== TRACK_INVISIBLE_COLOR && track?.mode !== 'playedButHidden'
 }
 function roundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   const radius = Math.max(0, Math.min(r, w / 2, h / 2))

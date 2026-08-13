@@ -15,7 +15,7 @@ const PANEL_MAX_OPACITY = 0.9
 
 function visibleTrack(trackId: number, scene: RecordRenderScene) {
   const track = scene.tracks.find(item => item.trackId === trackId)
-  return track?.color !== TRACK_INVISIBLE_COLOR && track?.mode !== 'playedButHidden' && track?.mode !== 'notPlayed'
+  return track?.color !== TRACK_INVISIBLE_COLOR && track?.mode !== 'playedButHidden'
 }
 
 export interface ActiveRenderNote {

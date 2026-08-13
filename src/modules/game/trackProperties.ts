@@ -48,10 +48,6 @@ export function isTrackSounded(mode: TrackMode): boolean {
   return mode === 'playedAutomatically' || mode === 'youPlay'
 }
 
-export function isTrackVisible(mode: TrackMode): boolean {
-  return mode !== 'notPlayed' && mode !== 'playedButHidden'
-}
-
 export function resolveTrackModeForSession(track: TrackProperties, playMode: PlayMode): TrackMode {
   if (track.mode === 'notPlayed' || track.mode === 'playedButHidden') return track.mode
   return roleToTrackMode(track.role, playMode)
@@ -65,18 +61,18 @@ export function isRoleIncludedInSheet(role: TrackRole | undefined): role is Hand
   return role === 'left' || role === 'right'
 }
 
-type SheetTrackSelectionSource = Array<Pick<TrackProperties, 'trackId' | 'role'>>
+type SheetTrackSelectionSource = Array<Pick<TrackProperties, 'trackId' | 'role' | 'color'>>
 
 export function getSheetTrackIds(tracks: SheetTrackSelectionSource): number[] {
   return tracks
-    .filter(track => isRoleIncludedInSheet(track.role))
+    .filter(track => isRoleIncludedInSheet(track.role) && track.color !== TRACK_INVISIBLE_COLOR)
     .map(track => track.trackId)
     .sort((a, b) => a - b)
 }
 
 export function getSheetTrackSelectionKey(tracks: SheetTrackSelectionSource): string {
   return tracks
-    .filter(track => isRoleIncludedInSheet(track.role))
+    .filter(track => isRoleIncludedInSheet(track.role) && track.color !== TRACK_INVISIBLE_COLOR)
     .map(track => `${track.trackId}:${track.role}`)
     .sort((a, b) => a.localeCompare(b))
     .join('|')

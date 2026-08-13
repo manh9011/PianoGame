@@ -4,7 +4,7 @@ import { getSheetTrackSelectionKey, type TrackProperties } from './trackProperti
 
 export const LEGACY_TRACK_SELECTION_KEY = 'legacy'
 
-type TrackSelectionSource = Array<Pick<TrackProperties | StoredTrackProperties, 'trackId' | 'role'>>
+type TrackSelectionSource = Array<Pick<TrackProperties | StoredTrackProperties, 'trackId' | 'role' | 'color'>>
 
 export interface ScoreBucketRef {
   mode: PlayMode
