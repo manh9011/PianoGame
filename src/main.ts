@@ -13,6 +13,17 @@ import { useToastStore } from './stores/toastStore'
 
 const t = i18n.global.t as (key: string, named?: Record<string, unknown>) => string
 
+function syncViewportHeight() {
+  const height = window.visualViewport?.height ?? window.innerHeight
+  document.documentElement.style.setProperty('--app-viewport-height', `${height}px`)
+}
+
+syncViewportHeight()
+window.visualViewport?.addEventListener('resize', syncViewportHeight)
+window.visualViewport?.addEventListener('scroll', syncViewportHeight)
+window.addEventListener('resize', syncViewportHeight)
+window.addEventListener('orientationchange', syncViewportHeight)
+
 async function initApp() {
   const app = createApp(App)
   const pinia = createPinia()

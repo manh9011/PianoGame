@@ -426,7 +426,7 @@ onBeforeUnmount(() => {
 .library-page {
   display: flex;
   flex-direction: column;
-  height: 100dvh;
+  height: var(--app-viewport-height, 100dvh);
   padding: 0;
   overflow: hidden;
   background: var(--color-bg-secondary);
@@ -715,7 +715,7 @@ onBeforeUnmount(() => {
   display: grid;
   gap: 0.9rem;
   width: min(40rem, 100%);
-  max-height: 92dvh;
+  max-height: calc(var(--app-viewport-height, 100dvh) * 0.92);
   padding: 0.85rem;
   overflow: auto;
   border: 1px solid var(--color-border-default);
@@ -761,9 +761,8 @@ onBeforeUnmount(() => {
 
 @media (max-width: 760px) {
   .library-page {
-    height: auto;
-    min-height: 100dvh;
-    overflow: visible;
+    height: var(--app-viewport-height, 100dvh);
+    overflow: hidden;
   }
 
   .detail-header,

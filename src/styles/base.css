@@ -6,6 +6,7 @@
 :root {
   color-scheme: dark;
   font-family: Inter, Segoe UI, system-ui, sans-serif;
+  --app-viewport-height: 100dvh;
 
   /* === SURFACE / BACKGROUND === */
   --color-bg-primary: #4a4a4a;
@@ -177,10 +178,18 @@
   touch-action: manipulation;
 }
 
+html,
+body,
+#app {
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  overflow: hidden;
+}
+
 body {
   margin: 0;
   min-width: 320px;
-  min-height: 100%;
   background: var(--color-bg-page, #15181d);
   color: var(--color-text-primary, #f4f4f4);
 }
@@ -200,7 +209,7 @@ a {
 
 /* Utility classes */
 .page {
-  min-height: 100%;
+  min-height: var(--app-viewport-height, 100dvh);
   padding: 1.25rem;
   display: flex;
   flex-direction: column;
@@ -270,7 +279,7 @@ a {
   --keyboard-height: clamp(96px, 18vh, 150px);
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr) var(--keyboard-height);
-  height: 100dvh;
+  height: var(--app-viewport-height, 100dvh);
   overflow: hidden;
   gap: 0;
   padding: 0;

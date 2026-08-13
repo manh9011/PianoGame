@@ -231,7 +231,8 @@ useShortcuts({
 
 <style scoped>
 .track-settings-wrap {
-  min-height: 100dvh;
+  height: var(--app-viewport-height, 100dvh);
+  min-height: 0;
   display: flex;
   flex-direction: column;
   background: var(--color-bg-secondary);

@@ -429,7 +429,7 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .record-layout {
-  height: 100dvh;
+  height: var(--app-viewport-height, 100dvh);
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr);
   background: var(--color-bg-tertiary);

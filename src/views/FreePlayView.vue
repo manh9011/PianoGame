@@ -683,7 +683,7 @@ watch(() => route.query.librarySongId, value => {
 
 <style scoped>
 .free-play-layout {
-  height: 100dvh;
+  height: var(--app-viewport-height, 100dvh);
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr) var(--keyboard-height);
   background: var(--color-bg-tertiary);

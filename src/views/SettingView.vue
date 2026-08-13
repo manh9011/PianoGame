@@ -28,7 +28,7 @@ const { t } = useI18n()
 
 <style scoped>
 .settings-view {
-  height: 100dvh;
+  height: var(--app-viewport-height, 100dvh);
   min-height: 0;
   display: grid;
   grid-template-rows: 2.75rem minmax(0, 1fr);

@@ -568,7 +568,7 @@ useShortcuts({
 
 <style scoped>
 .setup-wrap {
-  height: 100dvh;
+  height: var(--app-viewport-height, 100dvh);
   display: grid;
   grid-template-rows: auto auto auto minmax(0, 1fr);
   background: var(--color-bg-secondary);
@@ -992,7 +992,7 @@ useShortcuts({
 
 @media (max-width: 760px) {
   .setup-wrap {
-    height: 100dvh;
+    height: var(--app-viewport-height, 100dvh);
     overflow: hidden;
   }
 

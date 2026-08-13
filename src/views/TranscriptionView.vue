@@ -299,7 +299,7 @@ function onDownloadClick() {
 .transcription-container {
   display: flex;
   flex-direction: column;
-  height: 100dvh;
+  height: var(--app-viewport-height, 100dvh);
   background: var(--color-bg-primary);
   overflow-y: auto;
 }

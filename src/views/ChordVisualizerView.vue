@@ -28,7 +28,7 @@ const { t } = useI18n()
 .chord-visualizer-container {
   display: flex;
   flex-direction: column;
-  height: 100dvh;
+  height: var(--app-viewport-height, 100dvh);
   background: var(--color-bg-primary);
   color: var(--color-text-primary);
 }
