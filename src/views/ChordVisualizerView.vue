@@ -19,12 +19,7 @@ const { t } = useI18n()
     </header>
 
     <main class="content">
-      <iframe 
-        src="https://chordvisualizer.vercel.app/" 
-        class="chord-iframe"
-        allow="midi"
-        frameborder="0"
-      ></iframe>
+      <iframe src="https://chordvisualizer.vercel.app/" class="chord-iframe" allow="midi" frameborder="0"></iframe>
     </main>
   </div>
 </template>
@@ -33,7 +28,6 @@ const { t } = useI18n()
 .chord-visualizer-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
   height: 100dvh;
   background: var(--color-bg-primary);
   color: var(--color-text-primary);

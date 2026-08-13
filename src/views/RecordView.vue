@@ -369,76 +369,38 @@ onBeforeUnmount(() => {
 
 <template>
   <main v-if="player.session && player.song" class="record-layout">
-    <RecordTopBar
-      :settings-open="showSettingsDialog"
-      :visual-settings-open="showVisualSettingsDialog"
-      :track-config-open="showTrackConfigDialog"
-      :keyboard-range-open="showKeyboardRangeDialog"
-      :labels-open="showLabelsDialog"
-      :render-menu-open="showRenderMenu"
-      @open-settings="openSettings"
-      @open-visual-settings="openVisualSettings"
-      @open-track-config="openTrackConfig"
-      @open-keyboard-range="openKeyboardRange"
-      @open-labels="openLabels"
-      @toggle-render-menu="toggleRenderMenu"
-      @close-render-menu="showRenderMenu = false"
-      @run-render-preset="runRenderPreset"
-    />
+    <RecordTopBar :settings-open="showSettingsDialog" :visual-settings-open="showVisualSettingsDialog"
+      :track-config-open="showTrackConfigDialog" :keyboard-range-open="showKeyboardRangeDialog"
+      :labels-open="showLabelsDialog" :render-menu-open="showRenderMenu" @open-settings="openSettings"
+      @open-visual-settings="openVisualSettings" @open-track-config="openTrackConfig"
+      @open-keyboard-range="openKeyboardRange" @open-labels="openLabels" @toggle-render-menu="toggleRenderMenu"
+      @close-render-menu="showRenderMenu = false" @run-render-preset="runRenderPreset" />
 
-    <TrackProgressBar
-      crop-range-active
-      :crop-start-us="record.cropStartUs"
-      :crop-end-us="record.cropEndUs"
-      @update-crop-range="record.setCropRange"
-    />
+    <TrackProgressBar crop-range-active :crop-start-us="record.cropStartUs" :crop-end-us="record.cropEndUs"
+      @update-crop-range="record.setCropRange" />
 
     <section class="record-stage-area">
       <RecordStageCanvas />
     </section>
 
-    <RecordSettingsDialog
-      :show="showSettingsDialog"
-      :popup-style="settingsPopupStyle"
-      :arrow-style="settingsArrowStyle"
-      :arrow-placement="settingsArrowPlacement"
-      :audio-name="customAudioName"
-      @close="showSettingsDialog = false"
-      @select-audio="handleSelectAudio"
-      @clear-audio="handleClearAudio"
-    />
+    <RecordSettingsDialog :show="showSettingsDialog" :popup-style="settingsPopupStyle" :arrow-style="settingsArrowStyle"
+      :arrow-placement="settingsArrowPlacement" :audio-name="customAudioName" @close="showSettingsDialog = false"
+      @select-audio="handleSelectAudio" @clear-audio="handleClearAudio" />
 
-    <RecordVisualSettingsDialog
-      :show="showVisualSettingsDialog"
-      :popup-style="visualSettingsPopupStyle"
-      :arrow-style="visualSettingsArrowStyle"
-      :arrow-placement="visualSettingsArrowPlacement"
-      @close="showVisualSettingsDialog = false"
-    />
+    <RecordVisualSettingsDialog :show="showVisualSettingsDialog" :popup-style="visualSettingsPopupStyle"
+      :arrow-style="visualSettingsArrowStyle" :arrow-placement="visualSettingsArrowPlacement"
+      @close="showVisualSettingsDialog = false" />
 
-    <TrackConfigDialog
-      :show="showTrackConfigDialog"
-      :popup-style="trackConfigPopupStyle"
-      :arrow-style="trackConfigArrowStyle"
-      :arrow-placement="trackConfigArrowPlacement"
-      @close="showTrackConfigDialog = false"
-    />
+    <TrackConfigDialog :show="showTrackConfigDialog" :popup-style="trackConfigPopupStyle"
+      :arrow-style="trackConfigArrowStyle" :arrow-placement="trackConfigArrowPlacement"
+      @close="showTrackConfigDialog = false" />
 
-    <KeyboardRangeDialog
-      :show="showKeyboardRangeDialog"
-      :popup-style="keyboardRangePopupStyle"
-      :arrow-style="keyboardRangeArrowStyle"
-      :arrow-placement="keyboardRangeArrowPlacement"
-      @close="showKeyboardRangeDialog = false"
-    />
+    <KeyboardRangeDialog :show="showKeyboardRangeDialog" :popup-style="keyboardRangePopupStyle"
+      :arrow-style="keyboardRangeArrowStyle" :arrow-placement="keyboardRangeArrowPlacement"
+      @close="showKeyboardRangeDialog = false" />
 
-    <LabelsDialog
-      :show="showLabelsDialog"
-      :popup-style="labelsPopupStyle"
-      :arrow-style="labelsArrowStyle"
-      :arrow-placement="labelsArrowPlacement"
-      @close="showLabelsDialog = false"
-    />
+    <LabelsDialog :show="showLabelsDialog" :popup-style="labelsPopupStyle" :arrow-style="labelsArrowStyle"
+      :arrow-placement="labelsArrowPlacement" @close="showLabelsDialog = false" />
 
     <Teleport to="body">
       <Transition name="render-overlay">
@@ -450,7 +412,8 @@ onBeforeUnmount(() => {
               </div>
               <div class="render-overlay__info">
                 <div class="render-overlay__title">{{ t('record.exportProgress') }}</div>
-                <div class="render-overlay__message">{{ record.exportProgress.message || t(`record.exportStages.${record.exportProgress.stage}`) }}</div>
+                <div class="render-overlay__message">{{ record.exportProgress.message ||
+                  t(`record.exportStages.${record.exportProgress.stage}`) }}</div>
               </div>
               <button class="render-overlay__cancel" @click.stop="cancelExport" :title="t('record.cancelExport')">
                 <i class="fas fa-times"></i>
@@ -466,7 +429,6 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .record-layout {
-  height: 100vh;
   height: 100dvh;
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr);
@@ -478,7 +440,6 @@ onBeforeUnmount(() => {
   position: relative;
   min-height: 0;
 }
-
 </style>
 
 <style>
@@ -585,4 +546,3 @@ onBeforeUnmount(() => {
   opacity: 0;
 }
 </style>
-

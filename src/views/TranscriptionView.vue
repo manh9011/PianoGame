@@ -252,7 +252,10 @@ function onDownloadClick() {
             <div class="piano-progress-fill" :style="{ width: progressPercent + '%' }"></div>
           </div>
           <p v-if="stageLabel" class="stage-label">
-            {{ t('transcription.segmentProgress', { stage: stageLabel, done: segDone, total: segTotal, percent: progressPercent, time: elapsedSeconds.toFixed(1) }) }}
+            {{ t('transcription.segmentProgress', {
+              stage: stageLabel, done: segDone, total: segTotal, percent:
+                progressPercent,
+              time: elapsedSeconds.toFixed(1) }) }}
           </p>
           <pre class="log">{{ logLines.join('\n') }}</pre>
         </section>
@@ -296,7 +299,6 @@ function onDownloadClick() {
 .transcription-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
   height: 100dvh;
   background: var(--color-bg-primary);
   overflow-y: auto;

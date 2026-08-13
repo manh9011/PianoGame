@@ -304,7 +304,7 @@ function stopNormalPlaybackVoices() {
 function tickNormalPlayback() {
   const elapsedUs = Math.round((performance.now() - playbackStartedAtMs) * 1000)
   const durationUs = playbackStartUs + elapsedUs
-  
+
   if (durationUs >= freePlay.recordingDurationUs) {
     freePlay.seekTo(0)
     if (freePlay.isPlaying) {
@@ -312,7 +312,7 @@ function tickNormalPlayback() {
     }
     return
   }
-  
+
   freePlay.seekTo(durationUs)
   const active = new Set<string>()
   for (const track of freePlay.tracks) {
@@ -416,12 +416,12 @@ async function onPracticeConfirm(songName: string) {
     const bytes = new Uint8Array(data.length)
     bytes.set(data)
     const file = new File([bytes.buffer as ArrayBuffer], `${songName}.mid`, { type: 'audio/midi' })
-    
+
     // Import to libraryStore
     const { useLibraryStore } = await import('../stores/libraryStore')
     const library = useLibraryStore()
     const song = await library.importFile(file)
-    
+
     toast.showSuccess(t('freePlay.importSuccess'))
     router.push({ name: 'mode-select', params: { hash: song.hash } })
   } catch (error) {
@@ -606,7 +606,7 @@ onBeforeUnmount(() => {
   if (freePlay.status === 'recording') freePlay.stopRecording()
   stopPlayback()
   stopBackingPlayback()
-  bindInput(midiAccess, '', () => {})
+  bindInput(midiAccess, '', () => { })
   unsubscribeNoteInput?.()
   stopTimer()
   closeDialogs()
@@ -641,36 +641,18 @@ watch(() => route.query.librarySongId, value => {
 </script>
 
 <template>
-  <main
-    v-if="player.session"
-    ref="freePlayLayoutRef"
-    class="free-play-layout"
-    :style="{ '--keyboard-height': `${keyboardHeight}px`, '--black-key-height': `${blackKeyHeight}px` }"
-  >
-    <FreePlayTopBar
-      :is-fullscreen="isFullscreen"
-      :is-playing="freePlay.isPlaying"
-      :settings-open="showSettingsDialog"
-      :metronome-open="showMetronomeDialog"
-      :keyboard-range-open="showKeyboardRangeDialog"
-      :labels-open="showLabelsDialog"
-      @start-recording="startRecording"
-      @stop-recording="stopRecording"
-      @toggle-playback="togglePlayback"
-      @rewind="freePlay.seekTo(0)"
-      @export-midi="exportMidi"
-      @import-midi="importMidiFile"
-      @open-practice="showPracticeDialog = true"
-      @open-track-editor="openTrackEditor"
-      @delete-recording="deleteRecording"
-      @open-settings="openSettings"
-      @open-metronome="openMetronome"
-      @open-keyboard-range="openKeyboardRange"
-      @open-labels="openLabels"
-      @toggle-fullscreen="toggleFullscreen"
-    />
+  <main v-if="player.session" ref="freePlayLayoutRef" class="free-play-layout"
+    :style="{ '--keyboard-height': `${keyboardHeight}px`, '--black-key-height': `${blackKeyHeight}px` }">
+    <FreePlayTopBar :is-fullscreen="isFullscreen" :is-playing="freePlay.isPlaying" :settings-open="showSettingsDialog"
+      :metronome-open="showMetronomeDialog" :keyboard-range-open="showKeyboardRangeDialog"
+      :labels-open="showLabelsDialog" @start-recording="startRecording" @stop-recording="stopRecording"
+      @toggle-playback="togglePlayback" @rewind="freePlay.seekTo(0)" @export-midi="exportMidi"
+      @import-midi="importMidiFile" @open-practice="showPracticeDialog = true" @open-track-editor="openTrackEditor"
+      @delete-recording="deleteRecording" @open-settings="openSettings" @open-metronome="openMetronome"
+      @open-keyboard-range="openKeyboardRange" @open-labels="openLabels" @toggle-fullscreen="toggleFullscreen" />
     <FreePlayProgressBar />
-    <section class="free-play-stage" @wheel="handleWheel" @touchstart="handleTouchStart" @touchmove="handleTouchMove" @touchend="handleTouchEnd" @touchcancel="handleTouchEnd">
+    <section class="free-play-stage" @wheel="handleWheel" @touchstart="handleTouchStart" @touchmove="handleTouchMove"
+      @touchend="handleTouchEnd" @touchcancel="handleTouchEnd">
       <FreePlayPianoRoll />
       <FreePlayTrackManager />
     </section>
@@ -678,54 +660,29 @@ watch(() => route.query.librarySongId, value => {
       <PianoKeyboard />
     </section>
 
-    <FreePlayPracticeDialog
-      :show="showPracticeDialog"
-      @close="showPracticeDialog = false"
-      @confirm="onPracticeConfirm"
-    />
+    <FreePlayPracticeDialog :show="showPracticeDialog" @close="showPracticeDialog = false"
+      @confirm="onPracticeConfirm" />
 
-    <FreePlaySettingsDialog
-      :show="showSettingsDialog"
-      :popup-style="settingsPopupStyle"
-      :arrow-style="settingsArrowStyle"
-      :arrow-placement="settingsArrowPlacement"
-      @close="showSettingsDialog = false"
-    />
+    <FreePlaySettingsDialog :show="showSettingsDialog" :popup-style="settingsPopupStyle"
+      :arrow-style="settingsArrowStyle" :arrow-placement="settingsArrowPlacement" @close="showSettingsDialog = false" />
 
-    <FreePlayMetronomeDialog
-      :show="showMetronomeDialog"
-      :popup-style="metronomePopupStyle"
-      :arrow-style="metronomeArrowStyle"
-      :arrow-placement="metronomeArrowPlacement"
-      @close="showMetronomeDialog = false"
-    />
+    <FreePlayMetronomeDialog :show="showMetronomeDialog" :popup-style="metronomePopupStyle"
+      :arrow-style="metronomeArrowStyle" :arrow-placement="metronomeArrowPlacement"
+      @close="showMetronomeDialog = false" />
 
-    <KeyboardRangeDialog
-      :show="showKeyboardRangeDialog"
-      :popup-style="keyboardRangePopupStyle"
-      :arrow-style="keyboardRangeArrowStyle"
-      :arrow-placement="keyboardRangeArrowPlacement"
-      @close="showKeyboardRangeDialog = false"
-    />
+    <KeyboardRangeDialog :show="showKeyboardRangeDialog" :popup-style="keyboardRangePopupStyle"
+      :arrow-style="keyboardRangeArrowStyle" :arrow-placement="keyboardRangeArrowPlacement"
+      @close="showKeyboardRangeDialog = false" />
 
-    <LabelsDialog
-      :show="showLabelsDialog"
-      :popup-style="labelsPopupStyle"
-      :arrow-style="labelsArrowStyle"
-      :arrow-placement="labelsArrowPlacement"
-      @close="showLabelsDialog = false"
-    />
+    <LabelsDialog :show="showLabelsDialog" :popup-style="labelsPopupStyle" :arrow-style="labelsArrowStyle"
+      :arrow-placement="labelsArrowPlacement" @close="showLabelsDialog = false" />
 
-    <FreePlayTrackEditorDialog
-      :show="showTrackEditorDialog"
-      @close="showTrackEditorDialog = false"
-    />
+    <FreePlayTrackEditorDialog :show="showTrackEditorDialog" @close="showTrackEditorDialog = false" />
   </main>
 </template>
 
 <style scoped>
 .free-play-layout {
-  height: 100vh;
   height: 100dvh;
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr) var(--keyboard-height);

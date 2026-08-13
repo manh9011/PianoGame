@@ -59,7 +59,8 @@ function closeProfileManager() {
         <h1 class="app-name">{{ appName }}</h1>
       </div>
       <div class="header-right">
-        <BaseButton variant="secondary" class="username-button" :aria-label="t('home.profileMenu')" @click="toggleProfileManager">
+        <BaseButton variant="secondary" class="username-button" :aria-label="t('home.profileMenu')"
+          @click="toggleProfileManager">
           {{ profile.activeProfile.name }} ▾
         </BaseButton>
 
@@ -110,12 +111,7 @@ function closeProfileManager() {
       <div class="right-panel">
         <h2 class="panel-title">{{ t('home.recentlyPlayed') }}</h2>
         <div v-if="recentSongs.length" class="recent-list">
-          <button
-            v-for="song in recentSongs"
-            :key="song!.id"
-            class="recent-item"
-            @click="playSong(song!.id)"
-          >
+          <button v-for="song in recentSongs" :key="song!.id" class="recent-item" @click="playSong(song!.id)">
             <span class="song-name">{{ song!.title }}</span>
             <div class="recent-right">
               <span class="song-time">{{ formatTimeAgo(song!.lastPlayed) }}</span>
@@ -134,7 +130,8 @@ function closeProfileManager() {
       </div>
       <div class="footer-center">
         <div class="footer-info">{{ t('common.input') }}: {{ settings.midiInputId || t('common.noMidiInput') }}</div>
-        <div class="footer-info">{{ t('common.output') }}: {{ settings.midiOutputId || t('common.builtInSynthesizer') }}</div>
+        <div class="footer-info">{{ t('common.output') }}: {{ settings.midiOutputId || t('common.builtInSynthesizer') }}
+        </div>
       </div>
       <div class="footer-right">
         <div class="version">{{ appVersion }}</div>
@@ -148,7 +145,6 @@ function closeProfileManager() {
 .home-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
   height: 100dvh;
   background: var(--color-bg-primary);
   color: var(--color-text-primary);

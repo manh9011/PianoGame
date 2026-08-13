@@ -277,19 +277,10 @@ onBeforeUnmount(() => {
 
     <!-- Toolbar (sticky) -->
     <div v-if="activeTab === 'library'" class="sl-toolbar-wrap">
-      <LibraryToolbar
-        v-model:search-query="searchQuery"
-        v-model:search-mode="searchMode"
-        v-model:selected-author="selectedAuthor"
-        v-model:selected-composer="selectedComposer"
-        v-model:sort="sort"
-        :authors="authors"
-        :composers="composers"
-        :authors-loading="authorsLoading"
-        :composers-loading="composersLoading"
-        class="sl-toolbar"
-        @clear-filters="clearFilters"
-      />
+      <LibraryToolbar v-model:search-query="searchQuery" v-model:search-mode="searchMode"
+        v-model:selected-author="selectedAuthor" v-model:selected-composer="selectedComposer" v-model:sort="sort"
+        :authors="authors" :composers="composers" :authors-loading="authorsLoading"
+        :composers-loading="composersLoading" class="sl-toolbar" @clear-filters="clearFilters" />
     </div>
 
     <!-- Content -->
@@ -309,32 +300,19 @@ onBeforeUnmount(() => {
 
         <!-- Grid -->
         <template v-else>
-          <ScoreGrid
-            :scores="scores"
-            :loading="libraryLoading"
-            @select="openDetail"
-          />
+          <ScoreGrid :scores="scores" :loading="libraryLoading" @select="openDetail" />
 
           <!-- Pagination -->
           <div v-if="pagination.total_pages > 1" class="sl-pagination">
-            <BaseButton
-              variant="secondary"
-              size="sm"
-              :disabled="page <= 1"
-              @click="goToPage(page - 1)"
-            >
+            <BaseButton variant="secondary" size="sm" :disabled="page <= 1" @click="goToPage(page - 1)">
               {{ t('scoreLibrary.prev') }}
             </BaseButton>
             <span class="sl-page-info">
               {{ t('scoreLibrary.pageInfo', { page: pagination.page, totalPages: pagination.total_pages }) }}
               <span class="sl-page-total">{{ t('scoreLibrary.pageTotal', { total: pagination.total }) }}</span>
             </span>
-            <BaseButton
-              variant="secondary"
-              size="sm"
-              :disabled="page >= pagination.total_pages"
-              @click="goToPage(page + 1)"
-            >
+            <BaseButton variant="secondary" size="sm" :disabled="page >= pagination.total_pages"
+              @click="goToPage(page + 1)">
               {{ t('scoreLibrary.next') }}
             </BaseButton>
           </div>
@@ -347,24 +325,12 @@ onBeforeUnmount(() => {
     </div>
 
     <!-- Detail Dialog -->
-    <ScoreDetailDialog
-      :show="detailOpen"
-      :score="selectedScore"
-      :detail-loading="detailLoading"
-      :midi-blob="midiBlob"
-      :midi-loading="midiLoading"
-      :play-loading="playLoading"
-      @close="closeDetail"
-      @download="handleDownload"
-      @play="handlePlay"
-      @midi-ready="(blob: Blob) => midiBlob = blob"
-    />
+    <ScoreDetailDialog :show="detailOpen" :score="selectedScore" :detail-loading="detailLoading" :midi-blob="midiBlob"
+      :midi-loading="midiLoading" :play-loading="playLoading" @close="closeDetail" @download="handleDownload"
+      @play="handlePlay" @midi-ready="(blob: Blob) => midiBlob = blob" />
 
     <!-- Help Dialog -->
-    <ScoreLibraryHelp
-      :show="helpOpen"
-      @close="helpOpen = false"
-    />
+    <ScoreLibraryHelp :show="helpOpen" @close="helpOpen = false" />
   </div>
 </template>
 
@@ -372,7 +338,6 @@ onBeforeUnmount(() => {
 .sl-root {
   display: flex;
   flex-direction: column;
-  height: 100vh;
   height: 100dvh;
   background: var(--color-bg-primary);
   color: var(--color-text-primary);

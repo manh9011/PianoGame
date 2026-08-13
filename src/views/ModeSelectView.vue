@@ -393,18 +393,18 @@ useShortcuts({
 
 <template>
   <section class="setup-wrap">
-    <AchievementCelebration
-      v-if="achievementCelebration"
-      :celebration="achievementCelebration"
-      @done="achievementCelebration = null"
-    />
+    <AchievementCelebration v-if="achievementCelebration" :celebration="achievementCelebration"
+      @done="achievementCelebration = null" />
     <header class="setup-header">
       <div class="header-actions">
-        <BaseButton variant="secondary" class="header-btn" @click="router.push('/library')">{{ t('modeSelect.songs') }}</BaseButton>
-        <BaseButton v-if="DEBUG" variant="secondary" class="header-btn" @click="testAchievementCelebration">{{ t('modeSelect.testCelebration') }}</BaseButton>
+        <BaseButton variant="secondary" class="header-btn" @click="router.push('/library')">{{ t('modeSelect.songs') }}
+        </BaseButton>
+        <BaseButton v-if="DEBUG" variant="secondary" class="header-btn" @click="testAchievementCelebration">{{
+          t('modeSelect.testCelebration') }}</BaseButton>
       </div>
       <div class="song-heading">
-        <span class="top-score" :style="achievementColorStyle(selectedAchievementScore, maxPoints(handSelection))">{{ selectedBestGameplay }}</span>
+        <span class="top-score" :style="achievementColorStyle(selectedAchievementScore, maxPoints(handSelection))">{{
+          selectedBestGameplay }}</span>
         <span class="song-title">{{ player.song?.title }}</span>
         <span v-if="isMusicXml" class="source-badge musicxml">MusicXML</span>
         <span v-else class="source-badge midi">MIDI</span>
@@ -414,7 +414,8 @@ useShortcuts({
 
     <section class="setup-modes">
       <aside class="setup-tools">
-        <button class="utility-card" :class="{ active: mode === 'listen' }" @click="selectMode('listen', 'both')" @dblclick="selectAndStart('listen', 'both')">
+        <button class="utility-card" :class="{ active: mode === 'listen' }" @click="selectMode('listen', 'both')"
+          @dblclick="selectAndStart('listen', 'both')">
           {{ t('modeSelect.listen') }}
         </button>
         <button class="utility-card" :class="{ 'needs-attention': needsTrackConfig }" @click="goToTrackSettings">
@@ -432,23 +433,24 @@ useShortcuts({
           <p>{{ t(item.subtitleKey) }}</p>
         </header>
         <div class="hand-pair">
-          <button
-            v-for="hand in (['left', 'right'] as HandSelection[])"
-            :key="hand"
-            class="score-card"
+          <button v-for="hand in (['left', 'right'] as HandSelection[])" :key="hand" class="score-card"
             :class="{ active: mode === item.mode && handSelection === hand, disabled: needsTrackConfig }"
-            :style="scoreCardStyle(item.mode, hand)"
-            :disabled="needsTrackConfig"
-            @click="selectMode(item.mode, hand)"
-            @dblclick="selectAndStart(item.mode, hand)"
-          >
-            <span class="card-score">{{ formatScore(scoreValue(item.mode, hand)) }}<small>/{{ maxPoints(hand) }}</small></span>
-            <span class="hand-label"><span class="hand-swatch" aria-hidden="true"></span>{{ t(handLabelKeys[hand]) }}</span>
+            :style="scoreCardStyle(item.mode, hand)" :disabled="needsTrackConfig" @click="selectMode(item.mode, hand)"
+            @dblclick="selectAndStart(item.mode, hand)">
+            <span class="card-score">{{ formatScore(scoreValue(item.mode, hand)) }}<small>/{{ maxPoints(hand)
+                }}</small></span>
+            <span class="hand-label"><span class="hand-swatch" aria-hidden="true"></span>{{ t(handLabelKeys[hand])
+              }}</span>
           </button>
         </div>
-        <button class="score-card both-card" :class="{ active: mode === item.mode && handSelection === 'both', disabled: needsTrackConfig }" :style="scoreCardStyle(item.mode, 'both')" :disabled="needsTrackConfig" @click="selectMode(item.mode, 'both')" @dblclick="selectAndStart(item.mode, 'both')">
-          <span class="card-score">{{ formatScore(scoreValue(item.mode, 'both')) }}<small>/{{ maxPoints('both') }}</small></span>
-          <span class="hand-label"><span class="hand-swatch" aria-hidden="true"></span>{{ t('modeSelect.hands.both') }}</span>
+        <button class="score-card both-card"
+          :class="{ active: mode === item.mode && handSelection === 'both', disabled: needsTrackConfig }"
+          :style="scoreCardStyle(item.mode, 'both')" :disabled="needsTrackConfig" @click="selectMode(item.mode, 'both')"
+          @dblclick="selectAndStart(item.mode, 'both')">
+          <span class="card-score">{{ formatScore(scoreValue(item.mode, 'both')) }}<small>/{{ maxPoints('both')
+              }}</small></span>
+          <span class="hand-label"><span class="hand-swatch" aria-hidden="true"></span>{{ t('modeSelect.hands.both')
+            }}</span>
         </button>
       </section>
     </section>
@@ -457,13 +459,8 @@ useShortcuts({
 
     <section class="setup-detail-area">
       <nav class="detail-tabs" :aria-label="t('modeSelect.detailTabsAria')">
-        <button
-          v-for="tab in detailTabs"
-          :key="tab.key"
-          class="detail-tab"
-          :class="{ active: detailTab === tab.key }"
-          @click="detailTab = tab.key"
-        >
+        <button v-for="tab in detailTabs" :key="tab.key" class="detail-tab" :class="{ active: detailTab === tab.key }"
+          @click="detailTab = tab.key">
           {{ t(tab.labelKey) }}
         </button>
       </nav>
@@ -502,14 +499,8 @@ useShortcuts({
         <template v-else-if="detailTab === 'breakdown'">
           <div class="detail-content breakdown-content">
             <p class="breakdown-note">{{ t('modeSelect.breakdown.note') }}</p>
-            <BaseTable
-              :columns="breakdownColumns"
-              :data="breakdownRows"
-              :hoverable="false"
-              bordered
-              class="breakdown-table-override"
-              row-key="id"
-            >
+            <BaseTable :columns="breakdownColumns" :data="breakdownRows" :hoverable="false" bordered
+              class="breakdown-table-override" row-key="id">
               <template #cell-achievement="{ value }">
                 <span :class="{ muted: value === '--' || !value }">{{ value || '' }}</span>
               </template>
@@ -531,29 +522,16 @@ useShortcuts({
 
         <template v-else-if="detailTab === 'chart'">
           <div class="detail-content chart-content">
-            <ModeScoreTimeline
-              :entries="chartEntries"
-              :hand-selection="handSelection"
-              :empty-label="t('modeSelect.chart.empty')"
-              :locale="settings.locale"
-            />
+            <ModeScoreTimeline :entries="chartEntries" :hand-selection="handSelection"
+              :empty-label="t('modeSelect.chart.empty')" :locale="settings.locale" />
           </div>
         </template>
 
         <template v-else>
-          <BaseTable
-            :columns="pointsColumns"
-            :data="scoreRows"
-            :sort-by="sortColumn"
-            :sort-desc="sortDirection === 'desc'"
-            @update:sort-by="toggleSort($event as any)"
-            @update:sort-desc="handleSortDescChange"
-            :hoverable="false"
-            bordered
-            class="points-table-override"
-            row-key="playedAt"
-            :selected-key="latestPlayedAt"
-          >
+          <BaseTable :columns="pointsColumns" :data="scoreRows" :sort-by="sortColumn"
+            :sort-desc="sortDirection === 'desc'" @update:sort-by="toggleSort($event as any)"
+            @update:sort-desc="handleSortDescChange" :hoverable="false" bordered class="points-table-override"
+            row-key="playedAt" :selected-key="latestPlayedAt">
             <template #cell-playIndex="{ item }">
               {{ item.playIndex }}
             </template>
@@ -590,7 +568,6 @@ useShortcuts({
 
 <style scoped>
 .setup-wrap {
-  height: 100vh;
   height: 100dvh;
   display: grid;
   grid-template-rows: auto auto auto minmax(0, 1fr);
@@ -713,8 +690,15 @@ useShortcuts({
 }
 
 @keyframes pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 165, 0, 0.7); }
-  50% { box-shadow: 0 0 0 8px rgba(255, 165, 0, 0); }
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 165, 0, 0.7);
+  }
+
+  50% {
+    box-shadow: 0 0 0 8px rgba(255, 165, 0, 0);
+  }
 }
 
 .config-warning {

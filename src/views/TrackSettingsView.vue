@@ -201,34 +201,29 @@ useShortcuts({
 
     <main class="tracks-container">
       <div class="track-panel-shell">
-        <TrackConfigPanel variant="standalone" :allow-role-edit="true" 
-          @drag-start="handleDragStart" 
+        <TrackConfigPanel variant="standalone" :allow-role-edit="true" @drag-start="handleDragStart"
           @drag-end="handleDragEnd" />
       </div>
     </main>
 
     <BaseToolbar variant="footer" class="track-footer" :class="{ 'dragging-active': isDragging }">
       <template #left>
-        <BaseButton variant="secondary" @click="reset"
-          @dragover.prevent
-          @dragenter.prevent
-          @drop="handleDropReset"
+        <BaseButton variant="secondary" @click="reset" @dragover.prevent @dragenter.prevent @drop="handleDropReset"
           :class="{ 'drop-zone': isDragging }">
           <i class="fas fa-bolt"></i>
           {{ t('trackSettings.reset') }}
         </BaseButton>
       </template>
       <template #center>
-        <BaseButton v-if="isDragging" variant="secondary" class="drop-zone drop-zone-center"
-          @dragover.prevent
-          @dragenter.prevent
-          @drop="handleDropAll">
+        <BaseButton v-if="isDragging" variant="secondary" class="drop-zone drop-zone-center" @dragover.prevent
+          @dragenter.prevent @drop="handleDropAll">
           {{ t('trackSettings.applyToAll') }}
         </BaseButton>
         <span v-else class="footer-text">{{ t('trackSettings.copySettingsByDragging') }}</span>
       </template>
       <template #right>
-        <BaseButton variant="secondary" class="auto-color" @click="autoColor">{{ t('trackSettings.autoColor') }}</BaseButton>
+        <BaseButton variant="secondary" class="auto-color" @click="autoColor">{{ t('trackSettings.autoColor') }}
+        </BaseButton>
       </template>
     </BaseToolbar>
   </section>
@@ -236,7 +231,6 @@ useShortcuts({
 
 <style scoped>
 .track-settings-wrap {
-  min-height: 100vh;
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
@@ -287,7 +281,8 @@ useShortcuts({
   transition: all 0.2s ease;
 }
 
-.drop-zone:hover, .drop-zone:dragover {
+.drop-zone:hover,
+.drop-zone:dragover {
   background: rgba(252, 233, 79, 0.2) !important;
   transform: scale(1.05);
 }
@@ -297,4 +292,3 @@ useShortcuts({
   font-weight: 700;
 }
 </style>
-
