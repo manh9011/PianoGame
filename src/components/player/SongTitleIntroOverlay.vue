@@ -1,18 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { LEAD_IN_US } from '../../modules/midi/midiPlayerClock'
 
-const INTRO_TOTAL_US = 3_000_000
-const INTRO_START_US = -LEAD_IN_US
-const INTRO_END_US = INTRO_START_US + INTRO_TOTAL_US
-const INTRO_IN_US = 600_000
-const INTRO_HOLD_US = 1_500_000
-const INTRO_OUT_US = INTRO_TOTAL_US - INTRO_IN_US - INTRO_HOLD_US
+const INTRO_IN_FRACTION = 0.2
+const INTRO_HOLD_FRACTION = 0.5
 const PANEL_MAX_OPACITY = 0.9
 
 const props = defineProps<{
   title: string
   currentUs: number
+  leadInUs: number
   started: boolean
   manuallyStopped: boolean
 }>()
@@ -33,29 +29,37 @@ function easeInCubic(progress: number) {
   return progress * progress * progress
 }
 
+const totalUs = computed(() => Math.max(0, props.leadInUs))
+const startUs = computed(() => -totalUs.value)
+const endUs = computed(() => 0)
+const inUs = computed(() => totalUs.value * INTRO_IN_FRACTION)
+const holdUs = computed(() => totalUs.value * INTRO_HOLD_FRACTION)
+const outUs = computed(() => totalUs.value - inUs.value - holdUs.value)
+
 const normalizedTitle = computed(() => props.title.replace(/\s+/g, ' ').trim())
 
 const visible = computed(() => (
   props.started &&
   !props.manuallyStopped &&
   normalizedTitle.value.length > 0 &&
-  props.currentUs >= INTRO_START_US &&
-  props.currentUs < INTRO_END_US
+  totalUs.value > 0 &&
+  props.currentUs >= startUs.value &&
+  props.currentUs < endUs.value
 ))
 
-const elapsedUs = computed(() => Math.max(0, Math.min(INTRO_TOTAL_US, props.currentUs - INTRO_START_US)))
+const elapsedUs = computed(() => Math.max(0, Math.min(totalUs.value, props.currentUs - startUs.value)))
 
 const phase = computed(() => {
   const elapsed = elapsedUs.value
-  if (elapsed < INTRO_IN_US) {
-    return { name: 'in' as const, progress: clamp01(elapsed / INTRO_IN_US) }
+  if (elapsed < inUs.value) {
+    return { name: 'in' as const, progress: clamp01(elapsed / inUs.value) }
   }
-  if (elapsed < INTRO_IN_US + INTRO_HOLD_US) {
+  if (elapsed < inUs.value + holdUs.value) {
     return { name: 'hold' as const, progress: 1 }
   }
   return {
     name: 'out' as const,
-    progress: clamp01((elapsed - INTRO_IN_US - INTRO_HOLD_US) / INTRO_OUT_US),
+    progress: clamp01((elapsed - inUs.value - holdUs.value) / outUs.value),
   }
 })
 

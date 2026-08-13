@@ -9,7 +9,6 @@ import { useProfileStore } from '../stores/profileStore'
 import { useSettingsStore } from '../stores/settingsStore'
 import { useToastStore } from '../stores/toastStore'
 import { bindInput, requestMidiAccess } from '../modules/midi/webMidi'
-import { LEAD_IN_US } from '../modules/midi/midiPlayerClock'
 import { WHITE_KEY_COUNT } from '../modules/render/pianoGeometry'
 import type { HandSelection, PlayMode, SessionNote } from '../modules/game/playSession'
 import PlayTopBar from '../components/player/PlayTopBar.vue'
@@ -80,6 +79,7 @@ const sheetReady = ref(!settings.showSheetMusic)
 const shouldStartAfterSheetReady = ref(false)
 const wasPlayingBeforeSheetLoad = ref(false)
 const songTitleIntroStarted = ref(false)
+const leadInUs = computed(() => (player.session?.leadInDuration ?? settings.leadInDuration) * 1_000_000)
 if (window.location.search.includes('perf=1') || window.location.hash.includes('perf=1')) {
   settings.patchSettings({ advancedEnableDebugOverlay: true })
 }
@@ -565,7 +565,7 @@ useShortcuts({
   ),
   jumpToBeginningSong: () => {
     if (!playbackBlocked.value && player.canSeek) {
-      player.seekToUs(-LEAD_IN_US)
+      player.seekToUs(-leadInUs.value)
     }
   }
 })
@@ -766,7 +766,8 @@ watch(() => player.stats, stats => {
       </section>
       <SongTitleIntroOverlay
         :title="player.song?.title ?? ''"
-        :current-us="player.session?.currentUs ?? -LEAD_IN_US"
+        :current-us="player.session?.currentUs ?? -leadInUs"
+        :lead-in-us="leadInUs"
         :started="songTitleIntroStarted"
         :manually-stopped="player.playbackManuallyStopped"
       />
