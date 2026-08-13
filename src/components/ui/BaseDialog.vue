@@ -75,9 +75,14 @@ function handleOverlayClick(event: MouseEvent) {
 
 .dialog-container {
   width: min(94vw, 100%);
+  max-height: 90vh;
   max-height: 90dvh;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "header"
+    "content"
+    "footer";
   border-radius: 12px;
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-border-default);
@@ -86,6 +91,7 @@ function handleOverlayClick(event: MouseEvent) {
 }
 
 .dialog-header {
+  grid-area: header;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -120,6 +126,7 @@ function handleOverlayClick(event: MouseEvent) {
 }
 
 .dialog-footer {
+  grid-area: footer;
   flex-shrink: 0;
   border-top: 1px solid var(--color-border-default);
   padding: 1rem 1.25rem;
@@ -146,6 +153,7 @@ function handleOverlayClick(event: MouseEvent) {
 }
 
 .dialog-content {
+  grid-area: content;
   flex: 1;
   min-height: 0;
   display: flex;
