@@ -76,8 +76,6 @@ function onImgError(e: Event) {
 .sc-card-img-wrap {
   aspect-ratio: 3 / 4;
   overflow: hidden;
-  /* Sheet thumbnails: PNG có nền trong suốt, luôn đặt nền trắng */
-  background: #fff;
 }
 
 .sc-card-img {
@@ -85,6 +83,8 @@ function onImgError(e: Event) {
   height: 100%;
   object-fit: contain;
   display: block;
+  /* Sheet thumbnails: PNG có nền trong suốt, đặt nền trắng trên thẻ img để tránh bị trình duyệt ép Dark Mode */
+  background: #fff;
 }
 
 .sc-card-body {

@@ -178,8 +178,12 @@ onBeforeUnmount(() => {
 }
 
 .sd-image {
-  width: 100%;
+  max-width: 100%;
+  max-height: 60dvh;
+  width: auto;
   height: auto;
+  display: block;
+  margin: 0 auto;
   object-fit: contain;
   border-radius: 6px;
   /* Sheet thumbnails: PNG có nền trong suốt, luôn đặt nền trắng */
