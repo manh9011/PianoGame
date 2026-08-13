@@ -16,10 +16,7 @@ function updateThemeMetaColor(theme: 'dark' | 'light') {
 function updateViewportMeta(compact: boolean) {
   const meta = document.querySelector('meta[name="viewport"]')
   if (!meta) return
-  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
-  const content = isMobile
-    ? 'width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no'
-    : `width=${compact ? 1920 : 1440}, viewport-fit=cover, user-scalable=no`
+  const content = `width=${compact ? 1920 : 1440}, viewport-fit=cover, user-scalable=no`
   meta.setAttribute('content', content)
 }
 
