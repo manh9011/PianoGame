@@ -145,6 +145,9 @@ function handleOverlayClick(event: MouseEvent) {
 
 .dialog-content {
   flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   overflow: auto;
   padding: 1.25rem;
 }
