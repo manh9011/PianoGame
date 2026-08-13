@@ -13,40 +13,12 @@ function updateThemeMetaColor(theme: 'dark' | 'light') {
   if (meta) meta.setAttribute('content', theme === 'light' ? '#f6f7fb' : '#202020')
 }
 
-let viewportResizeListener: (() => void) | null = null;
-let currentTargetWidth = 1600;
-
 function updateViewportMeta(compact: boolean) {
   const meta = document.querySelector('meta[name="viewport"]')
   if (!meta) return
   
-  currentTargetWidth = compact ? 1920 : 1600
-
-  const update = () => {
-    const w = window.visualViewport?.width || window.innerWidth
-    const h = window.visualViewport?.height || window.innerHeight
-    
-    if (w && h) {
-      const ratio = h / w
-      const targetHeight = Math.round(currentTargetWidth * ratio)
-      meta.setAttribute('content', `width=${currentTargetWidth}, height=${targetHeight}, viewport-fit=cover, user-scalable=no`)
-    } else {
-      meta.setAttribute('content', `width=${currentTargetWidth}, viewport-fit=cover, user-scalable=no`)
-    }
-  }
-
-  update()
-
-  if (!viewportResizeListener) {
-    viewportResizeListener = () => {
-      setTimeout(update, 100)
-    }
-    window.addEventListener('resize', viewportResizeListener)
-    window.addEventListener('orientationchange', viewportResizeListener)
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', viewportResizeListener)
-    }
-  }
+  const targetWidth = compact ? 1920 : 1600
+  meta.setAttribute('content', `width=${targetWidth}, viewport-fit=cover, user-scalable=no`)
 }
 
 export const useSettingsStore = defineStore('settings', {
