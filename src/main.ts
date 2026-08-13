@@ -19,6 +19,7 @@ window.visualViewport?.addEventListener('resize', syncAppViewport)
 window.visualViewport?.addEventListener('scroll', syncAppViewport)
 window.addEventListener('resize', syncAppViewport)
 window.addEventListener('orientationchange', syncAppViewport)
+document.addEventListener('fullscreenchange', syncAppViewport)
 
 async function initApp() {
   const app = createApp(App)

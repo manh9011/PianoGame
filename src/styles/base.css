@@ -8,6 +8,7 @@
   font-family: Inter, Segoe UI, system-ui, sans-serif;
   --app-layout-width: 100%;
   --app-viewport-scale: 1;
+  --app-viewport-top: 0px;
   --app-viewport-height: 100dvh;
 
   /* === SURFACE / BACKGROUND === */
@@ -189,16 +190,20 @@ body,
   overflow: hidden;
 }
 
-html[data-app-viewport-scaled],
-html[data-app-viewport-scaled] body {
+html[data-app-viewport-offset],
+html[data-app-viewport-offset] body {
   width: 100%;
   height: 100%;
 }
 
-html[data-app-viewport-scaled] #app {
+html[data-app-viewport-offset] #app {
   width: var(--app-layout-width);
   height: var(--app-viewport-height);
   min-height: var(--app-viewport-height);
+  translate: 0 var(--app-viewport-top);
+}
+
+html[data-app-viewport-scaled] #app {
   transform: scale(var(--app-viewport-scale));
   transform-origin: top left;
 }
