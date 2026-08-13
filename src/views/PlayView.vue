@@ -74,6 +74,7 @@ const showHelpOverlay = ref(false)
 const showPerformanceDetail = ref(false)
 const frozenPerformanceSnapshot = ref<PlaybackProfilerSnapshot | null>(null)
 const isFullscreen = ref(false)
+const fullscreenAvailable = ref(!(navigator.maxTouchPoints > 0 || window.matchMedia('(pointer: coarse)').matches))
 const wasPlayingBeforeDialog = ref(false)
 const sheetReady = ref(!settings.showSheetMusic)
 const shouldStartAfterSheetReady = ref(false)
@@ -426,6 +427,7 @@ function toggleHelpOverlay() {
 }
 
 function toggleFullscreen() {
+  if (!fullscreenAvailable.value) return
   if (!document.fullscreenElement) {
     document.documentElement.requestFullscreen().catch(err => {
       console.error(`Lỗi khi bật fullscreen: ${err.message}`)
@@ -729,6 +731,7 @@ watch(() => player.stats, stats => {
   >
     <PlayTopBar
       :is-fullscreen="isFullscreen"
+      :fullscreen-available="fullscreenAvailable"
       :bookmarks-dialog-open="showBookmarksDialog"
       :loop-dialog-open="showLoopControl"
       :finger-dialog-open="showFingerDialog"

@@ -5,8 +5,13 @@ import { RouterView } from 'vue-router'
 import { Analytics } from "@vercel/analytics/vue"
 import { useShortcuts } from './composables/useShortcuts'
 
+function fullscreenAllowed() {
+  return !(navigator.maxTouchPoints > 0 || window.matchMedia('(pointer: coarse)').matches)
+}
+
 useShortcuts({
   toggleFullScreen: () => {
+    if (!fullscreenAllowed()) return
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().catch(() => {})
     } else {

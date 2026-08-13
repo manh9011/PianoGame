@@ -15,6 +15,7 @@ const settings = useSettingsStore()
 
 const props = defineProps<{
   isFullscreen: boolean
+  fullscreenAvailable?: boolean
   bookmarksDialogOpen?: boolean
   loopDialogOpen?: boolean
   fingerDialogOpen?: boolean
@@ -180,7 +181,7 @@ function zoomIn() {
         <BaseButton variant="icon" data-help-anchor="bookmarks" :active="bookmarksDialogOpen" :title="t('play.bookmarks')" :aria-label="t('play.bookmarks')" @click="emit('openBookmarks')"><i class="fas fa-bookmark"></i></BaseButton>
         <BaseButton variant="icon" data-help-anchor="note-labels" :title="t('play.noteLabels')" :aria-label="t('play.noteLabels')" @click="(e) => emit('openLabels', e)"><i class="fas fa-tags"></i></BaseButton>
         <BaseButton variant="icon" data-help-anchor="looping" :active="loopActive || loopDialogOpen" :title="t('play.loop')" :aria-label="t('play.loop')" @click="(e) => emit('openLoop', e)"><i class="fas fa-repeat"></i></BaseButton>
-        <BaseButton variant="icon" data-help-anchor="fullscreen" :title="isFullscreen ? t('play.exitFullscreen') : t('play.fullscreen')" :aria-label="isFullscreen ? t('play.exitFullscreen') : t('play.fullscreen')" @click="emit('toggleFullscreen')">
+        <BaseButton v-if="fullscreenAvailable !== false" variant="icon" data-help-anchor="fullscreen" :title="isFullscreen ? t('play.exitFullscreen') : t('play.fullscreen')" :aria-label="isFullscreen ? t('play.exitFullscreen') : t('play.fullscreen')" @click="emit('toggleFullscreen')">
           <i :class="isFullscreen ? 'fas fa-compress' : 'fas fa-expand'"></i>
         </BaseButton>
       </div>

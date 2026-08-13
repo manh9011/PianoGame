@@ -53,6 +53,7 @@ const freePlayLayoutRef = ref<HTMLElement>()
 const keyboardHeight = ref(150)
 const blackKeyHeight = ref(95)
 const isFullscreen = ref(false)
+const fullscreenAvailable = ref(!(navigator.maxTouchPoints > 0 || window.matchMedia('(pointer: coarse)').matches))
 const showPracticeDialog = ref(false)
 const showSettingsDialog = ref(false)
 const showMetronomeDialog = ref(false)
@@ -524,6 +525,7 @@ async function deleteRecording() {
 }
 
 function toggleFullscreen() {
+  if (!fullscreenAvailable.value) return
   if (!document.fullscreenElement) {
     document.documentElement.requestFullscreen().catch(err => {
       console.error(`Lỗi khi bật fullscreen: ${err.message}`)
@@ -643,7 +645,7 @@ watch(() => route.query.librarySongId, value => {
 <template>
   <main v-if="player.session" ref="freePlayLayoutRef" class="free-play-layout"
     :style="{ '--keyboard-height': `${keyboardHeight}px`, '--black-key-height': `${blackKeyHeight}px` }">
-    <FreePlayTopBar :is-fullscreen="isFullscreen" :is-playing="freePlay.isPlaying" :settings-open="showSettingsDialog"
+    <FreePlayTopBar :is-fullscreen="isFullscreen" :fullscreen-available="fullscreenAvailable" :is-playing="freePlay.isPlaying" :settings-open="showSettingsDialog"
       :metronome-open="showMetronomeDialog" :keyboard-range-open="showKeyboardRangeDialog"
       :labels-open="showLabelsDialog" @start-recording="startRecording" @stop-recording="stopRecording"
       @toggle-playback="togglePlayback" @rewind="freePlay.seekTo(0)" @export-midi="exportMidi"

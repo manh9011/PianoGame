@@ -14,6 +14,7 @@ const settings = useSettingsStore()
 
 const props = defineProps<{
   isFullscreen: boolean
+  fullscreenAvailable?: boolean
   isPlaying?: boolean
   settingsOpen?: boolean
   metronomeOpen?: boolean
@@ -178,7 +179,7 @@ function zoomIn() {
       <BaseButton variant="icon" :active="settingsOpen" :title="t('common.settings')" :aria-label="t('common.settings')" @click="(event) => emit('openSettings', event)"><i class="fas fa-cog"></i></BaseButton>
       <BaseButton variant="icon" :active="keyboardRangeOpen" :title="t('play.keyboardRange')" :aria-label="t('play.keyboardRange')" @click="(event) => emit('openKeyboardRange', event)"><i class="fas fa-keyboard"></i></BaseButton>
       <BaseButton variant="icon" :active="labelsOpen" :title="t('play.noteLabels')" :aria-label="t('play.noteLabels')" @click="(event) => emit('openLabels', event)"><i class="fas fa-tags"></i></BaseButton>
-      <BaseButton variant="icon" :title="props.isFullscreen ? t('play.exitFullscreen') : t('play.fullscreen')" :aria-label="props.isFullscreen ? t('play.exitFullscreen') : t('play.fullscreen')" @click="emit('toggleFullscreen')">
+      <BaseButton v-if="fullscreenAvailable !== false" variant="icon" :title="props.isFullscreen ? t('play.exitFullscreen') : t('play.fullscreen')" :aria-label="props.isFullscreen ? t('play.exitFullscreen') : t('play.fullscreen')" @click="emit('toggleFullscreen')">
         <i :class="props.isFullscreen ? 'fas fa-compress' : 'fas fa-expand'"></i>
       </BaseButton>
     </template>

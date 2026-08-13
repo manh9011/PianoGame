@@ -5,7 +5,6 @@ import type { LabelMode, KeyboardRangeMode, RecordVideoOrientation, RecordVideoS
 import { loadSettings, saveSettings, defaultSettings } from '../modules/settings/userSettings'
 import { clampLeadInDuration, clampZoomPercent, clampSpeed } from '../modules/game/playSession'
 import { persistQueue } from '../modules/storage/indexedDb'
-import { setAppViewportTarget } from '../modules/ui/appViewport'
 
 import { DEFAULT_SHORTCUTS, type ShortcutCategory, type ShortcutsConfig } from '../modules/settings/defaultShortcuts'
 
@@ -15,7 +14,11 @@ function updateThemeMetaColor(theme: 'dark' | 'light') {
 }
 
 function updateViewportMeta(compact: boolean) {
-  setAppViewportTarget(compact)
+  const meta = document.querySelector('meta[name="viewport"]')
+  if (!meta) return
+
+  const targetWidth = compact ? 1920 : 1600
+  meta.setAttribute('content', `width=${targetWidth}, viewport-fit=cover, user-scalable=no`)
 }
 
 export const useSettingsStore = defineStore('settings', {
