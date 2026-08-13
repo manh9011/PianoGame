@@ -466,6 +466,7 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .record-layout {
+  height: 100vh;
   height: 100dvh;
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr);

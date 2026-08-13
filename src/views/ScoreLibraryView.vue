@@ -372,6 +372,7 @@ onBeforeUnmount(() => {
 .sl-root {
   display: flex;
   flex-direction: column;
+  height: 100vh;
   height: 100dvh;
   background: var(--color-bg-primary);
   color: var(--color-text-primary);

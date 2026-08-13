@@ -15,10 +15,12 @@ function updateThemeMetaColor(theme: 'dark' | 'light') {
 
 function updateViewportMeta(compact: boolean) {
   const meta = document.querySelector('meta[name="viewport"]')
-  if (meta) {
-    const width = compact ? 1920 : 1440
-    meta.setAttribute('content', `width=${width}, viewport-fit=cover, user-scalable=no`)
-  }
+  if (!meta) return
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+  const content = isMobile
+    ? 'width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no'
+    : `width=${compact ? 1920 : 1440}, viewport-fit=cover, user-scalable=no`
+  meta.setAttribute('content', content)
 }
 
 export const useSettingsStore = defineStore('settings', {

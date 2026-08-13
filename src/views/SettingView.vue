@@ -28,6 +28,7 @@ const { t } = useI18n()
 
 <style scoped>
 .settings-view {
+  height: 100vh;
   height: 100dvh;
   min-height: 0;
   display: grid;
