@@ -10,19 +10,15 @@ import { useProfileStore } from './stores/profileStore'
 import { useFreePlayStore } from './stores/freePlayStore'
 import { i18n } from './i18n'
 import { useToastStore } from './stores/toastStore'
+import { syncAppViewport } from './modules/ui/appViewport'
 
 const t = i18n.global.t as (key: string, named?: Record<string, unknown>) => string
 
-function syncViewportHeight() {
-  const height = window.visualViewport?.height ?? window.innerHeight
-  document.documentElement.style.setProperty('--app-viewport-height', `${height}px`)
-}
-
-syncViewportHeight()
-window.visualViewport?.addEventListener('resize', syncViewportHeight)
-window.visualViewport?.addEventListener('scroll', syncViewportHeight)
-window.addEventListener('resize', syncViewportHeight)
-window.addEventListener('orientationchange', syncViewportHeight)
+syncAppViewport()
+window.visualViewport?.addEventListener('resize', syncAppViewport)
+window.visualViewport?.addEventListener('scroll', syncAppViewport)
+window.addEventListener('resize', syncAppViewport)
+window.addEventListener('orientationchange', syncAppViewport)
 
 async function initApp() {
   const app = createApp(App)
