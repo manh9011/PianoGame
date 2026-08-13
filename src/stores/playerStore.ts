@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import type { SongMetadata } from '../types/song'
-import { base64ToBuffer, loadSongMidiData } from '../modules/library/songLibrary'
+import { base64ToBuffer, loadSongMidiData, loadSongMusicXmlData, loadSongCompressedMusicXmlData } from '../modules/library/songLibrary'
 import { parseMidi } from '../modules/midi/midiParser'
 import { translateControlChanges, translateNotes } from '../modules/midi/midiNoteTranslator'
 import type { MidiBookmarkSource } from '../modules/midi/midiTypes'
@@ -14,6 +14,8 @@ import { collectChordAtStart, findEarliestPlayableWaitingStart, findHit, findPla
 import { awardHoldPoints, createScoreState, recordHit, recordMiss, recordMisses, recordPassiveRealTime, recordStray, resetSpeedTrackingAnchor, stopHoldsForInput, summarizeScoreWithinRange, trimScoreAfter, updateSpeedTracking, type ScoreState } from '../modules/game/scoring'
 import { summarizeStats, type SongPlayStats } from '../modules/game/songStatistics'
 import { assignHands } from '../modules/game/handAssignment'
+import { buildKaraokeLines, buildKaraokeLinesFromSyllables, type KaraokeLine } from '../modules/game/karaokeLyrics'
+import { decompressMxlBase64, extractTimedLyrics } from '../modules/musicxml/musicXmlLyrics'
 import { requestPianoFingering } from '../modules/fingering/fingeringClient'
 import type { FingeringAssignment, FingerNumber, HandSizePreset } from '../modules/fingering/fingeringTypes'
 import { AutoNotePlayer } from '../modules/audio/autoNotePlayer'
@@ -421,6 +423,7 @@ export const usePlayerStore = defineStore('player', {
   state: () => ({
     song: null as SongMetadata | null,
     session: null as PlaySession | null,
+    karaokeLines: [] as KaraokeLine[],
     clock: null as MidiPlayerClock | null,
     stats: null as SongPlayStats | null,
     completedStatsBatch: [] as SongPlayStats[],
@@ -482,6 +485,7 @@ export const usePlayerStore = defineStore('player', {
       this.autoPlayer.allNotesOff(this.session)
       this.metronome.restart()
       this.song = null
+      this.karaokeLines = []
       const track = createDefaultTrackProperties([{ trackId: monitorTrack.trackId ?? 0, role: 'background', instrumentProgram: monitorTrack.instrumentProgram ?? 0 }])[0]
       if (monitorTrack.color) track.color = monitorTrack.color
       this.session = createPlaySession([], [], [track], {
@@ -534,7 +538,11 @@ export const usePlayerStore = defineStore('player', {
       const bookmarks = createSessionBookmarks(midi, tempoMap)
       const keySignatures = createSessionKeySignatures(midi, tempoMap)
       this.song = song
+      this.karaokeLines = buildKaraokeLines(midi, duration)
       this.session = createPlaySession(notes, controlChanges, tracks, { speed, leadInDuration, zoomPercent, octaveShift, tempoMap, measureGridUs, metronomeBeatGrid, bookmarks, keySignatures, needsTrackConfiguration: needsManualAssignment && tracks.some(track => !isTrackRoleComplete(track)), durationUs: duration })
+      if (song.musicXmlData || song.compressedMusicXmlData || song.hasMusicXmlSource) {
+        void this.loadKaraokeLinesFromMusicXml(song)
+      }
       restoreSavedTrackSettings(song.id, this.session)
       resetBackgroundScores(this.session)
       this.refreshKeyboardRange()
@@ -680,6 +688,25 @@ export const usePlayerStore = defineStore('player', {
         }
       }, { leadInUs: (this.session?.leadInDuration ?? 5.5) * 1_000_000 })
       this.applyLoopBoundsToClock()
+    },
+    async loadKaraokeLinesFromMusicXml(song: SongMetadata) {
+      try {
+        let xmlText = song.musicXmlData ?? null
+        if (!xmlText && song.compressedMusicXmlData) xmlText = await decompressMxlBase64(song.compressedMusicXmlData)
+        if (!xmlText) xmlText = (await loadSongMusicXmlData(song.id)) ?? null
+        if (!xmlText) {
+          const compressed = await loadSongCompressedMusicXmlData(song.id)
+          if (compressed) xmlText = await decompressMxlBase64(compressed)
+        }
+        if (!xmlText || this.song?.id !== song.id) return
+        const session = this.session
+        if (!session) return
+        const entries = extractTimedLyrics(xmlText)
+        if (entries.length === 0) return
+        this.karaokeLines = buildKaraokeLinesFromSyllables(entries, session.loopState.durationUs)
+      } catch (error) {
+        console.warn('[Karaoke] MusicXML lyric extraction failed:', error)
+      }
     },
     configureSession(options: ConfigureSessionOptions) {
       const session = this.session

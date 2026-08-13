@@ -636,6 +636,7 @@ export const pl = {
     fallingMeasureLinesDescription: "Pokazuj siatkę/linie taktów.",
     sheetMusic: "Nuty",
     sheetMusicDescription: "Pokazuj zapis nutowy, gdy dane są dostępne.",
+    karaokeSub: "Napisy karaoke",
     metronome: "Metronom",
     volume: "Głośność",
     volumeDescription: "Głośność metronomu.",

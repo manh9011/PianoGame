@@ -636,6 +636,7 @@ export const fr = {
     fallingMeasureLinesDescription: "Afficher les lignes de grille ou de mesure.",
     sheetMusic: "Partition",
     sheetMusicDescription: "Afficher la partition lorsque les données sont disponibles.",
+    karaokeSub: "Sous-titres karaoké",
     metronome: "Métronome",
     volume: "Volume",
     volumeDescription: "Volume du métronome.",

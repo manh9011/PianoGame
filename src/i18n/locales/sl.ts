@@ -636,6 +636,7 @@ export const sl = {
     fallingMeasureLinesDescription: "Prikaži mrežo/taktne črte.",
     sheetMusic: "Notni zapis",
     sheetMusicDescription: "Prikaži notni zapis, ko so podatki na voljo.",
+    karaokeSub: "Karaoke podnapisi",
     metronome: "Metronom",
     volume: "Glasnost",
     volumeDescription: "Glasnost metronoma.",

@@ -636,6 +636,7 @@ export const de = {
     fallingMeasureLinesDescription: "Raster-/Taktlinien anzeigen.",
     sheetMusic: "Notenblatt",
     sheetMusicDescription: "Notenblatt anzeigen, wenn Daten verfügbar sind.",
+    karaokeSub: "Karaoke-Untertitel",
     metronome: "Metronom",
     volume: "Lautstärke",
     volumeDescription: "Metronom-Lautstärke.",

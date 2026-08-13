@@ -23,6 +23,7 @@ export const defaultSettings: UserSettings = {
   showGrid: true,
   showFallingNotes: true,
   showSheetMusic: false,
+  showKaraokeSub: true,
   showMyBookmarks: true,
   showMetadataBookmarks: true,
   showKeySignatureBookmarks: true,

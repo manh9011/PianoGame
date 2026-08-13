@@ -1,5 +1,6 @@
 import { Midi } from '@tonejs/midi'
-import type { MidiBookmarkEvent, MidiFile, MidiKeySignatureEvent, MidiTrackInfo, RawMidiEvent } from './midiTypes'
+import { parseMidi as parseRawMidi } from 'midi-file'
+import type { MidiBookmarkEvent, MidiFile, MidiKeySignatureEvent, MidiLyricEvent, MidiTrackInfo, RawMidiEvent } from './midiTypes'
 import { getInstrumentByProgram } from '../audio/gmInstrumentCatalog'
 
 function titleCaseScale(scale?: string) {
@@ -30,6 +31,39 @@ function dedupeBookmarks(bookmarks: MidiBookmarkEvent[]) {
     })
 }
 
+/**
+ * @tonejs/midi only surfaces lyric meta events from track 0; karaoke MIDI
+ * files usually keep lyrics on the melody track, so scan every track here.
+ */
+function collectLyricsFromAllTracks(buffer: ArrayBuffer): MidiLyricEvent[] {
+  try {
+    const raw = parseRawMidi(new Uint8Array(buffer))
+    const out: MidiLyricEvent[] = []
+    for (const track of raw.tracks) {
+      let pulse = 0
+      for (const event of track) {
+        pulse += event.deltaTime
+        if (event.type === 'lyrics' && event.text.trim()) out.push({ pulse, text: event.text })
+      }
+    }
+    return out
+  } catch {
+    return []
+  }
+}
+
+function dedupeLyrics(lyrics: MidiLyricEvent[]) {
+  const seen = new Set<string>()
+  return lyrics
+    .sort((a, b) => a.pulse - b.pulse || a.text.localeCompare(b.text))
+    .filter(lyric => {
+      const key = `${lyric.pulse}:${lyric.text}`
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+}
+
 export function parseMidi(buffer: ArrayBuffer): MidiFile {
   const midi = new Midi(buffer)
 
@@ -37,6 +71,7 @@ export function parseMidi(buffer: ArrayBuffer): MidiFile {
   const tracks: MidiTrackInfo[] = []
   const bookmarks: MidiBookmarkEvent[] = []
   const keySignatures: MidiKeySignatureEvent[] = []
+  const lyrics: MidiLyricEvent[] = collectLyricsFromAllTracks(buffer)
   let durationPulse = 0
 
   midi.tracks.forEach((track, trackId) => {
@@ -138,6 +173,8 @@ export function parseMidi(buffer: ArrayBuffer): MidiFile {
     const pulse = Math.round(meta.ticks)
     if (meta.type === 'marker') {
       pushBookmark(bookmarks, { pulse, source: 'midiMarker', label: meta.text, metaType: meta.type })
+    } else if (meta.type === 'lyrics') {
+      if (meta.text.trim()) lyrics.push({ pulse, text: meta.text })
     } else if (meta.type === 'text' || meta.type === 'cuePoint') {
       pushBookmark(bookmarks, { pulse, source: 'metadata', label: meta.text, metaType: meta.type })
     }
@@ -157,6 +194,7 @@ export function parseMidi(buffer: ArrayBuffer): MidiFile {
     tracks,
     durationPulse,
     bookmarks: dedupeBookmarks(bookmarks),
-    keySignatures
+    keySignatures,
+    lyrics: dedupeLyrics(lyrics)
   }
 }

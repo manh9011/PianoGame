@@ -636,6 +636,7 @@ export const pt = {
     fallingMeasureLinesDescription: "Mostrar linhas de grade ou de compasso.",
     sheetMusic: "Partitura",
     sheetMusicDescription: "Mostrar partitura quando houver dados disponíveis.",
+    karaokeSub: "Legendas de karaokê",
     metronome: "Metrônomo",
     volume: "Volume",
     volumeDescription: "Volume do metrônomo.",

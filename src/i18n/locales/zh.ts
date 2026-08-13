@@ -636,6 +636,7 @@ export const zh = {
     fallingMeasureLinesDescription: "显示网格/小节线。",
     sheetMusic: "五线谱",
     sheetMusicDescription: "有数据时显示五线谱。",
+    karaokeSub: "卡拉OK字幕",
     metronome: "节拍器",
     volume: "音量",
     volumeDescription: "节拍器音量。",

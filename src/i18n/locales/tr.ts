@@ -636,6 +636,7 @@ export const tr = {
     fallingMeasureLinesDescription: "Izgara/ölçü çizgilerini göster.",
     sheetMusic: "Nota kağıdı",
     sheetMusicDescription: "Veri mevcut olduğunda nota kağıdını göster.",
+    karaokeSub: "Karaoke altyazıları",
     metronome: "Metronom",
     volume: "Ses seviyesi",
     volumeDescription: "Metronom ses seviyesi.",

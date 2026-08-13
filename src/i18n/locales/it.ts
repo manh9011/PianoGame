@@ -636,6 +636,7 @@ export const it = {
     fallingMeasureLinesDescription: "Mostra griglia/linee di misura.",
     sheetMusic: "Spartito",
     sheetMusicDescription: "Mostra lo spartito quando i dati sono disponibili.",
+    karaokeSub: "Sottotitoli karaoke",
     metronome: "Metronomo",
     volume: "Volume",
     volumeDescription: "Volume del metronomo.",

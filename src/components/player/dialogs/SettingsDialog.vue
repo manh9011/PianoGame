@@ -54,6 +54,11 @@ function handleClickOutside(event: MouseEvent) {
               <span class="setting-label">{{ t('settings.sheetMusic') }}</span>
               <BaseToggle :model-value="settings.showSheetMusic" @update:model-value="(v) => { settings.showSheetMusic = v; settings.persist() }" />
             </div>
+
+            <div class="setting-item">
+              <span class="setting-label">{{ t('settings.karaokeSub') }}</span>
+              <BaseToggle :model-value="settings.showKaraokeSub" @update:model-value="(v) => { settings.showKaraokeSub = v; settings.persist() }" />
+            </div>
           </div>
           <div
             class="settings-dialog-arrow"

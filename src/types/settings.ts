@@ -42,6 +42,7 @@ export interface UserSettings {
   showGrid: boolean
   showFallingNotes: boolean
   showSheetMusic: boolean
+  showKaraokeSub: boolean
   showMyBookmarks: boolean
   showMetadataBookmarks: boolean
   showKeySignatureBookmarks: boolean

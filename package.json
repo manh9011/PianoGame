@@ -23,6 +23,7 @@
         "@tonejs/midi": "^2.0.28",
         "@vercel/analytics": "^2.0.1",
         "@vitejs/plugin-vue": "latest",
+        "midi-file": "^1.2.4",
         "mp4-muxer": "^5.2.2",
         "onnxruntime-web": "^1.27.0",
         "pinia": "latest",

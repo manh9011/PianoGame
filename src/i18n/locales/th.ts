@@ -636,6 +636,7 @@ export const th = {
     fallingMeasureLinesDescription: "แสดงเส้นกริด/เส้นห้องเพลง",
     sheetMusic: "โน้ตเพลง",
     sheetMusicDescription: "แสดงโน้ตเพลงเมื่อมีข้อมูล",
+    karaokeSub: "คำบรรยายคาราโอเกะ",
     metronome: "เมโทรนอม",
     volume: "ระดับเสียง",
     volumeDescription: "ระดับเสียงเมโทรนอม",

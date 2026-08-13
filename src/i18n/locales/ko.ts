@@ -636,6 +636,7 @@ export const ko = {
     fallingMeasureLinesDescription: "그리드/마디선을 표시합니다.",
     sheetMusic: "악보",
     sheetMusicDescription: "데이터가 있을 때 악보를 표시합니다.",
+    karaokeSub: "가라오케 자막",
     metronome: "메트로놈",
     volume: "음량",
     volumeDescription: "메트로놈 음량입니다.",

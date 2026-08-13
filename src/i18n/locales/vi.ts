@@ -636,6 +636,7 @@ export const vi = {
     fallingMeasureLinesDescription: "Hiển thị lưới/vạch ô nhịp.",
     sheetMusic: "Bản nhạc",
     sheetMusicDescription: "Hiển thị bản nhạc khi có dữ liệu.",
+    karaokeSub: "Phụ đề karaoke",
     metronome: "Máy đếm nhịp",
     volume: "Âm lượng",
     volumeDescription: "Âm lượng máy đếm nhịp.",

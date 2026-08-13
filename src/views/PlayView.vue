@@ -29,6 +29,7 @@ import LabelsDialog from '../components/player/dialogs/LabelsDialog.vue'
 import BookmarksDialog from '../components/player/dialogs/BookmarksDialog.vue'
 import LoopControl from '../components/player/LoopControl.vue'
 import LoopPerformanceOverlay from '../components/player/LoopPerformanceOverlay.vue'
+import KaraokeSubtitle from '../components/player/KaraokeSubtitle.vue'
 import SettingsDialog from '../components/player/dialogs/SettingsDialog.vue'
 import TrackConfigDialog from '../components/player/dialogs/TrackConfigDialog.vue'
 import FingerDialog from '../components/player/dialogs/FingerDialog.vue'
@@ -761,6 +762,7 @@ watch(() => player.stats, stats => {
           @select-finger-note="openFingerForNote"
         />
         <PedalIndicator />
+        <KaraokeSubtitle v-if="settings.showKaraokeSub && player.karaokeLines.length" />
       </section>
       <SongTitleIntroOverlay
         :title="player.song?.title ?? ''"

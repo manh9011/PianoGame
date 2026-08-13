@@ -636,6 +636,7 @@ export const hi = {
     fallingMeasureLinesDescription: "ग्रिड/मेज़र लाइनें दिखाएँ।",
     sheetMusic: "शीट संगीत",
     sheetMusicDescription: "डेटा उपलब्ध होने पर शीट संगीत दिखाएँ।",
+    karaokeSub: "कराओके उपशीर्षक",
     metronome: "मेट्रोनोम",
     volume: "वॉल्यूम",
     volumeDescription: "मेट्रोनोम वॉल्यूम।",

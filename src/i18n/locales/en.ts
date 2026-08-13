@@ -629,6 +629,7 @@ export const en = {
     fallingMeasureLinesDescription: 'Show grid/measure lines.',
     sheetMusic: 'Sheet music',
     sheetMusicDescription: 'Show sheet music when data is available.',
+    karaokeSub: 'Karaoke subtitles',
     metronome: 'Metronome',
     volume: 'Volume',
     volumeDescription: 'Metronome volume.',

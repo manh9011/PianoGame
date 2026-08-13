@@ -636,6 +636,7 @@ export const ja = {
     fallingMeasureLinesDescription: "グリッド/小節線を表示します。",
     sheetMusic: "楽譜",
     sheetMusicDescription: "データが利用できる場合に楽譜を表示します。",
+    karaokeSub: "カラオケ字幕",
     metronome: "メトロノーム",
     volume: "音量",
     volumeDescription: "メトロノームの音量です。",

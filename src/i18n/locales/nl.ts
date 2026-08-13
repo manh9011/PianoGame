@@ -636,6 +636,7 @@ export const nl = {
     fallingMeasureLinesDescription: "Toon raster-/maatlijnen.",
     sheetMusic: "Bladmuziek",
     sheetMusicDescription: "Toon bladmuziek wanneer gegevens beschikbaar zijn.",
+    karaokeSub: "Karaoke-ondertiteling",
     metronome: "Metronoom",
     volume: "Volume",
     volumeDescription: "Volume van de metronoom.",

@@ -636,6 +636,7 @@ export const ca = {
     fallingMeasureLinesDescription: "Mostra línies de quadrícula o de compàs.",
     sheetMusic: "Partitura",
     sheetMusicDescription: "Mostra la partitura quan hi hagi dades disponibles.",
+    karaokeSub: "Subtítols de karaoke",
     metronome: "Metrònom",
     volume: "Volum",
     volumeDescription: "Volum del metrònom.",

@@ -636,6 +636,7 @@ export const ar = {
     fallingMeasureLinesDescription: "أظهر خطوط الشبكة/الموازير.",
     sheetMusic: "النوتة الموسيقية",
     sheetMusicDescription: "أظهر النوتة الموسيقية عند توفر البيانات.",
+    karaokeSub: "ترجمات الكاريوكي",
     metronome: "المترونوم",
     volume: "مستوى الصوت",
     volumeDescription: "مستوى صوت المترونوم.",

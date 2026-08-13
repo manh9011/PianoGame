@@ -636,6 +636,7 @@ export const ru = {
     fallingMeasureLinesDescription: "Показывать сетку/линии тактов.",
     sheetMusic: "Нотная запись",
     sheetMusicDescription: "Показывать нотную запись, когда данные доступны.",
+    karaokeSub: "Караоке-субтитры",
     metronome: "Метроном",
     volume: "Громкость",
     volumeDescription: "Громкость метронома.",
