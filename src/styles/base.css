@@ -180,7 +180,7 @@
 body {
   margin: 0;
   min-width: 320px;
-  min-height: 100dvh;
+  min-height: 100%;
   background: var(--color-bg-page, #15181d);
   color: var(--color-text-primary, #f4f4f4);
 }
@@ -200,7 +200,7 @@ a {
 
 /* Utility classes */
 .page {
-  min-height: 100dvh;
+  min-height: 100%;
   padding: 1.25rem;
   display: flex;
   flex-direction: column;
