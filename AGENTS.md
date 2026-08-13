@@ -48,7 +48,8 @@ PianoGame/
 │   ├── types/                        # Core TypeScript interfaces
 │   │   ├── song.ts                   # SongMetadata, SongSortKey
 │   │   ├── profile.ts                # UserProfile, ModeScoreEntry, StoredTrackProperties...
-│   │   └── settings.ts               # UserSettings (LabelMode, KeyboardRangeMode...)
+│   │   ├── settings.ts               # UserSettings (LabelMode, KeyboardRangeMode...)
+│   │   └── scoreLibrary.ts           # ScoreLibrary API types
 │   │
 │   ├── router/
 │   │   └── index.ts                  # Routes: /, /library, /mode-select, /track-settings,
@@ -73,17 +74,21 @@ PianoGame/
 │   ├── views/                        # Route-level page components
 │   │   ├── HomeView.vue              # Home: play, free-play, recent songs, profile
 │   │   ├── LibraryView.vue           # Song list, search, sort, import, preview, details
+│   │   ├── ScoreLibraryView.vue      # Online score library
 │   │   ├── ModeSelectView.vue        # Mode selection (listen/melody/rhythm/performance)
 │   │   ├── TrackSettingsView.vue     # Track config (hands, instruments, colors)
 │   │   ├── PlayView.vue              # ⭐ Main gameplay view (piano roll + keyboard)
 │   │   ├── RecordView.vue            # Video export preview
 │   │   ├── FreePlayView.vue          # Free play recording + playback
+│   │   ├── TranscriptionView.vue     # Audio to MIDI transcription
+│   │   ├── ChordVisualizerView.vue   # Realtime chord visualizer
 │   │   ├── SettingView.vue           # Settings (w/ nested children)
-│   │   └── settings/                 # Settings sub-views (music-devices, gameplay...)
+│   │   └── settings/                 # Settings sub-views (MusicDevices, Gameplay, Shortcuts...)
 │   │
 │   ├── components/                   # Vue components
 │   │   ├── home/                     # Home: RecentSongs, ProfileManager, LanguageDropup
 │   │   ├── library/                  # Library: SongList, SongSortBar, FolderSelector, MidiImportButton
+│   │   ├── scoreLibrary/             # Online Score Library: Grid, Card, Dialogs
 │   │   ├── player/                   # ⭐ Player components
 │   │   │   ├── PianoKeyboard.vue     #    Canvas piano keyboard
 │   │   │   ├── PianoRoll.vue         #    Canvas falling notes
@@ -110,6 +115,7 @@ PianoGame/
 │   │   │   ├── GameplaySettings.vue
 │   │   │   ├── MidiDeviceSettings.vue
 │   │   │   └── ui/                   # Settings layout (Sidebar, Section, Row, Toggle)
+│   │   ├── ui/                       # Base UI components (BaseButton, BaseDialog, BaseGrid...)
 │   │   └── Toast.vue                 # Global toast notifications
 │   │
 │   ├── modules/                      # ⭐ Core business logic (pure TS, no Vue dependency)
@@ -139,7 +145,9 @@ PianoGame/
 │   │   │   ├── playSession.ts        #    ⭐ PlaySession type, PlayMode configs, session creation
 │   │   │   ├── trackProperties.ts    #    Track modes/roles/colors, defaults
 │   │   │   ├── handAssignment.ts     #    Auto hand split by pitch
-│   │   │   ├── hitDetection.ts       #    Note hit detection, chord collection, miss marking
+│   │   │   ├── hitDetection.ts       #    Note hit detection, miss marking
+│   │   │   ├── chordDetection.ts     #    Realtime chord detection
+│   │   │   ├── karaokeLyrics.ts      #    Karaoke lyrics sync
 │   │   │   ├── scoring.ts            #    ⭐ Full scoring: timing, combo, holds, speed, grade
 │   │   │   ├── scoreKeys.ts          #    Score tracking keys
 │   │   │   ├── songStatistics.ts     #    Song play stats aggregation
@@ -181,6 +189,7 @@ PianoGame/
 │   │   ├── musicxml/                 # MusicXML utilities
 │   │   │   ├── musicXmlCompression.ts#    MXL compression/decompression
 │   │   │   ├── musicXmlPlaybackCache.ts
+│   │   │   ├── musicXmlLyrics.ts     #    MusicXML lyrics parsing
 │   │   │   └── musicXmlExportMetadata.ts
 │   │   │
 │   │   ├── fingering/                # Piano fingering engine
@@ -201,11 +210,20 @@ PianoGame/
 │   │   │   ├── userSettings.ts       #    Settings CRUD + defaults
 │   │   │   ├── profileStorage.ts     #    Profile CRUD
 │   │   │   ├── storageKeys.ts        #    IndexedDB key constants
-│   │   │   └── settingsNavigation.ts #    Settings nav tree
+│   │   │   ├── settingsNavigation.ts #    Settings nav tree
+│   │   │   └── defaultShortcuts.ts   #    Keyboard shortcuts
 │   │   │
 │   │   ├── storage/                  # Storage layer
 │   │   │   ├── indexedDb.ts          #    ⭐ IndexedDB wrapper + PersistQueue
 │   │   │   └── renderAssetStore.ts   #    Render asset storage
+│   │   │
+│   │   ├── transkun/                 # AI Audio to MIDI Transcription
+│   │   │   ├── onnxModel.ts          #    ONNX Runtime model loader
+│   │   │   ├── transcriber.ts        #    Transcription orchestrator
+│   │   │   └── melFrontEnd.ts        #    Audio features extraction
+│   │   │
+│   │   ├── scoreLibrary/             # Score library API
+│   │   │   └── scoreLibraryApi.ts    #    API client for online scores
 │   │   │
 │   │   └── perf/                     # Performance profiler
 │   │       └── playbackProfiler.ts   #    In-game FPS/ms profiling, span tracking
@@ -216,7 +234,8 @@ PianoGame/
 │   │   └── renderExportWorker.ts     # Video encoding
 │   │
 │   └── composables/                  # Vue composables
-│       └── useConfirmDialog.ts
+│       ├── useConfirmDialog.ts
+│       └── useShortcuts.ts
 │
 ├── src-tauri/                        # Tauri desktop app (Rust)
 │   ├── Cargo.toml
@@ -233,6 +252,9 @@ PianoGame/
 | ------------------------ | ------------------------ | -------------------------------------- |
 | `/`                      | HomeView.vue             | Màn hình chính, recent songs, profile  |
 | `/library`               | LibraryView.vue          | Thư viện bài hát, import MIDI/MusicXML |
+| `/score-library`         | ScoreLibraryView.vue     | Thư viện bài hát online                |
+| `/transcription`         | TranscriptionView.vue    | Chuyển đổi audio sang MIDI (AI)        |
+| `/chord-visualizer`      | ChordVisualizerView.vue  | Hiển thị hợp âm realtime               |
 | `/mode-select/:hash?`    | ModeSelectView.vue       | Chọn chế độ chơi cho bài hát           |
 | `/track-settings/:hash?` | TrackSettingsView.vue    | Cấu hình track (tay, nhạc cụ, màu)     |
 | `/play/:hash/:modeId`    | PlayView.vue             | ⭐ Màn chơi chính                       |
