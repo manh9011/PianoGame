@@ -55,6 +55,7 @@ let lastFrameMs = 0
 let logicalWidth = 0
 let logicalHeight = 0
 let pixelRatio = 1
+let diagnosticLogged = false
 
 const keyboardRange = computed<KeyboardRange>(() => {
   const session = player.session
@@ -720,11 +721,25 @@ function drawMelodyWaitHighlight(ctx: CanvasRenderingContext2D) {
 function draw() {
   const canvas = canvasRef.value
   const ctx = canvas?.getContext('2d')
-  if (!canvas || !ctx) return
+  if (!canvas || !ctx) {
+    if (!diagnosticLogged) {
+      diagnosticLogged = true
+      console.warn('[PG-DIAG][keyboard] draw skipped', { hasCanvas: !!canvas, hasCtx: !!ctx, logicalWidth, logicalHeight, dpr: window.devicePixelRatio, canvasWidth: canvas?.width, canvasHeight: canvas?.height })
+    }
+    return
+  }
   if ((!logicalWidth || !logicalHeight) && !resizeCanvas()) {
+    if (!diagnosticLogged) {
+      diagnosticLogged = true
+      console.warn('[PG-DIAG][keyboard] zero size', { logicalWidth, logicalHeight, dpr: window.devicePixelRatio })
+    }
     dirty = true
     requestDraw()
     return
+  }
+  if (!diagnosticLogged) {
+    diagnosticLogged = true
+    console.log('[PG-DIAG][keyboard] drawing OK', { logicalWidth, logicalHeight, canvasWidth: canvas.width, canvasHeight: canvas.height, pixelRatio, dpr: window.devicePixelRatio })
   }
   const nowMs = performance.now()
   updatePressFlashes(nowMs)

@@ -40,6 +40,7 @@ let rafId: number | null = null
 let logicalWidth = 0
 let logicalHeight = 0
 let pixelRatio = 1
+let diagnosticLogged = false
 // Removed CanvasSpriteCache to avoid Safari max canvas context limit crash
 let fpsFrames = 0
 let fpsLastSampleMs = performance.now()
@@ -605,8 +606,24 @@ function publishSpriteCacheStats(profile: PlaybackProfilerContext | null) {
 function draw(dt: number, nowMs: number, frameProfile: PlaybackProfilerContext | null) {
   const canvas = canvasRef.value
   const ctx = canvas?.getContext('2d')
-  if (!canvas || !ctx) return
-  if ((!logicalWidth || !logicalHeight) && !resizeCanvas()) return
+  if (!canvas || !ctx) {
+    if (!diagnosticLogged) {
+      diagnosticLogged = true
+      console.warn('[PG-DIAG][roll] draw skipped', { hasCanvas: !!canvas, hasCtx: !!ctx, logicalWidth, logicalHeight, dpr: window.devicePixelRatio, canvasWidth: canvas?.width, canvasHeight: canvas?.height })
+    }
+    return
+  }
+  if ((!logicalWidth || !logicalHeight) && !resizeCanvas()) {
+    if (!diagnosticLogged) {
+      diagnosticLogged = true
+      console.warn('[PG-DIAG][roll] zero size', { logicalWidth, logicalHeight, dpr: window.devicePixelRatio })
+    }
+    return
+  }
+  if (!diagnosticLogged) {
+    diagnosticLogged = true
+    console.log('[PG-DIAG][roll] drawing OK', { logicalWidth, logicalHeight, canvasWidth: canvas.width, canvasHeight: canvas.height, pixelRatio, dpr: window.devicePixelRatio, hasSession: !!player.session, notesCount: player.session?.notes.length })
+  }
   measurePlaybackSpan(frameProfile, 'frame.clearBackground', () => {
     ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0)
     ctx.clearRect(0, 0, logicalWidth, logicalHeight)
