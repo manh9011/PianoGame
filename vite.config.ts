@@ -56,6 +56,9 @@ export default defineConfig({
       },
     }),
   ],
+  build: {
+    target: 'safari13'
+  },
   assetsInclude: ['**/*.mid'],
   clearScreen: false,
   server: {
