@@ -166,9 +166,12 @@ const unassignedFingerRegions = computed(() => {
 
 function syncCanvasSize(canvas: HTMLCanvasElement) {
   const rect = canvas.getBoundingClientRect()
+  const parent = canvas.parentElement
   const dpr = window.devicePixelRatio || 1
-  const width = Math.max(1, Math.round(rect.width * dpr))
-  const height = Math.max(1, Math.round(rect.height * dpr))
+  const cssWidth = rect.width || parent?.clientWidth || canvas.clientWidth
+  const cssHeight = rect.height || parent?.clientHeight || canvas.clientHeight
+  const width = Math.max(1, Math.round(cssWidth * dpr))
+  const height = Math.max(1, Math.round(cssHeight * dpr))
   if (canvas.width !== width) canvas.width = width
   if (canvas.height !== height) canvas.height = height
   return { width, height }

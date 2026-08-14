@@ -8,21 +8,18 @@ import { getKeyboardLabel, getVirtualPianoNoteIdFromKey } from '../../modules/re
 import { HAND_COLORS } from '../../modules/game/handAssignment'
 import { TRACK_INVISIBLE_COLOR } from '../../modules/game/trackProperties'
 import { getKeyboardRange, isNoteInRange, type KeyboardRange } from '../../modules/render/keyboardRange'
-import { CanvasSpriteCache, createSpriteCanvas } from '../../modules/render/canvasSpriteCache'
 import { drawKeyboardHitLine, keyboardWhiteKeyTopOffset } from '../../modules/render/hitLineRenderer'
 import type { Hand, SessionNote } from '../../modules/game/playSession'
 
 const blackKeyRaisedImage = new Image()
 blackKeyRaisedImage.src = `${import.meta.env.BASE_URL}keys/black-key-raised.png`
 blackKeyRaisedImage.onload = () => {
-  invalidateKeyboardBaseLayer()
   requestDraw()
 }
 
 const blackKeyPressedImage = new Image()
 blackKeyPressedImage.src = `${import.meta.env.BASE_URL}keys/black-key-pressed.png`
 blackKeyPressedImage.onload = () => {
-  invalidateKeyboardBaseLayer()
   requestDraw()
 }
 
@@ -58,11 +55,6 @@ let lastFrameMs = 0
 let logicalWidth = 0
 let logicalHeight = 0
 let pixelRatio = 1
-let keyboardBaseCanvas: HTMLCanvasElement | null = null
-let keyboardBaseKey = ''
-let keyboardBlackLayerCanvas: HTMLCanvasElement | null = null
-let keyboardBlackLayerKey = ''
-// Removed CanvasSpriteCache to fix Safari canvas limit crash
 
 const keyboardRange = computed<KeyboardRange>(() => {
   const session = player.session
@@ -318,21 +310,23 @@ function currentKeySignatureAccidentals() {
 
 function resizeCanvas() {
   const canvas = canvasRef.value
-  if (!canvas) return
+  if (!canvas) return false
   const rect = canvas.getBoundingClientRect()
   const nextPixelRatio = window.devicePixelRatio || 1
-  const nextWidth = Math.round(rect.width * nextPixelRatio)
-  const nextHeight = Math.round(rect.height * nextPixelRatio)
-  const sizeChanged = logicalWidth !== rect.width || logicalHeight !== rect.height || pixelRatio !== nextPixelRatio
-  logicalWidth = rect.width
-  logicalHeight = rect.height
+  const parent = canvas.parentElement
+  const cssWidth = rect.width || parent?.clientWidth || canvas.clientWidth
+  const cssHeight = rect.height || parent?.clientHeight || canvas.clientHeight
+  if (!cssWidth || !cssHeight) return false
+  const nextWidth = Math.max(1, Math.round(cssWidth * nextPixelRatio))
+  const nextHeight = Math.max(1, Math.round(cssHeight * nextPixelRatio))
+  const sizeChanged = logicalWidth !== cssWidth || logicalHeight !== cssHeight || pixelRatio !== nextPixelRatio
+  logicalWidth = cssWidth
+  logicalHeight = cssHeight
   pixelRatio = nextPixelRatio
   if (canvas.width !== nextWidth) canvas.width = nextWidth
   if (canvas.height !== nextHeight) canvas.height = nextHeight
-  if (sizeChanged) {
-    invalidateKeyboardBaseLayer()
-    requestDraw()
-  }
+  if (sizeChanged) requestDraw()
+  return true
 }
 
 function roundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
@@ -427,7 +421,6 @@ function drawWhiteLabel(ctx: CanvasRenderingContext2D, rect: KeyRect, isActive =
   const strokeStyle = isActive ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,1)'
   const fillStyle = isActive ? 'rgba(0,0,0,0.92)' : 'rgba(0,0,0,0.9)'
   drawTextSprite(ctx, {
-    key: `keyboard:white:${label}:${fontSize}:${strokeStyle}:${fillStyle}`,
     text: label,
     font: `700 ${fontSize}px sans-serif`,
     lineWidth: 3,
@@ -482,6 +475,20 @@ function drawBlackKey(ctx: CanvasRenderingContext2D, rect: KeyRect, isDown = act
   const img = drawDown ? blackKeyPressedImage : blackKeyRaisedImage
   if (img && img.complete && img.naturalWidth > 0) {
     ctx.drawImage(img, bx, by, bw, bh)
+  } else {
+    const body = ctx.createLinearGradient(bx, by, bx + bw, by + bh)
+    if (drawDown) {
+      body.addColorStop(0, shadeColor('#303030', -35))
+      body.addColorStop(0.55, '#0a0a0a')
+      body.addColorStop(1, '#020202')
+    } else {
+      body.addColorStop(0, '#303030')
+      body.addColorStop(0.5, '#070707')
+      body.addColorStop(1, '#000000')
+    }
+    pathBlackKeyLip(ctx, bx, by, bw, bh)
+    ctx.fillStyle = body
+    ctx.fill()
   }
 
   ctx.shadowColor = 'transparent'
@@ -537,7 +544,6 @@ function drawBlackLabel(ctx: CanvasRenderingContext2D, rect: KeyRect, isActive =
   const strokeStyle = isActive ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0.75)'
   const fillStyle = isActive ? 'rgba(255,255,255,0.92)' : 'rgba(245,245,245,0.9)'
   drawTextSprite(ctx, {
-    key: `keyboard:black:${label}:${fontSize}:${strokeStyle}:${fillStyle}`,
     text: label,
     font: `700 ${fontSize}px sans-serif`,
     lineWidth: 2.5,
@@ -620,7 +626,6 @@ function shadeColor(hex: string, percent: number) {
 }
 
 type TextSpriteOptions = {
-  key: string
   text: string
   font: string
   lineWidth: number
@@ -647,28 +652,6 @@ function drawTextSprite(ctx: CanvasRenderingContext2D, options: TextSpriteOption
   ctx.restore()
 }
 
-function getKeyboardBaseCacheKey() {
-  const range = keyboardRange.value
-  return [
-    Math.round(logicalWidth),
-    Math.round(logicalHeight),
-    Math.round(blackKeyHeight()),
-    `${range.lowNote}-${range.highNote}`,
-    props.transparentBackground ? 'transparent' : 'opaque',
-    settings.showKeyLabels,
-    settings.keyLabelMode === 'finger-hint' ? 'finger-hint-base' : settings.keyLabelMode,
-    settings.keyLabelSize,
-    currentKeySignatureAccidentals(),
-  ].join(':')
-}
-
-function invalidateKeyboardBaseLayer() {
-  keyboardBaseCanvas = null
-  keyboardBaseKey = ''
-  keyboardBlackLayerCanvas = null
-  keyboardBlackLayerKey = ''
-}
-
 function drawBlackKeyLayer(ctx: CanvasRenderingContext2D) {
   for (const k of blackKeys) {
     const { x, y, width, height } = keyRect(k)
@@ -686,39 +669,12 @@ function drawBlackKeyLayer(ctx: CanvasRenderingContext2D) {
   for (const key of blackKeys) drawBlackKey(ctx, keyRect(key), false, isKeyDisabled(key.noteId))
 }
 
-function buildKeyboardBaseLayer(cacheKey: string) {
-  const canvas = createSpriteCanvas(logicalWidth, logicalHeight)
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return null
-
+function drawKeyboardBaseLayer(ctx: CanvasRenderingContext2D) {
   if (!props.transparentBackground) {
     ctx.fillStyle = '#000000'
     ctx.fillRect(0, 0, logicalWidth, logicalHeight)
   }
   for (const key of whiteKeys) drawWhiteKey(ctx, keyRect(key), false, isKeyDisabled(key.noteId))
-  drawBlackKeyLayer(ctx)
-  keyboardBaseCanvas = canvas
-  keyboardBaseKey = cacheKey
-  return canvas
-}
-
-function ensureKeyboardBaseLayer() {
-  const cacheKey = getKeyboardBaseCacheKey()
-  if (keyboardBaseCanvas && keyboardBaseKey === cacheKey) return keyboardBaseCanvas
-  return buildKeyboardBaseLayer(cacheKey)
-}
-
-function ensureKeyboardBlackLayer() {
-  const cacheKey = getKeyboardBaseCacheKey()
-  if (keyboardBlackLayerCanvas && keyboardBlackLayerKey === cacheKey) return keyboardBlackLayerCanvas
-  const canvas = createSpriteCanvas(logicalWidth, logicalHeight)
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return null
-  ctx.clearRect(0, 0, logicalWidth, logicalHeight)
-  drawBlackKeyLayer(ctx)
-  keyboardBlackLayerCanvas = canvas
-  keyboardBlackLayerKey = cacheKey
-  return canvas
 }
 
 function drawHitLine(ctx: CanvasRenderingContext2D) {
@@ -760,17 +716,18 @@ function draw() {
   const canvas = canvasRef.value
   const ctx = canvas?.getContext('2d')
   if (!canvas || !ctx) return
-  if (!logicalWidth || !logicalHeight) resizeCanvas()
+  if ((!logicalWidth || !logicalHeight) && !resizeCanvas()) {
+    dirty = true
+    requestDraw()
+    return
+  }
   const nowMs = performance.now()
   updatePressFlashes(nowMs)
   animatingPressFlash = false
 
   ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0)
   ctx.clearRect(0, 0, logicalWidth, logicalHeight)
-  const baseLayer = ensureKeyboardBaseLayer()
-  if (baseLayer) {
-    ctx.drawImage(baseLayer, 0, 0, logicalWidth, logicalHeight)
-  }
+  drawKeyboardBaseLayer(ctx)
 
   const activeWhiteKeys = whiteKeys.filter(key => !isKeyDisabled(key.noteId) && active(key.noteId))
   for (const key of activeWhiteKeys) {
@@ -780,26 +737,13 @@ function draw() {
     drawWhiteKey(ctx, keyRect(key), !release, false, flash)
   }
 
-  if (activeWhiteKeys.length > 0) {
-    // Active white keys are drawn above the cached base, so restore the cached hit line and black-key layer on top.
-    const blackLayer = ensureKeyboardBlackLayer()
-    if (blackLayer) ctx.drawImage(blackLayer, 0, 0, logicalWidth, logicalHeight)
-    for (const key of blackKeys) {
-      const isActive = active(key.noteId)
-      if (!isActive || isKeyDisabled(key.noteId)) continue
+  drawBlackKeyLayer(ctx)
+  for (const key of blackKeys) {
+    if (!isKeyDisabled(key.noteId) && active(key.noteId)) {
       const release = forcingRelease(key.noteId, nowMs)
       const flash = release ? 0 : pressFlashStrength(key.noteId, nowMs)
       if (release || flash > 0) animatingPressFlash = true
       drawBlackKey(ctx, keyRect(key), !release, false, flash)
-    }
-  } else {
-    for (const key of blackKeys) {
-      if (!isKeyDisabled(key.noteId) && active(key.noteId)) {
-        const release = forcingRelease(key.noteId, nowMs)
-        const flash = release ? 0 : pressFlashStrength(key.noteId, nowMs)
-        if (release || flash > 0) animatingPressFlash = true
-        drawBlackKey(ctx, keyRect(key), !release, false, flash)
-      }
     }
   }
 
@@ -851,7 +795,6 @@ watch(() => {
   const range = keyboardRange.value
   return `${range.lowNote}:${range.highNote}`
 }, () => {
-  invalidateKeyboardBaseLayer()
   requestDraw()
 })
 watch(() => [
@@ -862,7 +805,6 @@ watch(() => [
   props.transparentBackground,
   props.previewActiveFromTimeline,
 ], () => {
-  invalidateKeyboardBaseLayer()
   requestDraw()
 })
 
@@ -1029,7 +971,6 @@ onBeforeUnmount(() => {
     cancelAnimationFrame(rafId)
     rafId = null
   }
-  invalidateKeyboardBaseLayer()
 })
 </script>
 

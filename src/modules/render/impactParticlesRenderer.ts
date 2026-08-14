@@ -124,13 +124,6 @@ function withAlpha(input: string, alpha: number) {
   return input
 }
 
-function defaultCanvasFactory(width: number, height: number) {
-  const canvas = document.createElement('canvas')
-  canvas.width = width
-  canvas.height = height
-  return canvas
-}
-
 function offscreenCanvasFactory(width: number, height: number) {
   return new OffscreenCanvas(width, height)
 }
@@ -424,10 +417,10 @@ export function drawImpactParticlesStatelessWithSprites(
   drawImpactParticlesStateless(ctx, notes, currentUs, height, yOffset, getOffscreenImpactSprites() ?? undefined, reduceMotion)
 }
 
-export function createImpactParticleRenderer(createCanvas: CanvasFactory = defaultCanvasFactory, random: () => number = Math.random) {
+export function createImpactParticleRenderer(createCanvas: CanvasFactory | null = null, random: () => number = Math.random) {
   const particles: ImpactParticle[] = []
   const floatingParticles: FloatingImpactParticle[] = []
-  const { raySprites, rayGlowSprites, floatSprites } = createImpactSprites(createCanvas)
+  const sprites = createCanvas ? createImpactSprites(createCanvas) : null
 
   function clear() {
     particles.length = 0
@@ -517,9 +510,14 @@ export function createImpactParticleRenderer(createCanvas: CanvasFactory = defau
       const ageRatio = 1 - lifeRatio
       const alpha = Math.sin(Math.min(1, ageRatio) * Math.PI) * 0.72
       const size = particle.radius * (0.7 + ageRatio * 0.55)
-      const sprite = floatSprites[particle.colorIndex]
-      ctx.globalAlpha = alpha
-      ctx.drawImage(sprite, particle.x - size, particle.y - size, size * 2, size * 2)
+      const variant = IMPACT_RAY_VARIANTS[particle.colorIndex]
+      if (sprites) {
+        const sprite = sprites.floatSprites[particle.colorIndex]
+        ctx.globalAlpha = alpha
+        ctx.drawImage(sprite, particle.x - size, particle.y - size, size * 2, size * 2)
+      } else {
+        drawFloatingImpactParticle(ctx, particle.x, particle.y, size, variant, alpha)
+      }
     }
 
     for (const particle of particles) {
@@ -528,20 +526,25 @@ export function createImpactParticleRenderer(createCanvas: CanvasFactory = defau
       const grow = Math.min(1, ageRatio / 0.32)
       const fade = lifeRatio < 0.42 ? lifeRatio / 0.42 : 1
       const alpha = Math.max(0, Math.min(1, fade))
-      const sprite = raySprites[particle.colorIndex]
-      const glowSprite = rayGlowSprites[particle.colorIndex]
       const height = particle.startLength + (particle.endLength - particle.startLength) * grow
       const coreWidth = particle.thickness * (10 + grow * 8)
       const glowWidth = coreWidth * particle.glowWidth * (1.05 + grow * 0.35)
 
-      ctx.save()
-      ctx.translate(particle.x, particle.y)
-      ctx.rotate(particle.angle + Math.PI / 2)
-      ctx.globalAlpha = alpha * particle.glowAlpha
-      ctx.drawImage(glowSprite, -glowWidth / 2, -height, glowWidth, height)
-      ctx.globalAlpha = alpha
-      ctx.drawImage(sprite, -coreWidth / 2, -height, coreWidth, height)
-      ctx.restore()
+      const variant = IMPACT_RAY_VARIANTS[particle.colorIndex]
+      if (sprites) {
+        const sprite = sprites.raySprites[particle.colorIndex]
+        const glowSprite = sprites.rayGlowSprites[particle.colorIndex]
+        ctx.save()
+        ctx.translate(particle.x, particle.y)
+        ctx.rotate(particle.angle + Math.PI / 2)
+        ctx.globalAlpha = alpha * particle.glowAlpha
+        ctx.drawImage(glowSprite, -glowWidth / 2, -height, glowWidth, height)
+        ctx.globalAlpha = alpha
+        ctx.drawImage(sprite, -coreWidth / 2, -height, coreWidth, height)
+        ctx.restore()
+      } else {
+        drawImpactRay(ctx, particle.x, particle.y, height, particle.angle + Math.PI / 2, variant, coreWidth, glowWidth, alpha)
+      }
     }
 
     ctx.restore()

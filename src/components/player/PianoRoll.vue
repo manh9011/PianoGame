@@ -109,16 +109,21 @@ function roundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: num
 }
 function resizeCanvas() {
   const canvas = canvasRef.value
-  if (!canvas) return
+  if (!canvas) return false
   const rect = canvas.getBoundingClientRect()
   const nextPixelRatio = window.devicePixelRatio || 1
-  const nextWidth = Math.round(rect.width * nextPixelRatio)
-  const nextHeight = Math.round(rect.height * nextPixelRatio)
-  logicalWidth = rect.width
-  logicalHeight = rect.height
+  const parent = canvas.parentElement
+  const cssWidth = rect.width || parent?.clientWidth || canvas.clientWidth
+  const cssHeight = rect.height || parent?.clientHeight || canvas.clientHeight
+  if (!cssWidth || !cssHeight) return false
+  const nextWidth = Math.max(1, Math.round(cssWidth * nextPixelRatio))
+  const nextHeight = Math.max(1, Math.round(cssHeight * nextPixelRatio))
+  logicalWidth = cssWidth
+  logicalHeight = cssHeight
   pixelRatio = nextPixelRatio
   if (canvas.width !== nextWidth) canvas.width = nextWidth
   if (canvas.height !== nextHeight) canvas.height = nextHeight
+  return true
 }
 function noteKey(note: SessionNote) {
   return `${note.trackId}:${note.noteId}:${note.start}:${note.end}`
@@ -598,7 +603,7 @@ function draw(dt: number, nowMs: number, frameProfile: PlaybackProfilerContext |
   const canvas = canvasRef.value
   const ctx = canvas?.getContext('2d')
   if (!canvas || !ctx) return
-  if (!logicalWidth || !logicalHeight) resizeCanvas()
+  if ((!logicalWidth || !logicalHeight) && !resizeCanvas()) return
   measurePlaybackSpan(frameProfile, 'frame.clearBackground', () => {
     ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0)
     ctx.clearRect(0, 0, logicalWidth, logicalHeight)
