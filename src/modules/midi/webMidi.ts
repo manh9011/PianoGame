@@ -1,13 +1,111 @@
+import { invoke } from '@tauri-apps/api/core'
+import { listen } from '@tauri-apps/api/event'
+
 export interface MidiDeviceInfo { id: string; name: string }
 
 export type MidiAccess = { inputs: Map<string, MIDIInput>; outputs: Map<string, MIDIOutput> }
 export type MIDIInput = { id: string; name?: string; onmidimessage: ((event: { data: Uint8Array }) => void) | null }
 export type MIDIOutput = { id: string; name?: string; send: (data: number[]) => void }
 
-export function isWebMidiSupported() { return 'requestMIDIAccess' in navigator }
+export function isWebMidiSupported() { 
+  return 'requestMIDIAccess' in navigator || '__TAURI_INTERNALS__' in window 
+}
 
 export async function requestMidiAccess(options?: { sysex?: boolean }): Promise<MidiAccess | null> {
   const midiNavigator = navigator as unknown as { requestMIDIAccess?: (options?: { sysex?: boolean }) => Promise<MidiAccess> }
+
+  if (midiNavigator.requestMIDIAccess) {
+    try {
+      return await midiNavigator.requestMIDIAccess(options)
+    } catch (error) {
+      console.warn('Không thể truy cập Web MIDI API (bị từ chối quyền hoặc không hỗ trợ):', error)
+      // Fall through to Tauri check below in case it's a Safari 13 partial implementation that fails
+    }
+  }
+
+  // Tauri fallback for older WebKit (like Safari 13 on macOS Catalina) where the injected polyfill failed
+  if ('__TAURI_INTERNALS__' in window) {
+    try {
+      const inputs = new Map<string, MIDIInput>()
+      const outputs = new Map<string, MIDIOutput>()
+      const access: MidiAccess = { inputs, outputs }
+
+      let resolveInit: (val: any) => void
+      let rejectInit: (err: any) => void
+      const initPromise = new Promise((resolve, reject) => {
+        resolveInit = resolve
+        rejectInit = reject
+      })
+
+      // Listen for MIDI messages
+      listen('plugin:midi:midi-message', (event: any) => {
+        const [id, _timestamp, data] = event.payload
+        const input = inputs.get(id)
+        if (input && input.onmidimessage) {
+          input.onmidimessage({ data: new Uint8Array(data) })
+        }
+      })
+
+      // Listen for State changes
+      listen('plugin:midi:state-change', (event: any) => {
+        const payload = event.payload
+        const newInputs = payload.inputs || []
+        const newOutputs = payload.outputs || []
+
+        // Update inputs
+        const currentInputIds = new Set(inputs.keys())
+        newInputs.forEach(([id, name]: [string, string]) => {
+          if (!inputs.has(id)) {
+            let _onmidimessage: any = null
+            const inputObj: MIDIInput = {
+              id,
+              name,
+              get onmidimessage() { return _onmidimessage },
+              set onmidimessage(cb) {
+                _onmidimessage = cb
+                if (cb) {
+                  invoke('plugin:midi|open_input', { id }).catch(console.error)
+                } else {
+                  invoke('plugin:midi|close_input', { id }).catch(console.error)
+                }
+              }
+            }
+            inputs.set(id, inputObj)
+          }
+          currentInputIds.delete(id)
+        })
+        currentInputIds.forEach(id => inputs.delete(id))
+
+        // Update outputs
+        const currentOutputIds = new Set(outputs.keys())
+        newOutputs.forEach(([id, name]: [string, string]) => {
+          if (!outputs.has(id)) {
+            const outputObj: MIDIOutput = {
+              id,
+              name,
+              send: (data: number[]) => {
+                invoke('plugin:midi|open_output', { id }).then(() => {
+                  invoke('plugin:midi|output_send', { id, msg: data, timestamp: null }).catch(console.error)
+                }).catch(console.error)
+              }
+            }
+            outputs.set(id, outputObj)
+          }
+          currentOutputIds.delete(id)
+        })
+        currentOutputIds.forEach(id => outputs.delete(id))
+
+        resolveInit(access)
+      })
+
+      setTimeout(() => rejectInit(new Error('Tauri MIDI init timeout')), 5000)
+
+      await initPromise
+      return access
+    } catch (e) {
+      console.warn('Tauri MIDI fallback error:', e)
+    }
+  }
 
   const notifyUnsupported = () => {
     import('../../stores/toastStore').then(({ useToastStore }) => {
@@ -15,18 +113,8 @@ export async function requestMidiAccess(options?: { sysex?: boolean }): Promise<
     }).catch(() => { })
   }
 
-  if (!midiNavigator.requestMIDIAccess) {
-    notifyUnsupported()
-    return null
-  }
-
-  try {
-    return await midiNavigator.requestMIDIAccess(options)
-  } catch (error) {
-    console.warn('Không thể truy cập Web MIDI API (bị từ chối quyền hoặc không hỗ trợ):', error)
-    notifyUnsupported()
-    return null
-  }
+  notifyUnsupported()
+  return null
 }
 
 export function listInputs(access: MidiAccess | null): MidiDeviceInfo[] { return access ? [...access.inputs.values()].map(d => ({ id: d.id, name: d.name || d.id })) : [] }
