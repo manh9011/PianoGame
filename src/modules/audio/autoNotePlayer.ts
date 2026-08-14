@@ -60,6 +60,10 @@ export class AutoNotePlayer {
     if (this.usingSynth) await this.synth.start()
   }
 
+  resumeAudioContext() {
+    if (this.usingSynth) void this.synth.start()
+  }
+
   tick(session: PlaySession) {
     if (!session.setupComplete) return
     const profileEnabled = isPlaybackProfilerEnabled()

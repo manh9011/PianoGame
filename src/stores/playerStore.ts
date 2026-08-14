@@ -762,6 +762,12 @@ export const usePlayerStore = defineStore('player', {
     start() {
       if (!this.session?.setupComplete || this.interactionLocked) return
       if (this.stats && this.session.mode !== 'listen') return
+      
+      // FIX SAFARI: Attempt to unlock AudioContext immediately on user gesture
+      void this.autoPlayer.resumeAudioContext()
+      void this.inputSynth.start()
+      void this.metronome.resumeAudioContext()
+
       if (this.session.finished) {
         this.seekToUs(0)
       }
@@ -775,6 +781,12 @@ export const usePlayerStore = defineStore('player', {
       const session = this.session
       if (!session?.setupComplete || !session.modeConfig.pauseAllowed || this.interactionLocked) return
       if (this.stats && session.mode !== 'listen') return
+      
+      // FIX SAFARI: Attempt to unlock AudioContext immediately on user gesture
+      void this.autoPlayer.resumeAudioContext()
+      void this.inputSynth.start()
+      void this.metronome.resumeAudioContext()
+
       if (session.finished && !this.clock?.state.running) {
         this.seekToUs(0)
       }

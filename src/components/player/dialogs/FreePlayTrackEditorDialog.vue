@@ -360,6 +360,9 @@ function stopNoteAudition() {
 }
 
 async function auditionNote(note: FreePlayRecordedNote) {
+  // FIX SAFARI
+  void player.inputSynth.start()
+
   const track = draftTracks.value.find(track => track.id === note.trackId)
   if (!track || mutedTrackIds.value.includes(track.id)) return
   stopNoteAudition()
@@ -430,6 +433,9 @@ function stopEditorPlayback(keepPosition = true) {
 }
 
 function toggleEditorPlayback() {
+  // FIX SAFARI
+  void player.inputSynth.start()
+
   if (editorPlaying.value) stopEditorPlayback()
   else startEditorPlayback()
 }
@@ -484,6 +490,9 @@ function startPreview(trackId: number) {
 }
 
 function togglePreview(trackId: number) {
+  // FIX SAFARI
+  void player.inputSynth.start()
+
   if (previewTrackId.value === trackId) stopPreview()
   else startPreview(trackId)
 }

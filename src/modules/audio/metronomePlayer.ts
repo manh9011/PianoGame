@@ -73,6 +73,11 @@ export class MetronomePlayer {
     this.lastCurrentUs = null
   }
 
+  resumeAudioContext() {
+    const context = this.ensureContext()
+    if (context.state === 'suspended') void context.resume()
+  }
+
   private ensureTicks(beatGrid: MetronomeBeat[], doubleSpeed: boolean) {
     if (this.beatGrid === beatGrid && this.doubleSpeed === doubleSpeed) return
     this.beatGrid = beatGrid
