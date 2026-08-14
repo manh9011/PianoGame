@@ -7,8 +7,27 @@ export type MidiAccess = { inputs: Map<string, MIDIInput>; outputs: Map<string, 
 export type MIDIInput = { id: string; name?: string; onmidimessage: ((event: { data: Uint8Array }) => void) | null }
 export type MIDIOutput = { id: string; name?: string; send: (data: number[]) => void }
 
+const WEB_MIDI_UNSUPPORTED_TOAST_SEEN_KEY = 'pianogame:webMidiUnsupportedToastSeen'
+let webMidiUnsupportedToastSeen = false
+
 export function isWebMidiSupported() { 
   return 'requestMIDIAccess' in navigator || '__TAURI_INTERNALS__' in window 
+}
+
+function markWebMidiUnsupportedToastSeen() {
+  if (webMidiUnsupportedToastSeen) return true
+  try {
+    if (sessionStorage.getItem(WEB_MIDI_UNSUPPORTED_TOAST_SEEN_KEY)) {
+      webMidiUnsupportedToastSeen = true
+      return true
+    }
+    sessionStorage.setItem(WEB_MIDI_UNSUPPORTED_TOAST_SEEN_KEY, '1')
+  } catch {
+    webMidiUnsupportedToastSeen = true
+    return false
+  }
+  webMidiUnsupportedToastSeen = true
+  return false
 }
 
 export async function requestMidiAccess(options?: { sysex?: boolean }): Promise<MidiAccess | null> {
@@ -108,6 +127,7 @@ export async function requestMidiAccess(options?: { sysex?: boolean }): Promise<
   }
 
   const notifyUnsupported = () => {
+    if (markWebMidiUnsupportedToastSeen()) return
     import('../../stores/toastStore').then(({ useToastStore }) => {
       useToastStore().show('Your browser/device does not support WebMIDI (e.g., Safari/iOS). Please use Google Chrome, Edge, or the desktop application.', 'error')
     }).catch(() => { })

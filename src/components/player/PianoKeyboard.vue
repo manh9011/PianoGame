@@ -62,7 +62,7 @@ let keyboardBaseCanvas: HTMLCanvasElement | null = null
 let keyboardBaseKey = ''
 let keyboardBlackLayerCanvas: HTMLCanvasElement | null = null
 let keyboardBlackLayerKey = ''
-const keyboardLabelSprites = new CanvasSpriteCache(160)
+// Removed CanvasSpriteCache to fix Safari canvas limit crash
 
 const keyboardRange = computed<KeyboardRange>(() => {
   const session = player.session
@@ -480,7 +480,9 @@ function drawBlackKey(ctx: CanvasRenderingContext2D, rect: KeyRect, isDown = act
   ctx.shadowOffsetY = drawDown ? 1 : isDisabled ? 0.5 : 1.5
 
   const img = drawDown ? blackKeyPressedImage : blackKeyRaisedImage
-  ctx.drawImage(img, bx, by, bw, bh)
+  if (img && img.complete && img.naturalWidth > 0) {
+    ctx.drawImage(img, bx, by, bw, bh)
+  }
 
   ctx.shadowColor = 'transparent'
   ctx.shadowBlur = 0
@@ -630,37 +632,19 @@ type TextSpriteOptions = {
 }
 
 function drawTextSprite(ctx: CanvasRenderingContext2D, options: TextSpriteOptions) {
-  const padding = Math.max(4, Math.ceil(options.lineWidth) + 2)
-  const sprite = keyboardLabelSprites.getOrCreate(options.key, () => {
-    const measuringCanvas = createSpriteCanvas(1, 1)
-    const measuring = measuringCanvas.getContext('2d')
-    if (!measuring) return measuringCanvas
-    measuring.font = options.font
-    const metrics = measuring.measureText(options.text)
-    const fontSize = Number(options.font.match(/(\d+(?:\.\d+)?)px/)?.[1] ?? 16)
-    const textWidth = Math.ceil(metrics.width)
-    const textHeight = Math.ceil(
-      (metrics.actualBoundingBoxAscent || fontSize * 0.8) +
-      (metrics.actualBoundingBoxDescent || fontSize * 0.25)
-    )
-    const canvas = createSpriteCanvas(textWidth + padding * 2, textHeight + padding * 2)
-    const spriteCtx = canvas.getContext('2d')
-    if (!spriteCtx) return canvas
-    spriteCtx.font = options.font
-    spriteCtx.textAlign = 'center'
-    spriteCtx.textBaseline = 'middle'
-    spriteCtx.lineJoin = 'round'
-    spriteCtx.miterLimit = 2
-    spriteCtx.lineWidth = options.lineWidth
-    spriteCtx.strokeStyle = options.strokeStyle
-    spriteCtx.fillStyle = options.fillStyle
-    spriteCtx.strokeText(options.text, canvas.width / 2, canvas.height / 2)
-    spriteCtx.fillText(options.text, canvas.width / 2, canvas.height / 2)
-    return canvas
-  })
-
-  const y = options.baseline === 'alphabetic' ? options.y - sprite.height / 2 : options.y
-  ctx.drawImage(sprite, options.x - sprite.width / 2, y - sprite.height / 2)
+  ctx.save()
+  ctx.font = options.font
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.lineJoin = 'round'
+  ctx.miterLimit = 2
+  ctx.lineWidth = options.lineWidth
+  ctx.strokeStyle = options.strokeStyle
+  ctx.fillStyle = options.fillStyle
+  const y = options.baseline === 'alphabetic' ? options.y : options.y
+  ctx.strokeText(options.text, options.x, y)
+  ctx.fillText(options.text, options.x, y)
+  ctx.restore()
 }
 
 function getKeyboardBaseCacheKey() {
@@ -1046,7 +1030,6 @@ onBeforeUnmount(() => {
     rafId = null
   }
   invalidateKeyboardBaseLayer()
-  keyboardLabelSprites.clear()
 })
 </script>
 

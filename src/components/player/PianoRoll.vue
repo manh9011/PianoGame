@@ -9,7 +9,6 @@ import { createPianoKeys, WHITE_KEY_COUNT } from '../../modules/render/pianoGeom
 import { formatKeySignature, getNoteLabel, notePitchClass } from '../../modules/render/pianoLabels'
 import { FLAT_GRAY, MISSED_NOTE_COLOR, TRACK_INVISIBLE_COLOR } from '../../modules/game/trackProperties'
 import { HAND_COLORS, HAND_HIT_COLORS } from '../../modules/game/handAssignment'
-import { CanvasSpriteCache, createSpriteCanvas } from '../../modules/render/canvasSpriteCache'
 import { drawRollHitLine, ROLL_HIT_LINE_HEIGHT as HIT_LINE_HEIGHT } from '../../modules/render/hitLineRenderer'
 import { createImpactParticleRenderer, getImpactRepeatThrottleMs, IMPACT_REWIND_THRESHOLD_US } from '../../modules/render/impactParticlesRenderer'
 import { addActivePlaybackCounter, addPlaybackCounter, beginRenderFrame, endRenderFrame, measurePlaybackSpan, setPlaybackGauge, type PlaybackProfilerContext } from '../../modules/perf/playbackProfiler'
@@ -41,8 +40,7 @@ let rafId: number | null = null
 let logicalWidth = 0
 let logicalHeight = 0
 let pixelRatio = 1
-const noteBodySprites = new CanvasSpriteCache(220)
-const noteLabelSprites = new CanvasSpriteCache(180)
+// Removed CanvasSpriteCache to avoid Safari max canvas context limit crash
 let fpsFrames = 0
 let fpsLastSampleMs = performance.now()
 let lastFps = 0
@@ -132,8 +130,6 @@ function clearEffects() {
 function syncEffectSession(session: NonNullable<typeof player.session>) {
   if (session !== lastSessionRef) {
     clearEffects()
-    noteBodySprites.clear()
-    noteLabelSprites.clear()
     lastSessionRef = session
   } else if (session.currentUs < lastCurrentUs - IMPACT_REWIND_THRESHOLD_US) {
     clearEffects()
@@ -496,9 +492,6 @@ function drawLoopRegion(ctx: CanvasRenderingContext2D, session: NonNullable<type
   ctx.restore()
 }
 
-const NOTE_BODY_PAD_X = 8
-const NOTE_BODY_PAD_Y = 10
-
 function drawNoteBody(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, fillColor: string) {
   ctx.save()
   ctx.shadowColor = 'rgba(0,0,0,0.36)'
@@ -528,25 +521,14 @@ function drawNoteBody(ctx: CanvasRenderingContext2D, x: number, y: number, w: nu
   ctx.fill()
 }
 
-function noteBodySpriteKey(width: number, height: number, fillColor: string) {
-  return `note-body:v1:${Math.round(width)}:${Math.round(height)}:${fillColor}`
-}
-
 function drawNote(ctx: CanvasRenderingContext2D, note: LaidOutNote<SessionNote>) {
   const x = note.x
   const y = note.y - note.height
   const w = Math.max(1, Math.round(note.width))
   const h = Math.max(1, Math.round(note.height))
   const fillColor = color(note)
-  const sprite = noteBodySprites.getOrCreate(noteBodySpriteKey(w, h, fillColor), () => {
-    const canvas = createSpriteCanvas(w + NOTE_BODY_PAD_X * 2, h + NOTE_BODY_PAD_Y * 2)
-    const spriteCtx = canvas.getContext('2d')
-    if (!spriteCtx) return canvas
-    drawNoteBody(spriteCtx, NOTE_BODY_PAD_X, NOTE_BODY_PAD_Y, w, h, fillColor)
-    return canvas
-  })
 
-  ctx.drawImage(sprite, x - NOTE_BODY_PAD_X, y - NOTE_BODY_PAD_Y)
+  drawNoteBody(ctx, x, y, w, h, fillColor)
   if (settings.showFingerHints && note.finger && settings.noteLabelMode !== 'finger-hint') drawFingerBadge(ctx, note, true)
 }
 
@@ -589,70 +571,27 @@ function drawFingerBadge(ctx: CanvasRenderingContext2D, note: LaidOutNote<Sessio
   ctx.restore()
 }
 
-type NoteLabelSpriteOptions = {
-  text: string
-  fontSize: number
-  fillStyle: string
-  strokeStyle: string
-  lineWidth: number
-}
-
-function getNoteLabelSprite(options: NoteLabelSpriteOptions) {
-  const key = `note-label:v1:${options.text}:${options.fontSize}:${options.fillStyle}:${options.strokeStyle}:${options.lineWidth}`
-  return noteLabelSprites.getOrCreate(key, () => {
-    const measuringCanvas = createSpriteCanvas(1, 1)
-    const measuring = measuringCanvas.getContext('2d')
-    if (!measuring) return measuringCanvas
-    const font = `600 ${options.fontSize}px sans-serif`
-    measuring.font = font
-    const metrics = measuring.measureText(options.text)
-    const padding = Math.max(4, Math.ceil(options.lineWidth) + 2)
-    const textWidth = Math.ceil(metrics.width)
-    const textHeight = Math.ceil(
-      (metrics.actualBoundingBoxAscent || options.fontSize * 0.8) +
-      (metrics.actualBoundingBoxDescent || options.fontSize * 0.25)
-    )
-    const canvas = createSpriteCanvas(textWidth + padding * 2, textHeight + padding * 2)
-    const spriteCtx = canvas.getContext('2d')
-    if (!spriteCtx) return canvas
-    spriteCtx.font = font
-    spriteCtx.textAlign = 'center'
-    spriteCtx.textBaseline = 'middle'
-    spriteCtx.lineJoin = 'round'
-    spriteCtx.miterLimit = 2
-    spriteCtx.lineWidth = options.lineWidth
-    spriteCtx.strokeStyle = options.strokeStyle
-    spriteCtx.fillStyle = options.fillStyle
-    spriteCtx.strokeText(options.text, canvas.width / 2, canvas.height / 2)
-    spriteCtx.fillText(options.text, canvas.width / 2, canvas.height / 2)
-    return canvas
-  })
-}
-
 function drawNoteLabel(ctx: CanvasRenderingContext2D, note: LaidOutNote<SessionNote>, text: string) {
   const baseFontSize = 16
   const fontSize = baseFontSize + settings.noteLabelSize * 2
-  const sprite = getNoteLabelSprite({
-    text,
-    fontSize,
-    fillStyle: '#ffffff',
-    strokeStyle: 'rgba(0,0,0,0.82)',
-    lineWidth: 3,
-  })
-  ctx.drawImage(sprite, note.x + note.width / 2 - sprite.width / 2, note.initialY - 6 - sprite.height / 2)
+  ctx.save()
+  ctx.font = `600 ${fontSize}px sans-serif`
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.lineJoin = 'round'
+  ctx.miterLimit = 2
+  ctx.lineWidth = 3
+  ctx.strokeStyle = 'rgba(0,0,0,0.82)'
+  ctx.fillStyle = '#ffffff'
+  const x = note.x + note.width / 2
+  const y = note.initialY - 6
+  ctx.strokeText(text, x, y)
+  ctx.fillText(text, x, y)
+  ctx.restore()
 }
 
 function publishSpriteCacheStats(profile: PlaybackProfilerContext | null) {
-  const body = noteBodySprites.snapshotStats()
-  const label = noteLabelSprites.snapshotStats()
-  setPlaybackGauge(profile, 'noteBodyCacheHits', body.hits)
-  setPlaybackGauge(profile, 'noteBodyCacheMisses', body.misses)
-  setPlaybackGauge(profile, 'noteBodyCacheEvictions', body.evictions)
-  setPlaybackGauge(profile, 'noteBodyCacheSize', body.size)
-  setPlaybackGauge(profile, 'noteLabelCacheHits', label.hits)
-  setPlaybackGauge(profile, 'noteLabelCacheMisses', label.misses)
-  setPlaybackGauge(profile, 'noteLabelCacheEvictions', label.evictions)
-  setPlaybackGauge(profile, 'noteLabelCacheSize', label.size)
+  void profile
 }
 
 function draw(dt: number, nowMs: number, frameProfile: PlaybackProfilerContext | null) {
@@ -1018,8 +957,6 @@ onBeforeUnmount(() => {
   if (rafId !== null) cancelAnimationFrame(rafId)
   resizeObserver?.disconnect()
   clearEffects()
-  noteBodySprites.clear()
-  noteLabelSprites.clear()
 
   const canvas = canvasRef.value
   if (canvas) {
