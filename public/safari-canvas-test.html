@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Safari Canvas Test</title>
+<style>
+  body { margin: 0; background: #111; color: #fff; font: 14px/1.4 system-ui, sans-serif; }
+  h2 { margin: 8px 0 4px; font-size: 15px; font-weight: 600; }
+  .box { margin: 8px; }
+  .wrap { height: 200px; overflow: hidden; background: #222; position: relative; }
+  canvas { display: block; width: 100%; height: 100%; }
+  .c1 { background: #330000; }
+  .c2 { background: #003300; }
+  .c3 { background: #000033; }
+  .layer-test { transform: translateZ(0); }
+  #status { margin: 8px; padding: 8px; background: #222; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+  <div class="box">
+    <h2>1. Canvas 2D trần (mong đợi: ĐỎ)</h2>
+    <div class="wrap"><canvas id="c1" class="c1"></canvas></div>
+  </div>
+  <div class="box">
+    <h2>2. Canvas 2D + overflow:hidden + translateZ (mong đợi: XANH LÁ)</h2>
+    <div class="wrap layer-test"><canvas id="c2" class="c2"></canvas></div>
+  </div>
+  <div class="box">
+    <h2>3. WebGL (mong đợi: XANH DƯƠNG)</h2>
+    <div class="wrap"><canvas id="c3" class="c3"></canvas></div>
+  </div>
+  <div id="status">status: initializing…</div>
+
+<script>
+const status = document.getElementById('status')
+const lines = []
+function log(msg) { lines.push(msg); status.textContent = lines.join('\n') }
+
+log('dpr: ' + (window.devicePixelRatio || 1))
+log('inner: ' + window.innerWidth + 'x' + window.innerHeight)
+log('zoom-ish visualViewport.scale: ' + (window.visualViewport ? window.visualViewport.scale : 'n/a'))
+
+// 1. plain 2D
+try {
+  const c = document.getElementById('c1')
+  c.width = Math.max(1, Math.round(c.getBoundingClientRect().width * (window.devicePixelRatio || 1)))
+  c.height = Math.max(1, Math.round(c.getBoundingClientRect().height * (window.devicePixelRatio || 1)))
+  const ctx = c.getContext('2d')
+  if (!ctx) throw new Error('ctx null')
+  ctx.fillStyle = '#ff0000'
+  ctx.fillRect(0, 0, c.width, c.height)
+  ctx.fillStyle = '#ffffff'
+  ctx.font = '20px sans-serif'
+  ctx.fillText('RED OK', 20, 40)
+  log('c1: 2d ctx ok, ' + c.width + 'x' + c.height)
+} catch (e) { log('c1 ERROR: ' + e.message) }
+
+// 2. 2D inside app-like wrapper
+try {
+  const c = document.getElementById('c2')
+  c.width = Math.max(1, Math.round(c.getBoundingClientRect().width * (window.devicePixelRatio || 1)))
+  c.height = Math.max(1, Math.round(c.getBoundingClientRect().height * (window.devicePixelRatio || 1)))
+  const ctx = c.getContext('2d')
+  if (!ctx) throw new Error('ctx null')
+  ctx.fillStyle = '#00aa00'
+  ctx.fillRect(0, 0, c.width, c.height)
+  ctx.fillStyle = '#ffffff'
+  ctx.font = '20px sans-serif'
+  ctx.fillText('GREEN OK', 20, 40)
+  log('c2: 2d ctx ok, ' + c.width + 'x' + c.height)
+} catch (e) { log('c2 ERROR: ' + e.message) }
+
+// 3. WebGL
+try {
+  const c = document.getElementById('c3')
+  c.width = Math.max(1, Math.round(c.getBoundingClientRect().width * (window.devicePixelRatio || 1)))
+  c.height = Math.max(1, Math.round(c.getBoundingClientRect().height * (window.devicePixelRatio || 1)))
+  const gl = c.getContext('webgl') || c.getContext('experimental-webgl')
+  if (!gl) throw new Error('webgl ctx null')
+  gl.viewport(0, 0, c.width, c.height)
+  gl.clearColor(0, 0.3, 1, 1)
+  gl.clear(gl.COLOR_BUFFER_BIT)
+  log('c3: webgl ctx ok, ' + c.width + 'x' + c.height + ', renderer: ' + gl.getParameter(gl.RENDERER))
+} catch (e) { log('c3 ERROR: ' + e.message) }
+
+log('done')
+</script>
+</body>
+</html>
