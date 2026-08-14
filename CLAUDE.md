@@ -383,6 +383,7 @@ freePlayStore ←── orchestrate ──→ freePlayMidiImport, editor
 
 ## UI & Localization
 
+- CSS cần tương thích ngược với Safari 15 trở lên.
 - Toàn bộ text hiển thị trên giao diện phải sử dụng hệ thống i18n.
 - Không được hard-code text trong component, template hoặc script.
 - Khi thêm text mới, phải bổ sung key vào 19 file locale trong `src/i18n/locales/`.

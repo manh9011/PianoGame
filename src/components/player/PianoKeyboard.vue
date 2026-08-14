@@ -329,6 +329,11 @@ function resizeCanvas() {
   return true
 }
 
+function handleResize() {
+  resizeCanvas()
+  requestDraw()
+}
+
 function roundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   const radius = Math.max(0, Math.min(r, w / 2, h / 2))
   ctx.beginPath()
@@ -944,11 +949,12 @@ function onVisibilityChange() {
 onMounted(() => {
   resizeCanvas()
   if (canvasRef.value) {
-    resizeObserver = new ResizeObserver(() => {
-      resizeCanvas()
-      requestDraw()
-    })
-    resizeObserver.observe(canvasRef.value)
+    if (typeof ResizeObserver !== 'undefined') {
+      resizeObserver = new ResizeObserver(handleResize)
+      resizeObserver.observe(canvasRef.value)
+    } else {
+      window.addEventListener('resize', handleResize)
+    }
   }
   window.addEventListener('blur', releaseAllInput)
   window.addEventListener('keydown', onComputerKeyDown)
@@ -963,6 +969,7 @@ onBeforeUnmount(() => {
   window.removeEventListener('keydown', onComputerKeyDown)
   window.removeEventListener('keyup', onComputerKeyUp)
   document.removeEventListener('visibilitychange', onVisibilityChange)
+  window.removeEventListener('resize', handleResize)
   if (resizeObserver) {
     resizeObserver.disconnect()
     resizeObserver = null

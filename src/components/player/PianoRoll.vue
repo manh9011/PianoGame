@@ -125,6 +125,9 @@ function resizeCanvas() {
   if (canvas.height !== nextHeight) canvas.height = nextHeight
   return true
 }
+function handleResize() {
+  resizeCanvas()
+}
 function noteKey(note: SessionNote) {
   return `${note.trackId}:${note.noteId}:${note.start}:${note.end}`
 }
@@ -706,6 +709,8 @@ function drawFrame() {
     if (rawDt > 33.3) addPlaybackCounter(frameProfile, 'slowFrames33')
     if (rawDt > 50) addPlaybackCounter(frameProfile, 'slowFrames50')
     draw(dt, now, frameProfile)
+  } catch (error) {
+    console.error('[PianoRoll] render frame failed:', error)
   } finally {
     endRenderFrame(frameProfile)
   }
@@ -943,8 +948,12 @@ onMounted(() => {
   resizeCanvas()
   const canvas = canvasRef.value
   if (canvas) {
-    resizeObserver = new ResizeObserver(() => resizeCanvas())
-    resizeObserver.observe(canvas)
+    if (typeof ResizeObserver !== 'undefined') {
+      resizeObserver = new ResizeObserver(handleResize)
+      resizeObserver.observe(canvas)
+    } else {
+      window.addEventListener('resize', handleResize)
+    }
 
     canvas.addEventListener('touchstart', handleTouchStart, { passive: true })
     canvas.addEventListener('touchmove', handleTouchMove, { passive: false })
@@ -961,6 +970,7 @@ onBeforeUnmount(() => {
   if (isTouchDragging || draggingLoopEdge) player.unblockPlaybackOutput(true)
   if (rafId !== null) cancelAnimationFrame(rafId)
   resizeObserver?.disconnect()
+  window.removeEventListener('resize', handleResize)
   clearEffects()
 
   const canvas = canvasRef.value

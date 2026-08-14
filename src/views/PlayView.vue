@@ -639,8 +639,12 @@ onMounted(async () => {
   await nextTick()
   updateKeyboardHeight()
   if (playLayoutRef.value) {
-    resizeObserver = new ResizeObserver(updateKeyboardHeight)
-    resizeObserver.observe(playLayoutRef.value)
+    if (typeof ResizeObserver !== 'undefined') {
+      resizeObserver = new ResizeObserver(updateKeyboardHeight)
+      resizeObserver.observe(playLayoutRef.value)
+    } else {
+      window.addEventListener('resize', updateKeyboardHeight)
+    }
   }
 })
 
@@ -648,6 +652,7 @@ onBeforeUnmount(() => {
   bindInput(midiAccess, '', () => {})
   document.removeEventListener('fullscreenchange', updateFullscreenState)
   window.removeEventListener('resize', updateFullscreenState)
+  window.removeEventListener('resize', updateKeyboardHeight)
   if (resizeObserver) {
     resizeObserver.disconnect()
     resizeObserver = null
