@@ -444,10 +444,8 @@ function handleDrop(event: DragEvent, targetTrackId: number) {
   display: flex;
   flex-direction: column;
   border-radius: 4px;
-  background: var(--track-color);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(0, 0, 0, 0.15) 100%), var(--track-color);
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--track-color) 86%, #ffffff 3%), color-mix(in srgb, var(--track-color) 70%, #000000 18%));
+  background-color: var(--track-color);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(0, 0, 0, 0.15) 100%);
   box-shadow:
     0 2px 0 rgba(255, 255, 255, 0.18) inset,
     0 -1px 0 rgba(0, 0, 0, 0.26) inset,
