@@ -34,6 +34,9 @@ if (typeof PIXI === 'undefined') {
   throw new Error('PIXI not defined')
 }
 
+var COLORS = [0x3b82f6, 0x22c55e, 0xfacc15, 0xa855f7, 0xef4444]
+var fallSpeed = 0.25 // px per ms
+
 try {
   const app = new PIXI.Application({
     width: window.innerWidth,
@@ -96,9 +99,6 @@ try {
   // falling notes
   const notes = new PIXI.Container()
   stage.addChild(notes)
-
-  const COLORS = [0x3b82f6, 0x22c55e, 0xfacc15, 0xa855f7, 0xef4444]
-  const fallSpeed = 0.25 // px per ms
 
   function spawn() {
     const col = Math.floor(Math.random() * 7)
