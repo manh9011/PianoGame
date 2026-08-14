@@ -307,6 +307,13 @@ a {
   background: transparent;
 }
 
+/* Force own compositing layer: Safari 15 can stop presenting canvas bitmaps otherwise (black canvas) */
+.roll,
+.keyboard-canvas,
+.progress-canvas {
+  transform: translateZ(0);
+}
+
 .stat {
   display: inline-grid;
   gap: 0.1rem;
