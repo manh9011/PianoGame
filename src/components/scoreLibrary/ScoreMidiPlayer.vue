@@ -53,6 +53,10 @@ function stopPlayback() {
 }
 
 async function parseAndPlay() {
+  // FIX: Capture user gesture on Safari BEFORE ANY AWAIT to unlock AudioContext.
+  const freshPlayer = new AutoNotePlayer()
+  const configurePromise = freshPlayer.configure('')
+
   const blob = props.midiBlob ?? internalBlob.value
   if (!blob) {
     if (!props.userId || !props.scoreId) return
@@ -99,8 +103,7 @@ async function parseAndPlay() {
   session.paused = false
   session.tracks.forEach(track => { track.mode = 'playedAutomatically' })
 
-  const freshPlayer = new AutoNotePlayer()
-  await freshPlayer.configure('')
+  await configurePromise
   activePlayer = freshPlayer
 
   clock = new MidiPlayerClock(durationUs, () => 100, state => {

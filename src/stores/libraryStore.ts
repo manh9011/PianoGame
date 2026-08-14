@@ -390,6 +390,11 @@ export const useLibraryStore = defineStore('library', {
       return this.evaluateSongDifficulties(this.songs.filter(needsDifficultyEvaluation).map(song => song.id), onProgress)
     },
     async startPreview(song: SongMetadata, outputId: string, speed: number, leadInDuration: number, zoomPercent: number, octaveShift: number) {
+      // FIX: Capture user gesture on Safari BEFORE ANY AWAIT to unlock AudioContext.
+      // Luôn tạo mới player như bên playerStore.ts.
+      const newPlayer = new AutoNotePlayer()
+      const configurePromise = newPlayer.configure(outputId)
+
       const requestId = this.previewRequestId + 1
       this.previewRequestId = requestId
       const isCurrentRequest = () => this.previewRequestId === requestId
@@ -397,8 +402,10 @@ export const useLibraryStore = defineStore('library', {
       if (!data || !isCurrentRequest()) return
       this.stopPreview()
       this.previewRequestId = requestId
-      await this.previewPlayer.configure(outputId)
+
+      await configurePromise
       if (!isCurrentRequest()) return
+
       const midi = parseMidi(base64ToBuffer(data))
       if (!isCurrentRequest()) return
       const { notes } = assignHands(translateNotes(midi))
@@ -425,10 +432,7 @@ export const useLibraryStore = defineStore('library', {
       this.previewSongId = song.id
       this.previewDurationUs = duration
 
-      // FIX: Tránh dùng chung một AutoNotePlayer instance dễ bị lỗi gc / treo qua nhiều tab chuyển đổi.
-      // Luôn tạo mới player như bên playerStore.ts.
-      this.previewPlayer = new AutoNotePlayer()
-      await this.previewPlayer.configure(outputId)
+      this.previewPlayer = newPlayer
 
       this.previewClock = new MidiPlayerClock(duration, () => speed, state => {
         if (!isCurrentRequest()) return

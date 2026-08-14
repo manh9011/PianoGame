@@ -6,8 +6,16 @@
 :root {
   color-scheme: dark;
   font-family: Inter, Segoe UI, system-ui, sans-serif;
-  --app-viewport-height: 100dvh;
+  --app-viewport-height: 100vh;
+}
 
+@supports (height: 100dvh) {
+  :root {
+    --app-viewport-height: 100dvh;
+  }
+}
+
+:root {
   /* === SURFACE / BACKGROUND === */
   --color-bg-primary: #4a4a4a;
   --color-bg-secondary: #3F3F3F;
