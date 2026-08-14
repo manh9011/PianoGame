@@ -111,6 +111,8 @@ let previewEndUs = 0
 let canvasResizeObserver: ResizeObserver | null = null
 const CROP_HANDLE_HIT_PX = 16
 const loopPreview = ref<{ left: number; width: number } | null>(null)
+let progressDiagnosticLogged = false
+let progressDiagnosticCount = 0
 const shouldDrawPlayedRegions = computed(() => !props.cropRangeActive && !!player.session && player.playbackManuallyStopped)
 const playedRegions = computed(() => {
   const total = totalUs.value
@@ -183,11 +185,24 @@ function drawProgressCanvas() {
 
   const { width, height } = syncCanvasSize(canvas)
   const ctx = canvas.getContext('2d')
-  if (!ctx) return
+  if (!ctx) {
+    if (!progressDiagnosticLogged) {
+      progressDiagnosticLogged = true
+      console.warn('[PG-DIAG][progress] getContext failed', { width, height, dpr: window.devicePixelRatio, canvasWidth: canvas.width, canvasHeight: canvas.height })
+    }
+    return
+  }
   ctx.clearRect(0, 0, width, height)
 
   const currentUs = player.session?.currentUs ?? 0
   const progressWidth = Math.max(0, Math.min(1, (currentUs - seekStartUs.value) / seekSpanUs.value)) * width
+  progressDiagnosticCount += 1
+  if (!progressDiagnosticLogged) {
+    progressDiagnosticLogged = true
+    console.log('[PG-DIAG][progress] drawing OK', { width, height, currentUs, seekStartUs: seekStartUs.value, seekSpanUs: seekSpanUs.value, progressWidth })
+  } else if (progressDiagnosticCount % 180 === 0) {
+    console.log('[PG-DIAG][progress] tick', { currentUs, progressWidth, width })
+  }
   if (progressWidth <= 0) return
 
   const progressGradient = ctx.createLinearGradient(0, 0, 0, height)
