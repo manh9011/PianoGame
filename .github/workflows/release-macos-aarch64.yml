@@ -1,4 +1,4 @@
-name: Release Tauri App (macOS)
+name: Release Tauri App (macOS aarch64)
 
 on:
   workflow_call:
@@ -17,7 +17,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: release-macos-${{ inputs.release_tag }}
+  group: release-macos-aarch64-${{ inputs.release_tag }}
   cancel-in-progress: false
 
 env:
@@ -25,7 +25,7 @@ env:
 
 jobs:
   release:
-    name: Build macOS
+    name: Build macOS (aarch64)
     runs-on: macos-latest
     steps:
       - name: Checkout repository
@@ -40,7 +40,7 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: aarch64-apple-darwin, x86_64-apple-darwin
+          targets: aarch64-apple-darwin
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
@@ -91,4 +91,4 @@ jobs:
           releaseBody: 'Download the installation file compatible with your operating system from the Assets section.'
           releaseDraft: false
           prerelease: ${{ contains(env.RELEASE_TAG, '-') }}
-          args: --bundles dmg --target universal-apple-darwin
+          args: --bundles dmg --target aarch64-apple-darwin

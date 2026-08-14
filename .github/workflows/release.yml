@@ -19,8 +19,14 @@ jobs:
       release_tag: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
     secrets: inherit
 
-  release-macos:
-    uses: ./.github/workflows/release-macos.yml
+  release-macos-aarch64:
+    uses: ./.github/workflows/release-macos-aarch64.yml
+    with:
+      release_tag: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
+    secrets: inherit
+
+  release-macos-x86_64:
+    uses: ./.github/workflows/release-macos-x86_64.yml
     with:
       release_tag: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
     secrets: inherit
