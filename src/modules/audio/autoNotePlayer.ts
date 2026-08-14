@@ -1,5 +1,5 @@
 import type { MidiDeviceInfo } from '../midi/webMidi'
-import { requestMidiAccess, sendNote, sendProgramChange } from '../midi/webMidi'
+import { isWebMidiSupported, requestMidiAccess, sendNote, sendProgramChange } from '../midi/webMidi'
 import type { Hand, PlaySession, SessionNote } from '../game/playSession'
 import { SimpleSynth } from './simpleSynth'
 import { handMatches, isNoteInKeyboardRange } from '../game/hitDetection'
@@ -53,9 +53,9 @@ export class AutoNotePlayer {
   } | null = null
 
   async configure(outputId: string) {
-    this.midiOutputId = outputId
-    this.midiAccess = await requestMidiAccess()
-    this.usingSynth = !this.midiAccess?.outputs.get(outputId)
+    this.midiOutputId = outputId.trim()
+    this.midiAccess = this.midiOutputId && isWebMidiSupported() ? await requestMidiAccess() : null
+    this.usingSynth = !this.midiOutputId || !this.midiAccess?.outputs.get(this.midiOutputId)
     this.sentPrograms.clear()
     if (this.usingSynth) await this.synth.start()
   }
