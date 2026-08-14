@@ -1,4 +1,4 @@
-name: Release Tauri App (Orchestrator)
+name: Release Tauri App
 
 on:
   push:
