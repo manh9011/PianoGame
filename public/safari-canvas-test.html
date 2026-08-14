@@ -3,35 +3,23 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Safari Canvas Test</title>
+<title>PixiJS Safari 15 Test</title>
 <style>
-  body { margin: 0; background: #111; color: #fff; font: 14px/1.4 system-ui, sans-serif; }
-  h2 { margin: 8px 0 4px; font-size: 15px; font-weight: 600; }
-  .box { margin: 8px; }
-  .wrap { height: 200px; overflow: hidden; background: #222; position: relative; }
-  canvas { display: block; width: 100%; height: 100%; }
-  .c1 { background: #330000; }
-  .c2 { background: #003300; }
-  .c3 { background: #000033; }
-  .layer-test { transform: translateZ(0); }
-  #status { margin: 8px; padding: 8px; background: #222; white-space: pre-wrap; }
+  html, body { margin: 0; height: 100%; background: #111; color: #fff; font: 14px/1.4 system-ui, sans-serif; }
+  #app { position: absolute; inset: 0; }
+  #status {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 10;
+    padding: 8px 12px; background: rgba(0,0,0,0.72);
+    white-space: pre-wrap; pointer-events: none;
+    font-family: ui-monospace, monospace; font-size: 12px;
+  }
 </style>
 </head>
 <body>
-  <div class="box">
-    <h2>1. Canvas 2D trần (mong đợi: ĐỎ)</h2>
-    <div class="wrap"><canvas id="c1" class="c1"></canvas></div>
-  </div>
-  <div class="box">
-    <h2>2. Canvas 2D + overflow:hidden + translateZ (mong đợi: XANH LÁ)</h2>
-    <div class="wrap layer-test"><canvas id="c2" class="c2"></canvas></div>
-  </div>
-  <div class="box">
-    <h2>3. WebGL (mong đợi: XANH DƯƠNG)</h2>
-    <div class="wrap"><canvas id="c3" class="c3"></canvas></div>
-  </div>
-  <div id="status">status: initializing…</div>
+  <div id="app"></div>
+  <div id="status">loading pixi.js…</div>
 
+<script src="https://cdn.jsdelivr.net/npm/pixi.js@7.4.2/dist/browser/pixi.min.js"></script>
 <script>
 const status = document.getElementById('status')
 const lines = []
@@ -39,52 +27,108 @@ function log(msg) { lines.push(msg); status.textContent = lines.join('\n') }
 
 log('dpr: ' + (window.devicePixelRatio || 1))
 log('inner: ' + window.innerWidth + 'x' + window.innerHeight)
-log('zoom-ish visualViewport.scale: ' + (window.visualViewport ? window.visualViewport.scale : 'n/a'))
+log('visibilityState: ' + document.visibilityState)
 
-// 1. plain 2D
+if (typeof PIXI === 'undefined') {
+  log('PIXI load FAILED (CDN block)')
+  throw new Error('PIXI not defined')
+}
+
 try {
-  const c = document.getElementById('c1')
-  c.width = Math.max(1, Math.round(c.getBoundingClientRect().width * (window.devicePixelRatio || 1)))
-  c.height = Math.max(1, Math.round(c.getBoundingClientRect().height * (window.devicePixelRatio || 1)))
-  const ctx = c.getContext('2d')
-  if (!ctx) throw new Error('ctx null')
-  ctx.fillStyle = '#ff0000'
-  ctx.fillRect(0, 0, c.width, c.height)
-  ctx.fillStyle = '#ffffff'
-  ctx.font = '20px sans-serif'
-  ctx.fillText('RED OK', 20, 40)
-  log('c1: 2d ctx ok, ' + c.width + 'x' + c.height)
-} catch (e) { log('c1 ERROR: ' + e.message) }
+  const app = new PIXI.Application({
+    width: window.innerWidth,
+    height: window.innerHeight,
+    backgroundColor: 0x303030,
+    antialias: true,
+    resolution: window.devicePixelRatio || 1,
+    autoDensity: true,
+  })
+  document.getElementById('app').appendChild(app.view)
 
-// 2. 2D inside app-like wrapper
-try {
-  const c = document.getElementById('c2')
-  c.width = Math.max(1, Math.round(c.getBoundingClientRect().width * (window.devicePixelRatio || 1)))
-  c.height = Math.max(1, Math.round(c.getBoundingClientRect().height * (window.devicePixelRatio || 1)))
-  const ctx = c.getContext('2d')
-  if (!ctx) throw new Error('ctx null')
-  ctx.fillStyle = '#00aa00'
-  ctx.fillRect(0, 0, c.width, c.height)
-  ctx.fillStyle = '#ffffff'
-  ctx.font = '20px sans-serif'
-  ctx.fillText('GREEN OK', 20, 40)
-  log('c2: 2d ctx ok, ' + c.width + 'x' + c.height)
-} catch (e) { log('c2 ERROR: ' + e.message) }
+  const type = app.renderer.type
+  const typeName = type === PIXI.RENDERER_TYPE.WEBGL
+    ? (app.renderer.context.webGLVersion === 2 ? 'WebGL2' : 'WebGL1')
+    : type === PIXI.RENDERER_TYPE.CANVAS ? 'Canvas2D (WebGL tắt)' : 'unknown'
+  log('PIXI renderer: ' + typeName)
 
-// 3. WebGL
-try {
-  const c = document.getElementById('c3')
-  c.width = Math.max(1, Math.round(c.getBoundingClientRect().width * (window.devicePixelRatio || 1)))
-  c.height = Math.max(1, Math.round(c.getBoundingClientRect().height * (window.devicePixelRatio || 1)))
-  const gl = c.getContext('webgl') || c.getContext('experimental-webgl')
-  if (!gl) throw new Error('webgl ctx null')
-  gl.viewport(0, 0, c.width, c.height)
-  gl.clearColor(0, 0.3, 1, 1)
-  gl.clear(gl.COLOR_BUFFER_BIT)
-  log('c3: webgl ctx ok, ' + c.width + 'x' + c.height + ', renderer: ' + gl.getParameter(gl.RENDERER))
-} catch (e) { log('c3 ERROR: ' + e.message) }
+  const stage = new PIXI.Container()
+  app.stage.addChild(stage)
 
-log('done')
+  // key columns (1 octave = 7 white keys)
+  const keyW = app.screen.width / 7
+  const keyboardH = 110
+  const rollH = app.screen.height - keyboardH
+  const hitY = rollH
+
+  const whiteGfx = new PIXI.Graphics()
+  for (let i = 0; i < 7; i++) {
+    whiteGfx.beginFill(0xffffff)
+    whiteGfx.drawRect(i * keyW, rollH, keyW - 1, keyboardH)
+    whiteGfx.endFill()
+  }
+  stage.addChild(whiteGfx)
+
+  const blackGfx = new PIXI.Graphics()
+  blackGfx.beginFill(0x111111)
+  const blackCols = [1, 2, 4, 5, 6]
+  for (const i of blackCols) {
+    blackGfx.drawRect(i * keyW - keyW * 0.3, rollH, keyW * 0.6, keyboardH * 0.62)
+  }
+  blackGfx.endFill()
+  stage.addChild(blackGfx)
+
+  // hit line
+  const hitLine = new PIXI.Graphics()
+  hitLine.beginFill(0xe01b24)
+  hitLine.drawRect(0, hitY - 3, app.screen.width, 6)
+  hitLine.endFill()
+  stage.addChild(hitLine)
+
+  // grid
+  const grid = new PIXI.Graphics()
+  grid.lineStyle(1, 0x444444, 0.6)
+  for (let i = 0; i <= 7; i++) {
+    grid.moveTo(i * keyW, 0)
+    grid.lineTo(i * keyW, rollH)
+  }
+  stage.addChild(grid)
+
+  // falling notes
+  const notes = new PIXI.Container()
+  stage.addChild(notes)
+
+  const COLORS = [0x3b82f6, 0x22c55e, 0xfacc15, 0xa855f7, 0xef4444]
+  const fallSpeed = 0.25 // px per ms
+
+  function spawn() {
+    const col = Math.floor(Math.random() * 7)
+    const n = new PIXI.Graphics()
+    n.beginFill(COLORS[(Math.random() * COLORS.length) | 0])
+    n.drawRoundedRect(0, 0, keyW - 6, 28, 6)
+    n.endFill()
+    n.x = col * keyW + 3
+    n.y = -30
+    notes.addChild(n)
+  }
+
+  app.ticker.add(() => {
+    const dt = app.ticker.deltaMS
+    for (let i = notes.children.length - 1; i >= 0; i--) {
+      const n = notes.children[i]
+      n.y += fallSpeed * dt
+      if (n.y > rollH) { n.destroy(); notes.removeChildAt(i) }
+    }
+    if (Math.random() < 0.12) spawn()
+  })
+
+  for (let i = 0; i < 10; i++) spawn()
+
+  window.__pixiApp = app
+  log('PIXI OK — nốt đang rơi, keyboard + hit line vẽ bằng ' + typeName)
+  log('Thấy nốt rơi => PixiJS chạy được trên Safari này')
+} catch (e) {
+  log('PIXI ERROR: ' + (e && e.message ? e.message : e))
+}
 </script>
 </body>
 </html>
