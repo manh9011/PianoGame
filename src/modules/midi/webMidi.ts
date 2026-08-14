@@ -8,7 +8,25 @@ export function isWebMidiSupported() { return 'requestMIDIAccess' in navigator }
 
 export async function requestMidiAccess(options?: { sysex?: boolean }): Promise<MidiAccess | null> {
   const midiNavigator = navigator as unknown as { requestMIDIAccess?: (options?: { sysex?: boolean }) => Promise<MidiAccess> }
-  return midiNavigator.requestMIDIAccess ? midiNavigator.requestMIDIAccess(options) : null
+
+  const notifyUnsupported = () => {
+    import('../../stores/toastStore').then(({ useToastStore }) => {
+      useToastStore().show('Your browser/device does not support WebMIDI (e.g., Safari/iOS). Please use Google Chrome, Edge, or the desktop application.', 'error')
+    }).catch(() => { })
+  }
+
+  if (!midiNavigator.requestMIDIAccess) {
+    notifyUnsupported()
+    return null
+  }
+
+  try {
+    return await midiNavigator.requestMIDIAccess(options)
+  } catch (error) {
+    console.warn('Không thể truy cập Web MIDI API (bị từ chối quyền hoặc không hỗ trợ):', error)
+    notifyUnsupported()
+    return null
+  }
 }
 
 export function listInputs(access: MidiAccess | null): MidiDeviceInfo[] { return access ? [...access.inputs.values()].map(d => ({ id: d.id, name: d.name || d.id })) : [] }
@@ -70,7 +88,7 @@ export function bindMidiMessageListener(
   access: MidiAccess | null,
   onMessage: (name: string, data: Uint8Array) => void
 ): () => void {
-  if (!access) return () => {}
+  if (!access) return () => { }
 
   const unbindFns: Array<() => void> = []
 

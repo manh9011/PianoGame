@@ -18,7 +18,8 @@ export class SimpleSynth {
 
   async start() {
     if (!this.context) {
-      this.context = new AudioContext()
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext
+      this.context = new AudioCtx()
       this.master = this.context.createGain()
       this.master.gain.value = this.masterVolume
       this.master.connect(this.context.destination)
