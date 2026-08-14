@@ -111,6 +111,8 @@ onBeforeUnmount(() => {
   bottom: calc(100% + 0.45rem);
   z-index: 30;
   width: 13rem;
+  max-height: 18rem;
+  max-height: min(18rem, 65vh);
   max-height: min(18rem, 65dvh);
   overflow: auto;
   padding: 0.28rem;
