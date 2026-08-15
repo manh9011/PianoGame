@@ -232,8 +232,8 @@ function drawImpactRay(
   ctx.globalAlpha = alpha
 
   const glow = ctx.createLinearGradient(0, 0, 0, -length)
-  glow.addColorStop(0, withAlpha(variant.color, 0.42 * variant.alpha))
-  glow.addColorStop(0.32, withAlpha(IMPACT_LIGHT_COLOR, 0.24 * variant.alpha))
+  glow.addColorStop(0, withAlpha(variant.color, 0.2 * variant.alpha))
+  glow.addColorStop(0.32, withAlpha(IMPACT_LIGHT_COLOR, 0.12 * variant.alpha))
   glow.addColorStop(1, 'rgba(255,255,255,0)')
   ctx.strokeStyle = glow
   ctx.lineWidth = glowWidth
@@ -277,11 +277,12 @@ function drawFloatingImpactParticle(
 function drawImpactBurst(ctx: Canvas2DContext, note: ImpactLayoutNote, burstSeed: number, ageUs: number, height: number, yOffset: number, sprites?: ImpactSpriteBundle) {
   const ageRatio = Math.max(0, Math.min(1, ageUs / IMPACT_RAY_LIFE_US))
   const lifeRatio = 1 - ageRatio
-  const grow = Math.min(1, ageRatio / 0.32)
+  const growT = Math.min(1, ageRatio / 0.32)
+  const grow = growT * (2 - growT)
   const fade = lifeRatio < 0.42 ? lifeRatio / 0.42 : 1
   if (fade <= 0) return
 
-  const particleCount = Math.max(7, Math.min(16, Math.round(note.width / 4.5)))
+  const particleCount = Math.max(5, Math.min(12, Math.round(note.width / 5)))
   const left = note.x + Math.min(2, note.width * 0.08)
   const usableWidth = Math.max(1, note.width - Math.min(4, note.width * 0.16))
   const minHeight = Math.max(0, note.width * 0.75)
@@ -298,8 +299,8 @@ function drawImpactBurst(ctx: Canvas2DContext, note: ImpactLayoutNote, burstSeed
     const targetLength = (minHeight + stableRandom(seed + 7) * (maxHeight - minHeight)) * (accent ? 1.35 + stableRandom(seed + 11) * 0.35 : 1)
     const length = Math.max(1, targetLength * grow)
     const thickness = (0.6 + stableRandom(seed + 13) * 1.15) * (accent ? 1.05 : 1)
-    const coreWidth = thickness * (10 + grow * 8)
-    const glowWidth = coreWidth * (1.2 + stableRandom(seed + 17) * 1.05) * (1.05 + grow * 0.35)
+    const coreWidth = thickness * (4.5 + grow * 4)
+    const glowWidth = coreWidth * (0.9 + stableRandom(seed + 17) * 0.5) * (1 + grow * 0.25)
     const x = left + usableWidth * ratio + (stableRandom(seed + 23) - 0.5) * Math.min(3, note.width * 0.08)
     const y = originY - stableRandom(seed + 29) * 0.6
     if (sprites) {
@@ -437,7 +438,7 @@ export function createImpactParticleRenderer(createCanvas: CanvasFactory | null 
 
   function spawn(note: ImpactLayoutNote, logicalHeight: number) {
     const y = logicalHeight + 4
-    const particleCount = Math.max(7, Math.min(16, Math.round(note.width / 4.5)))
+    const particleCount = Math.max(5, Math.min(12, Math.round(note.width / 5)))
     const left = note.x + Math.min(2, note.width * 0.08)
     const usableWidth = Math.max(1, note.width - Math.min(4, note.width * 0.16))
     const minHeight = Math.max(0, note.width * 0.75)
@@ -456,10 +457,10 @@ export function createImpactParticleRenderer(createCanvas: CanvasFactory | null 
         startLength: random() * minHeight,
         endLength: (minHeight + random() * (maxHeight - minHeight)) * (accent ? 1.35 + random() * 0.35 : 1),
         thickness: (0.6 + random() * 1.15) * (accent ? 1.05 : 1),
-        life: 190 + random() * 160,
+        life: IMPACT_RAY_LIFE_MS,
         maxLife: IMPACT_RAY_LIFE_MS,
         colorIndex: Math.floor(random() * IMPACT_RAY_VARIANTS.length),
-        glowWidth: 1.2 + random() * 1.05,
+        glowWidth: 0.9 + random() * 0.5,
         glowAlpha: 0.2 + random() * 0.22,
       })
     }
@@ -472,7 +473,7 @@ export function createImpactParticleRenderer(createCanvas: CanvasFactory | null 
           vx: (random() - 0.5) * 0.035,
           vy: -0.035 - random() * 0.055,
           radius: 4 + random() * 7,
-          life: 520 + random() * 420,
+          life: IMPACT_FLOAT_LIFE_MS,
           maxLife: IMPACT_FLOAT_LIFE_MS,
           colorIndex: Math.floor(random() * IMPACT_RAY_VARIANTS.length),
         })
@@ -523,12 +524,13 @@ export function createImpactParticleRenderer(createCanvas: CanvasFactory | null 
     for (const particle of particles) {
       const lifeRatio = Math.max(0, particle.life / particle.maxLife)
       const ageRatio = 1 - lifeRatio
-      const grow = Math.min(1, ageRatio / 0.32)
+      const growT = Math.min(1, ageRatio / 0.32)
+      const grow = growT * (2 - growT)
       const fade = lifeRatio < 0.42 ? lifeRatio / 0.42 : 1
       const alpha = Math.max(0, Math.min(1, fade))
       const height = particle.startLength + (particle.endLength - particle.startLength) * grow
-      const coreWidth = particle.thickness * (10 + grow * 8)
-      const glowWidth = coreWidth * particle.glowWidth * (1.05 + grow * 0.35)
+      const coreWidth = particle.thickness * (4.5 + grow * 4)
+      const glowWidth = coreWidth * particle.glowWidth * (1 + grow * 0.25)
 
       const variant = IMPACT_RAY_VARIANTS[particle.colorIndex]
       if (sprites) {
