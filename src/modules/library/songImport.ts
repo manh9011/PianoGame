@@ -1,0 +1,126 @@
+import { computeMidiHash } from '../midi/midiHash'
+import { parseMidi } from '../midi/midiParser'
+import { translateNotes } from '../midi/midiNoteTranslator'
+import { buildTempoMap, pulseToMicroseconds } from '../midi/midiTempo'
+import { SheetMusicError } from '../sheet/sheetTypes'
+import { createMidiCacheFromCompressedMusicXml, createMidiCacheFromMusicXml, isMusicXmlText } from '../musicxml/musicXmlPlaybackCache'
+import { evaluateMidiDifficultyAuto } from '../midi/midiDifficulty'
+import { bufferToBase64 } from './songLibrary'
+
+export type SupportedSongFileKind = 'midi' | 'musicxml'
+
+export interface ImportedSongCandidate {
+  kind: SupportedSongFileKind
+  title: string
+  originalFileName: string
+  folderPath?: string
+  midiData: string
+  musicXmlData?: string
+  compressedMusicXmlData?: string
+  playbackHash: string
+  notationHash?: string
+  duration: number
+  trackCount: number
+  noteCount: number
+  difficulty?: number
+}
+
+const MIDI_EXTENSION = /\.(mid|midi|rmi|rmid)$/i
+const MUSIC_XML_EXTENSION = /\.(musicxml|xml|mxl)$/i
+const COMPRESSED_MUSIC_XML_EXTENSION = /\.mxl$/i
+
+export function getSupportedSongFileKind(name: string): SupportedSongFileKind | null {
+  if (MIDI_EXTENSION.test(name)) return 'midi'
+  if (MUSIC_XML_EXTENSION.test(name)) return 'musicxml'
+  return null
+}
+
+export function isSupportedSongFile(name: string) {
+  return getSupportedSongFileKind(name) !== null
+}
+
+function stripSupportedExtension(name: string) {
+  return name.replace(MIDI_EXTENSION, '').replace(MUSIC_XML_EXTENSION, '')
+}
+
+function normalizeMusicXmlText(text: string) {
+  return text.replace(/^﻿/, '').replace(/\r\n?/g, '\n').trim()
+}
+
+function arrayBufferFromView(view: Uint8Array) {
+  const copy = new Uint8Array(view.byteLength)
+  copy.set(view)
+  return copy.buffer
+}
+
+function summarizeMidi(buffer: ArrayBuffer) {
+  const midi = parseMidi(buffer)
+  const notes = translateNotes(midi)
+  return {
+    midi,
+    notes,
+    duration: pulseToMicroseconds(midi.durationPulse, midi.header.ticksPerQuarter, buildTempoMap(midi)),
+  }
+}
+
+function evaluateImportDifficulty(buffer: ArrayBuffer, fileName: string) {
+  try {
+    return evaluateMidiDifficultyAuto(buffer).roundedScore
+  } catch (error) {
+    console.warn('[Song Import] Không thể tự đánh giá độ khó:', fileName, error)
+    return undefined
+  }
+}
+
+export async function createImportedSongCandidate(file: File, folderPath?: string): Promise<ImportedSongCandidate> {
+  const kind = getSupportedSongFileKind(file.name)
+  if (!kind) throw new Error('Unsupported song file')
+
+  const title = stripSupportedExtension(file.name)
+
+  if (kind === 'midi') {
+    const buffer = await file.arrayBuffer()
+    const playbackHash = await computeMidiHash(buffer)
+    const { midi, notes, duration } = summarizeMidi(buffer)
+    const difficulty = evaluateImportDifficulty(buffer, file.name)
+    return {
+      kind,
+      title,
+      originalFileName: file.name,
+      folderPath,
+      midiData: bufferToBase64(buffer),
+      playbackHash,
+      duration,
+      trackCount: midi.header.trackCount,
+      noteCount: notes.length,
+      difficulty,
+    }
+  }
+
+  const compressed = COMPRESSED_MUSIC_XML_EXTENSION.test(file.name)
+  const sourceBuffer = await file.arrayBuffer()
+  const musicXmlData = compressed ? undefined : normalizeMusicXmlText(await file.text())
+  if (musicXmlData !== undefined && !isMusicXmlText(musicXmlData)) throw new SheetMusicError('sheetMusic.errors.invalidMusicXml', 'invalidMusicXml')
+
+  const notationHash = await computeMidiHash(musicXmlData !== undefined ? arrayBufferFromView(new TextEncoder().encode(musicXmlData)) : sourceBuffer)
+  const midiBuffer = musicXmlData !== undefined ? await createMidiCacheFromMusicXml(musicXmlData) : await createMidiCacheFromCompressedMusicXml(sourceBuffer)
+  const playbackHash = await computeMidiHash(midiBuffer)
+  const { midi, notes, duration } = summarizeMidi(midiBuffer)
+  const difficulty = evaluateImportDifficulty(midiBuffer, file.name)
+
+  return {
+    kind,
+    title,
+    originalFileName: file.name,
+    folderPath,
+    midiData: bufferToBase64(midiBuffer),
+    musicXmlData,
+    compressedMusicXmlData: compressed ? bufferToBase64(sourceBuffer) : undefined,
+    playbackHash,
+    notationHash,
+    duration,
+    trackCount: midi.header.trackCount,
+    noteCount: notes.length,
+    difficulty,
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "files.watcherExclude": {
+    "**/src-electron/target/**": true,
+    "**/dist/**": true,
+    "**/src-tauri/target/**": true
+  }
+}

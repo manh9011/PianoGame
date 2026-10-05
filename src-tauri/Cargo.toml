@@ -1,0 +1,29 @@
+[package]
+name = "pianogame"
+version = "0.1.7"
+description = "PianoGame desktop app"
+authors = ["Lương Xuân Mạnh"]
+license = ""
+repository = ""
+edition = "2021"
+rust-version = "1.77.2"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "pianogame_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.6.3", features = [] }
+
+[dependencies]
+tauri = { version = "2.11.3", features = [] }
+tauri-plugin-dialog = "2"
+tauri-plugin-opener = "2"
+tauri-plugin-shell = "2"
+
+# tauri-utils 2.9.3 mime sniffing mislabels unknown extensions (woff2/mid/...)
+# as text/html -> fonts/icons break on Android. Fix lives in vendor/tauri-utils.
+[patch.crates-io]
+tauri-utils = { path = "vendor/tauri-utils" }

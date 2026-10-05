@@ -1,0 +1,107 @@
+name: Tauri V2 Linux
+
+on:
+  workflow_call:
+    inputs:
+      release_tag:
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Git tag to release, e.g., v0.1.0 or v0.1.0-rc.1'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-linux-${{ inputs.release_tag }}
+  cancel-in-progress: false
+
+env:
+  RELEASE_TAG: ${{ inputs.release_tag }}
+
+jobs:
+  release:
+    name: Build Linux
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libgtk-3-dev \
+            libwebkit2gtk-4.1-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            rpm
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Validate release version
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+
+          const tag = process.env.RELEASE_TAG || '';
+          if (!/^v\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/.test(tag)) {
+            throw new Error(`Release tag "${tag}" must match vX.Y.Z or vX.Y.Z-prerelease.`);
+          }
+
+          const expectedVersion = tag.replace(/^v/, '');
+          const tauriConfig = JSON.parse(fs.readFileSync('src-tauri/tauri.conf.json', 'utf8'));
+          const cargoToml = fs.readFileSync('src-tauri/Cargo.toml', 'utf8');
+          const cargoVersion = cargoToml.match(/^version\s*=\s*"([^"]+)"/m)?.[1];
+
+          const mismatches = [];
+          if (tauriConfig.version !== expectedVersion) {
+            mismatches.push(`src-tauri/tauri.conf.json version is ${tauriConfig.version}, expected ${expectedVersion}`);
+          }
+          if (cargoVersion !== expectedVersion) {
+            mismatches.push(`src-tauri/Cargo.toml version is ${cargoVersion ?? 'missing'}, expected ${expectedVersion}`);
+          }
+
+          if (mismatches.length > 0) {
+            throw new Error(`Release version mismatch:\n${mismatches.join('\n')}`);
+          }
+
+          console.log(`Release version ${expectedVersion} matches ${tag}.`);
+          NODE
+
+      - name: Build and upload desktop release assets
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ env.RELEASE_TAG }}
+          releaseName: PianoGame ${{ env.RELEASE_TAG }}
+          releaseBody: 'Download the installation file compatible with your operating system from the Assets section.'
+          releaseDraft: false
+          prerelease: ${{ contains(env.RELEASE_TAG, '-') }}
+          args: --bundles appimage,deb,rpm

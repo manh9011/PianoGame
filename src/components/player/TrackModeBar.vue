@@ -1,0 +1,37 @@
+<script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+import { usePlayerStore } from '../../stores/playerStore'
+import { TRACK_MODES, type TrackMode } from '../../modules/game/trackProperties'
+import BaseSelect from '../ui/BaseSelect.vue'
+
+const { t } = useI18n()
+const player = usePlayerStore()
+const labelKeys: Record<TrackMode, string> = {
+  playedAutomatically: 'trackModes.playedAutomatically',
+  youPlay: 'trackModes.youPlay',
+  playedButHidden: 'trackModes.playedButHidden',
+  notPlayed: 'trackModes.notPlayed',
+}
+</script>
+
+<template>
+  <section v-if="player.session" class="track-modes">
+    <strong>{{ t('trackModes.title') }}</strong>
+    <div class="track-grid">
+      <div v-for="track in player.session.tracks" :key="track.trackId" class="track-row">
+        <span class="swatch" :style="{ backgroundColor: track.color }"></span>
+        <strong>{{ t('trackModes.track', { number: track.trackId + 1 }) }}</strong>
+        <BaseSelect :modelValue="track.mode" @update:modelValue="player.setTrackMode(track.trackId, $event as TrackMode)">
+          <option v-for="mode in TRACK_MODES" :key="mode" :value="mode">{{ t(labelKeys[mode]) }}</option>
+        </BaseSelect>
+      </div>
+    </div>
+  </section>
+</template>
+
+<style scoped>
+.track-modes { position: absolute; left: 0.5rem; top: 4.5rem; z-index: 10; width: min(360px, calc(100vw - 1rem)); max-height: min(36dvh, 240px); overflow: auto; display: grid; gap: 0.45rem; padding: 0.55rem; border: 1px solid rgba(255,255,255,0.14); border-radius: 10px; background: rgba(15, 18, 23, 0.72); box-shadow: 0 8px 22px rgba(0,0,0,0.22); backdrop-filter: blur(8px); }
+.track-grid { display: grid; gap: 0.4rem; }
+.track-row { display: grid; grid-template-columns: auto 1fr minmax(8rem, auto); gap: 0.45rem; align-items: center; font-size: 0.82rem; }
+.swatch { width: 14px; height: 14px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.45); }
+</style>

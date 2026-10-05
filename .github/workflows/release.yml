@@ -1,0 +1,65 @@
+name: Release App
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+      - 'v*.*.*-*'
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Git tag to release, e.g., v0.1.0 or v0.1.0-rc.1'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release-macos-electron-arm64:
+    uses: ./.github/workflows/electron-mac-arm64.yml
+    with:
+      tag: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
+    secrets: inherit
+
+  release-macos-electron-x64:
+    uses: ./.github/workflows/electron-mac-x64.yml
+    with:
+      tag: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
+    secrets: inherit
+
+  release-windows:
+    uses: ./.github/workflows/tauriv2-windows.yml
+    with:
+      release_tag: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
+    secrets: inherit
+
+  release-linux:
+    uses: ./.github/workflows/tauriv2-linux.yml
+    with:
+      release_tag: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
+    secrets: inherit
+
+  release-android-arm64-v8a:
+    uses: ./.github/workflows/tauriv2-android-arm64-v8a.yml
+    with:
+      release_tag: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
+    secrets: inherit
+
+  release-android-armeabi-v7a:
+    uses: ./.github/workflows/tauriv2-android-armeabi-v7a.yml
+    with:
+      release_tag: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
+    secrets: inherit
+
+  release-android-x86_64:
+    uses: ./.github/workflows/tauriv2-android-x86_64.yml
+    with:
+      release_tag: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
+    secrets: inherit
+
+  release-android-x86:
+    uses: ./.github/workflows/tauriv2-android-x86.yml
+    with:
+      release_tag: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
+    secrets: inherit

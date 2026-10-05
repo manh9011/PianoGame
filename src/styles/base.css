@@ -1,0 +1,325 @@
+* {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+:root {
+  color-scheme: dark;
+  font-family: Inter, Segoe UI, system-ui, sans-serif;
+  --app-viewport-height: 100dvh;
+}
+
+:root {
+  /* === SURFACE / BACKGROUND === */
+  --color-bg-primary: #4a4a4a;
+  --color-bg-secondary: #3F3F3F;
+  --color-bg-tertiary: #2b2d31;
+  --color-bg-elevated: #3F3F3F;
+  --color-bg-elevated-2: #2a2a2a;
+  --color-bg-header: #333333;
+  --color-bg-card: #3d3d3d;
+  --color-bg-card-hover: #454545;
+  --color-bg-input: #222224;
+  --color-bg-input-focus: #141416;
+  --color-bg-tooltip: rgba(40, 40, 40, 0.98);
+  --color-bg-overlay: rgba(0, 0, 0, 0.4);
+  --color-bg-subtle: rgba(0, 0, 0, 0.2);
+  --color-bg-page: #15181d;
+
+  /* === TEXT === */
+  --color-text-primary: #e3e4e8;
+  --color-text-secondary: #9ca3af;
+  --color-text-muted: rgba(255, 255, 255, 0.48);
+  --color-text-inverse: #1f2430;
+
+  /* === BUTTON === */
+  --color-btn-primary-bg: #5a9e5a;
+  --color-btn-primary-hover: #6ab06a;
+  --color-btn-primary-text: #ffffff;
+  --color-btn-secondary-bg: #5D5D5D;
+  --color-btn-secondary-hover: #7a7a7a;
+  --color-btn-secondary-text: #d0d0d0;
+  --color-btn-danger-bg: #992323;
+  --color-btn-danger-hover: #b82b2b;
+  --color-btn-danger-text: #ffffff;
+
+  /* === BORDER === */
+  --color-border-default: rgba(255, 255, 255, 0.15);
+  --color-border-subtle: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(255, 255, 255, 0.22);
+  --color-border-input: rgba(255, 255, 255, 0.14);
+
+  /* === SHADOW === */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.28);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.4);
+  --shadow-xl: 0 18px 40px rgba(0, 0, 0, 0.45);
+
+  /* === SPECIAL / ACCENT === */
+  --color-accent-amber: #fbbf24;
+  --color-accent-green: #4ade80;
+  --color-accent-red: #ef4444;
+  --color-accent-blue: #3465a4;
+  --color-success: #22c55e;
+  --color-error: #ef4444;
+  --color-info: #6366f1;
+  --color-theme-toggle: #69c769;
+
+  /* === TOGGLE === */
+  --color-toggle-bg: var(--color-bg-input);
+  --color-toggle-active: var(--color-theme-toggle);
+  --color-toggle-thumb: linear-gradient(#ffffff, #d8d8d8);
+  --color-toggle-border: var(--color-border-default);
+  --color-toggle-border-active: var(--color-border-strong);
+
+  /* === SLIDER === */
+  --color-slider-track: var(--color-bg-tertiary);
+  --color-slider-thumb: var(--color-text-primary);
+
+  /* === INPUT === */
+  --color-input-bg: var(--color-bg-input);
+  --color-input-border: var(--color-border-input);
+  --color-input-focus-border: var(--color-border-strong);
+  --color-input-focus-bg: var(--color-bg-input-focus);
+
+  /* === CHECKBOX / RADIO === */
+  --color-check-bg: var(--color-bg-input);
+  --color-check-active: var(--color-theme-toggle);
+  --color-check-border: var(--color-border-default);
+
+  /* === TAB === */
+  --color-tab-bg: var(--color-bg-secondary);
+  --color-tab-active-bg: var(--color-row-selected);
+  --color-tab-border: var(--color-border-default);
+
+  /* === TOOLBAR === */
+  --color-toolbar-bg: var(--color-bg-header);
+
+  /* === CARD === */
+  --color-card-bg: var(--color-bg-card);
+  --color-card-border: var(--color-border-default);
+  --color-card-radius: 16px;
+
+  /* === ROW SELECTION === */
+  --color-row-hover: rgba(255, 255, 255, 0.06);
+  --color-row-selected: #6F6F6F;
+  --color-row-selected-hover: #7d7d7d;
+  --color-row-selected-text: #ffffff;
+
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+
+  /* === SURFACE / BACKGROUND === */
+  --color-bg-primary: #f4f4f4;
+  --color-bg-secondary: #ececec;
+  --color-bg-tertiary: #e0e2e6;
+  --color-bg-elevated: #ffffff;
+  --color-bg-elevated-2: #f0f0f0;
+  --color-bg-header: #4a8ed4;
+  --color-bg-card: #ffffff;
+  --color-bg-card-hover: #e8eef5;
+  --color-bg-input: #ffffff;
+  --color-bg-input-focus: #ffffff;
+  --color-bg-tooltip: rgba(245, 245, 245, 0.98);
+  --color-bg-overlay: rgba(0, 0, 0, 0.35);
+  --color-bg-subtle: rgba(0, 0, 0, 0.03);
+  --color-bg-page: #f4f4f4;
+
+  /* === TEXT === */
+  --color-text-primary: #2c2c2c;
+  --color-text-secondary: #6b7280;
+  --color-text-muted: rgba(0, 0, 0, 0.4);
+  --color-text-inverse: #f4f4f4;
+
+  /* === BUTTON === */
+  --color-btn-primary-bg: #4a9e4a;
+  --color-btn-primary-hover: #5ab05a;
+  --color-btn-primary-text: #ffffff;
+  --color-btn-secondary-bg: #d8d8d8;
+  --color-btn-secondary-hover: #c8c8c8;
+  --color-btn-secondary-text: #2c2c2c;
+  --color-btn-danger-bg: #992323;
+  --color-btn-danger-hover: #b82b2b;
+  --color-btn-danger-text: #ffffff;
+
+  /* === BORDER === */
+  --color-border-default: rgba(0, 0, 0, 0.1);
+  --color-border-subtle: rgba(0, 0, 0, 0.05);
+  --color-border-strong: rgba(0, 0, 0, 0.16);
+  --color-border-input: rgba(0, 0, 0, 0.18);
+
+  /* === SHADOW === */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.07);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.12);
+  --shadow-xl: 0 18px 40px rgba(0, 0, 0, 0.14);
+
+  /* === SPECIAL / ACCENT === */
+  --color-accent-amber: #d97706;
+  --color-accent-green: #16a34a;
+  --color-accent-red: #dc2626;
+  --color-accent-blue: #4a8ed4;
+  --color-success: #16a34a;
+  --color-error: #dc2626;
+  --color-info: #4f46e5;
+  --color-theme-toggle: #4a9e4a;
+
+  /* === ROW SELECTION === */
+  --color-row-hover: #e8eef5;
+  --color-row-selected: #9dc8ef;
+  --color-row-selected-hover: #8bbce8;
+  --color-row-selected-text: #1a2a3a;
+
+}
+
+/* Reset & Base */
+* {
+  box-sizing: border-box;
+  touch-action: manipulation;
+}
+
+html,
+body,
+#app {
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  overflow: hidden;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: var(--color-bg-page, #15181d);
+  color: var(--color-text-primary, #f4f4f4);
+}
+
+a {
+  color: inherit;
+}
+
+:root[dir='rtl'] {
+  direction: rtl;
+}
+
+:root[dir='rtl'] .fa-chevron-right,
+:root[dir='rtl'] .fa-chevron-left {
+  transform: scaleX(-1);
+}
+
+/* Utility classes */
+.page {
+  min-height: var(--app-viewport-height, 100dvh);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.panel {
+  border: 1px solid var(--color-border-default, #333a44);
+  border-radius: 16px;
+  background: var(--color-bg-card, rgba(32, 37, 44, 0.88));
+  padding: 1rem;
+  box-shadow: var(--shadow-md, 0 12px 30px rgba(0, 0, 0, 0.18));
+}
+
+.row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.muted {
+  color: var(--color-text-secondary, #babdb6);
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 4rem);
+}
+
+.nav-buttons {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.list {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.song-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.75rem;
+  align-items: center;
+  border: 1px solid var(--color-border-default, #333a44);
+  border-radius: 12px;
+  padding: 0.75rem;
+  background: var(--color-bg-input, #1b2027);
+}
+
+.kbd-area {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--color-border-default, #303843);
+  border-radius: 14px;
+  background: linear-gradient(#14191f, #0b0d10);
+}
+
+.play-layout {
+  --keyboard-height: clamp(96px, 18vh, 150px);
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) var(--keyboard-height);
+  height: var(--app-viewport-height, 100dvh);
+  overflow: hidden;
+  gap: 0;
+  padding: 0;
+}
+
+.play-layout .play-stage {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  background: linear-gradient(var(--color-bg-tertiary, #151a22), #07090c);
+}
+
+.play-layout .kbd-area {
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+/* Force own compositing layer: Safari 15 can stop presenting canvas bitmaps otherwise (black canvas) */
+.roll,
+.keyboard-canvas,
+.progress-canvas {
+  transform: translateZ(0);
+}
+
+.stat {
+  display: inline-grid;
+  gap: 0.1rem;
+  min-width: 5.5rem;
+}
+
+.stat strong {
+  font-size: 1.25rem;
+}
+
+@media (max-width: 720px) {
+  .song-row {
+    grid-template-columns: 1fr;
+  }
+}

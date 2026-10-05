@@ -1,0 +1,49 @@
+{
+    "name": "PianoGame",
+    "version": "v0.1.7",
+    "copyright": "©2026 manh9011",
+    "scripts": {
+        "dev": "vite",
+        "build": "vue-tsc -b && vite build",
+        "typecheck": "vue-tsc -b",
+        "preview": "vite preview",
+        "tauri": "tauri",
+        "tauri:dev": "tauri dev",
+        "tauri:build": "tauri build",
+        "tauri:android:init": "tauri android init --ci --skip-targets-install",
+        "tauri:android:build": "tauri android build --apk --target aarch64 x86_64 --split-per-abi --ci",
+        "electron:build": "vue-tsc -b && vite build --mode electron",
+        "electron:dist:mac": "npm run electron:build && cd src-electron && npm run dist:mac",
+        "electron:dist:win": "npm run electron:build && cd src-electron && npm run dist:win"
+    },
+    "dependencies": {
+        "@fortawesome/fontawesome-free": "^7.3.0",
+        "@tauri-apps/api": "^2.11.0",
+        "@tauri-apps/plugin-dialog": "^2.7.2",
+        "@tauri-apps/plugin-opener": "^2.5.4",
+        "@tauri-apps/plugin-shell": "^2.3.5",
+        "@tonaljs/tonal": "^4.10.0",
+        "@tonejs/midi": "^2.0.28",
+        "@vercel/analytics": "^2.0.1",
+        "@vitejs/plugin-vue": "latest",
+        "midi-file": "^1.2.4",
+        "mp4-muxer": "^5.2.2",
+        "onnxruntime-web": "^1.27.0",
+        "pinia": "latest",
+        "soundfont-player": "^0.12.0",
+        "typescript": "latest",
+        "uplot": "^1.6.32",
+        "vite": "latest",
+        "vue": "latest",
+        "vue-i18n": "^11.4.6",
+        "vue-router": "latest",
+        "vue-tsc": "latest",
+        "webm-muxer": "^5.1.4",
+        "webmscore": "^1.2.1"
+    },
+    "devDependencies": {
+        "@tauri-apps/cli": "^2.11.4",
+        "vite-plugin-pwa": "^1.3.0"
+    },
+    "packageManager": "pnpm@10.9.0+sha512.0486e394640d3c1fb3c9d43d49cf92879ff74f8516959c235308f5a8f62e2e19528a65cdc2a3058f587cde71eba3d5b56327c8c33a97e4c4051ca48a10ca2d5f"
+}

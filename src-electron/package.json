@@ -1,0 +1,48 @@
+{
+  "name": "pianogame-electron",
+  "version": "0.1.7",
+  "private": true,
+  "description": "PianoGame desktop build (Electron, macOS)",
+  "author": "manh9011",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "dist:mac": "electron-builder --mac",
+    "dist:win": "electron-builder --win",
+    "dist:win:local": "electron-builder --win -c.directories.output=../../pg-release-electron"
+  },
+  "devDependencies": {
+    "electron": "latest",
+    "electron-builder": "latest"
+  },
+  "build": {
+    "appId": "com.pianogame.desktop",
+    "productName": "PianoGame",
+    "directories": {
+      "output": "target"
+    },
+    "files": [
+      "main.cjs",
+      "preload.cjs"
+    ],
+    "extraResources": [
+      {
+        "from": "../dist",
+        "to": "dist"
+      }
+    ],
+    "mac": {
+      "target": "dmg",
+      "icon": "../src-tauri/icons/icon.icns",
+      "category": "public.app-category.music"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "../src-tauri/icons/icon.ico"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "../src-tauri/icons"
+    }
+  }
+}

@@ -1,0 +1,9 @@
+/.agents
+/.claude
+/.cocoindex_code
+/dist
+/node_modules
+/src-tauri/target
+/src-electron/node_modules
+/src-electron/target
+/*.log

@@ -1,0 +1,54 @@
+name: Electron Mac X64 Build
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag version (vd: v0.1.7)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install web deps
+        run: npm ci
+
+      - name: Install electron deps
+        run: npm install
+        working-directory: src-electron
+
+      - name: Build web (electron mode)
+        run: npm run electron:build
+
+      - name: Build mac app (x64)
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: npx electron-builder --mac --x64
+        working-directory: src-electron
+
+      - name: Publish to GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          if ! gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --title "PianoGame $RELEASE_TAG" --generate-notes
+          fi
+          gh release upload "$RELEASE_TAG" src-electron/target/*.dmg --repo "$GITHUB_REPOSITORY" --clobber
