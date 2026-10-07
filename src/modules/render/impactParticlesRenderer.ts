@@ -66,6 +66,7 @@ type CanvasFactory = (width: number, height: number) => SpriteCanvas
 type ImpactSpriteBundle = {
   raySprites: SpriteCanvas[]
   rayGlowSprites: SpriteCanvas[]
+  rayCombinedAtlas: SpriteCanvas
   floatSprites: SpriteCanvas[]
 }
 
@@ -184,6 +185,22 @@ function createRayGlowSprite(variant: ImpactRayVariant, createCanvas: CanvasFact
   return canvas
 }
 
+function createCombinedRayAtlas(rays: SpriteCanvas[], glows: SpriteCanvas[], createCanvas: CanvasFactory) {
+  const canvas = createCanvas(rays.length * 96, 3 * 128)
+  const ctx = get2dContext(canvas)
+  if (!ctx) return canvas
+  ctx.globalCompositeOperation = 'lighter'
+  for (let index = 0; index < rays.length; index += 1) {
+    for (let level = 0; level < 3; level += 1) {
+      ctx.globalAlpha = 0.2 + level * 0.11
+      ctx.drawImage(glows[index], index * 96, level * 128, 96, 128)
+      ctx.globalAlpha = 1
+      ctx.drawImage(rays[index], index * 96 + 20, level * 128, 56, 128)
+    }
+  }
+  return canvas
+}
+
 function createFloatSprite(variant: ImpactRayVariant, createCanvas: CanvasFactory) {
   const canvas = createCanvas(IMPACT_FLOAT_SPRITE_SIZE, IMPACT_FLOAT_SPRITE_SIZE)
   const ctx = get2dContext(canvas)
@@ -219,6 +236,18 @@ function stableRandom(seed: number) {
   return value - Math.floor(value)
 }
 
+const impactSeedCache = new Map<string, number>()
+
+function impactSeed(note: ImpactLayoutNote) {
+  const cached = impactSeedCache.get(note.id)
+  if (cached !== undefined) return cached
+  const seed = hashString(note.id) || note.noteId * 97 + note.trackId * 31
+  if (impactSeedCache.size > 4096) impactSeedCache.clear()
+  impactSeedCache.set(note.id, seed)
+  return seed
+}
+
+// ponytail: seed cached — hashString per frame per note wasted CPU on long sustains; visual identical.
 function noteStartUs(note: ImpactLayoutNote) {
   return note.startUs ?? note.start ?? 0
 }
@@ -287,6 +316,35 @@ function drawFloatingImpactParticle(
   ctx.fillRect(x - size, y - size, size * 2, size * 2)
 }
 
+interface ImpactRayLayout { ratio: number; spread: number; accentBoost: number; variantIndex: number; lengthScale: number; thickness: number; glowScale: number; xJitter: number; yJitter: number; glowAlpha: number }
+interface ImpactFloatLayout { variantIndex: number; startRatio: number; startLift: number; vx: number; vy: number; radiusBase: number }
+interface ImpactBurstLayout { rays: ImpactRayLayout[]; floats: ImpactFloatLayout[] }
+const impactBurstCache = new Map<number, ImpactBurstLayout>()
+function impactBurstLayout(burstSeed: number, particleCount: number): ImpactBurstLayout {
+  const cached = impactBurstCache.get(burstSeed)
+  if (cached && cached.rays.length === particleCount) return cached
+  const rays: ImpactRayLayout[] = []
+  for (let index = 0; index < particleCount; index += 1) {
+    const ratio = particleCount === 1 ? 0.5 : index / (particleCount - 1)
+    const seed = burstSeed + index * 19
+    const sideBias = ratio - 0.5
+    const accent = stableRandom(seed + 3) < 0.14
+    rays.push({ ratio, spread: sideBias * 0.72 + (stableRandom(seed) - 0.5) * 0.28, accentBoost: accent ? 1.35 + stableRandom(seed + 11) * 0.35 : 1, variantIndex: Math.floor(stableRandom(seed + 5) * IMPACT_RAY_VARIANTS.length), lengthScale: stableRandom(seed + 7), thickness: (0.6 + stableRandom(seed + 13) * 1.15) * (accent ? 1.05 : 1), glowScale: 1.2 + stableRandom(seed + 17) * 1.05, xJitter: stableRandom(seed + 23) - 0.5, yJitter: stableRandom(seed + 29) * 0.6, glowAlpha: 0.2 + stableRandom(seed + 31) * 0.22 })
+  }
+  const floats: ImpactFloatLayout[] = []
+  if (stableRandom(burstSeed + 101) < 0.35) {
+    const floatCount = 1 + Math.floor(stableRandom(burstSeed + 103) * 3)
+    for (let index = 0; index < floatCount; index += 1) {
+      const seed = burstSeed + 211 + index * 37
+      floats.push({ variantIndex: Math.floor(stableRandom(seed + 5) * IMPACT_RAY_VARIANTS.length), startRatio: stableRandom(seed + 7), startLift: stableRandom(seed + 11) * 8, vx: (stableRandom(seed + 13) - 0.5) * 0.035, vy: -0.035 - stableRandom(seed + 17) * 0.055, radiusBase: 4 + stableRandom(seed + 19) * 7 })
+    }
+  }
+  const layout = { rays, floats }
+  if (impactBurstCache.size > 4096) impactBurstCache.clear()
+  impactBurstCache.set(burstSeed, layout)
+  return layout
+}
+// ponytail: burst layout cached per burstSeed — same randoms recomputed every frame before; pixel-identical output.
 function drawImpactBurst(ctx: Canvas2DContext, note: ImpactLayoutNote, burstSeed: number, ageUs: number, height: number, yOffset: number, sprites?: ImpactSpriteBundle) {
   const ageRatio = Math.max(0, Math.min(1, ageUs / IMPACT_RAY_LIFE_US))
   const lifeRatio = 1 - ageRatio
@@ -295,64 +353,51 @@ function drawImpactBurst(ctx: Canvas2DContext, note: ImpactLayoutNote, burstSeed
   if (fade <= 0) return
 
   const particleCount = Math.max(7, Math.min(16, Math.round(note.width / 4.5)))
+  const layout = impactBurstLayout(burstSeed, particleCount)
   const left = note.x + Math.min(2, note.width * 0.08)
   const usableWidth = Math.max(1, note.width - Math.min(4, note.width * 0.16))
   const minHeight = Math.max(0, note.width * 0.75)
   const maxHeight = Math.max(minHeight + 1, note.width * 0.75 * 1.5)
   const originY = yOffset + height + 4
 
-  for (let index = 0; index < particleCount; index += 1) {
-    const ratio = particleCount === 1 ? 0.5 : index / (particleCount - 1)
-    const seed = burstSeed + index * 19
-    const sideBias = ratio - 0.5
-    const spread = sideBias * 0.72 + (stableRandom(seed) - 0.5) * 0.28
-    const accent = stableRandom(seed + 3) < 0.14
-    const variant = IMPACT_RAY_VARIANTS[Math.floor(stableRandom(seed + 5) * IMPACT_RAY_VARIANTS.length)]
-    const targetLength = (minHeight + stableRandom(seed + 7) * (maxHeight - minHeight)) * (accent ? 1.35 + stableRandom(seed + 11) * 0.35 : 1)
+  for (const ray of layout.rays) {
+    const variant = IMPACT_RAY_VARIANTS[ray.variantIndex]
+    const targetLength = (minHeight + ray.lengthScale * (maxHeight - minHeight)) * ray.accentBoost
     const length = Math.max(1, targetLength * grow)
-    const thickness = (0.6 + stableRandom(seed + 13) * 1.15) * (accent ? 1.05 : 1)
-    const coreWidth = thickness * (10 + grow * 8)
-    const glowWidth = coreWidth * (1.2 + stableRandom(seed + 17) * 1.05) * (1.05 + grow * 0.35)
-    const x = left + usableWidth * ratio + (stableRandom(seed + 23) - 0.5) * Math.min(3, note.width * 0.08)
-    const y = originY - stableRandom(seed + 29) * 0.6
+    const coreWidth = ray.thickness * (10 + grow * 8)
+    const glowWidth = coreWidth * ray.glowScale * (1.05 + grow * 0.35)
+    const x = left + usableWidth * ray.ratio + ray.xJitter * Math.min(3, note.width * 0.08)
+    const y = originY - ray.yJitter
     if (sprites) {
-      const sprite = sprites.raySprites[IMPACT_RAY_VARIANTS.indexOf(variant)]
-      const glowSprite = sprites.rayGlowSprites[IMPACT_RAY_VARIANTS.indexOf(variant)]
+      const glowLevel = Math.max(0, Math.min(2, Math.round((ray.glowAlpha - 0.2) / 0.11)))
       ctx.save()
       ctx.translate(x, y)
-      ctx.rotate(spread)
-      ctx.globalAlpha = fade * (0.2 + stableRandom(seed + 31) * 0.22)
-      ctx.drawImage(glowSprite, -glowWidth / 2, -length, glowWidth, length)
+      ctx.rotate(ray.spread)
       ctx.globalAlpha = fade
-      ctx.drawImage(sprite, -coreWidth / 2, -length, coreWidth, length)
+      ctx.drawImage(sprites.rayCombinedAtlas, ray.variantIndex * 96, glowLevel * 128, 96, 128, -glowWidth / 2, -length, glowWidth, length)
       ctx.restore()
     } else {
-      drawImpactRay(ctx, x, y, length, spread, variant, coreWidth, glowWidth, fade)
+      drawImpactRay(ctx, x, y, length, ray.spread, variant, coreWidth, glowWidth, fade)
     }
   }
 
-  if (stableRandom(burstSeed + 101) >= 0.35) return
-  const floatCount = 1 + Math.floor(stableRandom(burstSeed + 103) * 3)
   const floatAgeRatio = Math.max(0, Math.min(1, ageUs / IMPACT_FLOAT_LIFE_US))
   const floatAlpha = Math.sin(floatAgeRatio * Math.PI) * 0.72
-  if (floatAlpha <= 0) return
+  if (floatAlpha <= 0 || !layout.floats.length) return
 
-  for (let index = 0; index < floatCount; index += 1) {
-    const seed = burstSeed + 211 + index * 37
-    const variant = IMPACT_RAY_VARIANTS[Math.floor(stableRandom(seed + 5) * IMPACT_RAY_VARIANTS.length)]
-    const startX = left + stableRandom(seed + 7) * usableWidth
-    const startY = originY - stableRandom(seed + 11) * 8
-    const vx = (stableRandom(seed + 13) - 0.5) * 0.035
-    const vy = -0.035 - stableRandom(seed + 17) * 0.055
+  for (const float of layout.floats) {
+    const variant = IMPACT_RAY_VARIANTS[float.variantIndex]
+    const startX = left + float.startRatio * usableWidth
+    const startY = originY - float.startLift
     const ageMs = ageUs / 1000
-    const radius = (4 + stableRandom(seed + 19) * 7) * (0.7 + floatAgeRatio * 0.55)
+    const radius = float.radiusBase * (0.7 + floatAgeRatio * 0.55)
     if (sprites) {
-      const sprite = sprites.floatSprites[IMPACT_RAY_VARIANTS.indexOf(variant)]
+      const sprite = sprites.floatSprites[float.variantIndex]
       const size = radius * 2
       ctx.globalAlpha = floatAlpha
-      ctx.drawImage(sprite, startX + vx * ageMs - size, startY + vy * ageMs - size, size * 2, size * 2)
+      ctx.drawImage(sprite, startX + float.vx * ageMs - size, startY + float.vy * ageMs - size, size * 2, size * 2)
     } else {
-      drawFloatingImpactParticle(ctx, startX + vx * ageMs, startY + vy * ageMs, radius, variant, floatAlpha)
+      drawFloatingImpactParticle(ctx, startX + float.vx * ageMs, startY + float.vy * ageMs, radius, variant, floatAlpha)
     }
   }
 }
@@ -378,7 +423,7 @@ export function drawImpactParticlesStateless(
     const endUs = noteEndUs(note)
     const lastPlayableUs = Math.min(currentUs, endUs)
     if (lastPlayableUs < startUs) continue
-    const baseSeed = hashString(note.id) || note.noteId * 97 + note.trackId * 31
+    const baseSeed = impactSeed(note)
     const throttleUs = getImpactRepeatThrottleUs(reduceMotion)
     const lastBurstIndex = Math.floor((lastPlayableUs - startUs) / throttleUs)
     const firstBurstIndex = Math.max(0, Math.floor((currentUs - startUs - maxBurstAgeUs) / throttleUs))
@@ -395,9 +440,14 @@ export function drawImpactParticlesStateless(
 }
 
 function createImpactSprites(createCanvas: CanvasFactory): ImpactSpriteBundle {
+  const raySprites = IMPACT_RAY_VARIANTS.map(variant => createRaySprite(variant, createCanvas))
+  const rayGlowSprites = IMPACT_RAY_VARIANTS.map(variant => createRayGlowSprite(variant, createCanvas))
   return {
-    raySprites: IMPACT_RAY_VARIANTS.map(variant => createRaySprite(variant, createCanvas)),
-    rayGlowSprites: IMPACT_RAY_VARIANTS.map(variant => createRayGlowSprite(variant, createCanvas)),
+    raySprites,
+    rayGlowSprites,
+    // ponytail: three glow intensities packed into one atlas keep every ray/burst,
+    // halve per-frame blits without creating 90 extra canvas contexts.
+    rayCombinedAtlas: createCombinedRayAtlas(raySprites, rayGlowSprites, createCanvas),
     floatSprites: IMPACT_RAY_VARIANTS.map(variant => createFloatSprite(variant, createCanvas)),
   }
 }

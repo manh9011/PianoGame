@@ -6,7 +6,8 @@ import { useSettingsStore } from '../../stores/settingsStore'
 import { layoutNotes } from '../../modules/render/pianoRollLayout'
 import type { LaidOutNote } from '../../modules/render/pianoRollLayout'
 import { createPianoKeys, WHITE_KEY_COUNT } from '../../modules/render/pianoGeometry'
-import { formatKeySignature, getNoteLabel, notePitchClass } from '../../modules/render/pianoLabels'
+import { drawStableFallingNoteSprite, paintFallingNoteDirect } from '../../modules/render/fallingNoteSprites'
+import { formatKeySignature, getNoteLabel, isBlackNote, notePitchClass } from '../../modules/render/pianoLabels'
 import { FLAT_GRAY, MISSED_NOTE_COLOR, TRACK_INVISIBLE_COLOR } from '../../modules/game/trackProperties'
 import { HAND_COLORS, HAND_HIT_COLORS } from '../../modules/game/handAssignment'
 import { drawRollHitLine, ROLL_HIT_LINE_HEIGHT as HIT_LINE_HEIGHT } from '../../modules/render/hitLineRenderer'
@@ -455,33 +456,10 @@ function drawLoopRegion(ctx: CanvasRenderingContext2D, session: NonNullable<type
   ctx.restore()
 }
 
-function drawNoteBody(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, fillColor: string) {
-  ctx.save()
-  ctx.shadowColor = 'rgba(0,0,0,0.36)'
-  ctx.shadowBlur = 3.2
-  ctx.shadowOffsetX = 2.5
-  ctx.shadowOffsetY = 3
-  roundedRect(ctx, x, y, w, h, 5)
-  ctx.fillStyle = fillColor
-  ctx.fill()
-  ctx.restore()
-
-  const innerX = x + 1
-  const innerY = y + 1
-  const innerW = Math.max(0, w - 2)
-  const innerH = Math.max(0, h - 2)
-  const bevel = ctx.createLinearGradient(x, y, x + w, y + h)
-  bevel.addColorStop(0, 'rgba(255,255,255,0.48)')
-  bevel.addColorStop(0.22, 'rgba(255,255,255,0.14)')
-  bevel.addColorStop(0.58, 'rgba(0,0,0,0)')
-  bevel.addColorStop(1, 'rgba(0,0,0,0.28)')
-  roundedRect(ctx, innerX, innerY, innerW, innerH, 4)
-  ctx.fillStyle = bevel
-  ctx.fill()
-
-  roundedRect(ctx, innerX, innerY, innerW, 1.5, 1)
-  ctx.fillStyle = 'rgba(255,255,255,0.52)'
-  ctx.fill()
+function drawNoteBody(ctx: CanvasRenderingContext2D, note: LaidOutNote<SessionNote>, x: number, y: number, w: number, h: number, fillColor: string) {
+  // Stable full-size sprite: note size fixed while falling — 1 blit/note; resize frames use direct paint.
+  const spriteOptions = { color: fillColor, blackKey: isBlackNote(note.noteId), scale: pixelRatio }
+  drawStableFallingNoteSprite(ctx, spriteOptions, note.id, x, y, w, h, () => paintFallingNoteDirect(ctx, spriteOptions, x, y, w, h))
 }
 
 function drawNote(ctx: CanvasRenderingContext2D, note: LaidOutNote<SessionNote>) {
@@ -491,7 +469,7 @@ function drawNote(ctx: CanvasRenderingContext2D, note: LaidOutNote<SessionNote>)
   const h = Math.max(1, Math.round(note.height))
   const fillColor = color(note)
 
-  drawNoteBody(ctx, x, y, w, h, fillColor)
+  drawNoteBody(ctx, note, x, y, w, h, fillColor)
   if (settings.showFingerHints && note.finger && settings.noteLabelMode !== 'finger-hint') drawFingerBadge(ctx, note, true)
 }
 

@@ -6,13 +6,13 @@ import { usePlayerStore } from '../../stores/playerStore'
 import { useSettingsStore } from '../../stores/settingsStore'
 import { detectBestChord } from '../../modules/game/chordDetection'
 import { createPianoKeys, WHITE_KEY_COUNT } from '../../modules/render/pianoGeometry'
-import { getNoteLabel } from '../../modules/render/pianoLabels'
+import { getNoteLabel, isBlackNote } from '../../modules/render/pianoLabels'
+import { drawStableFallingNoteSprite, paintFallingNoteDirect } from '../../modules/render/fallingNoteSprites'
 import { drawRollHitLine, ROLL_HIT_LINE_HEIGHT } from '../../modules/render/hitLineRenderer'
 import { drawImpactParticlesStatelessWithSprites } from '../../modules/render/impactParticlesRenderer'
 import { isNoteInRange } from '../../modules/render/keyboardRange'
 
 const PIANO_ROLL_BACKGROUND = '#303030'
-const NOTE_RADIUS = 5
 const MIN_NOTE_HEIGHT = 8
 const keys = createPianoKeys()
 const keyByNoteId = new Map(keys.map(key => [key.noteId, key]))
@@ -113,21 +113,6 @@ function yForTime(timeUs: number, viewStartUs: number, windowUs: number) {
   return ratio * rollHeight()
 }
 
-function roundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
-  const radius = Math.max(0, Math.min(r, w / 2, h / 2))
-  ctx.beginPath()
-  ctx.moveTo(x + radius, y)
-  ctx.lineTo(x + w - radius, y)
-  ctx.quadraticCurveTo(x + w, y, x + w, y + radius)
-  ctx.lineTo(x + w, y + h - radius)
-  ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h)
-  ctx.lineTo(x + radius, y + h)
-  ctx.quadraticCurveTo(x, y + h, x, y + h - radius)
-  ctx.lineTo(x, y + radius)
-  ctx.quadraticCurveTo(x, y, x + radius, y)
-  ctx.closePath()
-}
-
 function drawGrid(ctx: CanvasRenderingContext2D) {
   const unitWidth = logicalWidth / WHITE_KEY_COUNT
   ctx.save()
@@ -190,30 +175,9 @@ function noteColor(note: DrawableNote) {
 }
 
 function drawNoteBody(ctx: CanvasRenderingContext2D, note: DrawableNote, x: number, y: number, width: number, height: number) {
-  const color = noteColor(note)
-  ctx.save()
-  ctx.shadowColor = 'rgba(0,0,0,0.36)'
-  ctx.shadowBlur = 3.2
-  ctx.shadowOffsetX = 2.5
-  ctx.shadowOffsetY = 3
-  roundedRect(ctx, x, y, width, height, NOTE_RADIUS)
-  ctx.fillStyle = color
-  ctx.fill()
-  ctx.shadowColor = 'transparent'
-
-  const bevel = ctx.createLinearGradient(x, y, x, y + height)
-  bevel.addColorStop(0, 'rgba(255,255,255,0.35)')
-  bevel.addColorStop(0.32, 'rgba(255,255,255,0.08)')
-  bevel.addColorStop(1, 'rgba(0,0,0,0.18)')
-  roundedRect(ctx, x + 1, y + 1, Math.max(0, width - 2), Math.max(0, height - 2), NOTE_RADIUS - 1)
-  ctx.fillStyle = bevel
-  ctx.fill()
-
-  ctx.lineWidth = 1
-  ctx.strokeStyle = 'rgba(0,0,0,0.32)'
-  roundedRect(ctx, x, y, width, height, NOTE_RADIUS)
-  ctx.stroke()
-  ctx.restore()
+  // Stable full-size sprite: note size fixed while animating — 1 blit/note; resize frames use direct paint.
+  const spriteOptions = { color: noteColor(note), blackKey: isBlackNote(note.noteId), outline: true, softBevel: true, scale: pixelRatio }
+  drawStableFallingNoteSprite(ctx, spriteOptions, note.id, x, y, width, height, () => paintFallingNoteDirect(ctx, spriteOptions, x, y, width, height))
 }
 
 function drawNoteLabel(ctx: CanvasRenderingContext2D, note: DrawableNote, x: number, y: number, width: number, height: number) {
