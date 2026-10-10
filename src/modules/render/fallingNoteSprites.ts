@@ -12,6 +12,32 @@ export interface FallingNoteSpriteOptions {
 const PAD = 8
 const RADIUS_WHITE = 5
 const RADIUS_BLACK = 4
+const BLACK_KEY_DARKEN = 0.72
+const WHITE_KEY_BRIGHTEN = 1.25
+
+function adjustHex(hex: string, factor: number): string {
+  let r: number, g: number, b: number
+  if (/^#[\da-f]{6}$/i.test(hex)) {
+    const v = Number.parseInt(hex.slice(1), 16)
+    r = (v >> 16) & 255; g = (v >> 8) & 255; b = v & 255
+  } else if (/^#[\da-f]{3}$/i.test(hex)) {
+    r = Number.parseInt(hex[1] + hex[1], 16)
+    g = Number.parseInt(hex[2] + hex[2], 16)
+    b = Number.parseInt(hex[3] + hex[3], 16)
+  } else {
+    return hex
+  }
+  r = Math.min(255, Math.round(r * factor))
+  g = Math.min(255, Math.round(g * factor))
+  b = Math.min(255, Math.round(b * factor))
+  return `#${((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1)}`
+}
+
+function resolveNoteColor(options: FallingNoteSpriteOptions): string {
+  if (options.blackKey) return adjustHex(options.color, BLACK_KEY_DARKEN)
+  return adjustHex(options.color, WHITE_KEY_BRIGHTEN)
+}
+
 // ponytail: nine-part master is assembled once per key width, then drawn as three
 // vertical slices when note height varies; upgrade only if widths vary each frame.
 const MASTER_W = 48
@@ -64,20 +90,20 @@ function paintMaster(options: FallingNoteSpriteOptions, rw: number, mh: number, 
   ctx.shadowOffsetX = 2.5 * s
   ctx.shadowOffsetY = 3 * s
   roundedRectPath(ctx, x, y, RW, MH, radius)
-  ctx.fillStyle = options.color
+  ctx.fillStyle = resolveNoteColor(options)
   ctx.fill()
   ctx.restore()
 
   const bevel = ctx.createLinearGradient(x, y, options.softBevel ? x : x + RW, y + MH)
   if (options.softBevel) {
-    bevel.addColorStop(0, 'rgba(255,255,255,0.35)')
-    bevel.addColorStop(0.32, 'rgba(255,255,255,0.08)')
-    bevel.addColorStop(1, 'rgba(0,0,0,0.18)')
-  } else {
-    bevel.addColorStop(0, 'rgba(255,255,255,0.48)')
-    bevel.addColorStop(0.22, 'rgba(255,255,255,0.14)')
-    bevel.addColorStop(0.58, 'rgba(0,0,0,0)')
+    bevel.addColorStop(0, 'rgba(255,255,255,0.12)')
+    bevel.addColorStop(0.32, 'rgba(255,255,255,0.03)')
     bevel.addColorStop(1, 'rgba(0,0,0,0.28)')
+  } else {
+    bevel.addColorStop(0, 'rgba(255,255,255,0.15)')
+    bevel.addColorStop(0.22, 'rgba(255,255,255,0.04)')
+    bevel.addColorStop(0.58, 'rgba(0,0,0,0)')
+    bevel.addColorStop(1, 'rgba(0,0,0,0.38)')
   }
   roundedRectPath(ctx, x + s, y + s, Math.max(0, RW - s * 2), Math.max(0, MH - s * 2), Math.max(0, radius - s))
   ctx.fillStyle = bevel
@@ -85,7 +111,7 @@ function paintMaster(options: FallingNoteSpriteOptions, rw: number, mh: number, 
 
   if (!options.softBevel) {
     roundedRectPath(ctx, x + s, y + s, Math.max(0, RW - s * 2), Math.max(1, 1.5 * s), s)
-    ctx.fillStyle = 'rgba(255,255,255,0.52)'
+    ctx.fillStyle = 'rgba(255,255,255,0.12)'
     ctx.fill()
   }
 
@@ -106,20 +132,20 @@ export function paintFallingNoteDirect(ctx: Canvas2DContext, options: FallingNot
   ctx.shadowOffsetX = 2.5
   ctx.shadowOffsetY = 3
   roundedRectPath(ctx, x, y, w, h, radius)
-  ctx.fillStyle = options.color
+  ctx.fillStyle = resolveNoteColor(options)
   ctx.fill()
   ctx.restore()
 
   const bevel = ctx.createLinearGradient(x, y, options.softBevel ? x : x + w, y + h)
   if (options.softBevel) {
-    bevel.addColorStop(0, 'rgba(255,255,255,0.35)')
-    bevel.addColorStop(0.32, 'rgba(255,255,255,0.08)')
-    bevel.addColorStop(1, 'rgba(0,0,0,0.18)')
-  } else {
-    bevel.addColorStop(0, 'rgba(255,255,255,0.48)')
-    bevel.addColorStop(0.22, 'rgba(255,255,255,0.14)')
-    bevel.addColorStop(0.58, 'rgba(0,0,0,0)')
+    bevel.addColorStop(0, 'rgba(255,255,255,0.12)')
+    bevel.addColorStop(0.32, 'rgba(255,255,255,0.03)')
     bevel.addColorStop(1, 'rgba(0,0,0,0.28)')
+  } else {
+    bevel.addColorStop(0, 'rgba(255,255,255,0.15)')
+    bevel.addColorStop(0.22, 'rgba(255,255,255,0.04)')
+    bevel.addColorStop(0.58, 'rgba(0,0,0,0)')
+    bevel.addColorStop(1, 'rgba(0,0,0,0.38)')
   }
   roundedRectPath(ctx, x + 1, y + 1, Math.max(0, w - 2), Math.max(0, h - 2), Math.max(0, radius - 1))
   ctx.fillStyle = bevel
@@ -127,7 +153,7 @@ export function paintFallingNoteDirect(ctx: Canvas2DContext, options: FallingNot
 
   if (!options.softBevel) {
     roundedRectPath(ctx, x + 1, y + 1, Math.max(0, w - 2), 1.5, 1)
-    ctx.fillStyle = 'rgba(255,255,255,0.52)'
+    ctx.fillStyle = 'rgba(255,255,255,0.12)'
     ctx.fill()
   }
 
