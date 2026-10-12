@@ -14,7 +14,7 @@ PianoGame là ứng dụng học và luyện tập piano đa nền tảng, lấy
 | State        | Pinia                                            |
 | Router       | Vue Router (hash history)                        |
 | i18n         | vue-i18n (19 ngôn ngữ, RTL support)              |
-| Desktop      | Tauri v2 (Rust)                                  |
+| Desktop      | Tauri v2 (Rust), Electron                        |
 | PWA          | vite-plugin-pwa (offline support)                |
 | CSS          | Thuần CSS + CSS variables (dark/light theme)     |
 | Audio        | Web Audio API, soundfont-player, SimpleSynth     |
@@ -320,6 +320,10 @@ File MIDI → @tonejs/midi → RawMidiEvent[] → translateNotes → assignHands
 | `npm run tauri:dev`           | Tauri dev mode           |
 | `npm run tauri:build`         | Build Tauri desktop app  |
 | `npm run tauri:android:build` | Build Android APK        |
+| `npm run electron:build`      | Typecheck + Vite build (electron mode) |
+| `npm run electron:dist:win`   | Build Windows Electron installer (NSIS) |
+| `npm run electron:dist:mac`   | Build macOS Electron DMG |
+| `npm run electron:dist:linux` | Build Linux Electron (AppImage, deb, rpm) |
 
 ## Các store và dependency graph
 

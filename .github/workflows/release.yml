@@ -35,9 +35,9 @@ jobs:
     secrets: inherit
 
   release-linux:
-    uses: ./.github/workflows/tauriv2-linux.yml
+    uses: ./.github/workflows/electron-linux.yml
     with:
-      release_tag: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
+      tag: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
     secrets: inherit
 
   release-android-arm64-v8a:

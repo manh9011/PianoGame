@@ -2,13 +2,14 @@
   "name": "pianogame-electron",
   "version": "0.1.7",
   "private": true,
-  "description": "PianoGame desktop build (Electron, macOS)",
+  "description": "PianoGame desktop build (Electron, macOS/Linux/Windows)",
   "author": "manh9011",
   "main": "main.cjs",
   "scripts": {
     "start": "electron .",
     "dist:mac": "electron-builder --mac",
     "dist:win": "electron-builder --win",
+    "dist:linux": "electron-builder --linux",
     "dist:win:local": "electron-builder --win -c.directories.output=../../pg-release-electron"
   },
   "devDependencies": {
@@ -41,8 +42,13 @@
       "icon": "../src-tauri/icons/icon.ico"
     },
     "linux": {
-      "target": "AppImage",
-      "icon": "../src-tauri/icons"
+      "target": [
+        "AppImage",
+        "deb",
+        "rpm"
+      ],
+      "icon": "../src-tauri/icons",
+      "category": "Audio"
     }
   }
 }

@@ -13,6 +13,7 @@
         "tauri:android:init": "tauri android init --ci --skip-targets-install",
         "tauri:android:build": "tauri android build --apk --target aarch64 x86_64 --split-per-abi --ci",
         "electron:build": "vue-tsc -b && vite build --mode electron",
+        "electron:dist:linux": "npm run electron:build && cd src-electron && npm run dist:linux",
         "electron:dist:mac": "npm run electron:build && cd src-electron && npm run dist:mac",
         "electron:dist:win": "npm run electron:build && cd src-electron && npm run dist:win"
     },

@@ -111,6 +111,9 @@ app.whenReady().then(() => {
   session.defaultSession.setPermissionRequestHandler((_wc, permission, callback) => {
     callback(['midi', 'midiSysex', 'fullscreen'].includes(permission))
   })
+  session.defaultSession.setPermissionCheckHandler((_wc, permission) => {
+    return ['midi', 'midiSysex', 'fullscreen'].includes(permission)
+  })
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     const headers = { ...details.responseHeaders }
     if (details.url.startsWith('https://scorelibrary.manh9011.qzz.io/')) {

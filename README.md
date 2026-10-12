@@ -54,7 +54,7 @@ Anyone can jump in and play a song right away: falling-line visuals guide your h
 - **Web (PWA)** - installable, works offline, deployable to any static host
 - **Windows** - Electron (NSIS installer) and Tauri builds
 - **macOS** - Electron builds (Intel x64 and Apple Silicon arm64, DMG)
-- **Linux** - Tauri builds
+- **Linux** - Electron builds (AppImage, deb, rpm)
 - **Android** - Tauri APK builds (arm64-v8a, armeabi-v7a, x86, x86_64)
 
 All release artifacts are built automatically via GitHub Actions.
@@ -120,8 +120,9 @@ npm run tauri:android:build    # Build Android APKs
 The Electron build compiles the app with Vite in electron mode first (`electron:build`), then packages it with electron-builder:
 
 ```sh
-npm run electron:dist:win  # Build Windows installer (NSIS)
-npm run electron:dist:mac  # Build macOS DMG
+npm run electron:dist:win    # Build Windows installer (NSIS)
+npm run electron:dist:mac    # Build macOS DMG
+npm run electron:dist:linux  # Build Linux packages (AppImage, deb, rpm)
 ```
 
 ## Scripts
@@ -138,6 +139,7 @@ npm run electron:dist:mac  # Build macOS DMG
 | `npm run electron:build` | Typecheck + Vite build in electron mode |
 | `npm run electron:dist:win` | Build the Windows Electron installer (NSIS) |
 | `npm run electron:dist:mac` | Build the macOS Electron DMG |
+| `npm run electron:dist:linux` | Build Linux packages (AppImage, deb, rpm) |
 
 ## Project Structure
 
@@ -153,8 +155,8 @@ PianoGame/
 │   ├── i18n/            # 19-language translation files
 │   ├── types/           # Core TypeScript interfaces
 │   └── styles/          # Global CSS with theme variables
-├── src-tauri/           # Tauri v2 desktop app (Rust)
-├── src-electron/        # Electron app (Windows/macOS)
+├── src-tauri/           # Tauri v2 desktop app (Windows/Android)
+├── src-electron/        # Electron app (Windows/macOS/Linux)
 └── public/              # Static assets (soundfonts, icons, key signature SVGs)
 ```
 
