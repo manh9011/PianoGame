@@ -1,6 +1,12 @@
 {
     "name": "PianoGame",
     "version": "v0.1.7",
+    "description": "Cross-platform piano learning and practice app",
+    "homepage": "https://github.com/manh9011/PianoGame",
+    "author": {
+        "name": "Lương Xuân Mạnh",
+        "email": "manh9011@gmail.com"
+    },
     "copyright": "©2026 manh9011",
     "scripts": {
         "dev": "vite",

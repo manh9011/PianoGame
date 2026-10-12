@@ -3,7 +3,11 @@
   "version": "0.1.7",
   "private": true,
   "description": "PianoGame desktop build (Electron, macOS/Linux/Windows)",
-  "author": "manh9011",
+  "homepage": "https://github.com/manh9011/PianoGame",
+  "author": {
+    "name": "Lương Xuân Mạnh",
+    "email": "manh9011@gmail.com"
+  },
   "main": "main.cjs",
   "scripts": {
     "start": "electron .",
@@ -47,6 +51,7 @@
         "deb",
         "rpm"
       ],
+      "maintainer": "Lương Xuân Mạnh <manh9011@gmail.com>",
       "icon": "../src-tauri/icons",
       "category": "Audio"
     }
