@@ -155,16 +155,31 @@ export function collectChordAtStart(notes: SessionNote[], tracks: TrackPropertie
   return chord
 }
 
-export function findHit(notes: SessionNote[], tracks: TrackProperties[], handSelection: HandSelection, noteId: number, currentUs: number, session?: PlaySession) {
+export function findHit(notes: SessionNote[], tracks: TrackProperties[], handSelection: HandSelection, noteId: number, currentUs: number, session?: PlaySession): SessionNote | null {
   let best: SessionNote | null = null
   let bestDistance = Infinity
-  const earliestStart = findEarliestPlayableWaitingStart(notes, tracks, handSelection, session)
-  if (earliestStart === null) return null
-
-  for (const note of collectChordAtStart(notes, tracks, handSelection, earliestStart, session)) {
-    if (note.noteId !== noteId) continue
+  const consider = (note: SessionNote) => {
+    if (note.noteId !== noteId) return
     const distance = Math.abs(note.start - currentUs)
     if (distance <= HIT_WINDOW_US && distance < bestDistance) { best = note; bestDistance = distance }
+  }
+  const earliestStart = findEarliestPlayableWaitingStart(notes, tracks, handSelection, session)
+  if (earliestStart !== null) {
+    for (const note of collectChordAtStart(notes, tracks, handSelection, earliestStart, session)) consider(note)
+  }
+  if (best) return best
+
+  if (notesSortedByStart(notes) && session) {
+    let index = lowerBoundStart(notes, currentUs - HIT_WINDOW_US)
+    for (; index < notes.length; index += 1) {
+      const note = notes[index]
+      if (note.start > currentUs + HIT_WINDOW_US) break
+      if (note.state === 'waiting' && isPlayableNote(note, tracks, handSelection, session)) consider(note)
+    }
+  } else {
+    for (const note of notes) {
+      if (note.state === 'waiting' && isPlayableNote(note, tracks, handSelection, session)) consider(note)
+    }
   }
   return best
 }

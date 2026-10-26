@@ -10,7 +10,7 @@ import { PLAY_MODE_CONFIGS, clampLeadInDuration, clampZoomPercent, clampSpeed, c
 import { getKeyboardRange } from '../modules/render/keyboardRange'
 import { getKeySignatureAccidentals } from '../modules/render/pianoLabels'
 import { MidiPlayerClock } from '../modules/midi/midiPlayerClock'
-import { collectChordAtStart, findEarliestPlayableWaitingStart, findHit, findPlayableWaitingNoteDueBy, HIT_WINDOW_US, isPlayableNote, markMisses } from '../modules/game/hitDetection'
+import { collectChordAtStart, findHit, findPlayableWaitingNoteDueBy, HIT_WINDOW_US, isPlayableNote, markMisses } from '../modules/game/hitDetection'
 import { awardHoldPoints, createScoreState, recordHit, recordMiss, recordMisses, recordPassiveRealTime, recordStray, resetSpeedTrackingAnchor, stopHoldsForInput, summarizeScoreWithinRange, trimScoreAfter, updateSpeedTracking, type ScoreState } from '../modules/game/scoring'
 import { summarizeStats, type SongPlayStats } from '../modules/game/songStatistics'
 import { assignHands } from '../modules/game/handAssignment'
@@ -1399,23 +1399,27 @@ export const usePlayerStore = defineStore('player', {
     },
     noteInput(noteId: number, on: boolean, options: NoteInputOptions = {}) {
       const session = this.session
-      if (this.playbackOutputBlocked || this.interactionLocked) return
-      if (!session?.setupComplete) return
-      if ((session.finished || this.stats) && session.mode !== 'listen') return
       const velocity = Math.max(0, Math.min(127, Math.round(options.velocity ?? 80)))
       const source = options.source ?? 'midi'
-      const inputTrackId = options.trackId ?? session.tracks[0]?.trackId
       const atMs = performance.now()
       if (!on) {
-        session.activeNotes.delete(noteId)
-        session.activeNoteHands.delete(noteId)
-        session.activeNoteTrackIds.delete(noteId)
-        markKeyboardVisualChanged(session)
-        for (const score of activeScoresFor(session)) stopHoldsForInput(score, noteId)
-        this.inputSynth.noteOff(noteId)
+        if (session) {
+          const wasActive = session.activeNotes.delete(noteId)
+          session.activeNoteHands.delete(noteId)
+          session.activeNoteTrackIds.delete(noteId)
+          if (wasActive) {
+            markKeyboardVisualChanged(session)
+            for (const score of activeScoresFor(session)) stopHoldsForInput(score, noteId)
+          }
+          this.inputSynth.noteOff(noteId)
+        }
         emitNoteInput({ noteId, on, velocity, source, atMs })
         return
       }
+      if (this.playbackOutputBlocked || this.interactionLocked) return
+      if (!session?.setupComplete) return
+      if ((session.finished || this.stats) && session.mode !== 'listen') return
+      const inputTrackId = options.trackId ?? session.tracks[0]?.trackId
 
       const playableNoteId = noteId - session.octaveShift * 12
       const hit = session.mode === 'listen' ? null : findHit(session.notes, session.tracks, session.handSelection, playableNoteId, session.currentUs, session)
@@ -1434,27 +1438,17 @@ export const usePlayerStore = defineStore('player', {
       if (session.mode === 'listen') return
 
       if (hit) {
-        const chordStart = findEarliestPlayableWaitingStart(session.notes, session.tracks, session.handSelection, session)
-        const chordNotes = chordStart === null
-          ? [hit]
-          : collectChordAtStart(session.notes, session.tracks, session.handSelection, chordStart, session)
-        const activeInputByPlayableNote = new Map<number, number>()
-        for (const activeNoteId of session.activeNotes) {
-          activeInputByPlayableNote.set(activeNoteId - session.octaveShift * 12, activeNoteId)
-        }
-        const chordComplete = chordNotes.every(chordNote => activeInputByPlayableNote.has(chordNote.noteId))
-
-        if (!chordComplete) return
+        const chordNotes = collectChordAtStart(session.notes, session.tracks, session.handSelection, hit.start, session)
+        const matchedNotes: SessionNote[] = chordNotes.filter(chordNote => chordNote.noteId === playableNoteId)
 
         const nowMs = performance.now()
-        for (const chordNote of chordNotes) {
-          const inputNoteId = activeInputByPlayableNote.get(chordNote.noteId) ?? noteId
-          session.activeNoteHands.set(inputNoteId, chordNote.hand)
-          session.activeNoteTrackIds.set(inputNoteId, chordNote.trackId)
+        for (const chordNote of matchedNotes) {
+          session.activeNoteHands.set(noteId, chordNote.hand)
+          session.activeNoteTrackIds.set(noteId, chordNote.trackId)
           chordNote.state = 'hit'
-          if (session.modeConfig.scoringEnabled) recordHitForSessionNote(session, chordNote, session.currentUs, inputNoteId, nowMs)
+          if (session.modeConfig.scoringEnabled) recordHitForSessionNote(session, chordNote, session.currentUs, noteId, nowMs)
         }
-        if (session.mode === 'noteMemory' && chordNotes.some(note => note.id === session.melodyWaitNoteId)) {
+        if (matchedNotes.length && session.mode === 'noteMemory' && matchedNotes.some(note => note.id === session.melodyWaitNoteId)) {
           flushMelodyWaitTracking(session, nowMs)
           session.melodyWaitNoteId = undefined
           session.melodyWaitStartedMs = undefined
