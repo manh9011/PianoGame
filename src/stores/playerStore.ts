@@ -1402,7 +1402,9 @@ export const usePlayerStore = defineStore('player', {
       const velocity = Math.max(0, Math.min(127, Math.round(options.velocity ?? 80)))
       const source = options.source ?? 'midi'
       const atMs = performance.now()
+      const inputVoiceId = `input:${source}:${noteId}`
       if (!on) {
+        if (source !== 'midi') this.autoPlayer.noteOffVoice(inputVoiceId)
         if (session) {
           const wasActive = session.activeNotes.delete(noteId)
           session.activeNoteHands.delete(noteId)
@@ -1433,7 +1435,13 @@ export const usePlayerStore = defineStore('player', {
         session.activeNoteTrackIds.set(noteId, inputTrackId)
       }
       markKeyboardVisualChanged(session)
-      void this.inputSynth.noteOn(String(noteId), noteId, velocity, getTrackSoundfont(session, hit?.trackId ?? inputTrackId))
+      const activeTrackId = hit?.trackId ?? inputTrackId
+      if (source !== 'midi' && this.autoPlayer.isUsingMidiOutput()) {
+        const trackProgram = session.tracks.find(track => track.trackId === activeTrackId)?.instrumentProgram ?? 0
+        this.autoPlayer.noteOnVoice(inputVoiceId, noteId, velocity, trackProgram, hit?.channel ?? 0)
+      } else {
+        void this.inputSynth.noteOn(String(noteId), noteId, velocity, getTrackSoundfont(session, activeTrackId))
+      }
       emitNoteInput({ noteId, on, velocity, source, atMs })
       if (session.mode === 'listen') return
 

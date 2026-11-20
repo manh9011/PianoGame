@@ -9,6 +9,14 @@ import { addActivePlaybackCounter, isPlaybackProfilerEnabled, setActivePlaybackG
 type MidiAccess = Awaited<ReturnType<typeof requestMidiAccess>>
 interface ActivePitchEntry { hand: Hand; trackId: number }
 
+const DEFAULT_SYNTH_MASTER_VOLUME = 0.72
+const MELODIC_MIDI_CHANNELS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15] as const
+
+export function getMelodicMidiChannel(trackIndex: number): number {
+  const safeIndex = Math.max(0, Math.floor(trackIndex))
+  return MELODIC_MIDI_CHANNELS[safeIndex % MELODIC_MIDI_CHANNELS.length]
+}
+
 function lowerBoundStart(notes: SessionNote[], startUs: number) {
   let lo = 0
   let hi = notes.length
@@ -37,10 +45,12 @@ export class AutoNotePlayer {
   private active = new Map<string, SessionNote>()
   private activeByPitch = new Map<number, ActivePitchEntry[]>()
   private activeKeyLights = new Map<string, { note: SessionNote; pitch: number }>()
+  private manualVoices = new Map<string, { noteId: number; channel: number }>()
   private synth = new SimpleSynth()
   private midiAccess: MidiAccess = null
   private midiOutputId = ''
   private usingSynth = false
+  private alsoUseSynth = false
   private zeroVolumeKeyLights = false
   private midiVolumeScale = 1
   private sentPrograms = new Map<number, number>()
@@ -55,20 +65,76 @@ export class AutoNotePlayer {
     lastUs: number
   } | null = null
 
-  async configure(outputId: string, options?: { zeroVolumeKeyLights?: boolean }) {
+  async configure(outputId: string, options?: { zeroVolumeKeyLights?: boolean; alsoUseSynth?: boolean }) {
+    for (const voiceId of [...this.manualVoices.keys()]) this.noteOffVoice(voiceId)
     this.midiOutputId = outputId.trim()
     this.midiAccess = this.midiOutputId && isWebMidiSupported() ? await requestMidiAccess() : null
     this.usingSynth = !this.midiOutputId || !this.midiAccess?.outputs.get(this.midiOutputId)
+    this.alsoUseSynth = !this.usingSynth && (options?.alsoUseSynth ?? false)
     this.zeroVolumeKeyLights = !this.usingSynth && (options?.zeroVolumeKeyLights ?? false)
     this.sentPrograms.clear()
     this.clearKeyLights()
-    if (this.usingSynth) await this.synth.start()
+    this.resetMasterVolume()
+    if (this.usingSynth || this.alsoUseSynth) await this.synth.start()
   }
 
   setMasterVolume(volume: number) {
     const clamped = Math.max(0, Math.min(1.5, volume))
     this.midiVolumeScale = clamped
     this.synth.setMasterVolume(clamped)
+  }
+
+  resetMasterVolume() {
+    this.midiVolumeScale = 1
+    this.synth.setMasterVolume(DEFAULT_SYNTH_MASTER_VOLUME)
+  }
+
+  isUsingMidiOutput(): boolean {
+    return !this.usingSynth && Boolean(this.midiOutputId && this.midiAccess?.outputs.get(this.midiOutputId))
+  }
+
+  noteOnVoice(voiceId: string, noteId: number, velocity = 80, instrumentProgram = 0, channel = 0) {
+    if (this.manualVoices.has(voiceId)) this.noteOffVoice(voiceId)
+    const safeChannel = Math.max(0, Math.min(15, Math.floor(channel)))
+    const safeNoteId = Math.max(0, Math.min(127, Math.round(noteId)))
+    const instrument = getInstrumentByProgram(instrumentProgram)
+    this.manualVoices.set(voiceId, { noteId: safeNoteId, channel: safeChannel })
+
+    const usingMidi = this.isUsingMidiOutput()
+    if (!usingMidi || this.alsoUseSynth) {
+      void this.synth.start().then(() => {
+        if (!this.manualVoices.has(voiceId)) return
+        void this.synth.noteOn(voiceId, safeNoteId, velocity, instrument.soundfontId)
+      })
+    }
+    if (!usingMidi) return
+    if (this.midiVolumeScale <= 0) return
+    if (this.sentPrograms.get(safeChannel) !== instrument.program) {
+      sendProgramChange(this.midiAccess, this.midiOutputId, safeChannel, instrument.program)
+      this.sentPrograms.set(safeChannel, instrument.program)
+    }
+    const baseVelocity = velocity || 80
+    const scaledVelocity = this.midiVolumeScale === 1
+      ? baseVelocity
+      : Math.max(1, Math.min(127, Math.round(baseVelocity * this.midiVolumeScale)))
+    sendNote(this.midiAccess, this.midiOutputId, safeNoteId, scaledVelocity, true, safeChannel)
+  }
+
+  noteOffVoice(voiceId: string) {
+    const entry = this.manualVoices.get(voiceId)
+    if (!entry) return
+    this.manualVoices.delete(voiceId)
+    const usingMidi = this.isUsingMidiOutput()
+    if (!usingMidi || this.alsoUseSynth) {
+      this.synth.noteOff(voiceId)
+    }
+    if (!usingMidi) return
+    const stillHeldOnChannel =
+      [...this.manualVoices.values()].some(other => other.channel === entry.channel && other.noteId === entry.noteId) ||
+      [...this.active.values()].some(other => (other.channel ?? 0) === entry.channel && other.noteId === entry.noteId)
+    if (!stillHeldOnChannel) {
+      sendNote(this.midiAccess, this.midiOutputId, entry.noteId, 0, false, entry.channel)
+    }
   }
 
   tick(session: PlaySession) {
@@ -202,6 +268,10 @@ export class AutoNotePlayer {
   allNotesOff(session?: PlaySession | null) {
     const hadActiveNotes = this.active.size > 0
     for (const note of this.active.values()) this.noteOff(note)
+    this.active.clear()
+    this.activeByPitch.clear()
+    for (const voiceId of [...this.manualVoices.keys()]) this.noteOffVoice(voiceId)
+    this.manualVoices.clear()
     this.clearKeyLights()
     if (session) {
       session.autoActiveNotes.clear()
@@ -210,8 +280,6 @@ export class AutoNotePlayer {
       session.autoActiveNotePressCounts.clear()
       if (hadActiveNotes) session.keyboardVisualVersion += 1
     }
-    this.active.clear()
-    this.activeByPitch.clear()
     this.currentSession = null
     this.sessionState = null
     this.synth.allNotesOff()
@@ -294,10 +362,10 @@ export class AutoNotePlayer {
   private noteOn(note: SessionNote) {
     const sessionTrack = this.currentTrackFor(note)
     const instrument = getInstrumentByProgram(sessionTrack?.instrumentProgram)
-    if (this.usingSynth) {
+    if (this.usingSynth || this.alsoUseSynth) {
       void this.synth.noteOn(note.id, note.noteId, note.velocity, instrument.soundfontId)
-      return
     }
+    if (this.usingSynth) return
     if (this.midiVolumeScale <= 0) return
     const channel = note.channel ?? 0
     if (this.sentPrograms.get(channel) !== instrument.program) {
@@ -312,8 +380,8 @@ export class AutoNotePlayer {
   }
 
   private noteOff(note: SessionNote) {
-    if (this.usingSynth) this.synth.noteOff(note.id)
-    else sendNote(this.midiAccess, this.midiOutputId, note.noteId, 0, false, note.channel ?? 0)
+    if (this.usingSynth || this.alsoUseSynth) this.synth.noteOff(note.id)
+    if (!this.usingSynth) sendNote(this.midiAccess, this.midiOutputId, note.noteId, 0, false, note.channel ?? 0)
   }
 
   private syncKeyLight(note: SessionNote, activeNow: boolean) {

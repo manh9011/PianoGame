@@ -450,7 +450,7 @@ export const useLibraryStore = defineStore('library', {
       // FIX: Tránh dùng chung một AutoNotePlayer instance dễ bị lỗi gc / treo qua nhiều tab chuyển đổi.
       // Luôn tạo mới player như bên playerStore.ts.
       const player = new AutoNotePlayer()
-      await player.configure(options.outputId)
+      await player.configure(options.outputId, { alsoUseSynth: true })
       if (!isCurrentRequest()) {
         player.allNotesOff(null)
         return

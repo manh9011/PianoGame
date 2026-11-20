@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useConfirmDialog } from '../../../composables/useConfirmDialog'
+import { getMelodicMidiChannel } from '../../../modules/audio/autoNotePlayer'
 import { getInstrumentByProgram, getInstrumentImageUrl } from '../../../modules/audio/gmInstrumentCatalog'
 import { TRACK_SETTINGS_PALETTE } from '../../../modules/game/trackProperties'
 import { clampPitch, editorBeatUs } from '../../../modules/freePlay/editor/freePlayTrackEditorGeometry'
@@ -344,7 +345,7 @@ function stopPreview() {
     window.clearInterval(previewTimerId)
     previewTimerId = null
   }
-  for (const voiceId of previewActiveVoiceIds) player.inputSynth.noteOff(voiceId)
+  for (const voiceId of previewActiveVoiceIds) player.autoPlayer.noteOffVoice(voiceId)
   previewActiveVoiceIds.clear()
   previewTrackId.value = null
 }
@@ -355,20 +356,18 @@ function stopNoteAudition() {
     noteAuditionTimerId = null
   }
   if (!noteAuditionVoiceId) return
-  player.inputSynth.noteOff(noteAuditionVoiceId)
+  player.autoPlayer.noteOffVoice(noteAuditionVoiceId)
   noteAuditionVoiceId = null
 }
 
-async function auditionNote(note: FreePlayRecordedNote) {
-  const track = draftTracks.value.find(track => track.id === note.trackId)
+function auditionNote(note: FreePlayRecordedNote) {
+  const trackIndex = draftTracks.value.findIndex(track => track.id === note.trackId)
+  const track = trackIndex >= 0 ? draftTracks.value[trackIndex] : undefined
   if (!track || mutedTrackIds.value.includes(track.id)) return
   stopNoteAudition()
   const voiceId = `free-play-editor-audition:${track.id}:${note.id}`
   noteAuditionVoiceId = voiceId
-  const soundfontId = getInstrumentByProgram(track.instrumentProgram).soundfontId
-  await player.inputSynth.start()
-  if (noteAuditionVoiceId !== voiceId) return
-  void player.inputSynth.noteOn(voiceId, note.noteId, note.velocity, soundfontId)
+  player.autoPlayer.noteOnVoice(voiceId, note.noteId, note.velocity, track.instrumentProgram, getMelodicMidiChannel(trackIndex))
   noteAuditionTimerId = window.setTimeout(stopNoteAudition, 380)
 }
 
@@ -377,7 +376,7 @@ function editorPlaybackVoiceId(trackId: number, noteId: string) {
 }
 
 function stopEditorPlaybackVoices() {
-  for (const voiceId of editorPlaybackVoiceIds) player.inputSynth.noteOff(voiceId)
+  for (const voiceId of editorPlaybackVoiceIds) player.autoPlayer.noteOffVoice(voiceId)
   editorPlaybackVoiceIds.clear()
 }
 
@@ -386,22 +385,22 @@ function tickEditorPlayback() {
   playheadUs.value = Math.min(timelineEndUs.value, editorPlaybackStartUs + elapsedUs)
   const active = new Set<string>()
 
-  for (const track of draftTracks.value) {
+  for (const [trackIndex, track] of draftTracks.value.entries()) {
     if (mutedTrackIds.value.includes(track.id)) continue
-    const soundfontId = getInstrumentByProgram(track.instrumentProgram).soundfontId
+    const channel = getMelodicMidiChannel(trackIndex)
     for (const note of track.notes) {
       if (note.startUs > playheadUs.value || note.endUs <= playheadUs.value) continue
       const voiceId = editorPlaybackVoiceId(track.id, note.id)
       active.add(voiceId)
       if (editorPlaybackVoiceIds.has(voiceId)) continue
       editorPlaybackVoiceIds.add(voiceId)
-      void player.inputSynth.noteOn(voiceId, note.noteId, note.velocity, soundfontId)
+      player.autoPlayer.noteOnVoice(voiceId, note.noteId, note.velocity, track.instrumentProgram, channel)
     }
   }
 
   for (const voiceId of [...editorPlaybackVoiceIds]) {
     if (active.has(voiceId)) continue
-    player.inputSynth.noteOff(voiceId)
+    player.autoPlayer.noteOffVoice(voiceId)
     editorPlaybackVoiceIds.delete(voiceId)
   }
 
@@ -456,13 +455,14 @@ function seekByBeat(direction: -1 | 1) {
 
 function startPreview(trackId: number) {
   if (mutedTrackIds.value.includes(trackId)) return
-  const track = draftTracks.value.find(track => track.id === trackId)
+  const trackIndex = draftTracks.value.findIndex(track => track.id === trackId)
+  const track = trackIndex >= 0 ? draftTracks.value[trackIndex] : undefined
   if (!track?.notes.length) return
   stopPreview()
   previewTrackId.value = trackId
   const startedAt = performance.now()
   const durationUs = Math.max(...track.notes.map(note => note.endUs))
-  const soundfontId = getInstrumentByProgram(track.instrumentProgram).soundfontId
+  const channel = getMelodicMidiChannel(trackIndex)
   previewTimerId = window.setInterval(() => {
     const elapsedUs = Math.round((performance.now() - startedAt) * 1000)
     const active = new Set<string>()
@@ -472,11 +472,11 @@ function startPreview(trackId: number) {
       active.add(voiceId)
       if (previewActiveVoiceIds.has(voiceId)) continue
       previewActiveVoiceIds.add(voiceId)
-      void player.inputSynth.noteOn(voiceId, note.noteId, note.velocity, soundfontId)
+      player.autoPlayer.noteOnVoice(voiceId, note.noteId, note.velocity, track.instrumentProgram, channel)
     }
     for (const voiceId of [...previewActiveVoiceIds]) {
       if (active.has(voiceId)) continue
-      player.inputSynth.noteOff(voiceId)
+      player.autoPlayer.noteOffVoice(voiceId)
       previewActiveVoiceIds.delete(voiceId)
     }
     if (elapsedUs > durationUs + 150_000) stopPreview()
@@ -797,21 +797,29 @@ function handleKeydown(event: KeyboardEvent) {
   }
 }
 
+function applyEditorVolume(value: number) {
+  const scaled = value / 100
+  player.autoPlayer.setMasterVolume(scaled)
+  player.inputSynth.setMasterVolume(scaled)
+}
+
 watch(() => props.show, async show => {
   if (!show) {
     stopPreview()
     stopNoteAudition()
     stopEditorPlayback()
     closeTrackDialogs()
+    player.autoPlayer.resetMasterVolume()
+    player.inputSynth.setMasterVolume(0.72)
     return
   }
-  player.inputSynth.setMasterVolume(editorVolume.value / 100)
   resetDraft()
+  applyEditorVolume(editorVolume.value)
   await nextTick()
 }, { immediate: true })
 
 watch(editorVolume, value => {
-  player.inputSynth.setMasterVolume(value / 100)
+  if (props.show) applyEditorVolume(value)
 })
 
 onBeforeUnmount(() => {
@@ -819,6 +827,8 @@ onBeforeUnmount(() => {
   stopNoteAudition()
   stopEditorPlayback()
   closeTrackDialogs()
+  player.autoPlayer.resetMasterVolume()
+  player.inputSynth.setMasterVolume(0.72)
 })
 </script>
 

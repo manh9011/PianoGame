@@ -10,7 +10,7 @@ import { useToastStore } from '../stores/toastStore'
 import { bindInput, requestMidiAccess } from '../modules/midi/webMidi'
 import { WHITE_KEY_COUNT } from '../modules/render/pianoGeometry'
 import { createFreePlayMidi } from '../modules/midi/freePlayMidiExport'
-import { getInstrumentByProgram } from '../modules/audio/gmInstrumentCatalog'
+import { getMelodicMidiChannel } from '../modules/audio/autoNotePlayer'
 import FreePlayTopBar from '../components/player/FreePlayTopBar.vue'
 import FreePlayProgressBar from '../components/player/FreePlayProgressBar.vue'
 import FreePlayTrackManager from '../components/player/FreePlayTrackManager.vue'
@@ -266,39 +266,39 @@ function backingVoiceId(trackId: number, noteId: string, loopIndex: number) {
 }
 
 function stopBackingPlayback() {
-  for (const voiceId of backingActiveVoiceIds) player.inputSynth.noteOff(voiceId)
+  for (const voiceId of backingActiveVoiceIds) player.autoPlayer.noteOffVoice(voiceId)
   backingActiveVoiceIds.clear()
 }
 
 function tickBackingPlayback(durationUs: number) {
   const active = new Set<string>()
-  for (const track of freePlay.tracks) {
+  for (const [trackIndex, track] of freePlay.tracks.entries()) {
     if (track.id === freePlay.recordingTrackId || !track.notes.length) continue
     const loopDurationUs = getFreePlayTrackLoopDurationUs(track, freePlay.bpm, freePlay.timeSignature)
     if (loopDurationUs <= 0) continue
     const loopIndex = track.loop ? Math.floor(durationUs / loopDurationUs) : 0
     const localUs = track.loop ? durationUs % loopDurationUs : durationUs
     if (!track.loop && durationUs > loopDurationUs) continue
-    const soundfontId = getInstrumentByProgram(track.instrumentProgram).soundfontId
+    const channel = getMelodicMidiChannel(trackIndex)
     for (const note of track.notes) {
       if (note.startUs > localUs || note.endUs <= localUs) continue
       const voiceId = backingVoiceId(track.id, note.id, loopIndex)
       active.add(voiceId)
       if (backingActiveVoiceIds.has(voiceId)) continue
       backingActiveVoiceIds.add(voiceId)
-      void player.inputSynth.noteOn(voiceId, note.noteId, note.velocity, soundfontId)
+      player.autoPlayer.noteOnVoice(voiceId, note.noteId, note.velocity, track.instrumentProgram, channel)
     }
   }
 
   for (const voiceId of [...backingActiveVoiceIds]) {
     if (active.has(voiceId)) continue
-    player.inputSynth.noteOff(voiceId)
+    player.autoPlayer.noteOffVoice(voiceId)
     backingActiveVoiceIds.delete(voiceId)
   }
 }
 
 function stopNormalPlaybackVoices() {
-  for (const voiceId of playbackActiveVoiceIds) player.inputSynth.noteOff(voiceId)
+  for (const voiceId of playbackActiveVoiceIds) player.autoPlayer.noteOffVoice(voiceId)
   playbackActiveVoiceIds.clear()
 }
 
@@ -316,27 +316,27 @@ function tickNormalPlayback() {
 
   freePlay.seekTo(durationUs)
   const active = new Set<string>()
-  for (const track of freePlay.tracks) {
+  for (const [trackIndex, track] of freePlay.tracks.entries()) {
     if (!track.notes.length) continue
     const loopDurationUs = getFreePlayTrackLoopDurationUs(track, freePlay.bpm, freePlay.timeSignature)
     if (loopDurationUs <= 0) continue
     const loopIndex = track.loop ? Math.floor(durationUs / loopDurationUs) : 0
     const localUs = track.loop ? durationUs % loopDurationUs : durationUs
     if (!track.loop && durationUs > loopDurationUs) continue
-    const soundfontId = getInstrumentByProgram(track.instrumentProgram).soundfontId
+    const channel = getMelodicMidiChannel(trackIndex)
     for (const note of track.notes) {
       if (note.startUs > localUs || note.endUs <= localUs) continue
       const voiceId = `free-play-playback:${track.id}:${note.id}:${loopIndex}`
       active.add(voiceId)
       if (playbackActiveVoiceIds.has(voiceId)) continue
       playbackActiveVoiceIds.add(voiceId)
-      void player.inputSynth.noteOn(voiceId, note.noteId, note.velocity, soundfontId)
+      player.autoPlayer.noteOnVoice(voiceId, note.noteId, note.velocity, track.instrumentProgram, channel)
     }
   }
 
   for (const voiceId of [...playbackActiveVoiceIds]) {
     if (active.has(voiceId)) continue
-    player.inputSynth.noteOff(voiceId)
+    player.autoPlayer.noteOffVoice(voiceId)
     playbackActiveVoiceIds.delete(voiceId)
   }
 
@@ -437,6 +437,7 @@ function openTrackEditor() {
     return
   }
   closePopovers()
+  stopPlayback()
   stopBackingPlayback()
   showTrackEditorDialog.value = true
 }
@@ -466,6 +467,7 @@ async function confirmImportReplace() {
 
 function openImportedEditor() {
   closeDialogs()
+  stopPlayback()
   stopBackingPlayback()
   showTrackEditorDialog.value = true
 }
@@ -612,11 +614,16 @@ onBeforeUnmount(() => {
   unsubscribeNoteInput?.()
   stopTimer()
   closeDialogs()
+  player.autoPlayer.allNotesOff(player.session)
   player.inputSynth.allNotesOff()
   freePlay.pressedMidiNotes.clear()
   document.removeEventListener('fullscreenchange', updateFullscreenState)
   window.removeEventListener('resize', updateFullscreenState)
   if (resizeObserver) resizeObserver.disconnect()
+})
+
+watch(() => settings.midiOutputId, outputId => {
+  void player.prepareAudio(outputId)
 })
 
 watch(() => settings.keyboardRangeMode, () => {
