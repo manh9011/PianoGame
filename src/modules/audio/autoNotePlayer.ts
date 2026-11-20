@@ -42,6 +42,7 @@ export class AutoNotePlayer {
   private midiOutputId = ''
   private usingSynth = false
   private zeroVolumeKeyLights = false
+  private midiVolumeScale = 1
   private sentPrograms = new Map<number, number>()
   private sessionState: {
     session: PlaySession
@@ -62,6 +63,12 @@ export class AutoNotePlayer {
     this.sentPrograms.clear()
     this.clearKeyLights()
     if (this.usingSynth) await this.synth.start()
+  }
+
+  setMasterVolume(volume: number) {
+    const clamped = Math.max(0, Math.min(1.5, volume))
+    this.midiVolumeScale = clamped
+    this.synth.setMasterVolume(clamped)
   }
 
   tick(session: PlaySession) {
@@ -291,12 +298,17 @@ export class AutoNotePlayer {
       void this.synth.noteOn(note.id, note.noteId, note.velocity, instrument.soundfontId)
       return
     }
+    if (this.midiVolumeScale <= 0) return
     const channel = note.channel ?? 0
     if (this.sentPrograms.get(channel) !== instrument.program) {
       sendProgramChange(this.midiAccess, this.midiOutputId, channel, instrument.program)
       this.sentPrograms.set(channel, instrument.program)
     }
-    sendNote(this.midiAccess, this.midiOutputId, note.noteId, note.velocity || 80, true, channel)
+    const baseVelocity = note.velocity || 80
+    const velocity = this.midiVolumeScale === 1
+      ? baseVelocity
+      : Math.max(1, Math.min(127, Math.round(baseVelocity * this.midiVolumeScale)))
+    sendNote(this.midiAccess, this.midiOutputId, note.noteId, velocity, true, channel)
   }
 
   private noteOff(note: SessionNote) {

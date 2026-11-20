@@ -1,15 +1,8 @@
 <script setup lang="ts">
-import { ref, watch, onBeforeUnmount } from 'vue'
+import { computed, ref, watch, onBeforeUnmount } from 'vue'
 import BaseButton from '../ui/BaseButton.vue'
-import { parseMidi } from '../../modules/midi/midiParser'
-import { translateNotes, translateControlChanges } from '../../modules/midi/midiNoteTranslator'
-import { buildTempoMap, pulseToMicroseconds } from '../../modules/midi/midiTempo'
-import { assignHands } from '../../modules/game/handAssignment'
-import { createDefaultTrackProperties } from '../../modules/game/trackProperties'
-import { createPlaySession, PLAY_MODE_CONFIGS } from '../../modules/game/playSession'
-import { AutoNotePlayer } from '../../modules/audio/autoNotePlayer'
-import { MidiPlayerClock } from '../../modules/midi/midiPlayerClock'
-import type { PlaySession } from '../../modules/game/playSession'
+import { useLibraryStore } from '../../stores/libraryStore'
+import { useSettingsStore } from '../../stores/settingsStore'
 
 interface Props {
   midiBlob: Blob | null
@@ -20,140 +13,99 @@ interface Props {
 
 const props = defineProps<Props>()
 
-const playing = ref(false)
-const paused = ref(false)
-const currentTime = ref(0)
-const duration = ref(0)
+const libraryStore = useLibraryStore()
+const settings = useSettingsStore()
+
 const volume = ref(1)
-const seekPercent = ref(0)
 const fetching = ref(false)
+const starting = ref(false)
 const internalBlob = ref<Blob | null>(null)
+let playRequestId = 0
 
 const emit = defineEmits<{
   'midiFetched': [blob: Blob]
 }>()
 
-let clock: MidiPlayerClock | null = null
-let session: PlaySession | null = null
-let activePlayer: AutoNotePlayer | null = null
-let durationUs = 0
+const previewKey = computed(() =>
+  props.userId && props.scoreId
+    ? `score-library:${props.userId}:${props.scoreId}`
+    : 'score-library-preview'
+)
+const isOwnPreview = computed(() => libraryStore.previewSongId === previewKey.value)
+const playing = computed(() => isOwnPreview.value && libraryStore.previewRunning)
+const paused = computed(() => isOwnPreview.value && !libraryStore.previewRunning && libraryStore.previewClock !== null)
+const duration = computed(() => (isOwnPreview.value ? libraryStore.previewDurationUs / 1_000_000 : 0))
+const currentTime = computed(() => {
+  if (!isOwnPreview.value) return 0
+  const maxUs = libraryStore.previewDurationUs
+  const clampedUs = maxUs > 0 ? Math.min(libraryStore.previewCurrentUs, maxUs) : libraryStore.previewCurrentUs
+  return Math.max(0, clampedUs) / 1_000_000
+})
+const seekPercent = computed(() => {
+  if (!isOwnPreview.value || libraryStore.previewDurationUs <= 0) return 0
+  return Math.max(0, Math.min(100, (libraryStore.previewCurrentUs / libraryStore.previewDurationUs) * 100))
+})
 
 function stopPlayback() {
-  clock?.stop()
-  clock = null
-  activePlayer?.allNotesOff(null)
-  activePlayer = null
-  session = null
-  playing.value = false
-  paused.value = false
-  currentTime.value = 0
-  seekPercent.value = 0
-  durationUs = 0
-  duration.value = 0
+  playRequestId++
+  fetching.value = false
+  starting.value = false
+  libraryStore.stopPreview()
 }
 
 async function parseAndPlay() {
+  const requestId = ++playRequestId
   const blob = props.midiBlob ?? internalBlob.value
   if (!blob) {
     if (!props.userId || !props.scoreId) return
     fetching.value = true
     try {
       const { fetchMidiBlob } = await import('../../modules/scoreLibrary/scoreLibraryApi')
-      internalBlob.value = await fetchMidiBlob(props.userId, props.scoreId)
-      emit('midiFetched', internalBlob.value)
+      const fetched = await fetchMidiBlob(props.userId, props.scoreId)
+      if (requestId !== playRequestId) return
+      internalBlob.value = fetched
+      emit('midiFetched', fetched)
     } catch {
-      fetching.value = false
       return
+    } finally {
+      if (requestId === playRequestId) fetching.value = false
     }
-    fetching.value = false
   }
 
   const activeBlob = props.midiBlob ?? internalBlob.value
-  if (!activeBlob) return
+  if (!activeBlob || requestId !== playRequestId) return
 
-  stopPlayback()
-
-  const buffer = await activeBlob.arrayBuffer()
-
-  const midi = parseMidi(buffer)
-  const { notes } = assignHands(translateNotes(midi))
-  const controlChanges = translateControlChanges(midi)
-  const trackIds = [...new Set(notes.map(n => n.trackId))]
-  const tracks = createDefaultTrackProperties(trackIds.map(trackId => {
-    const info = midi.tracks.find(t => t.trackId === trackId)
-    return {
-      trackId,
-      instrumentProgram: info?.instrumentProgram,
-      percussion: Boolean(info?.isPercussion || info?.channel === 9),
-    }
-  }))
-
-  durationUs = pulseToMicroseconds(midi.durationPulse, midi.header.ticksPerQuarter, buildTempoMap(midi))
-  duration.value = durationUs / 1_000_000
-
-  session = createPlaySession(notes, controlChanges, tracks, { speed: 100, leadInDuration: 0, zoomPercent: 100, octaveShift: 0 })
-  session.mode = 'listen'
-  session.modeConfig = PLAY_MODE_CONFIGS.listen
-  session.handSelection = 'both'
-  session.setupComplete = true
-  session.paused = false
-  session.tracks.forEach(track => { track.mode = 'playedAutomatically' })
-
-  const freshPlayer = new AutoNotePlayer()
-  await freshPlayer.configure('')
-  // ponytail: AutoNotePlayer owns its synth privately; cast to reach master volume.
-  ;(freshPlayer as unknown as { synth?: { setMasterVolume: (v: number) => void } } | null)?.synth?.setMasterVolume(volume.value)
-  activePlayer = freshPlayer
-
-  clock = new MidiPlayerClock(durationUs, () => 100, state => {
-    const s = session
-    if (!s) return
-    s.currentUs = state.currentUs
-    s.finished = state.finished
-    s.paused = !state.running
-    currentTime.value = Math.max(0, state.currentUs) / 1_000_000
-    seekPercent.value = durationUs > 0 ? (state.currentUs / durationUs) * 100 : 0
-    freshPlayer.tick(s)
-    if (state.finished) {
-      clock?.stop()
-      clock = null
-      playing.value = false
-      paused.value = false
-    }
-  }, { leadInUs: 0 })
-
-  clock.seek(0)
-  clock.start()
-  playing.value = true
-  paused.value = false
+  starting.value = true
+  try {
+    const buffer = await activeBlob.arrayBuffer()
+    if (requestId !== playRequestId) return
+    await libraryStore.startPreviewFromBuffer(buffer, {
+      songId: previewKey.value,
+      outputId: settings.midiOutputId,
+      speed: settings.defaultSpeed,
+      leadInDuration: settings.leadInDuration,
+      zoomPercent: settings.zoomPercent,
+      octaveShift: settings.octaveShift,
+      volume: volume.value,
+    })
+  } finally {
+    if (requestId === playRequestId) starting.value = false
+  }
 }
 
 function pausePlayback() {
-  clock?.pause()
-  activePlayer?.allNotesOff(null)
-  playing.value = false
-  paused.value = true
+  if (isOwnPreview.value) libraryStore.pausePreview()
 }
 
 function resumePlayback() {
-  clock?.start()
-  playing.value = true
-  paused.value = false
+  if (isOwnPreview.value) libraryStore.resumePreview()
 }
 
 function seekTo(e: MouseEvent) {
-  if (!clock || durationUs <= 0) return
+  if (!isOwnPreview.value || libraryStore.previewDurationUs <= 0) return
   const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
   const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
-
-  activePlayer?.allNotesOff(null)
-  const targetUs = pct * durationUs
-  clock.seek(targetUs)
-  if (!playing.value && !paused.value) {
-    clock.start()
-    playing.value = true
-    paused.value = false
-  }
+  libraryStore.seekPreviewToUs(pct * libraryStore.previewDurationUs)
 }
 
 function formatTime(t: number): string {
@@ -162,7 +114,13 @@ function formatTime(t: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`
 }
 
-watch(() => props.midiBlob, () => {
+watch(() => props.midiBlob, (newBlob) => {
+  if (newBlob && newBlob === internalBlob.value) return
+  stopPlayback()
+})
+
+watch([() => props.userId, () => props.scoreId], () => {
+  internalBlob.value = null
   stopPlayback()
 })
 
@@ -173,31 +131,23 @@ onBeforeUnmount(() => {
 defineExpose({ stopPlayback })
 
 function seekBack() {
-  if (!clock || durationUs <= 0) return
-  const currentUs = Math.max(0, (playing.value || paused.value) ? currentTime.value * 1_000_000 : 0)
-  const targetUs = Math.max(0, currentUs - 10_000_000)
-  activePlayer?.allNotesOff(null)
-  clock.seek(targetUs)
+  if (!isOwnPreview.value || libraryStore.previewDurationUs <= 0) return
+  libraryStore.seekPreviewToUs(Math.max(0, libraryStore.previewCurrentUs - 10_000_000))
 }
 
 function seekForward() {
-  if (!clock || durationUs <= 0) return
-  const currentUs = Math.max(0, (playing.value || paused.value) ? currentTime.value * 1_000_000 : 0)
-  const targetUs = Math.min(durationUs, currentUs + 10_000_000)
-  activePlayer?.allNotesOff(null)
-  clock.seek(targetUs)
+  if (!isOwnPreview.value || libraryStore.previewDurationUs <= 0) return
+  libraryStore.seekPreviewToUs(Math.min(libraryStore.previewDurationUs, libraryStore.previewCurrentUs + 10_000_000))
 }
 
 function rewindToStart() {
-  if (!clock || durationUs <= 0) return
-  activePlayer?.allNotesOff(null)
-  clock.seek(0)
+  if (!isOwnPreview.value || libraryStore.previewDurationUs <= 0) return
+  libraryStore.seekPreviewToUs(0)
 }
 
 function setVolume(e: Event) {
   volume.value = parseFloat((e.target as HTMLInputElement).value)
-  // ponytail: AutoNotePlayer owns its synth privately; cast to reach master volume.
-  ;(activePlayer as unknown as { synth?: { setMasterVolume: (v: number) => void } } | null)?.synth?.setMasterVolume(volume.value)
+  if (isOwnPreview.value) libraryStore.setPreviewVolume(volume.value)
 }
 </script>
 
@@ -212,9 +162,9 @@ function setVolume(e: Event) {
         <BaseButton
           v-if="!playing && !paused"
           variant="icon" size="sm"
-          :disabled="fetching || loading"
+          :disabled="fetching || starting || loading"
           @click="parseAndPlay"
-        ><i :class="fetching ? 'fa-solid fa-spinner fa-spin' : 'fa-solid fa-play'" /></BaseButton>
+        ><i :class="(fetching || starting) ? 'fa-solid fa-spinner fa-spin' : 'fa-solid fa-play'" /></BaseButton>
         <BaseButton v-else-if="paused" variant="icon" size="sm" @click="resumePlayback"><i class="fa-solid fa-play" /></BaseButton>
         <BaseButton v-else variant="icon" size="sm" @click="pausePlayback"><i class="fa-solid fa-pause" /></BaseButton>
 

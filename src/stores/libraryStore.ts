@@ -33,6 +33,16 @@ export interface DifficultyEvaluationResult {
   failed: { song: SongMetadata; reason: string }[]
 }
 
+export interface PreviewFromBufferOptions {
+  songId: string
+  outputId: string
+  speed?: number
+  leadInDuration?: number
+  zoomPercent?: number
+  octaveShift?: number
+  volume?: number
+}
+
 function ratingValue(value: number | undefined) {
   if (!value) return undefined
   return Math.max(1, Math.min(5, Math.round(value)))
@@ -397,12 +407,26 @@ export const useLibraryStore = defineStore('library', {
       const isCurrentRequest = () => this.previewRequestId === requestId
       const data = song.data ?? song.midiData ?? await loadSongMidiData(song.id)
       if (!data || !isCurrentRequest()) return
+      await this.startPreviewFromBuffer(base64ToBuffer(data), {
+        songId: song.id,
+        outputId,
+        speed,
+        leadInDuration,
+        zoomPercent,
+        octaveShift,
+      })
+    },
+    async startPreviewFromBuffer(buffer: ArrayBuffer, options: PreviewFromBufferOptions) {
       this.stopPreview()
-      this.previewRequestId = requestId
-      await this.previewPlayer.configure(outputId)
-      if (!isCurrentRequest()) return
-      const midi = parseMidi(base64ToBuffer(data))
-      if (!isCurrentRequest()) return
+      const requestId = this.previewRequestId
+      const isCurrentRequest = () => this.previewRequestId === requestId
+
+      const speed = options.speed ?? 100
+      const leadInDuration = options.leadInDuration ?? 0
+      const zoomPercent = options.zoomPercent ?? 100
+      const octaveShift = options.octaveShift ?? 0
+
+      const midi = parseMidi(buffer)
       const { notes } = assignHands(translateNotes(midi))
       const controlChanges = translateControlChanges(midi)
       const trackIds = [...new Set(notes.map(note => note.trackId))]
@@ -422,15 +446,23 @@ export const useLibraryStore = defineStore('library', {
       session.setupComplete = true
       session.paused = false
       session.tracks.forEach(track => { track.mode = 'playedAutomatically' })
-      if (!isCurrentRequest()) return
-      this.previewSession = session
-      this.previewSongId = song.id
-      this.previewDurationUs = duration
 
       // FIX: Tránh dùng chung một AutoNotePlayer instance dễ bị lỗi gc / treo qua nhiều tab chuyển đổi.
       // Luôn tạo mới player như bên playerStore.ts.
-      this.previewPlayer = new AutoNotePlayer()
-      await this.previewPlayer.configure(outputId)
+      const player = new AutoNotePlayer()
+      await player.configure(options.outputId)
+      if (!isCurrentRequest()) {
+        player.allNotesOff(null)
+        return
+      }
+      if (options.volume !== undefined) {
+        player.setMasterVolume(options.volume)
+      }
+
+      this.previewPlayer = player
+      this.previewSession = session
+      this.previewSongId = options.songId
+      this.previewDurationUs = duration
 
       this.previewClock = new MidiPlayerClock(duration, () => speed, state => {
         if (!isCurrentRequest()) return
@@ -442,7 +474,9 @@ export const useLibraryStore = defineStore('library', {
         this.previewProgress = state.progress
         this.previewCurrentUs = Math.max(0, state.currentUs)
         this.previewRunning = state.running && !state.finished
-        this.previewPlayer.tick(previewSession)
+        if (state.running && !state.finished) {
+          this.previewPlayer.tick(previewSession)
+        }
         if (state.finished) this.stopPreview()
       }, { leadInUs: leadInDuration * 1_000_000 })
       this.previewClock.seek(0)
@@ -453,14 +487,16 @@ export const useLibraryStore = defineStore('library', {
       if (!song) return
       if (this.previewSongId === song.id && this.previewClock) {
         if (this.previewRunning) this.pausePreview()
-        else {
-          this.previewClock.start()
-          if (this.previewSession) this.previewSession.paused = false
-          this.previewRunning = true
-        }
+        else this.resumePreview()
         return
       }
       await this.startPreview(song, outputId, speed, leadInDuration, zoomPercent, octaveShift)
+    },
+    resumePreview() {
+      if (!this.previewClock) return
+      this.previewClock.start()
+      if (this.previewSession) this.previewSession.paused = false
+      this.previewRunning = true
     },
     pausePreview() {
       this.previewClock?.pause()
@@ -485,6 +521,16 @@ export const useLibraryStore = defineStore('library', {
       const clamped = Math.max(0, Math.min(1, ratio))
       this.previewPlayer.allNotesOff(this.previewSession)
       this.previewClock.seek(clamped * this.previewClock.seekableDurationUs)
+    },
+    seekPreviewToUs(targetUs: number) {
+      if (!this.previewClock) return
+      const maxUs = Math.max(0, this.previewDurationUs)
+      const clamped = Math.max(0, Math.min(maxUs, targetUs))
+      this.previewPlayer.allNotesOff(this.previewSession)
+      this.previewClock.seek(clamped)
+    },
+    setPreviewVolume(volume: number) {
+      this.previewPlayer.setMasterVolume(volume)
     },
     async deleteSong(id: string) {
       if (this.previewSongId === id) this.stopPreview()
