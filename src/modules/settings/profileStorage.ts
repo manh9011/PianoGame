@@ -1,4 +1,5 @@
-import type { ModeScoreEntry, UserProfile } from '../../types/profile'
+import type { HandSelection, PlayMode } from '../game/playSession'
+import type { ModeScoreEntry, StoredModeSelection, UserProfile } from '../../types/profile'
 import { achievementFromHistory } from '../game/achievementScoring'
 import { isBetterModeScore, LEGACY_TRACK_SELECTION_KEY, normalizeTrackSelectionKey, scoreBucketKey, trackSelectionKeyForTracks } from '../game/scoreKeys'
 import { get, getAll, put } from '../storage/indexedDb'
@@ -18,7 +19,38 @@ export function createDefaultProfile(name = 'Người chơi'): UserProfile {
     fingeringsBySongId: {},
     trackSettingsBySongId: {},
     userBookmarksBySongId: {},
+    modeSelectionsBySongId: {},
   }
+}
+
+const VALID_PLAY_MODES = new Set<PlayMode>(['listen', 'noteMemory', 'practice', 'performance'])
+const VALID_HAND_SELECTIONS = new Set<HandSelection>(['left', 'right', 'both'])
+
+export function normalizeModeSelection(entry: Partial<StoredModeSelection> | undefined): StoredModeSelection | undefined {
+  if (!entry || !VALID_PLAY_MODES.has(entry.mode as PlayMode)) return undefined
+  const mode = entry.mode as PlayMode
+  const handSelection: HandSelection = mode === 'listen'
+    ? 'both'
+    : VALID_HAND_SELECTIONS.has(entry.handSelection as HandSelection)
+      ? (entry.handSelection as HandSelection)
+      : 'right'
+  return {
+    mode,
+    handSelection,
+    updatedAt: typeof entry.updatedAt === 'number' ? entry.updatedAt : Date.now(),
+  }
+}
+
+function normalizeModeSelectionsBySongId(
+  map: UserProfile['modeSelectionsBySongId'] | undefined,
+): UserProfile['modeSelectionsBySongId'] {
+  if (!map || typeof map !== 'object') return {}
+  const normalized: UserProfile['modeSelectionsBySongId'] = {}
+  for (const [songId, entry] of Object.entries(map)) {
+    const valid = normalizeModeSelection(entry)
+    if (valid) normalized[songId] = valid
+  }
+  return normalized
 }
 
 function normalizeUserBookmarksBySongId(
@@ -95,6 +127,8 @@ function normalizeProfile(profile: Partial<UserProfile>): UserProfile {
     fingeringsBySongId: profile.fingeringsBySongId ?? {},
     trackSettingsBySongId,
     userBookmarksBySongId: normalizeUserBookmarksBySongId(profile.userBookmarksBySongId),
+    lastModeSelection: normalizeModeSelection(profile.lastModeSelection),
+    modeSelectionsBySongId: normalizeModeSelectionsBySongId(profile.modeSelectionsBySongId),
   }
 }
 

@@ -617,6 +617,7 @@ onMounted(async () => {
     player.configureSession({ mode, handSelection, speed: settings.defaultSpeed })
     songTitleIntroStarted.value = false
   }
+  profiles.saveModeSelection(song.id, mode, handSelection)
 
   sheetReady.value = !settings.showSheetMusic
   startWhenSheetIsReady()

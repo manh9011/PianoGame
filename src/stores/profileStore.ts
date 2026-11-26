@@ -1,9 +1,10 @@
 import { defineStore } from 'pinia'
+import type { HandSelection, PlayMode } from '../modules/game/playSession'
 import type { ModeScoreEntry, StoredFingeringAssignment, StoredTrackProperties, StoredUserBookmark, UserProfile } from '../types/profile'
 import { achievementFromHistory } from '../modules/game/achievementScoring'
 import { isBetterModeScore, isSameScoreBucket, LEGACY_TRACK_SELECTION_KEY, normalizeTrackSelectionKey, scoreBucketKey, trackSelectionKeyForTracks } from '../modules/game/scoreKeys'
 import type { SongPlayStats } from '../modules/game/songStatistics'
-import { createDefaultProfile, loadProfiles, saveProfiles, loadActiveProfileId, saveActiveProfileId, migrateLegacyScoresToTrackSelections } from '../modules/settings/profileStorage'
+import { createDefaultProfile, loadProfiles, saveProfiles, loadActiveProfileId, saveActiveProfileId, migrateLegacyScoresToTrackSelections, normalizeModeSelection } from '../modules/settings/profileStorage'
 import { persistQueue } from '../modules/storage/indexedDb'
 
 const SCORE_HISTORY_LIMIT = 300
@@ -166,6 +167,33 @@ export const useProfileStore = defineStore('profiles', {
       }
       this.persist()
     },
+    modeSelectionFor(songId?: string): { mode: PlayMode; handSelection: HandSelection } {
+      const p = this.activeProfile
+      const saved = (songId ? p.modeSelectionsBySongId?.[songId] : undefined) ?? p.lastModeSelection
+      return saved
+        ? { mode: saved.mode, handSelection: saved.handSelection }
+        : { mode: 'noteMemory', handSelection: 'right' }
+    },
+    saveModeSelection(songId: string | undefined, mode: PlayMode, handSelection: HandSelection) {
+      const normalized = normalizeModeSelection({ mode, handSelection, updatedAt: Date.now() })
+      if (!normalized) return
+      const p = this.activeProfile
+      p.modeSelectionsBySongId ??= {}
+      const songChanged = Boolean(
+        songId
+        && (
+          p.modeSelectionsBySongId[songId]?.mode !== normalized.mode
+          || p.modeSelectionsBySongId[songId]?.handSelection !== normalized.handSelection
+        ),
+      )
+      const lastChanged =
+        p.lastModeSelection?.mode !== normalized.mode
+        || p.lastModeSelection?.handSelection !== normalized.handSelection
+      if (!songChanged && !lastChanged) return
+      if (songId) p.modeSelectionsBySongId[songId] = normalized
+      p.lastModeSelection = normalized
+      this.persist()
+    },
     assignLegacyScoresToTrackSelection(songId: string, tracks: StoredTrackProperties[]) {
       const p = this.activeProfile
       const trackSelectionKey = trackSelectionKeyForTracks(tracks)
@@ -292,6 +320,7 @@ export const useProfileStore = defineStore('profiles', {
         migrateMap(p.fingeringsBySongId)
         migrateMap(p.trackSettingsBySongId)
         migrateMap(p.userBookmarksBySongId)
+        migrateMap(p.modeSelectionsBySongId)
 
         if (p.scoresByMode) {
           let scoresChanged = false

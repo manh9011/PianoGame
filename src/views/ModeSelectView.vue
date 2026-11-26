@@ -28,8 +28,11 @@ const library = useLibraryStore()
 const player = usePlayerStore()
 const profiles = useProfileStore()
 const settings = useSettingsStore()
-const mode = ref<PlayMode>('noteMemory')
-const handSelection = ref<HandSelection>('right')
+const initialRouteHash = (route.params.hash as string | undefined) ?? (player.song?.playbackHash ?? player.song?.hash)
+const initialSongId = (initialRouteHash ? library.songByHash(initialRouteHash)?.id : undefined) ?? player.song?.id
+const initialSelection = profiles.modeSelectionFor(initialSongId)
+const mode = ref<PlayMode>(initialSelection.mode)
+const handSelection = ref<HandSelection>(initialSelection.handSelection)
 const speed = ref(settings.defaultSpeed)
 const detailTab = ref<'instructions' | 'breakdown' | 'chart' | 'points'>('points')
 const sortColumn = ref<'playIndex' | 'name' | 'points' | 'accuracy' | 'errors' | 'speed' | 'time' | 'date'>('points')
@@ -242,10 +245,14 @@ onMounted(async () => {
     await player.loadSong(song, settings.defaultSpeed, settings.leadInDuration, settings.zoomPercent, settings.octaveShift)
   }
 
+  const savedSelection = profiles.modeSelectionFor(song.id)
+  applyModeSelection(savedSelection.mode, savedSelection.handSelection)
+
   profiles.markRecent(song.id)
   const celebration = profiles.lastAchievementCelebration
   if (celebration?.songId === song.id) {
-    selectMode(celebration.mode, celebration.handSelection)
+    applyModeSelection(celebration.mode, celebration.handSelection)
+    profiles.saveModeSelection(song.id, mode.value, handSelection.value)
     achievementCelebration.value = profiles.consumeAchievementCelebration(song.id, celebration.mode, celebration.handSelection, currentTrackSelectionKey.value)
     if (achievementCelebration.value) animateAchievementScore(achievementCelebration.value)
   }
@@ -255,9 +262,14 @@ onBeforeUnmount(() => {
   if (achievementFrameId !== null) cancelAnimationFrame(achievementFrameId)
 })
 
-function selectMode(nextMode: PlayMode, nextHand: HandSelection = handSelection.value) {
+function applyModeSelection(nextMode: PlayMode, nextHand: HandSelection = handSelection.value) {
   mode.value = nextMode
-  handSelection.value = nextHand
+  handSelection.value = nextMode === 'listen' ? 'both' : nextHand
+}
+
+function selectMode(nextMode: PlayMode, nextHand: HandSelection = handSelection.value) {
+  applyModeSelection(nextMode, nextHand)
+  profiles.saveModeSelection(player.song?.id ?? initialSongId, mode.value, handSelection.value)
 }
 
 function scoreEntry(nextMode: PlayMode, nextHand: HandSelection) {
@@ -353,7 +365,7 @@ async function testAchievementCelebration() {
     to,
     playedAt: Date.now(),
   }
-  selectMode(celebration.mode, celebration.handSelection)
+  applyModeSelection(celebration.mode, celebration.handSelection)
   achievementCelebration.value = celebration
   animateAchievementScore(celebration)
 }

@@ -53,7 +53,6 @@
         "rpm"
       ],
       "maintainer": "Lương Xuân Mạnh <manh9011@gmail.com>",
-      "desktopName": "PianoGame",
       "syncDesktopName": true,
       "icon": "../src-tauri/icons",
       "category": "Audio"

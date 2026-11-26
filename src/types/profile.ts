@@ -86,6 +86,12 @@ export interface StoredSongUserBookmarks {
   updatedAt: number
 }
 
+export interface StoredModeSelection {
+  mode: PlayMode
+  handSelection: HandSelection
+  updatedAt: number
+}
+
 export interface UserProfile {
   id: string
   name: string
@@ -97,4 +103,6 @@ export interface UserProfile {
   fingeringsBySongId: Record<string, StoredSongFingering>
   trackSettingsBySongId: Record<string, StoredSongTrackSettings>
   userBookmarksBySongId: Record<string, StoredSongUserBookmarks>
+  lastModeSelection?: StoredModeSelection
+  modeSelectionsBySongId: Record<string, StoredModeSelection>
 }
