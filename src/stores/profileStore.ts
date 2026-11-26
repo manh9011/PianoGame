@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import type { ModeScoreEntry, StoredFingeringAssignment, StoredTrackProperties, UserProfile } from '../types/profile'
+import type { ModeScoreEntry, StoredFingeringAssignment, StoredTrackProperties, StoredUserBookmark, UserProfile } from '../types/profile'
 import { achievementFromHistory } from '../modules/game/achievementScoring'
 import { isBetterModeScore, isSameScoreBucket, LEGACY_TRACK_SELECTION_KEY, normalizeTrackSelectionKey, scoreBucketKey, trackSelectionKeyForTracks } from '../modules/game/scoreKeys'
 import type { SongPlayStats } from '../modules/game/songStatistics'
@@ -145,6 +145,27 @@ export const useProfileStore = defineStore('profiles', {
     trackSettingsFor(songId: string) {
       return this.activeProfile.trackSettingsBySongId?.[songId]
     },
+    userBookmarksFor(songId: string) {
+      return this.activeProfile.userBookmarksBySongId?.[songId]
+    },
+    saveUserBookmarks(songId: string, bookmarks: StoredUserBookmark[]) {
+      const p = this.activeProfile
+      p.userBookmarksBySongId ??= {}
+      if (bookmarks.length === 0) {
+        if (p.userBookmarksBySongId[songId]) {
+          delete p.userBookmarksBySongId[songId]
+          this.persist()
+        }
+        return
+      }
+      p.userBookmarksBySongId[songId] = {
+        bookmarks: bookmarks
+          .map(bookmark => ({ id: bookmark.id, timeUs: bookmark.timeUs, label: bookmark.label }))
+          .sort((a, b) => a.timeUs - b.timeUs),
+        updatedAt: Date.now(),
+      }
+      this.persist()
+    },
     assignLegacyScoresToTrackSelection(songId: string, tracks: StoredTrackProperties[]) {
       const p = this.activeProfile
       const trackSelectionKey = trackSelectionKeyForTracks(tracks)
@@ -270,6 +291,7 @@ export const useProfileStore = defineStore('profiles', {
         migrateMap(p.loopRegionsBySongId)
         migrateMap(p.fingeringsBySongId)
         migrateMap(p.trackSettingsBySongId)
+        migrateMap(p.userBookmarksBySongId)
 
         if (p.scoresByMode) {
           let scoresChanged = false

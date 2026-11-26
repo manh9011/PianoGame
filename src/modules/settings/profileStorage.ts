@@ -17,7 +17,35 @@ export function createDefaultProfile(name = 'Người chơi'): UserProfile {
     loopRegionsBySongId: {},
     fingeringsBySongId: {},
     trackSettingsBySongId: {},
+    userBookmarksBySongId: {},
   }
+}
+
+function normalizeUserBookmarksBySongId(
+  map: UserProfile['userBookmarksBySongId'] | undefined,
+): UserProfile['userBookmarksBySongId'] {
+  if (!map || typeof map !== 'object') return {}
+  const normalized: UserProfile['userBookmarksBySongId'] = {}
+  for (const [songId, entry] of Object.entries(map)) {
+    if (!entry || !Array.isArray(entry.bookmarks)) continue
+    const bookmarks = entry.bookmarks
+      .filter(bookmark =>
+        bookmark
+        && typeof bookmark.id === 'string'
+        && typeof bookmark.timeUs === 'number'
+        && Number.isFinite(bookmark.timeUs)
+        && typeof bookmark.label === 'string',
+      )
+      .map(bookmark => ({ id: bookmark.id, timeUs: bookmark.timeUs, label: bookmark.label }))
+      .sort((a, b) => a.timeUs - b.timeUs)
+    if (bookmarks.length > 0) {
+      normalized[songId] = {
+        bookmarks,
+        updatedAt: typeof entry.updatedAt === 'number' ? entry.updatedAt : Date.now(),
+      }
+    }
+  }
+  return normalized
 }
 
 function normalizeScoresByMode(scoresByMode: Partial<UserProfile['scoresByMode']>, trackSettingsBySongId: UserProfile['trackSettingsBySongId']) {
@@ -66,6 +94,7 @@ function normalizeProfile(profile: Partial<UserProfile>): UserProfile {
     loopRegionsBySongId: profile.loopRegionsBySongId ?? {},
     fingeringsBySongId: profile.fingeringsBySongId ?? {},
     trackSettingsBySongId,
+    userBookmarksBySongId: normalizeUserBookmarksBySongId(profile.userBookmarksBySongId),
   }
 }
 

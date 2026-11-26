@@ -422,6 +422,7 @@ function createSessionKeySignatures(midi: ReturnType<typeof parseMidi>, tempoMap
 export const usePlayerStore = defineStore('player', {
   state: () => ({
     song: null as SongMetadata | null,
+    loadedProfileId: '' as string,
     session: null as PlaySession | null,
     karaokeLines: [] as KaraokeLine[],
     clock: null as MidiPlayerClock | null,
@@ -485,6 +486,7 @@ export const usePlayerStore = defineStore('player', {
       this.autoPlayer.allNotesOff(this.session)
       this.metronome.restart()
       this.song = null
+      this.loadedProfileId = ''
       this.karaokeLines = []
       const track = createDefaultTrackProperties([{ trackId: monitorTrack.trackId ?? 0, role: 'background', instrumentProgram: monitorTrack.instrumentProgram ?? 0 }])[0]
       if (monitorTrack.color) track.color = monitorTrack.color
@@ -538,6 +540,7 @@ export const usePlayerStore = defineStore('player', {
       const bookmarks = createSessionBookmarks(midi, tempoMap)
       const keySignatures = createSessionKeySignatures(midi, tempoMap)
       this.song = song
+      this.loadedProfileId = useProfileStore().activeProfile.id
       this.karaokeLines = buildKaraokeLines(midi, duration)
       this.session = createPlaySession(notes, controlChanges, tracks, { speed, leadInDuration, zoomPercent, octaveShift, tempoMap, measureGridUs, metronomeBeatGrid, bookmarks, keySignatures, needsTrackConfiguration: needsManualAssignment && tracks.some(track => !isTrackRoleComplete(track)), durationUs: duration })
       if (song.musicXmlData || song.compressedMusicXmlData || song.hasMusicXmlSource) {
@@ -555,6 +558,7 @@ export const usePlayerStore = defineStore('player', {
       this.interactionLocked = false
       this.unblockPlaybackOutput(true)
       this.resetLoopAttemptHistory()
+      this.restoreSavedUserBookmarks(song.id)
       this.restoreSavedLoopRegion(song.id)
       restoreSavedFingering(song.id, this.session)
       this.clock?.stop()
@@ -976,30 +980,54 @@ export const usePlayerStore = defineStore('player', {
       })
     },
     setZoomPercent(v: number) { if (this.session) this.session.zoomPercent = clampZoomPercent(v) },
-    addUserBookmark(timeUs: number, label?: string) {
+    restoreSavedUserBookmarks(songId: string) {
       const session = this.session
       if (!session) return
+      const saved = useProfileStore().userBookmarksFor(songId)
+      session.userBookmarks = (saved?.bookmarks ?? [])
+        .filter(bookmark => Number.isFinite(bookmark.timeUs))
+        .map(bookmark => ({
+          id: bookmark.id,
+          timeUs: bookmark.timeUs,
+          label: bookmark.label,
+        }))
+        .sort((a, b) => a.timeUs - b.timeUs)
+    },
+    persistUserBookmarks() {
+      const session = this.session
+      if (!session || !this.song) return
+      useProfileStore().saveUserBookmarks(this.song.id, session.userBookmarks)
+    },
+    addUserBookmark(timeUs: number, label?: string) {
+      const session = this.session
+      if (!session || !Number.isFinite(timeUs)) return
       const id = `user:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`
       const finalLabel = label || `Bookmark ${session.userBookmarks.length + 1}`
       session.userBookmarks.push({ id, timeUs, label: finalLabel })
       session.userBookmarks.sort((a, b) => a.timeUs - b.timeUs)
+      this.persistUserBookmarks()
     },
     removeUserBookmark(id: string) {
       const session = this.session
       if (!session) return
       const index = session.userBookmarks.findIndex(b => b.id === id)
-      if (index !== -1) session.userBookmarks.splice(index, 1)
+      if (index === -1) return
+      session.userBookmarks.splice(index, 1)
+      this.persistUserBookmarks()
     },
     clearUserBookmarks() {
       const session = this.session
-      if (!session) return
+      if (!session || !session.userBookmarks.length) return
       session.userBookmarks.splice(0, session.userBookmarks.length)
+      this.persistUserBookmarks()
     },
     updateUserBookmarkLabel(id: string, label: string) {
       const session = this.session
       if (!session) return
       const bookmark = session.userBookmarks.find(b => b.id === id)
-      if (bookmark) bookmark.label = label
+      if (!bookmark || bookmark.label === label) return
+      bookmark.label = label
+      this.persistUserBookmarks()
     },
     seekToUserBookmark(id: string) {
       const session = this.session

@@ -238,7 +238,7 @@ onMounted(async () => {
     return
   }
 
-  if (!player.song || (player.song.playbackHash ?? player.song.hash) !== hash) {
+  if (!player.song || (player.song.playbackHash ?? player.song.hash) !== hash || player.loadedProfileId !== profiles.activeProfile.id) {
     await player.loadSong(song, settings.defaultSpeed, settings.leadInDuration, settings.zoomPercent, settings.octaveShift)
   }
 

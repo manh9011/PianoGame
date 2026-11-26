@@ -75,6 +75,17 @@ export interface StoredSongTrackSettings {
   updatedAt: number
 }
 
+export interface StoredUserBookmark {
+  id: string
+  timeUs: number
+  label: string
+}
+
+export interface StoredSongUserBookmarks {
+  bookmarks: StoredUserBookmark[]
+  updatedAt: number
+}
+
 export interface UserProfile {
   id: string
   name: string
@@ -85,4 +96,5 @@ export interface UserProfile {
   loopRegionsBySongId: Record<string, StoredLoopRegion>
   fingeringsBySongId: Record<string, StoredSongFingering>
   trackSettingsBySongId: Record<string, StoredSongTrackSettings>
+  userBookmarksBySongId: Record<string, StoredSongUserBookmarks>
 }
